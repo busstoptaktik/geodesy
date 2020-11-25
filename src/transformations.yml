@@ -1,0 +1,54 @@
+main:
+  meta:
+    desc: bla bla bla
+          blu blu blu
+    from: epsg:4371
+    to: epsg:4444
+    region: DK
+    accuracy: 1 m
+
+  globals:
+    ellps: Ost
+    a: Gurk
+    b: 7
+    dir: inv
+
+  steps:
+    - cart: {dir: fwd}
+    - helmert: {dx: 221., dy: 222, dz: 87}
+    - cart: {dir: inv, salat: banan, steak}
+    - call: {name: sub1, dir: inv}
+
+sub1:
+  steps:
+    - cart: {}
+    - helmert: {dx: 1, dy: 22, dz: 3}
+    - cart: {dir: inv}
+
+---
+
+main:
+  meta:
+    desc: bla bla bla
+          blu blu blu
+    from: epsg:4371
+    to: epsg:4444
+    region: DK
+    accuracy: 1 m
+
+  globals:
+    ellps: Ost
+    a: Gurk
+    b: 7
+
+  steps:
+    - cart: {dir: fwd}
+    - helmert: {dx: 221., dy: 222, dz: 87}
+    - cart: {dir: inv, salat: banan, steak}
+    - call: {name: cucumber, dir: inv}
+
+cucumber:
+  steps:
+    - cart: {}
+    - helmert: {dx: 1, dy: 22, dz: 3}
+    - cart: {dir: inv}
