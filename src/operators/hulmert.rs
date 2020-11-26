@@ -6,7 +6,7 @@ use crate::inverted;
 use crate::Coord;
 
 
-pub fn helmert(args: &HashMap<&Yaml,&Yaml>)  -> impl Fn(&mut Coord, bool) -> bool {
+pub fn hulmert(args: &HashMap<&Yaml,&Yaml>)  -> impl Fn(&mut Coord, bool) -> bool {
     let dx = num(args, "dx", 0.);
     let dy = num(args, "dy", 0.);
     let dz = num(args, "dz", 0.);
@@ -14,10 +14,10 @@ pub fn helmert(args: &HashMap<&Yaml,&Yaml>)  -> impl Fn(&mut Coord, bool) -> boo
     let inverse = inverted(args);
 
     let params = HelmertParams{dx, dy, dz};
-    println!("helmert.dx={}", dx);
-    println!("helmert.dy={}", dy);
-    println!("helmert.dz={}", dz);
-    println!("helmert.dp={}", dp);
+    println!("hulmert.dx={}", dx);
+    println!("hulmert.dy={}", dy);
+    println!("hulmert.dz={}", dz);
+    println!("hulmert.dp={}", dp);
     println!("args = {:?}\n", args);
 
     return move |x: &mut Coord, mut dir_fwd: bool| {

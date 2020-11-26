@@ -2,20 +2,22 @@ extern crate yaml_rust;
 use yaml_rust::{Yaml, YamlLoader};
 use std::collections::HashMap;
 use geodesy::operators::helmert::helmert;
+use geodesy::operators::hulmert::hulmert;
 use geodesy::Coord;
 
 fn main() {
     let helm = pain();
+    let hulm = pulm();
     let mut x = Coord{first: 1., second: 2., third: 3., fourth: 4.};
     helm(&mut x, true);
     println!("x:  {:?}", x);
     assert_eq!(x.first, 2.0);
-    helm(&mut x, false);
+    hulm(&mut x, false);
     println!("x:  {:?}", x);
     assert_eq!(x.first, 1.0);
 }
 
-fn pain() -> impl Fn(&mut Coord, bool) -> &mut Coord {
+fn pain() -> impl Fn(&mut Coord, bool) -> bool {
     let mut pap = HashMap::new();
 
     let txt = std::fs::read_to_string("src/transformations.yml").unwrap();
@@ -80,4 +82,33 @@ fn pain() -> impl Fn(&mut Coord, bool) -> &mut Coord {
     println!("PAX: {:?}", pax);
     return helm;
 
+}
+
+
+
+fn pulm() -> impl Fn(&mut Coord, bool) -> bool {
+    let mut par = HashMap::new();
+    let k = Yaml::from_str("dx");
+    let v = Yaml::Real(1.to_string());
+    par.insert(&k, &v);
+    let k = Yaml::from_str("dy");
+    let v = Yaml::Real(2.to_string());
+    par.insert(&k, &v);
+    let k = Yaml::from_str("dz");
+    let v = Yaml::Real(3.to_string());
+    par.insert(&k, &v);
+    let k = Yaml::from_str("dp");
+    let v = Yaml::from_str("dp");
+    par.insert(&k, &v);
+    println!("PAR: {:?}", par);
+
+    let hulm = hulmert(&par);
+    let mut x = Coord{first: 1., second: 2., third: 3., fourth: 4.};
+    hulm(&mut x, true);
+    println!("x:  {:?}", x);
+    assert_eq!(x.first, 2.0);
+    hulm(&mut x, false);
+    println!("x:  {:?}", x);
+    assert_eq!(x.first, 1.0);
+    return hulm;
 }
