@@ -8,14 +8,15 @@ use geodesy::Coord;
 fn main() {
     let helm = pain();
     let hulm = pulm();
-    let mut v = Vec::new();
-    v.push(helm);
-    v.push(hulm);
+    let mut v: Vec<Box<dyn Fn(&mut Coord, bool) -> bool>> = Vec::new();
+    v.push(Box::new(hulm));
+    v.push(Box::new(helm));
+
     let mut x = Coord{first: 1., second: 2., third: 3., fourth: 4.};
-    helm(&mut x, true);
+    v[1](&mut x, true);
     println!("x:  {:?}", x);
     assert_eq!(x.first, 2.0);
-    hulm(&mut x, false);
+    v[0](&mut x, false);
     println!("x:  {:?}", x);
     assert_eq!(x.first, 1.0);
 }

@@ -6,7 +6,7 @@ use crate::inverted;
 use crate::Coord;
 
 
-pub fn helmert(args: &HashMap<&Yaml,&Yaml>)  -> impl Fn(&mut Coord, bool) -> bool {
+pub fn helmert(args: &HashMap<&Yaml,&Yaml>) -> Box<dyn Fn(&mut Coord, bool) -> bool> {
     let dx = num(args, "dx", 0.);
     let dy = num(args, "dy", 0.);
     let dz = num(args, "dz", 0.);
@@ -17,10 +17,9 @@ pub fn helmert(args: &HashMap<&Yaml,&Yaml>)  -> impl Fn(&mut Coord, bool) -> boo
     println!("helmert.dx={}", dx);
     println!("helmert.dy={}", dy);
     println!("helmert.dz={}", dz);
-    println!("helmert.dp={}", dp);
     println!("args = {:?}\n", args);
 
-    return move |x: &mut Coord, mut dir_fwd: bool| {
+    return Box::new(move |x: &mut Coord, mut dir_fwd: bool| {
         if inverse {
             dir_fwd = !dir_fwd;
         }
@@ -28,7 +27,7 @@ pub fn helmert(args: &HashMap<&Yaml,&Yaml>)  -> impl Fn(&mut Coord, bool) -> boo
             return fwd(x, &params);
         }
         return inv(x, &params);
-    }
+    })
 }
 
 // #[derive(Debug)]

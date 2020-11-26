@@ -6,21 +6,20 @@ use crate::inverted;
 use crate::Coord;
 
 
-pub fn hulmert(args: &HashMap<&Yaml,&Yaml>)  -> impl Fn(&mut Coord, bool) -> bool {
+pub fn hulmert(args: &HashMap<&Yaml,&Yaml>) -> Box<dyn Fn(&mut Coord, bool) -> bool> {
     let dx = num(args, "dx", 0.);
     let dy = num(args, "dy", 0.);
     let dz = num(args, "dz", 0.);
     let dp = num(args, "dp", 64.);
     let inverse = inverted(args);
 
-    let params = HelmertParams{dx, dy, dz};
+    let params = HelmertParams{dx, dy};
     println!("hulmert.dx={}", dx);
     println!("hulmert.dy={}", dy);
-    println!("hulmert.dz={}", dz);
     println!("hulmert.dp={}", dp);
     println!("args = {:?}\n", args);
 
-    return move |x: &mut Coord, mut dir_fwd: bool| {
+    return Box::new(move |x: &mut Coord, mut dir_fwd: bool| {
         if inverse {
             dir_fwd = !dir_fwd;
         }
@@ -28,7 +27,7 @@ pub fn hulmert(args: &HashMap<&Yaml,&Yaml>)  -> impl Fn(&mut Coord, bool) -> boo
             return fwd(x, &params);
         }
         return inv(x, &params);
-    }
+    })
 }
 
 // #[derive(Debug)]
@@ -41,7 +40,7 @@ struct HelmertParams {
 fn fwd(x: &mut Coord, params: &HelmertParams) -> bool {
     x.first += params.dx;
     x.second += params.dy;
-    x.third += 3;
+    x.third += 3.;
     return true;
 }
 
@@ -49,6 +48,6 @@ fn fwd(x: &mut Coord, params: &HelmertParams) -> bool {
 fn inv(x: &mut Coord, params: &HelmertParams) -> bool {
     x.first -= params.dx;
     x.second -= params.dy;
-    x.third -= 3;
+    x.third -= 3.;
     return true;
 }
