@@ -8,6 +8,9 @@ use geodesy::Coord;
 fn main() {
     let helm = pain();
     let hulm = pulm();
+    let mut v = Vec::new();
+    v.push(helm);
+    v.push(hulm);
     let mut x = Coord{first: 1., second: 2., third: 3., fourth: 4.};
     helm(&mut x, true);
     println!("x:  {:?}", x);

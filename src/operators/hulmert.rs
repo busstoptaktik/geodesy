@@ -35,14 +35,13 @@ pub fn hulmert(args: &HashMap<&Yaml,&Yaml>)  -> impl Fn(&mut Coord, bool) -> boo
 struct HelmertParams {
     dx: f64,
     dy: f64,
-    dz: f64
 }
 
 
 fn fwd(x: &mut Coord, params: &HelmertParams) -> bool {
     x.first += params.dx;
     x.second += params.dy;
-    x.third += params.dz;
+    x.third += 3;
     return true;
 }
 
@@ -50,6 +49,6 @@ fn fwd(x: &mut Coord, params: &HelmertParams) -> bool {
 fn inv(x: &mut Coord, params: &HelmertParams) -> bool {
     x.first -= params.dx;
     x.second -= params.dy;
-    x.third -= params.dz;
+    x.third -= 3;
     return true;
 }
