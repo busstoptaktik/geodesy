@@ -9,8 +9,9 @@ fn main() {
     let helm = pain();
     let hulm = pulm();
     let mut v: Vec<Box<dyn Fn(&mut Coord, bool) -> bool>> = Vec::new();
-    v.push(Box::new(hulm));
-    v.push(Box::new(helm));
+    v.push(hulm);
+    v.push(helm);
+    v.push(pulm());
 
     let mut x = Coord{first: 1., second: 2., third: 3., fourth: 4.};
     v[1](&mut x, true);
@@ -19,9 +20,12 @@ fn main() {
     v[0](&mut x, false);
     println!("x:  {:?}", x);
     assert_eq!(x.first, 1.0);
+    v[2](&mut x, true);
+    println!("x:  {:?}", x);
+    assert_eq!(x.first, 2.0);
 }
 
-fn pain() -> impl Fn(&mut Coord, bool) -> bool {
+fn pain() -> Box<dyn Fn(&mut Coord, bool) -> bool>  {
     let mut pap = HashMap::new();
 
     let txt = std::fs::read_to_string("src/transformations.yml").unwrap();
@@ -85,12 +89,11 @@ fn pain() -> impl Fn(&mut Coord, bool) -> bool {
     pax.insert(String::from("pap"), String::from("pop"));
     println!("PAX: {:?}", pax);
     return helm;
-
 }
 
 
 
-fn pulm() -> impl Fn(&mut Coord, bool) -> bool {
+fn pulm() -> Box<dyn Fn(&mut Coord, bool) -> bool>  {
     let mut par = HashMap::new();
     let k = Yaml::from_str("dx");
     let v = Yaml::Real(1.to_string());

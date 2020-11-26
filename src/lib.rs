@@ -2,6 +2,14 @@ extern crate yaml_rust;
 use yaml_rust::Yaml;
 use std::collections::HashMap;
 
+
+// Næste skridt:
+// HashMap<String, String> til defaults/definitioner for operationer
+// Plain string til definitioner
+// implementer pipeline (steps)
+// operationer skal ikke operere på en Coord, men på en OpArg
+// Operationer skal returnere en struct med lidt metadata OG closure
+
 pub mod operators;
 
 #[cfg(test)]

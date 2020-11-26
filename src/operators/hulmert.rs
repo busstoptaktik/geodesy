@@ -5,7 +5,8 @@ use crate::num;
 use crate::inverted;
 use crate::Coord;
 
-
+// Return type based on an answer from Shepmaster over
+// at https://stackoverflow.com/questions/49012277
 pub fn hulmert(args: &HashMap<&Yaml,&Yaml>) -> Box<dyn Fn(&mut Coord, bool) -> bool> {
     let dx = num(args, "dx", 0.);
     let dy = num(args, "dy", 0.);
