@@ -12,6 +12,8 @@ use std::collections::HashMap;
 
 pub mod operators;
 
+type Operation = Box<dyn Fn(&mut Coord, bool) -> bool>;
+
 #[cfg(test)]
 mod tests {
     #[test]

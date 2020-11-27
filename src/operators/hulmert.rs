@@ -4,10 +4,11 @@ use std::collections::HashMap;
 use crate::num;
 use crate::inverted;
 use crate::Coord;
+use crate::Operation;
 
 // Return type based on an answer from Shepmaster over
 // at https://stackoverflow.com/questions/49012277
-pub fn hulmert(args: &HashMap<&Yaml,&Yaml>) -> Box<dyn Fn(&mut Coord, bool) -> bool> {
+pub fn hulmert(args: &HashMap<&Yaml,&Yaml>) ->  Operation {
     let dx = num(args, "dx", 0.);
     let dy = num(args, "dy", 0.);
     let dz = num(args, "dz", 0.);
@@ -31,7 +32,8 @@ pub fn hulmert(args: &HashMap<&Yaml,&Yaml>) -> Box<dyn Fn(&mut Coord, bool) -> b
     })
 }
 
-// #[derive(Debug)]
+
+#[derive(Debug)]
 struct HelmertParams {
     dx: f64,
     dy: f64,

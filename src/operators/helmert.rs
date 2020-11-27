@@ -4,9 +4,10 @@ use std::collections::HashMap;
 use crate::num;
 use crate::inverted;
 use crate::Coord;
+use crate::Operation;
 
 
-pub fn helmert(args: &HashMap<&Yaml,&Yaml>) -> Box<dyn Fn(&mut Coord, bool) -> bool> {
+pub fn helmert(args: &HashMap<&Yaml,&Yaml>) -> Operation {
     let dx = num(args, "dx", 0.);
     let dy = num(args, "dy", 0.);
     let dz = num(args, "dz", 0.);
@@ -30,7 +31,7 @@ pub fn helmert(args: &HashMap<&Yaml,&Yaml>) -> Box<dyn Fn(&mut Coord, bool) -> b
     })
 }
 
-// #[derive(Debug)]
+#[derive(Debug)]
 struct HelmertParams {
     dx: f64,
     dy: f64,
@@ -51,4 +52,21 @@ fn inv(x: &mut Coord, params: &HelmertParams) -> bool {
     x.second -= params.dy;
     x.third -= params.dz;
     return true;
+}
+
+mod tests {
+    use super::*;
+
+    #[test]
+    fn helmert() {
+        let mut x = Coord{first: 1., second: 2., third: 3., fourth: 4.};
+        let params = HelmertParams{dx: 1., dy: 2., dz: 3.};
+            fwd(&mut x, &params);
+            assert_eq!(x.first, 2.);
+
+            inv(&mut x, &params);
+            assert_eq!(x.first, 1.);
+            assert_eq!(x.second, 2.);
+            assert_eq!(x.third, 3.);
+    }
 }
