@@ -3,8 +3,8 @@ use yaml_rust::Yaml;
 use std::collections::HashMap;
 use crate::num;
 use crate::inverted;
-use crate::Coord;
-use crate::Operation;
+use crate::operators::Coord;
+use crate::operators::Operation;
 
 // Return type based on an answer from Shepmaster over
 // at https://stackoverflow.com/questions/49012277

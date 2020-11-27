@@ -3,8 +3,8 @@ use yaml_rust::{Yaml, YamlLoader};
 use std::collections::HashMap;
 use geodesy::operators::helmert::helmert;
 use geodesy::operators::hulmert::hulmert;
-use geodesy::Coord;
-use geodesy::Operation;
+use geodesy::operators::Coord;
+use geodesy::operators::Operation;
 use geodesy::foundations::DMS;
 
 fn main() {

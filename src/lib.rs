@@ -13,7 +13,6 @@ use std::collections::HashMap;
 pub mod foundations;
 
 pub mod operators;
-pub type Operation = Box<dyn Fn(&mut Coord, bool) -> bool>;
 
 #[cfg(test)]
 mod tests {
@@ -52,10 +51,3 @@ fn inverted(args: &HashMap<&yaml_rust::Yaml,&yaml_rust::Yaml>) -> bool {
 }
 
 
-#[derive(Debug)]
-pub struct Coord {
-    pub first: f64,
-    pub second: f64,
-    pub third: f64,
-    pub fourth: f64,
-}
