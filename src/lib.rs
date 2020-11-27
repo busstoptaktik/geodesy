@@ -3,7 +3,6 @@ use yaml_rust::Yaml;
 use std::collections::HashMap;
 
 
-
 // Næste skridt:
 // HashMap<String, String> til defaults/definitioner for operationer
 // Plain string til definitioner
