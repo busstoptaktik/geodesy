@@ -4,11 +4,13 @@ use std::collections::HashMap;
 use geodesy::operators::helmert::helmert;
 use geodesy::operators::hulmert::hulmert;
 use geodesy::Coord;
+use geodesy::Operation;
+use geodesy::foundations::DMS;
 
 fn main() {
     let helm = pain();
     let hulm = pulm();
-    let mut v: Vec<Box<dyn Fn(&mut Coord, bool) -> bool>> = Vec::new();
+    let mut v: Vec<Operation> = Vec::new();
     v.push(hulm);
     v.push(helm);
     v.push(pulm());
@@ -23,6 +25,13 @@ fn main() {
     v[2](&mut x, true);
     println!("x:  {:?}", x);
     assert_eq!(x.first, 2.0);
+
+    let dms = DMS::new(60, 24, 36.);
+    assert_eq!(dms.d, 60);
+    assert_eq!(dms.m, 24);
+    assert_eq!(dms.s, 36.);
+    let d = dms.to_deg();
+    assert_eq!(d, 60.41);
 }
 
 fn pain() -> Box<dyn Fn(&mut Coord, bool) -> bool>  {

@@ -11,7 +11,6 @@ pub fn helmert(args: &HashMap<&Yaml,&Yaml>) -> Operation {
     let dx = num(args, "dx", 0.);
     let dy = num(args, "dy", 0.);
     let dz = num(args, "dz", 0.);
-    let dp = num(args, "dp", 64.);
     let inverse = inverted(args);
 
     let params = HelmertParams{dx, dy, dz};
@@ -55,10 +54,9 @@ fn inv(x: &mut Coord, params: &HelmertParams) -> bool {
 }
 
 mod tests {
-    use super::*;
-
     #[test]
     fn helmert() {
+        use super::*;
         let mut x = Coord{first: 1., second: 2., third: 3., fourth: 4.};
         let params = HelmertParams{dx: 1., dy: 2., dz: 3.};
             fwd(&mut x, &params);

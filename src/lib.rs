@@ -10,9 +10,10 @@ use std::collections::HashMap;
 // operationer skal ikke operere på en Coord, men på en OpArg
 // Operationer skal returnere en struct med lidt metadata OG closure
 
-pub mod operators;
+pub mod foundations;
 
-type Operation = Box<dyn Fn(&mut Coord, bool) -> bool>;
+pub mod operators;
+pub type Operation = Box<dyn Fn(&mut Coord, bool) -> bool>;
 
 #[cfg(test)]
 mod tests {
@@ -21,7 +22,6 @@ mod tests {
         assert_eq!(2 + 2, 4);
     }
 }
-
 
 
 fn num(args: &HashMap<&yaml_rust::Yaml,&yaml_rust::Yaml>, key: &str, default: f64) -> f64 {

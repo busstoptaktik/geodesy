@@ -9,3 +9,4 @@ default-run = "ost"
 
 [dependencies]
 yaml-rust = "0.4"
+phf = { version = "0.7.24", features = ["macros"] }

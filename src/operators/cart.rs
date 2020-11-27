@@ -6,18 +6,25 @@ use crate::inverted;
 use crate::Coord;
 use crate::Operation;
 
-// Return type based on an answer from Shepmaster over
-// at https://stackoverflow.com/questions/49012277
-pub fn hulmert(args: &HashMap<&Yaml,&Yaml>) ->  Operation {
+/*
+
+
+
+
+
+*/
+
+pub fn helmert(args: &HashMap<&Yaml,&Yaml>) -> Operation {
     let dx = num(args, "dx", 0.);
     let dy = num(args, "dy", 0.);
+    let dz = num(args, "dz", 0.);
     let dp = num(args, "dp", 64.);
     let inverse = inverted(args);
 
-    let params = HelmertParams{dx, dy};
-    println!("hulmert.dx={}", dx);
-    println!("hulmert.dy={}", dy);
-    println!("hulmert.dp={}", dp);
+    let params = HelmertParams{dx, dy, dz};
+    println!("helmert.dx={}", dx);
+    println!("helmert.dy={}", dy);
+    println!("helmert.dz={}", dz);
     println!("args = {:?}\n", args);
 
     return Box::new(move |x: &mut Coord, mut dir_fwd: bool| {
@@ -31,18 +38,18 @@ pub fn hulmert(args: &HashMap<&Yaml,&Yaml>) ->  Operation {
     })
 }
 
-
 #[derive(Debug)]
 struct HelmertParams {
     dx: f64,
     dy: f64,
+    dz: f64
 }
 
 
 fn fwd(x: &mut Coord, params: &HelmertParams) -> bool {
     x.first += params.dx;
     x.second += params.dy;
-    x.third += 3.;
+    x.third += params.dz;
     return true;
 }
 
@@ -50,6 +57,23 @@ fn fwd(x: &mut Coord, params: &HelmertParams) -> bool {
 fn inv(x: &mut Coord, params: &HelmertParams) -> bool {
     x.first -= params.dx;
     x.second -= params.dy;
-    x.third -= 3.;
+    x.third -= params.dz;
     return true;
+}
+
+mod tests {
+    use super::*;
+
+    #[test]
+    fn helmert() {
+        let mut x = Coord{first: 1., second: 2., third: 3., fourth: 4.};
+        let params = HelmertParams{dx: 1., dy: 2., dz: 3.};
+            fwd(&mut x, &params);
+            assert_eq!(x.first, 2.);
+
+            inv(&mut x, &params);
+            assert_eq!(x.first, 1.);
+            assert_eq!(x.second, 2.);
+            assert_eq!(x.third, 3.);
+    }
 }
