@@ -30,6 +30,28 @@ pub fn ellipsoid(name: &str) -> Ellipsoid {
 }
 
 
+pub trait Latitude {
+    fn geocentric_lat(&self, f: f64) -> f64;
+    fn geographic_lat(&self, f: f64) -> f64;
+    fn reduced_lat(&self, f: f64) -> f64;
+}
+
+impl Latitude for f64 {
+    fn geocentric_lat(&self, f: f64) -> f64 {
+        return ((1.0 - f*(2.0 - f))*self.tan()).atan()
+    }
+
+    fn geographic_lat(&self, f: f64) -> f64 {
+        return (self.tan() / (1.0 - f*(2.0 - f))).atan()
+    }
+
+    fn reduced_lat(&self, f: f64) -> f64 {
+        return ((1.0 - f)*self.tan()).atan()
+    }
+
+}
+
+
 mod tests {
     #[test]
     fn test_dms() {
@@ -47,6 +69,22 @@ mod tests {
         assert_eq!(ellps.a, 6378137.0);
         assert_eq!(ellps.f, 1./298.257222100882711243);
     }
+
+    #[test]
+    fn test_latitude() {
+        use super::Latitude;
+        let ellps = super::ellipsoid("GRS80");
+        let phi = 60.0_f64.to_radians();
+        let theta = phi.geocentric_lat(ellps.f);
+        let phi2 = theta.geographic_lat(ellps.f);
+        assert!((phi-phi2).abs() < 1.0e10);
+        let theta2 = phi2.geocentric_lat(ellps.f);
+        assert!((theta-theta2).abs() < 1.0e10);
+
+        let beta = phi.reduced_lat(ellps.f);
+        assert!((phi - beta).abs() < 0.1_f64.to_radians());
+    }
+
 }
 
 /*
@@ -84,14 +122,4 @@ def geographic_lat(geocentric_lat, f):
 
 def eccentricity_squared(f):
     return f*(2 - f)
-
-def ellipsoid(name):
-    return _ellps[name]
-_ellps = {
-    "GRS80":   (6378137.0, 1./298.257222100882711243),
-    "intl":    (6378388.0, 1./297),
-    "Helmert": (6378200.0, 1./298.3),
-    "clrk66":  (6378206.4, 1./294.9786982),
-    "clrk80":  (6378249.145, 1./293.465)
-}
 */
