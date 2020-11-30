@@ -14,6 +14,16 @@ pub mod foundations;
 
 pub mod operators;
 
+#[derive(Debug)]
+pub struct Coord {
+    pub first: f64,
+    pub second: f64,
+    pub third: f64,
+    pub fourth: f64,
+}
+pub type Operator = Box<dyn Fn(&mut Coord, bool) -> bool>;
+
+
 #[cfg(test)]
 mod tests {
     #[test]
@@ -32,6 +42,15 @@ fn num(args: &HashMap<&yaml_rust::Yaml,&yaml_rust::Yaml>, key: &str, default: f6
     };
 
     let val = arg.unwrap();
+    if let Yaml::Real(value) = val {
+        if value.starts_with("^") {
+            let mut v = value.clone();
+            v.remove(0);
+            let n = num(args, v.as_str(), default);
+            println!("*********************************************** {} {}", v, n);
+            return num(args, v.as_str(), default);
+        }
+    }
     if let Yaml::Integer(value) = val {
         return *value as f64;
     }

@@ -40,9 +40,10 @@ main:
     ellps: Ost
     a: Gurk
     b: 7
+    fwd: true
 
   steps:
-    - cart: {dir: fwd}
+    - cart: {dir: fwd, dirt: ^b}
     - helmert: {dx: 221., dy: 222, dz: 87}
     - cart: {dir: inv, salat: banan, steak}
     - call: {name: cucumber, dir: inv}

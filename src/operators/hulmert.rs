@@ -3,12 +3,12 @@ use yaml_rust::Yaml;
 use std::collections::HashMap;
 use crate::num;
 use crate::inverted;
-use crate::operators::Coord;
-use crate::operators::Operation;
+use crate::Coord;
+use crate::Operator;
 
 // Return type based on an answer from Shepmaster over
 // at https://stackoverflow.com/questions/49012277
-pub fn hulmert(args: &HashMap<&Yaml,&Yaml>) ->  Operation {
+pub fn hulmert(args: &HashMap<&Yaml,&Yaml>) ->  Operator {
     let dx = num(args, "dx", 0.);
     let dy = num(args, "dy", 0.);
     let dp = num(args, "dp", 64.);

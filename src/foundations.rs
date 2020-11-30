@@ -14,6 +14,10 @@ impl DMS {
 #[derive(Clone, Copy, Debug)]
 pub struct Ellipsoid {pub a: f64, pub f: f64}
 
+// We use a map based on a perfect hash function (phf) here - not because
+// perfect hashing is important for the core functionality, but because
+// the phf::map can be constructed at compile time. This is not the case for
+// ordinary hashmaps.
 static ELLIPSOIDS: phf::Map<&'static str, Ellipsoid> = phf_map! {
     "GRS80"  =>  Ellipsoid {a: 6378137.0,   f: 1./298.257222100882711243},
     "intl"   =>  Ellipsoid {a: 6378388.0,   f: 1./297.},
@@ -29,24 +33,32 @@ pub fn ellipsoid(name: &str) -> Ellipsoid {
     return ELLIPSOIDS["GRS80"];
 }
 
-
+/// Misc. auxiliary latitudes
 pub trait Latitude {
-    fn geocentric_lat(&self, f: f64) -> f64;
-    fn geographic_lat(&self, f: f64) -> f64;
-    fn reduced_lat(&self, f: f64) -> f64;
+    /// Geographic latitude to geocentric latitude
+    /// or vice versa if `forward` is set to `false`.
+    fn geocentric(&self, f: f64, forward: bool) -> f64;
+
+    /// Geographic latitude to reduced latitude
+    /// or vice versa if `forward` is set to `false`.
+    fn reduced(&self, f: f64, forward: bool) -> f64;
 }
 
 impl Latitude for f64 {
-    fn geocentric_lat(&self, f: f64) -> f64 {
-        return ((1.0 - f*(2.0 - f))*self.tan()).atan()
-    }
-
-    fn geographic_lat(&self, f: f64) -> f64 {
+    fn geocentric(&self, f: f64, forward: bool) -> f64 {
+        // Geographic to geocentric?
+        if forward {
+            return ((1.0 - f*(2.0 - f))*self.tan()).atan()
+        }
         return (self.tan() / (1.0 - f*(2.0 - f))).atan()
     }
 
-    fn reduced_lat(&self, f: f64) -> f64 {
-        return ((1.0 - f)*self.tan()).atan()
+    fn reduced(&self, f: f64, forward: bool) -> f64 {
+        // Geographic to reduced?
+        if forward {
+            return ((1.0 - f)*self.tan()).atan()
+        }
+        return (self.tan()/(1.0 - f)).atan()
     }
 
 }
@@ -75,14 +87,15 @@ mod tests {
         use super::Latitude;
         let ellps = super::ellipsoid("GRS80");
         let phi = 60.0_f64.to_radians();
-        let theta = phi.geocentric_lat(ellps.f);
-        let phi2 = theta.geographic_lat(ellps.f);
-        assert!((phi-phi2).abs() < 1.0e10);
-        let theta2 = phi2.geocentric_lat(ellps.f);
-        assert!((theta-theta2).abs() < 1.0e10);
+        let theta = phi.geocentric(ellps.f, true);
+        let phi2 = theta.geocentric(ellps.f, false);
+        assert!((phi-phi2).abs() < 1.0e-10);
+        let theta2 = phi2.geocentric(ellps.f,true);
+        assert!((theta-theta2).abs() < 1.0e-10);
 
-        let beta = phi.reduced_lat(ellps.f);
-        assert!((phi - beta).abs() < 0.1_f64.to_radians());
+        let beta = phi.reduced(ellps.f, true);
+        let phi2 = beta.reduced(ellps.f, false);
+        assert!((phi - phi2).abs() < 1.0e-10);
     }
 
 }

@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use crate::num;
 use crate::inverted;
 use crate::Coord;
-use crate::Operation;
+use crate::Operator;
 
 /*
 
@@ -14,7 +14,7 @@ use crate::Operation;
 
 */
 
-pub fn helmert(args: &HashMap<&Yaml,&Yaml>) -> Operation {
+pub fn helmert(args: &HashMap<&Yaml,&Yaml>) -> Operator {
     let dx = num(args, "dx", 0.);
     let dy = num(args, "dy", 0.);
     let dz = num(args, "dz", 0.);

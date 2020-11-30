@@ -3,14 +3,14 @@ use yaml_rust::{Yaml, YamlLoader};
 use std::collections::HashMap;
 use geodesy::operators::helmert::helmert;
 use geodesy::operators::hulmert::hulmert;
-use geodesy::operators::Coord;
-use geodesy::operators::Operation;
+use geodesy::Coord;
+use geodesy::Operator;
 use geodesy::foundations::DMS;
 
 fn main() {
     let helm = pain();
     let hulm = pulm();
-    let mut v: Vec<Operation> = Vec::new();
+    let mut v: Vec<Operator> = Vec::new();
     v.push(hulm);
     v.push(helm);
     v.push(pulm());
@@ -78,6 +78,7 @@ fn pain() -> Box<dyn Fn(&mut Coord, bool) -> bool>  {
     par.insert(&k, &v);
     let k = Yaml::from_str("dz");
     let v = Yaml::Real(3.to_string());
+    let v = Yaml::Real("^dx".to_string());
     par.insert(&k, &v);
     let k = Yaml::from_str("dp");
     let v = Yaml::from_str("dp");
