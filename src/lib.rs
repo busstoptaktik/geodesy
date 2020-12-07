@@ -1,7 +1,6 @@
 extern crate yaml_rust;
-use yaml_rust::Yaml;
 use std::collections::HashMap;
-
+use yaml_rust::Yaml;
 
 // Næste skridt:
 // HashMap<String, String> til defaults/definitioner for operationer
@@ -21,8 +20,7 @@ pub struct Coord {
     pub third: f64,
     pub fourth: f64,
 }
-pub type Operator = Box<dyn Fn(&mut Coord, bool) -> bool>;
-
+pub type Poperator = Box<dyn Fn(&mut Coord, bool) -> bool>;
 
 #[cfg(test)]
 mod tests {
@@ -32,13 +30,12 @@ mod tests {
     }
 }
 
-
-fn num(args: &HashMap<&yaml_rust::Yaml,&yaml_rust::Yaml>, key: &str, default: f64) -> f64 {
+fn num(args: &HashMap<&yaml_rust::Yaml, &yaml_rust::Yaml>, key: &str, default: f64) -> f64 {
     let k = Yaml::from_str(key);
     let arg = args.get(&k);
     match arg {
         Some(arg) => arg,
-        None => return default
+        None => return default,
     };
 
     let val = arg.unwrap();
@@ -47,7 +44,10 @@ fn num(args: &HashMap<&yaml_rust::Yaml,&yaml_rust::Yaml>, key: &str, default: f6
             let mut v = value.clone();
             v.remove(0);
             let n = num(args, v.as_str(), default);
-            println!("*********************************************** {} {}", v, n);
+            println!(
+                "*********************************************** {} {}",
+                v, n
+            );
             return num(args, v.as_str(), default);
         }
     }
@@ -57,8 +57,7 @@ fn num(args: &HashMap<&yaml_rust::Yaml,&yaml_rust::Yaml>, key: &str, default: f6
     return val.as_f64().unwrap_or(default);
 }
 
-
-fn inverted(args: &HashMap<&yaml_rust::Yaml,&yaml_rust::Yaml>) -> bool {
+fn inverted(args: &HashMap<&yaml_rust::Yaml, &yaml_rust::Yaml>) -> bool {
     let k = Yaml::from_str("dir");
     let arg = args.get(&k);
     if let Some(val) = arg {
@@ -68,5 +67,3 @@ fn inverted(args: &HashMap<&yaml_rust::Yaml,&yaml_rust::Yaml>) -> bool {
     }
     return false;
 }
-
-

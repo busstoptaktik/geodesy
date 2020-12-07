@@ -1,18 +1,25 @@
 use phf::phf_map;
 
-pub struct DMS {pub s: f32, pub d: i16, pub m: i8}
+pub struct DMS {
+    pub s: f32,
+    pub d: i16,
+    pub m: i8,
+}
 
 impl DMS {
     pub fn new(d: i16, m: i8, s: f32) -> DMS {
-        DMS {d: d, m: m, s: s}
+        DMS { d: d, m: m, s: s }
     }
     pub fn to_deg(&self) -> f64 {
-        return (self.s as f64 /60. + self.m as f64)/60. + self.d as f64;
+        return (self.s as f64 / 60. + self.m as f64) / 60. + self.d as f64;
     }
 }
 
 #[derive(Clone, Copy, Debug)]
-pub struct Ellipsoid {pub a: f64, pub f: f64}
+pub struct Ellipsoid {
+    pub a: f64,
+    pub f: f64,
+}
 
 // We use a map based on a perfect hash function (phf) here - not because
 // perfect hashing is important for the core functionality, but because
@@ -48,21 +55,19 @@ impl Latitude for f64 {
     fn geocentric(&self, f: f64, forward: bool) -> f64 {
         // Geographic to geocentric?
         if forward {
-            return ((1.0 - f*(2.0 - f))*self.tan()).atan()
+            return ((1.0 - f * (2.0 - f)) * self.tan()).atan();
         }
-        return (self.tan() / (1.0 - f*(2.0 - f))).atan()
+        return (self.tan() / (1.0 - f * (2.0 - f))).atan();
     }
 
     fn reduced(&self, f: f64, forward: bool) -> f64 {
         // Geographic to reduced?
         if forward {
-            return ((1.0 - f)*self.tan()).atan()
+            return ((1.0 - f) * self.tan()).atan();
         }
-        return (self.tan()/(1.0 - f)).atan()
+        return (self.tan() / (1.0 - f)).atan();
     }
-
 }
-
 
 mod tests {
     #[test]
@@ -79,7 +84,7 @@ mod tests {
     fn test_ellipsoid() {
         let ellps = super::ellipsoid("GRS80");
         assert_eq!(ellps.a, 6378137.0);
-        assert_eq!(ellps.f, 1./298.257222100882711243);
+        assert_eq!(ellps.f, 1. / 298.257222100882711243);
     }
 
     #[test]
@@ -89,15 +94,14 @@ mod tests {
         let phi = 60.0_f64.to_radians();
         let theta = phi.geocentric(ellps.f, true);
         let phi2 = theta.geocentric(ellps.f, false);
-        assert!((phi-phi2).abs() < 1.0e-10);
-        let theta2 = phi2.geocentric(ellps.f,true);
-        assert!((theta-theta2).abs() < 1.0e-10);
+        assert!((phi - phi2).abs() < 1.0e-10);
+        let theta2 = phi2.geocentric(ellps.f, true);
+        assert!((theta - theta2).abs() < 1.0e-10);
 
         let beta = phi.reduced(ellps.f, true);
         let phi2 = beta.reduced(ellps.f, false);
         assert!((phi - phi2).abs() < 1.0e-10);
     }
-
 }
 
 /*

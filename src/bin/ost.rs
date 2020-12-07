@@ -1,138 +1,190 @@
 extern crate yaml_rust;
-use yaml_rust::{Yaml, YamlLoader};
-use std::collections::HashMap;
 use geodesy::operators::helmert::helmert;
 use geodesy::operators::hulmert::hulmert;
 use geodesy::Coord;
-use geodesy::Operator;
-use geodesy::foundations::DMS;
-
+use std::collections::HashMap;
+use yaml_rust::{Yaml, YamlLoader};
 
 // SE https://stackoverflow.com/questions/41301239/how-to-unbox-elements-contained-in-polymorphic-vectors
 
-const MESSAGES: [&'static str; 20] = [
-    "OK",
-    "Warning 1",
-    "Warning 2",
-    "Warning 3",
-    "Warning 4",
-    "Warning 5",
-    "Warning 6",
-    "Warning 7",
-    "Warning 8",
-    "Warning 9",
-    "Error  10",
-    "Error  11",
-    "Error  12",
-    "Error  13",
-    "Error  14",
-    "Error  15",
-    "Error  16",
-    "Error  17",
-    "Error  18",
-    "Error  19",
-];
-
-const OPERATOR_NAME: &'static str = "cart";
-const OPERATOR_DESC: &'static str = "Convert between cartesian and geographical coordinates";
+//const MESSAGES: [&'static str; 20] = [
+//    "OK",
+//    "Warning 1",
+//];
+//const OPERATOR_NAME: &'static str = "cart";
+//const OPERATOR_DESC: &'static str = "Convert between cartesian and geographical coordinates";
 
 
-pub trait HasArea {
-    fn area(&self) -> f64;
-    fn urea(&self) -> f64;
-    fn aurea(&self, dir: i32) -> f64 {
-        if dir > 0 {
-            return self.area();
+// ----------------- TYPES -------------------------------------------------
+
+#[derive(Debug)]
+pub struct OperatorWorkSpace {
+    pub first: f64,
+    pub second: f64,
+    pub third: f64,
+    pub fourth: f64,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct CoordType {}
+
+
+pub type Operator = Box<dyn IsOperator>;
+pub type Pipeline = Vec<Operator>;
+pub trait IsOperator {
+    fn fwd(&self, ws: &mut OperatorWorkSpace) -> i32;
+    fn inv(&self, ws: &mut OperatorWorkSpace) -> i32;
+    fn print_name(&self) {
+        println!("*** {} ***", self.name());
+    }
+    //fn name(&self) -> &'static str;
+    fn name(&self) -> &'static str {
+        return "UNKNOWN";
+    }
+    //fn msg(&self, errcode: i32) -> &'static str;
+    //fn left(&self) -> CoordType;
+    //fn right(&self) -> CoordType;
+}
+
+pub type OperatorArgs = HashMap<String, String>;
+pub trait IsOperatorArgs {
+    fn num_val(&self, key: &str, default: f64) -> f64;
+}
+impl IsOperatorArgs for OperatorArgs {
+    fn num_val(&self, key: &str, default: f64) -> f64 {
+        let arg = self.get(key);
+        let arg = match arg {
+            Some(arg) => arg,
+            None => return default,
+        };
+        if arg.starts_with("^") {
+            let mut v = arg.clone();
+            v.remove(0);
+            return self.num_val(v.as_str(), default);
         }
-        return self.urea();
-    }
-    fn print_area(&self) {
-        println!("This shape has an area of {}", self.area());
+        return arg.parse::<f64>().unwrap_or(default);
     }
 }
 
-struct Circle {
-    x: f64,
-    y: f64,
-    radius: f64,
+
+
+// ----------------- HELM -------------------------------------------------
+struct Helm {
+    dx: f64,
+    dy: f64,
+    dz: f64,
 }
 
-impl HasArea for Circle {
-    fn area(&self) -> f64 {
-        std::f64::consts::PI * (self.radius * self.radius)
+impl IsOperator for Helm {
+    fn fwd(&self, ws: &mut OperatorWorkSpace) -> i32 {
+        ws.first += self.dx;
+        ws.second += self.dy;
+        ws.third += self.dz;
+        return 0;
     }
-    fn urea(&self) -> f64 {
-        self.radius
+    fn inv(&self, ws: &mut OperatorWorkSpace) -> i32 {
+        ws.first -= self.dx;
+        ws.second -= self.dy;
+        ws.third -= self.dz;
+        return 0;
     }
-}
-
-struct Square {
-    x: f64,
-    y: f64,
-    side: f64,
-}
-
-impl HasArea for Square {
-    fn area(&self) -> f64 {
-        self.side * self.side
-    }
-    fn urea(&self) -> f64 {
-        self.side
+    fn name(&self) -> &'static str {
+        return "HELM";
     }
 }
 
-pub trait PopeT {}
-pub type Pope = Box<dyn PopeT>;
-pub type Pipe = Vec<Pope>;
 
-pub type Poperator = Box<dyn HasArea>;
-pub type Pipeline = Vec<Poperator>;
-
-fn get_circle() -> Poperator {
-    let c = Circle {
-        x: 0.0f64,
-        y: 0.0f64,
-        radius: 1.0f64,
-    };
-    return Box::new(c);
-}
-
-fn get_square() -> Poperator {
-    let s = Square {
-        x: 0.0f64,
-        y: 0.0f64,
-        side: 1.0f64,
+fn get_helm() -> Operator {
+    let s = Helm {
+        dx: 1f64,
+        dy: 2f64,
+        dz: 3f64,
     };
     return Box::new(s);
 }
 
-fn generic_experiment() ->  Pipeline {
-    println!("GENERIC *****************************");
 
-    /*
-    let c = Circle {
-        x: 0.0f64,
-        y: 0.0f64,
-        radius: 1.0f64,
+
+// ----------------- CART -------------------------------------------------
+struct Cart {
+    dx: f64,
+    dy: f64,
+    dz: f64,
+}
+
+impl IsOperator for Cart {
+    fn fwd(&self, ws: &mut OperatorWorkSpace) -> i32 {
+        ws.first += self.dx;
+        ws.second += self.dy;
+        ws.third += self.dz;
+        return 0;
+    }
+    fn inv(&self, ws: &mut OperatorWorkSpace) -> i32 {
+        ws.first -= self.dx;
+        ws.second -= self.dy;
+        ws.third -= self.dz;
+        return 0;
+    }
+    fn print_name(&self) {
+        println!("*** Cart ***");
+    }
+    fn name(&self) -> &'static str {
+        return "CART";
+    }
+}
+
+fn get_cart(args: &OperatorArgs) -> Operator {
+    let mut s = Cart {
+        dx: 1f64,
+        dy: 2f64,
+        dz: 3f64,
     };
-    */
-    let c = get_circle();
-    let s = get_square();
+    s.dx = args.num_val("dx", 0.0);
+    s.dy = args.num_val("dy", 0.0);
+    s.dz = args.num_val("dz", 0.0);
+    return Box::new(s);
+}
 
 
-    c.print_area();
-    s.print_area();
+
+fn generic_experiment() -> Pipeline {
+    println!("GENERIC *****************************");
+    let mut o = OperatorWorkSpace {
+        first: 1.0,
+        second: 2.0,
+        third: 3.0,
+        fourth: 4.0,
+    };
+    let mut args: OperatorArgs = HashMap::new();
+    args.insert("dx".to_string(), "^thedxvalue".to_string());
+    args.insert("thedxvalue".to_string(), "^thehiddendxvalue".to_string());
+    args.insert("thehiddendxvalue".to_string(), "1".to_string());
+
+    args.insert("dy".to_string(), "2".to_string());
+    args.insert("dz".to_string(), "3".to_string());
+    assert_eq!(1.0, args.num_val("dx", 0.0));
+
+    let c = get_cart(&args);
+    let h = get_helm();
+
+    c.fwd(&mut o);
+    println!("{:?}", o);
+    c.inv(&mut o);
+    println!("{:?}", o);
+
+    c.print_name();
+    h.print_name();
 
     let mut pipeline: Pipeline = Vec::new();
     pipeline.push(c);
-    pipeline.push(s);
+    pipeline.push(h);
     for x in &pipeline {
-        x.print_area();
+        x.print_name();
+        println!("{}", x.name());
     }
 
     return pipeline;
 }
-
 
 fn main() {
     /*
@@ -153,34 +205,11 @@ fn main() {
     let pipeline = generic_experiment();
     println!("MAIN*****************************");
     for x in &pipeline {
-        x.print_area();
-        println!("{}",x.aurea(1));
-        println!("{}",x.aurea(-1));
+        x.print_name();
     }
-
-
-    /*
-    let mut x = Coord{first: 1., second: 2., third: 3., fourth: 4.};
-    v[1](&mut x, true);
-    println!("x:  {:?}", x);
-    assert_eq!(x.first, 2.0);
-    v[0](&mut x, false);
-    println!("x:  {:?}", x);
-    assert_eq!(x.first, 1.0);
-    v[2](&mut x, true);
-    println!("x:  {:?}", x);
-    assert_eq!(x.first, 2.0);
-
-    let dms = DMS::new(60, 24, 36.);
-    assert_eq!(dms.d, 60);
-    assert_eq!(dms.m, 24);
-    assert_eq!(dms.s, 36.);
-    let d = dms.to_deg();
-    assert_eq!(d, 60.41);
-    */
 }
 
-fn pain() -> Box<dyn Fn(&mut Coord, bool) -> bool>  {
+fn pain() -> Box<dyn Fn(&mut Coord, bool) -> bool> {
     let mut pap = HashMap::new();
 
     let txt = std::fs::read_to_string("src/transformations.yml").unwrap();
@@ -214,7 +243,6 @@ fn pain() -> Box<dyn Fn(&mut Coord, bool) -> bool>  {
         println!("{}", &item.0.as_str().unwrap_or("~"));
     }
 
-
     let mut par = HashMap::new();
     let k = Yaml::from_str("dx");
     let v = Yaml::Real(1.to_string());
@@ -232,7 +260,12 @@ fn pain() -> Box<dyn Fn(&mut Coord, bool) -> bool>  {
     println!("PAR: {:?}", par);
 
     let helm = helmert(&par);
-    let mut x = Coord{first: 1., second: 2., third: 3., fourth: 4.};
+    let mut x = Coord {
+        first: 1.,
+        second: 2.,
+        third: 3.,
+        fourth: 4.,
+    };
     helm(&mut x, true);
     println!("x:  {:?}", x);
     assert_eq!(x.first, 2.0);
@@ -247,9 +280,7 @@ fn pain() -> Box<dyn Fn(&mut Coord, bool) -> bool>  {
     return helm;
 }
 
-
-
-fn pulm() -> Box<dyn Fn(&mut Coord, bool) -> bool>  {
+fn pulm() -> Box<dyn Fn(&mut Coord, bool) -> bool> {
     let mut par = HashMap::new();
     let k = Yaml::from_str("dx");
     let v = Yaml::Real(1.to_string());
@@ -266,7 +297,12 @@ fn pulm() -> Box<dyn Fn(&mut Coord, bool) -> bool>  {
     println!("PAR: {:?}", par);
 
     let hulm = hulmert(&par);
-    let mut x = Coord{first: 1., second: 2., third: 3., fourth: 4.};
+    let mut x = Coord {
+        first: 1.,
+        second: 2.,
+        third: 3.,
+        fourth: 4.,
+    };
     hulm(&mut x, true);
     println!("x:  {:?}", x);
     assert_eq!(x.first, 2.0);
