@@ -7,120 +7,37 @@ use geodesy::Coord;
 use geodesy::Operator;
 use geodesy::foundations::DMS;
 
-/*
-struct Op<T>{x: T}
-
-struct Cart {a: f64, f: f64}
-struct Helm {dx: f64, dy: f64, dz: f64}
-
-trait HasArea {
-    fn area(&self) -> f64;
-}
-
-impl HasArea for Rectangle {
-    fn area(&self) -> f64 { self.length * self.height }
-}
-
-
-impl HasArea for Triangle {
-    fn area(&self) -> f64 { self.length * self.height / 2.0 }
-}
-
-#[derive(Debug)]
-struct Rectangle { length: f64, height: f64 }
-#[derive(Debug)]
-struct Triangle  { length: f64, height: f64 }
-
-// `T` must implement `HasArea`. Any type which meets
-// the bound can access `HasArea`'s function `area`.
-struct Shp<T: HasArea>(T);
-
-fn area<T: HasArea>(t: &T) -> f64 { t.area() }
-
-
-
-// lånt fra https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=c11f8f2b3e5481faafb6367226de8c1e
-#[derive(PartialEq)]
-struct Material {}
-#[derive(PartialEq)]
-struct Matrix {}
-
-trait Shape {
-    fn material(&self) -> &Material;
-    fn transformation(&self) -> &Matrix;
-}
-
-#[derive(PartialEq)]
-struct Sphere {
-    transformation: Matrix,
-    material: Material
-}
-
-impl Shape for Sphere {
-    fn material(&self) -> &Material {
-        &self.material
-    }
-    fn transformation(&self) -> &Matrix {
-        &self.transformation
-    }
-}
-
-#[derive(PartialEq)]
-struct Trapezoid {
-    transformation: Matrix,
-    material: Material,
-    height: f64
-}
-
-
-impl Shape for Trapezoid {
-    fn material(&self) -> &Material {
-        &self.material
-    }
-    fn transformation(&self) -> &Matrix {
-        &self.transformation
-    }
-}
-
-
-impl<'a> PartialEq for dyn Shape + 'a {
-    fn eq(&self, other: &Self) -> bool {
-        self.material() == other.material() && self.transformation() == other.transformation()
-    }
-}
-
-fn do_stuff(objects: &Vec<&dyn Shape>) {
-    let obj1 = objects[0];
-    let obj2 = objects[1];
-    if obj1 == obj2 {
-        println!("Equal");
-    }
-}
-
-
-fn generic_experiment() -> Vec(&dyn Shape) {
-    println!("************************** GENERIC ****************************");
-    let s = Sphere{ transformation: Matrix{}, material: Material {} };
-    let t = &Trapezoid{ transformation: Matrix{}, material: Material {}, height: 42. } as &dyn Shape;
-    let s_shape = &s as &dyn Shape;
-//    let t_shape = &t as &dyn Shape;
-    let mut v = vec![ s_shape, t ];
-    println!("{}", s_shape == s_shape);
-    println!("{}", s_shape == t);
-
-    do_stuff(&v);
-    v;
-}
-*/
-
-
-
-
-
 
 // SE https://stackoverflow.com/questions/41301239/how-to-unbox-elements-contained-in-polymorphic-vectors
 
-trait HasArea {
+const MESSAGES: [&'static str; 20] = [
+    "OK",
+    "Warning 1",
+    "Warning 2",
+    "Warning 3",
+    "Warning 4",
+    "Warning 5",
+    "Warning 6",
+    "Warning 7",
+    "Warning 8",
+    "Warning 9",
+    "Error  10",
+    "Error  11",
+    "Error  12",
+    "Error  13",
+    "Error  14",
+    "Error  15",
+    "Error  16",
+    "Error  17",
+    "Error  18",
+    "Error  19",
+];
+
+const OPERATOR_NAME: &'static str = "cart";
+const OPERATOR_DESC: &'static str = "Convert between cartesian and geographical coordinates";
+
+
+pub trait HasArea {
     fn area(&self) -> f64;
     fn urea(&self) -> f64;
     fn aurea(&self, dir: i32) -> f64 {
@@ -130,7 +47,7 @@ trait HasArea {
         return self.urea();
     }
     fn print_area(&self) {
-        println!("This shape has area of {}", self.area());
+        println!("This shape has an area of {}", self.area());
     }
 }
 
@@ -164,6 +81,9 @@ impl HasArea for Square {
     }
 }
 
+pub trait PopeT {}
+pub type Pope = Box<dyn PopeT>;
+pub type Pipe = Vec<Pope>;
 
 pub type Poperator = Box<dyn HasArea>;
 pub type Pipeline = Vec<Poperator>;

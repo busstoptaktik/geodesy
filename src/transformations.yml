@@ -46,7 +46,7 @@ main:
     - cart: {dir: fwd, dirt: ^b}
     - helmert: {dx: 221., dy: 222, dz: 87}
     - cart: {dir: inv, salat: banan, steak}
-    - call: {name: cucumber, dir: inv}
+    - embed: {name: cucumber, dir: inv}
 
 cucumber:
   steps:
