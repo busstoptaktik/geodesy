@@ -23,48 +23,129 @@ pub struct OperatorWorkSpace {
     pub second: f64,
     pub third: f64,
     pub fourth: f64,
+    pub last_failing_operation: &'static str,
 }
 
 #[derive(Clone, Copy, Debug)]
-pub struct CoordType {}
+pub struct CoordType {
+
+}
 
 
 pub type Operator = Box<dyn IsOperator>;
 pub type Pipeline = Vec<Operator>;
+
 pub trait IsOperator {
     fn fwd(&self, ws: &mut OperatorWorkSpace) -> i32;
     fn inv(&self, ws: &mut OperatorWorkSpace) -> i32;
     fn print_name(&self) {
         println!("*** {} ***", self.name());
     }
-    //fn name(&self) -> &'static str;
     fn name(&self) -> &'static str {
         return "UNKNOWN";
     }
+    //fn is_inverted(&self) -> bool .. return self.inverted
+    //fn operate(&self, dir: bool) .. if inverted dir=!dir if dir fwd else inv
     //fn msg(&self, errcode: i32) -> &'static str;
     //fn left(&self) -> CoordType;
     //fn right(&self) -> CoordType;
 }
 
-pub type OperatorArgs = HashMap<String, String>;
-pub trait IsOperatorArgs {
-    fn num_val(&self, key: &str, default: f64) -> f64;
+
+#[derive(Debug)]
+struct OperatorArgs {
+    args: HashMap<String, String>,
+    used: HashMap<String, String>,
+    all_used: HashMap<String, String>,
 }
-impl IsOperatorArgs for OperatorArgs {
-    fn num_val(&self, key: &str, default: f64) -> f64 {
-        let arg = self.get(key);
-        let arg = match arg {
-            Some(arg) => arg,
-            None => return default,
-        };
-        if arg.starts_with("^") {
-            let mut v = arg.clone();
-            v.remove(0);
-            return self.num_val(v.as_str(), default);
+
+impl OperatorArgs{
+    pub fn new() -> OperatorArgs {
+        OperatorArgs{
+            args: HashMap::new(),
+            used: HashMap::new(),
+            all_used: HashMap::new(),
         }
-        return arg.parse::<f64>().unwrap_or(default);
+    }
+
+    pub fn insert(&mut self, key: &str, value: &str) {
+        self.args.insert(key.to_string(), value.to_string());
+    }
+
+    // Workhorse for ::value - this indirection is needed in order to keep the
+    // original key available, when traversing an indirect definition.
+    fn value_recursive_search(&mut self, key: &str, default: &str) -> String {
+        let arg = self.args.get(key);
+        let arg = match arg {
+            Some(arg) => arg.to_string(),
+            None => return default.to_string(),
+        };
+        self.all_used.insert(key.to_string(), arg.to_string());
+        if arg.starts_with("^") {
+            let arg = &arg[1..];
+            return self.value_recursive_search(arg, default);
+        }
+        return arg;
+    }
+
+    /// Return the arg for a given key; maintain usage info.
+    pub fn value(&mut self, key: &str, default: &str) -> String {
+        let arg = self.value_recursive_search(key, default);
+        if arg != default {
+            self.used.insert(key.to_string(), arg.to_string());
+        }
+        return arg;
+    }
+
+
+    pub fn numeric_value(&mut self, key: &str, default: f64) -> f64 {
+        let arg = self.value(key, "");
+        // key not given: return default
+        if arg == "" {
+            return default;
+        }
+        // key given, but not numeric: return NaN
+        return arg.parse().unwrap_or(f64::NAN);
+    }
+
+}
+
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn pargs() {
+        use super::*;
+        let mut pargs = OperatorArgs::new();
+
+        // dx and dy are straightforward
+        pargs.insert("dx", "1");
+        pargs.insert("dy", "2");
+
+        // But we hide dz behind two levels of indirection
+        pargs.insert("dz", "^ddz");
+        pargs.insert("ddz", "^dddz");
+        pargs.insert("dddz", "3");
+        println!("pargs: {:?}", pargs);
+
+        assert_eq!("1", pargs.value("dx", ""));
+        println!("used: {:?}", &pargs.used);
+
+        assert_eq!("2", pargs.value("dy", ""));
+        println!("used: {:?}", &pargs.used);
+
+        assert_eq!("3", pargs.value("dz", ""));
+        assert_eq!(3.0, pargs.numeric_value("dz", 42.0));
+        println!("used: {:?}", &pargs.used);
+        println!("all_used: {:?}", &pargs.all_used);
+
+
+        // Finally one for testing NAN returned for non-numerics
+        pargs.insert("ds", "foo");
+        assert!(pargs.numeric_value("ds", 0.0).is_nan());
     }
 }
+
 
 
 
@@ -133,19 +214,29 @@ impl IsOperator for Cart {
     }
 }
 
-fn get_cart(args: &OperatorArgs) -> Operator {
+
+fn get_cart(args: &mut OperatorArgs) -> Operator {
     let mut s = Cart {
         dx: 1f64,
         dy: 2f64,
         dz: 3f64,
     };
-    s.dx = args.num_val("dx", 0.0);
-    s.dy = args.num_val("dy", 0.0);
-    s.dz = args.num_val("dz", 0.0);
+    s.dx = args.numeric_value("dx", 0.0);
+    s.dy = args.numeric_value("dy", 0.0);
+    s.dz = args.numeric_value("dz", 0.0);
     return Box::new(s);
 }
 
 
+fn operator_factory(name: &str, args: &mut OperatorArgs) -> Operator {
+    if name == "cart" {
+        return get_cart(args);
+    }
+    if name == "helm" {
+        return get_helm();
+    }
+    return get_cart(args);
+}
 
 fn generic_experiment() -> Pipeline {
     println!("GENERIC *****************************");
@@ -154,17 +245,14 @@ fn generic_experiment() -> Pipeline {
         second: 2.0,
         third: 3.0,
         fourth: 4.0,
+        last_failing_operation: "",
     };
-    let mut args: OperatorArgs = HashMap::new();
-    args.insert("dx".to_string(), "^thedxvalue".to_string());
-    args.insert("thedxvalue".to_string(), "^thehiddendxvalue".to_string());
-    args.insert("thehiddendxvalue".to_string(), "1".to_string());
-
-    args.insert("dy".to_string(), "2".to_string());
-    args.insert("dz".to_string(), "3".to_string());
-    assert_eq!(1.0, args.num_val("dx", 0.0));
-
-    let c = get_cart(&args);
+    let mut args = OperatorArgs::new();
+    operator_factory("cart", &mut args);
+    args.insert("dx", "1");
+    args.insert("dy", "2");
+    args.insert("dz", "3");
+    let c = get_cart(&mut args);
     let h = get_helm();
 
     c.fwd(&mut o);
