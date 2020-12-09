@@ -5,7 +5,7 @@ use yaml_rust::{Yaml, YamlLoader};
 // ----------------- TYPES -------------------------------------------------
 
 #[derive(Clone, Copy, Debug)]
-pub struct CoordinateTuple(f64,f64,f64,f64);
+pub struct CoordinateTuple(f64, f64, f64, f64);
 impl CoordinateTuple {
     pub fn first(&self) -> f64 {self.0}
     pub fn second(&self) -> f64 {self.1}
@@ -125,42 +125,6 @@ impl OperatorArgs{
 }
 
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn operator_args() {
-        use super::*;
-        let mut pargs = OperatorArgs::new();
-
-        // dx and dy are straightforward
-        pargs.insert("dx", "1");
-        pargs.insert("dy", "2");
-
-        // But we hide dz behind two levels of indirection
-        pargs.insert("dz", "^ddz");
-        pargs.insert("ddz", "^dddz");
-        pargs.insert("dddz", "3");
-        println!("pargs: {:?}", pargs);
-
-        assert_eq!("1", pargs.value("dx", ""));
-        println!("used: {:?}", &pargs.used);
-
-        assert_eq!("2", pargs.value("dy", ""));
-        println!("used: {:?}", &pargs.used);
-
-        assert_eq!("3", pargs.value("dz", ""));
-        assert_eq!(3.0, pargs.numeric_value("dz", 42.0));
-        println!("used: {:?}", &pargs.used);
-        println!("all_used: {:?}", &pargs.all_used);
-
-
-        // Finally one for testing NAN returned for non-numerics
-        pargs.insert("ds", "foo");
-        assert!(pargs.numeric_value("ds", 0.0).is_nan());
-    }
-}
-
-
 
 
 // ----------------- HELM -------------------------------------------------
@@ -200,6 +164,69 @@ impl OperatorCore for Helm {
         return "HELM";
     }
 }
+
+
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn operator_args() {
+        use super::*;
+        let mut pargs = OperatorArgs::new();
+
+        // dx and dy are straightforward
+        pargs.insert("dx", "1");
+        pargs.insert("dy", "2");
+
+        // But we hide dz behind two levels of indirection
+        pargs.insert("dz", "^ddz");
+        pargs.insert("ddz", "^dddz");
+        pargs.insert("dddz", "3");
+        println!("pargs: {:?}", pargs);
+
+        assert_eq!("1", pargs.value("dx", ""));
+        println!("used: {:?}", &pargs.used);
+
+        assert_eq!("2", pargs.value("dy", ""));
+        println!("used: {:?}", &pargs.used);
+
+        assert_eq!("3", pargs.value("dz", ""));
+        assert_eq!(3.0, pargs.numeric_value("dz", 42.0));
+        println!("used: {:?}", &pargs.used);
+        println!("all_used: {:?}", &pargs.all_used);
+
+
+        // Finally one for testing NAN returned for non-numerics
+        pargs.insert("ds", "foo");
+        assert!(pargs.numeric_value("ds", 0.0).is_nan());
+    }
+
+
+
+    #[test]
+    fn helm() {
+        use super::*;
+        let mut o = OperatorWorkSpace::new();
+        let mut args = OperatorArgs::new();
+        args.insert("dx", "1");
+        args.insert("dy", "2");
+        args.insert("dz", "3");
+        println!("\nargs: {:?}\n", args);
+        let h = operator_factory("helm", &mut args);
+        h.fwd(&mut o);
+        assert_eq!(o.coord.first(), 1.);
+
+        h.inv(&mut o);
+        assert_eq!(o.coord.first(), 0.);
+        assert_eq!(o.coord.second(), 0.);
+        assert_eq!(o.coord.third(), 0.);
+    }
+
+
+}
+
+
+
 
 
 
