@@ -1,29 +1,36 @@
 extern crate yaml_rust;
-use geodesy::operators::helmert::helmert;
-use geodesy::operators::hulmert::hulmert;
-use geodesy::Coord;
 use std::collections::HashMap;
 use yaml_rust::{Yaml, YamlLoader};
 
-// SE https://stackoverflow.com/questions/41301239/how-to-unbox-elements-contained-in-polymorphic-vectors
-
-//const MESSAGES: [&'static str; 20] = [
-//    "OK",
-//    "Warning 1",
-//];
-//const OPERATOR_NAME: &'static str = "cart";
-//const OPERATOR_DESC: &'static str = "Convert between cartesian and geographical coordinates";
-
-
 // ----------------- TYPES -------------------------------------------------
+
+#[derive(Clone, Copy, Debug)]
+pub struct CoordinateTuple(f64,f64,f64,f64);
+impl CoordinateTuple {
+    pub fn first(&self) -> f64 {self.0}
+    pub fn second(&self) -> f64 {self.1}
+    pub fn third(&self) -> f64 {self.2}
+    pub fn fourth(&self) -> f64 {self.3}
+}
+
 
 #[derive(Debug)]
 pub struct OperatorWorkSpace {
-    pub first: f64,
-    pub second: f64,
-    pub third: f64,
-    pub fourth: f64,
+    pub coord: CoordinateTuple,
+    pub stack: Vec<f64>,
+    pub coordinate_stack: Vec<CoordinateTuple>,
     pub last_failing_operation: &'static str,
+}
+
+impl OperatorWorkSpace {
+    fn new() -> OperatorWorkSpace {
+        OperatorWorkSpace {
+            coord: CoordinateTuple(0.,0.,0.,0.),
+            stack: vec![],
+            coordinate_stack: vec![],
+            last_failing_operation: "",
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -32,21 +39,29 @@ pub struct CoordType {
 }
 
 
-pub type Operator = Box<dyn IsOperator>;
+pub type Operator = Box<dyn OperatorCore>;
 pub type Pipeline = Vec<Operator>;
 
-pub trait IsOperator {
-    fn fwd(&self, ws: &mut OperatorWorkSpace) -> i32;
-    fn inv(&self, ws: &mut OperatorWorkSpace) -> i32;
-    fn print_name(&self) {
-        println!("*** {} ***", self.name());
+pub trait OperatorCore {
+    fn fwd(&self, ws: &mut OperatorWorkSpace) -> bool;
+
+    // implementations must override at least one of {inv, invertible}
+    fn inv(&self, _ws: &mut OperatorWorkSpace) -> bool {
+        return false;
     }
+    fn invertible(&self) -> bool {
+        return true;
+    }
+
     fn name(&self) -> &'static str {
         return "UNKNOWN";
     }
+
+    fn error_message(&self) -> &'static str {
+        return "";
+    }
     //fn is_inverted(&self) -> bool .. return self.inverted
     //fn operate(&self, dir: bool) .. if inverted dir=!dir if dir fwd else inv
-    //fn msg(&self, errcode: i32) -> &'static str;
     //fn left(&self) -> CoordType;
     //fn right(&self) -> CoordType;
 }
@@ -80,6 +95,7 @@ impl OperatorArgs{
             Some(arg) => arg.to_string(),
             None => return default.to_string(),
         };
+        // all_used includes intermediate steps in indirect definitions
         self.all_used.insert(key.to_string(), arg.to_string());
         if arg.starts_with("^") {
             let arg = &arg[1..];
@@ -97,7 +113,6 @@ impl OperatorArgs{
         return arg;
     }
 
-
     pub fn numeric_value(&mut self, key: &str, default: f64) -> f64 {
         let arg = self.value(key, "");
         // key not given: return default
@@ -107,14 +122,13 @@ impl OperatorArgs{
         // key given, but not numeric: return NaN
         return arg.parse().unwrap_or(f64::NAN);
     }
-
 }
 
 
 #[cfg(test)]
 mod tests {
     #[test]
-    fn pargs() {
+    fn operator_args() {
         use super::*;
         let mut pargs = OperatorArgs::new();
 
@@ -154,34 +168,37 @@ struct Helm {
     dx: f64,
     dy: f64,
     dz: f64,
+    // pi: Pipeline,
 }
 
-impl IsOperator for Helm {
-    fn fwd(&self, ws: &mut OperatorWorkSpace) -> i32 {
-        ws.first += self.dx;
-        ws.second += self.dy;
-        ws.third += self.dz;
-        return 0;
+impl Helm {
+    pub fn new(args: &mut OperatorArgs) -> Helm {
+        Helm {
+            dx: args.numeric_value("dx", 0.0),
+            dy: args.numeric_value("dy", 0.0),
+            dz: args.numeric_value("dz", 0.0),
+            // pi: vec![],
+        }
     }
-    fn inv(&self, ws: &mut OperatorWorkSpace) -> i32 {
-        ws.first -= self.dx;
-        ws.second -= self.dy;
-        ws.third -= self.dz;
-        return 0;
+}
+
+
+impl OperatorCore for Helm {
+    fn fwd(&self, ws: &mut OperatorWorkSpace) -> bool {
+        ws.coord.0 += self.dx;
+        ws.coord.1 += self.dy;
+        ws.coord.2 += self.dz;
+        return true;
+    }
+    fn inv(&self, ws: &mut OperatorWorkSpace) -> bool {
+        ws.coord.0 -= self.dx;
+        ws.coord.1 -= self.dy;
+        ws.coord.2 -= self.dz;
+        return true;
     }
     fn name(&self) -> &'static str {
         return "HELM";
     }
-}
-
-
-fn get_helm() -> Operator {
-    let s = Helm {
-        dx: 1f64,
-        dy: 2f64,
-        dz: 3f64,
-    };
-    return Box::new(s);
 }
 
 
@@ -193,21 +210,32 @@ struct Cart {
     dz: f64,
 }
 
-impl IsOperator for Cart {
-    fn fwd(&self, ws: &mut OperatorWorkSpace) -> i32 {
-        ws.first += self.dx;
-        ws.second += self.dy;
-        ws.third += self.dz;
-        return 0;
+impl Cart {
+    pub fn new(args: &mut OperatorArgs) -> Cart {
+        let dx = args.numeric_value("dx", 0.0);
+        let dy = args.numeric_value("dy", 0.0);
+        let dz = args.numeric_value("dz", 0.0);
+        let cart = Cart {
+            dx: dx,
+            dy: dy,
+            dz: dz,
+        };
+        return cart;
     }
-    fn inv(&self, ws: &mut OperatorWorkSpace) -> i32 {
-        ws.first -= self.dx;
-        ws.second -= self.dy;
-        ws.third -= self.dz;
-        return 0;
+}
+
+impl OperatorCore for Cart {
+    fn fwd(&self, ws: &mut OperatorWorkSpace) -> bool {
+        ws.coord.0 += self.dx;
+        ws.coord.1 += self.dy;
+        ws.coord.2 += self.dz;
+        return true;
     }
-    fn print_name(&self) {
-        println!("*** Cart ***");
+    fn inv(&self, ws: &mut OperatorWorkSpace) -> bool {
+        ws.coord.0 -= self.dx;
+        ws.coord.1 -= self.dy;
+        ws.coord.2 -= self.dz;
+        return true;
     }
     fn name(&self) -> &'static str {
         return "CART";
@@ -215,187 +243,81 @@ impl IsOperator for Cart {
 }
 
 
-fn get_cart(args: &mut OperatorArgs) -> Operator {
-    let mut s = Cart {
-        dx: 1f64,
-        dy: 2f64,
-        dz: 3f64,
-    };
-    s.dx = args.numeric_value("dx", 0.0);
-    s.dy = args.numeric_value("dy", 0.0);
-    s.dz = args.numeric_value("dz", 0.0);
-    return Box::new(s);
-}
-
-
 fn operator_factory(name: &str, args: &mut OperatorArgs) -> Operator {
     if name == "cart" {
-        return get_cart(args);
+        return Box::new(Cart::new(args));
     }
     if name == "helm" {
-        return get_helm();
+        return Box::new(Helm::new(args));
     }
-    return get_cart(args);
+    return Box::new(Helm::new(args));
 }
 
+
 fn generic_experiment() -> Pipeline {
+    // Se https://docs.rs/yaml-rust/0.4.4/yaml_rust/yaml/enum.Yaml.html
+    let mut pap = OperatorArgs::new();
+    let txt = std::fs::read_to_string("src/transformations.yml").unwrap();
+    let docs = YamlLoader::load_from_str(&txt).unwrap();
+    //println!("OOOOOOOOOOOOOOOOOOOOooooooo {}", docs[0]["main"].as_hash().unwrap().iter().len());
+    let steps = docs[0]["main"]["steps"].as_vec().unwrap();
+    for _s in steps {
+        //println!("OOOOOOOOOOOOOOOOOOOOooooooo {:#?}", _s);
+    }
+    let globals = docs[0]["main"]["globals"].as_hash().unwrap();
+    let iter = globals.iter();
+    println!("\nGlobals: {:?}\n", globals);
+    for (arg, val) in iter {
+        if arg.as_str().unwrap() != "dir" {
+            let vall = match val {
+                Yaml::Integer(val) => val.to_string(),
+                Yaml::Real(val) => val.as_str().to_string(),
+                Yaml::String(val) => val.to_string(),
+                Yaml::Boolean(val) => val.to_string(),
+                _ => "".to_string(),
+            };
+            pap.insert(arg.as_str().unwrap(), &vall);
+        }
+    }
+    println!("\nPap: {:?}\n", pap);
+
+
     println!("GENERIC *****************************");
-    let mut o = OperatorWorkSpace {
-        first: 1.0,
-        second: 2.0,
-        third: 3.0,
-        fourth: 4.0,
-        last_failing_operation: "",
-    };
+    let mut o = OperatorWorkSpace::new();
     let mut args = OperatorArgs::new();
     operator_factory("cart", &mut args);
     args.insert("dx", "1");
     args.insert("dy", "2");
     args.insert("dz", "3");
-    let c = get_cart(&mut args);
-    let h = get_helm();
+    println!("\nargs: {:?}\n", args);
+    let c = operator_factory("cart", &mut args);
+    let h = operator_factory("helm", &mut args);
 
     c.fwd(&mut o);
     println!("{:?}", o);
     c.inv(&mut o);
     println!("{:?}", o);
 
-    c.print_name();
-    h.print_name();
+    println!("{}", c.name());
+    println!("{}", h.name());
 
     let mut pipeline: Pipeline = Vec::new();
     pipeline.push(c);
     pipeline.push(h);
     for x in &pipeline {
-        x.print_name();
         println!("{}", x.name());
     }
+    println!("{:?}", o);
 
     return pipeline;
 }
 
-fn main() {
-    /*
-    let helm = pain();
-    let hulm = pulm();
-    let mut v: Vec<Operator> = Vec::new();
-    v.push(hulm);
-    v.push(helm);
-    v.push(pulm());
 
-    let mut v: Vec<Op> = Vec::new();
-    let cart = Cart{a: 6378137.0, f: 1.0/298.257};
-    let hehe = Helm{dx: 1., dy: 2., dz: 3.};
-    v.push(cart);
-    v.push(hehe);
-    */
+fn main() {
 
     let pipeline = generic_experiment();
     println!("MAIN*****************************");
     for x in &pipeline {
-        x.print_name();
+        println!("{}", x.name());
     }
-}
-
-fn pain() -> Box<dyn Fn(&mut Coord, bool) -> bool> {
-    let mut pap = HashMap::new();
-
-    let txt = std::fs::read_to_string("src/transformations.yml").unwrap();
-    let docs = YamlLoader::load_from_str(&txt).unwrap();
-    let globals = docs[0]["main"]["globals"].as_hash().unwrap();
-    let iter = globals.iter();
-    println!("\nGlobals: {:?}\n", globals);
-    for (arg, val) in iter {
-        if arg.as_str().unwrap() != "dir" {
-            pap.insert(arg, val);
-        }
-    }
-
-    println!("\nPAP: {:?}\n", pap);
-    println!("\nkeys: {:?}\n", pap.keys());
-    let hule = Yaml::from_str("hule");
-    let ellps = Yaml::from_str("ellps");
-    let bopbop = Yaml::Integer(33);
-    pap.insert(&hule, &bopbop);
-    pap.insert(&ellps, &bopbop);
-    if let Yaml::Integer(c) = pap[&hule] {
-        println!("PAPC: {}", *c as f64);
-    }
-
-    // Multi document support, doc is a yaml::Yaml
-    let doc = docs[0].as_hash().unwrap();
-    let iter = doc.iter();
-    println!("\n{:?}\n", doc.len());
-
-    for item in iter {
-        println!("{}", &item.0.as_str().unwrap_or("~"));
-    }
-
-    let mut par = HashMap::new();
-    let k = Yaml::from_str("dx");
-    let v = Yaml::Real(1.to_string());
-    par.insert(&k, &v);
-    let k = Yaml::from_str("dy");
-    let v = Yaml::Real(2.to_string());
-    par.insert(&k, &v);
-    let k = Yaml::from_str("dz");
-    let v = Yaml::Real(3.to_string());
-    let v = Yaml::Real("^dx".to_string());
-    par.insert(&k, &v);
-    let k = Yaml::from_str("dp");
-    let v = Yaml::from_str("dp");
-    par.insert(&k, &v);
-    println!("PAR: {:?}", par);
-
-    let helm = helmert(&par);
-    let mut x = Coord {
-        first: 1.,
-        second: 2.,
-        third: 3.,
-        fourth: 4.,
-    };
-    helm(&mut x, true);
-    println!("x:  {:?}", x);
-    assert_eq!(x.first, 2.0);
-    helm(&mut x, false);
-    println!("x:  {:?}", x);
-    assert_eq!(x.first, 1.0);
-
-    // Det er sådan det skal se ud fra en operationsimplementerings synspunkt
-    let mut pax = HashMap::new();
-    pax.insert(String::from("pap"), String::from("pop"));
-    println!("PAX: {:?}", pax);
-    return helm;
-}
-
-fn pulm() -> Box<dyn Fn(&mut Coord, bool) -> bool> {
-    let mut par = HashMap::new();
-    let k = Yaml::from_str("dx");
-    let v = Yaml::Real(1.to_string());
-    par.insert(&k, &v);
-    let k = Yaml::from_str("dy");
-    let v = Yaml::Real(2.to_string());
-    par.insert(&k, &v);
-    let k = Yaml::from_str("dz");
-    let v = Yaml::Real(3.to_string());
-    par.insert(&k, &v);
-    let k = Yaml::from_str("dp");
-    let v = Yaml::from_str("dp");
-    par.insert(&k, &v);
-    println!("PAR: {:?}", par);
-
-    let hulm = hulmert(&par);
-    let mut x = Coord {
-        first: 1.,
-        second: 2.,
-        third: 3.,
-        fourth: 4.,
-    };
-    hulm(&mut x, true);
-    println!("x:  {:?}", x);
-    assert_eq!(x.first, 2.0);
-    hulm(&mut x, false);
-    println!("x:  {:?}", x);
-    assert_eq!(x.first, 1.0);
-    return hulm;
 }
