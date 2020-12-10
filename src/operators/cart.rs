@@ -1,79 +1,42 @@
-extern crate yaml_rust;
-use yaml_rust::Yaml;
-use std::collections::HashMap;
-use crate::num;
-use crate::inverted;
-use crate::Coord;
-use crate::Poperator;
+use crate::OperatorArgs;
+use crate::OperatorCore;
+use crate::OperatorWorkSpace;
 
-/*
-
-
-
-
-
-*/
-
-pub fn helmert(args: &HashMap<&Yaml,&Yaml>) -> Poperator {
-    let dx = num(args, "dx", 0.);
-    let dy = num(args, "dy", 0.);
-    let dz = num(args, "dz", 0.);
-    let dp = num(args, "dp", 64.);
-    let inverse = inverted(args);
-
-    let params = HelmertParams{dx, dy, dz};
-    println!("helmert.dx={}", dx);
-    println!("helmert.dy={}", dy);
-    println!("helmert.dz={}", dz);
-    println!("args = {:?}\n", args);
-
-    return Box::new(move |x: &mut Coord, mut dir_fwd: bool| {
-        if inverse {
-            dir_fwd = !dir_fwd;
-        }
-        if dir_fwd {
-            return fwd(x, &params);
-        }
-        return inv(x, &params);
-    })
-}
-
-#[derive(Debug)]
-struct HelmertParams {
+// ----------------- CART -------------------------------------------------
+pub struct Cart {
     dx: f64,
     dy: f64,
-    dz: f64
+    dz: f64,
 }
 
-
-fn fwd(x: &mut Coord, params: &HelmertParams) -> bool {
-    x.first += params.dx;
-    x.second += params.dy;
-    x.third += params.dz;
-    return true;
+impl Cart {
+    pub fn new(args: &mut OperatorArgs) -> Cart {
+        let dx = args.numeric_value("dx", 0.0);
+        let dy = args.numeric_value("dy", 0.0);
+        let dz = args.numeric_value("dz", 0.0);
+        let cart = Cart {
+            dx: dx,
+            dy: dy,
+            dz: dz,
+        };
+        return cart;
+    }
 }
 
-
-fn inv(x: &mut Coord, params: &HelmertParams) -> bool {
-    x.first -= params.dx;
-    x.second -= params.dy;
-    x.third -= params.dz;
-    return true;
-}
-
-mod tests {
-    use super::*;
-
-    #[test]
-    fn helmert() {
-        let mut x = Coord{first: 1., second: 2., third: 3., fourth: 4.};
-        let params = HelmertParams{dx: 1., dy: 2., dz: 3.};
-            fwd(&mut x, &params);
-            assert_eq!(x.first, 2.);
-
-            inv(&mut x, &params);
-            assert_eq!(x.first, 1.);
-            assert_eq!(x.second, 2.);
-            assert_eq!(x.third, 3.);
+impl OperatorCore for Cart {
+    fn fwd(&self, ws: &mut OperatorWorkSpace) -> bool {
+        ws.coord.0 += self.dx;
+        ws.coord.1 += self.dy;
+        ws.coord.2 += self.dz;
+        return true;
+    }
+    fn inv(&self, ws: &mut OperatorWorkSpace) -> bool {
+        ws.coord.0 -= self.dx;
+        ws.coord.1 -= self.dy;
+        ws.coord.2 -= self.dz;
+        return true;
+    }
+    fn name(&self) -> &'static str {
+        return "CART";
     }
 }

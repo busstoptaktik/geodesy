@@ -1,76 +1,68 @@
-extern crate yaml_rust;
-use crate::inverted;
-use crate::num;
-use crate::Coord;
-use crate::Poperator;
-use std::collections::HashMap;
-use yaml_rust::Yaml;
+use crate::OperatorArgs;
+use crate::OperatorCore;
+use crate::OperatorWorkSpace;
 
-pub fn helmert(args: &HashMap<&Yaml, &Yaml>) -> Poperator {
-    let dx = num(args, "dx", 0.);
-    let dy = num(args, "dy", 0.);
-    let dz = num(args, "dz", 0.);
-    let inverse = inverted(args);
-
-    let params = HelmertParams { dx, dy, dz };
-    println!("helmert.dx={}", dx);
-    println!("helmert.dy={}", dy);
-    println!("helmert.dz={}", dz);
-    println!("args = {:?}\n", args);
-
-    return Box::new(move |x: &mut Coord, mut dir_fwd: bool| {
-        if inverse {
-            dir_fwd = !dir_fwd;
-        }
-        if dir_fwd {
-            return fwd(x, &params);
-        }
-        return inv(x, &params);
-    });
-}
-
-#[derive(Debug)]
-struct HelmertParams {
+// ----------------- HELM -------------------------------------------------
+pub struct Helm {
     dx: f64,
     dy: f64,
     dz: f64,
 }
 
-fn fwd(x: &mut Coord, params: &HelmertParams) -> bool {
-    x.first += params.dx;
-    x.second += params.dy;
-    x.third += params.dz;
-    return true;
+impl Helm {
+    pub fn new(args: &mut OperatorArgs) -> Helm {
+        Helm {
+            dx: args.numeric_value("dx", 0.0),
+            dy: args.numeric_value("dy", 0.0),
+            dz: args.numeric_value("dz", 0.0),
+        }
+    }
 }
 
-fn inv(x: &mut Coord, params: &HelmertParams) -> bool {
-    x.first -= params.dx;
-    x.second -= params.dy;
-    x.third -= params.dz;
-    return true;
+
+impl OperatorCore for Helm {
+    fn fwd(&self, ws: &mut OperatorWorkSpace) -> bool {
+        ws.coord.0 += self.dx;
+        ws.coord.1 += self.dy;
+        ws.coord.2 += self.dz;
+        return true;
+    }
+
+    fn inv(&self, ws: &mut OperatorWorkSpace) -> bool {
+        ws.coord.0 -= self.dx;
+        ws.coord.1 -= self.dy;
+        ws.coord.2 -= self.dz;
+        return true;
+    }
+
+    fn name(&self) -> &'static str {
+        return "HELM";
+    }
 }
 
+
+
+#[cfg(test)]
 mod tests {
-    #[test]
-    fn helmert() {
-        use super::*;
-        let mut x = Coord {
-            first: 1.,
-            second: 2.,
-            third: 3.,
-            fourth: 4.,
-        };
-        let params = HelmertParams {
-            dx: 1.,
-            dy: 2.,
-            dz: 3.,
-        };
-        fwd(&mut x, &params);
-        assert_eq!(x.first, 2.);
+    use crate::operator_factory;
 
-        inv(&mut x, &params);
-        assert_eq!(x.first, 1.);
-        assert_eq!(x.second, 2.);
-        assert_eq!(x.third, 3.);
+    #[test]
+    fn helm() {
+        use super::*;
+        let mut o = OperatorWorkSpace::new();
+        let mut args = OperatorArgs::new();
+        // EPSG:1134 - 3 parameter, ED50/WGS84, s = sqrt(27) m
+        args.insert("dx", "-87");
+        args.insert("dy", "-96");
+        args.insert("dz", "-120");
+        println!("\nargs: {:?}\n", args);
+        let h = operator_factory("helm", &mut args);
+        h.fwd(&mut o);
+        assert_eq!(o.coord.first(), -87.);
+
+        h.inv(&mut o);
+        assert_eq!(o.coord.first(), 0.);
+        assert_eq!(o.coord.second(), 0.);
+        assert_eq!(o.coord.third(), 0.);
     }
 }

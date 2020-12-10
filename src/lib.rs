@@ -1,69 +1,174 @@
-extern crate yaml_rust;
 use std::collections::HashMap;
-use yaml_rust::Yaml;
-
-// Næste skridt:
-// HashMap<String, String> til defaults/definitioner for operationer
-// Plain string til definitioner
-// implementer pipeline (steps)
-// operationer skal ikke operere på en Coord, men på en OpArg
-// Operationer skal returnere en struct med lidt metadata OG closure
-
 pub mod foundations;
-
 pub mod operators;
 
-#[derive(Debug)]
-pub struct Coord {
-    pub first: f64,
-    pub second: f64,
-    pub third: f64,
-    pub fourth: f64,
+
+// ----------------- TYPES -------------------------------------------------
+
+#[derive(Clone, Copy, Debug)]
+pub struct CoordinateTuple(f64, f64, f64, f64);
+impl CoordinateTuple {
+    pub fn first(&self) -> f64 {self.0}
+    pub fn second(&self) -> f64 {self.1}
+    pub fn third(&self) -> f64 {self.2}
+    pub fn fourth(&self) -> f64 {self.3}
 }
-pub type Poperator = Box<dyn Fn(&mut Coord, bool) -> bool>;
+
+
+#[derive(Debug)]
+pub struct OperatorWorkSpace {
+    pub coord: CoordinateTuple,
+    pub stack: Vec<f64>,
+    pub coordinate_stack: Vec<CoordinateTuple>,
+    pub last_failing_operation: &'static str,
+}
+
+impl OperatorWorkSpace {
+    pub fn new() -> OperatorWorkSpace {
+        OperatorWorkSpace {
+            coord: CoordinateTuple(0.,0.,0.,0.),
+            stack: vec![],
+            coordinate_stack: vec![],
+            last_failing_operation: "",
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct CoordType {
+
+}
+
+
+pub type Operator = Box<dyn OperatorCore>;
+pub type Pipeline = Vec<Operator>;
+
+pub trait OperatorCore {
+    fn fwd(&self, ws: &mut OperatorWorkSpace) -> bool;
+
+    // implementations must override at least one of {inv, invertible}
+    fn inv(&self, _ws: &mut OperatorWorkSpace) -> bool {
+        return false;
+    }
+    fn invertible(&self) -> bool {
+        return true;
+    }
+
+    fn name(&self) -> &'static str {
+        return "UNKNOWN";
+    }
+
+    fn error_message(&self) -> &'static str {
+        return "";
+    }
+    //fn is_inverted(&self) -> bool .. return self.inverted
+    //fn operate(&self, dir: bool) .. if inverted dir=!dir if dir fwd else inv
+    //fn left(&self) -> CoordType;
+    //fn right(&self) -> CoordType;
+}
+
+
+#[derive(Debug)]
+pub struct OperatorArgs {
+    args: HashMap<String, String>,
+    used: HashMap<String, String>,
+    all_used: HashMap<String, String>,
+}
+
+impl OperatorArgs{
+    pub fn new() -> OperatorArgs {
+        OperatorArgs{
+            args: HashMap::new(),
+            used: HashMap::new(),
+            all_used: HashMap::new(),
+        }
+    }
+
+    pub fn insert(&mut self, key: &str, value: &str) {
+        self.args.insert(key.to_string(), value.to_string());
+    }
+
+    // Workhorse for ::value - this indirection is needed in order to keep the
+    // original key available, when traversing an indirect definition.
+    fn value_recursive_search(&mut self, key: &str, default: &str) -> String {
+        let arg = self.args.get(key);
+        let arg = match arg {
+            Some(arg) => arg.to_string(),
+            None => return default.to_string(),
+        };
+        // all_used includes intermediate steps in indirect definitions
+        self.all_used.insert(key.to_string(), arg.to_string());
+        if arg.starts_with("^") {
+            let arg = &arg[1..];
+            return self.value_recursive_search(arg, default);
+        }
+        return arg;
+    }
+
+    /// Return the arg for a given key; maintain usage info.
+    pub fn value(&mut self, key: &str, default: &str) -> String {
+        let arg = self.value_recursive_search(key, default);
+        if arg != default {
+            self.used.insert(key.to_string(), arg.to_string());
+        }
+        return arg;
+    }
+
+    pub fn numeric_value(&mut self, key: &str, default: f64) -> f64 {
+        let arg = self.value(key, "");
+        // key not given: return default
+        if arg == "" {
+            return default;
+        }
+        // key given, but not numeric: return NaN
+        return arg.parse().unwrap_or(f64::NAN);
+    }
+}
+
+use crate::operators as co;
+pub fn operator_factory(name: &str, args: &mut OperatorArgs) -> Operator {
+    if name == "cart" {
+        return Box::new(co::cart::Cart::new(args));
+    }
+    if name == "helm" {
+        return Box::new(co::helmert::Helm::new(args));
+    }
+    return Box::new(co::helmert::Helm::new(args));
+}
+
+
 
 #[cfg(test)]
 mod tests {
     #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}
+    fn operator_args() {
+        use super::*;
+        let mut pargs = OperatorArgs::new();
 
-fn num(args: &HashMap<&yaml_rust::Yaml, &yaml_rust::Yaml>, key: &str, default: f64) -> f64 {
-    let k = Yaml::from_str(key);
-    let arg = args.get(&k);
-    match arg {
-        Some(arg) => arg,
-        None => return default,
-    };
+        // dx and dy are straightforward
+        pargs.insert("dx", "1");
+        pargs.insert("dy", "2");
 
-    let val = arg.unwrap();
-    if let Yaml::Real(value) = val {
-        if value.starts_with("^") {
-            let mut v = value.clone();
-            v.remove(0);
-            let n = num(args, v.as_str(), default);
-            println!(
-                "*********************************************** {} {}",
-                v, n
-            );
-            return num(args, v.as_str(), default);
-        }
-    }
-    if let Yaml::Integer(value) = val {
-        return *value as f64;
-    }
-    return val.as_f64().unwrap_or(default);
-}
+        // But we hide dz behind two levels of indirection
+        pargs.insert("dz", "^ddz");
+        pargs.insert("ddz", "^dddz");
+        pargs.insert("dddz", "3");
+        println!("pargs: {:?}", pargs);
 
-fn inverted(args: &HashMap<&yaml_rust::Yaml, &yaml_rust::Yaml>) -> bool {
-    let k = Yaml::from_str("dir");
-    let arg = args.get(&k);
-    if let Some(val) = arg {
-        if val.as_str().unwrap_or("fwd") == "inv" {
-            return true;
-        }
+        assert_eq!("1", pargs.value("dx", ""));
+        println!("used: {:?}", &pargs.used);
+
+        assert_eq!("2", pargs.value("dy", ""));
+        println!("used: {:?}", &pargs.used);
+
+        assert_eq!("3", pargs.value("dz", ""));
+        assert_eq!(3.0, pargs.numeric_value("dz", 42.0));
+        println!("used: {:?}", &pargs.used);
+        println!("all_used: {:?}", &pargs.all_used);
+
+
+        // Finally one for testing NAN returned for non-numerics
+        pargs.insert("ds", "foo");
+        assert!(pargs.numeric_value("ds", 0.0).is_nan());
     }
-    return false;
 }
