@@ -19,7 +19,6 @@ impl Helm {
     }
 }
 
-
 impl OperatorCore for Helm {
     fn fwd(&self, ws: &mut OperatorWorkSpace) -> bool {
         ws.coord.0 += self.dx;
@@ -39,8 +38,6 @@ impl OperatorCore for Helm {
         return "HELM";
     }
 }
-
-
 
 #[cfg(test)]
 mod tests {

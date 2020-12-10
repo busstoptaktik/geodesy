@@ -2,18 +2,24 @@ use std::collections::HashMap;
 pub mod foundations;
 pub mod operators;
 
-
 // ----------------- TYPES -------------------------------------------------
 
 #[derive(Clone, Copy, Debug)]
 pub struct CoordinateTuple(f64, f64, f64, f64);
 impl CoordinateTuple {
-    pub fn first(&self) -> f64 {self.0}
-    pub fn second(&self) -> f64 {self.1}
-    pub fn third(&self) -> f64 {self.2}
-    pub fn fourth(&self) -> f64 {self.3}
+    pub fn first(&self) -> f64 {
+        self.0
+    }
+    pub fn second(&self) -> f64 {
+        self.1
+    }
+    pub fn third(&self) -> f64 {
+        self.2
+    }
+    pub fn fourth(&self) -> f64 {
+        self.3
+    }
 }
-
 
 #[derive(Debug)]
 pub struct OperatorWorkSpace {
@@ -26,7 +32,7 @@ pub struct OperatorWorkSpace {
 impl OperatorWorkSpace {
     pub fn new() -> OperatorWorkSpace {
         OperatorWorkSpace {
-            coord: CoordinateTuple(0.,0.,0.,0.),
+            coord: CoordinateTuple(0., 0., 0., 0.),
             stack: vec![],
             coordinate_stack: vec![],
             last_failing_operation: "",
@@ -35,10 +41,7 @@ impl OperatorWorkSpace {
 }
 
 #[derive(Clone, Copy, Debug)]
-pub struct CoordType {
-
-}
-
+pub struct CoordType {}
 
 pub type Operator = Box<dyn OperatorCore>;
 pub type Pipeline = Vec<Operator>;
@@ -67,7 +70,6 @@ pub trait OperatorCore {
     //fn right(&self) -> CoordType;
 }
 
-
 #[derive(Debug)]
 pub struct OperatorArgs {
     args: HashMap<String, String>,
@@ -75,9 +77,9 @@ pub struct OperatorArgs {
     all_used: HashMap<String, String>,
 }
 
-impl OperatorArgs{
+impl OperatorArgs {
     pub fn new() -> OperatorArgs {
-        OperatorArgs{
+        OperatorArgs {
             args: HashMap::new(),
             used: HashMap::new(),
             all_used: HashMap::new(),
@@ -136,8 +138,6 @@ pub fn operator_factory(name: &str, args: &mut OperatorArgs) -> Operator {
     return Box::new(co::helmert::Helm::new(args));
 }
 
-
-
 #[cfg(test)]
 mod tests {
     #[test]
@@ -165,7 +165,6 @@ mod tests {
         assert_eq!(3.0, pargs.numeric_value("dz", 42.0));
         println!("used: {:?}", &pargs.used);
         println!("all_used: {:?}", &pargs.all_used);
-
 
         // Finally one for testing NAN returned for non-numerics
         pargs.insert("ds", "foo");

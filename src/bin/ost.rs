@@ -1,11 +1,9 @@
 extern crate yaml_rust;
-use yaml_rust::{Yaml, YamlLoader};
-use geodesy::Pipeline;
+use geodesy::operator_factory;
 use geodesy::OperatorArgs;
 use geodesy::OperatorWorkSpace;
-use geodesy::operator_factory;
-
-
+use geodesy::Pipeline;
+use yaml_rust::{Yaml, YamlLoader};
 
 fn generic_experiment() -> Pipeline {
     // Se https://docs.rs/yaml-rust/0.4.4/yaml_rust/yaml/enum.Yaml.html
@@ -33,7 +31,6 @@ fn generic_experiment() -> Pipeline {
         }
     }
     println!("\nPap: {:?}\n", pap);
-
 
     println!("GENERIC *****************************");
     let mut o = OperatorWorkSpace::new();
@@ -65,9 +62,7 @@ fn generic_experiment() -> Pipeline {
     return pipeline;
 }
 
-
 fn main() {
-
     let pipeline = generic_experiment();
     println!("MAIN*****************************");
     for x in &pipeline {
