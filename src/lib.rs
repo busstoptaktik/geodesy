@@ -1,3 +1,7 @@
+extern crate yaml_rust;
+use yaml_rust::{Yaml, YamlLoader};
+
+
 use std::collections::HashMap;
 pub mod foundations;
 pub mod operators;
@@ -90,6 +94,13 @@ impl OperatorArgs {
         self.args.insert(key.to_string(), value.to_string());
     }
 
+    pub fn append(&mut self, additional: &OperatorArgs) {
+        let iter = additional.args.iter();
+        for (key, val) in iter {
+            self.insert(key, val);
+        }
+    }
+
     // Workhorse for ::value - this indirection is needed in order to keep the
     // original key available, when traversing an indirect definition.
     fn value_recursive_search(&mut self, key: &str, default: &str) -> String {
@@ -127,8 +138,8 @@ impl OperatorArgs {
     }
 }
 
-use crate::operators as co;
 pub fn operator_factory(name: &str, args: &mut OperatorArgs) -> Operator {
+    use crate::operators as co;
     if name == "cart" {
         return Box::new(co::cart::Cart::new(args));
     }
@@ -137,6 +148,34 @@ pub fn operator_factory(name: &str, args: &mut OperatorArgs) -> Operator {
     }
     return Box::new(co::helmert::Helm::new(args));
 }
+
+
+pub fn steps_and_globals(name: &str) -> (Vec<Yaml>, OperatorArgs) {
+    // Read YAML-document, locate "name", extract steps and globals
+    let txt = std::fs::read_to_string("src/transformations.yml").unwrap();
+    let docs = YamlLoader::load_from_str(&txt).unwrap();
+    let steps = docs[0][name]["steps"].as_vec().unwrap();
+    let globals = docs[0][name]["globals"].as_hash().unwrap();
+
+    // Loop over all globals, create corresponding OperartorArgs object
+    let mut args = OperatorArgs::new();
+    let iter = globals.iter();
+    for (arg, val) in iter {
+        if arg.as_str().unwrap() != "inv" {
+            let vall = match val {
+                Yaml::Integer(val) => val.to_string(),
+                Yaml::Real(val) => val.as_str().to_string(),
+                Yaml::String(val) => val.to_string(),
+                Yaml::Boolean(val) => val.to_string(),
+                _ => "".to_string(),
+            };
+            args.insert(arg.as_str().unwrap(), &vall);
+        }
+    }
+
+    return (steps.to_vec(), args);
+}
+
 
 #[cfg(test)]
 mod tests {

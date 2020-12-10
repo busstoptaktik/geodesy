@@ -11,11 +11,11 @@ fn generic_experiment() -> Pipeline {
     let txt = std::fs::read_to_string("src/transformations.yml").unwrap();
     let docs = YamlLoader::load_from_str(&txt).unwrap();
     //println!("OOOOOOOOOOOOOOOOOOOOooooooo {}", docs[0]["main"].as_hash().unwrap().iter().len());
-    let steps = docs[0]["main"]["steps"].as_vec().unwrap();
+    let steps = docs[0]["plain"]["steps"].as_vec().unwrap();
     for _s in steps {
         //println!("OOOOOOOOOOOOOOOOOOOOooooooo {:#?}", _s);
     }
-    let globals = docs[0]["main"]["globals"].as_hash().unwrap();
+    let globals = docs[0]["plain"]["globals"].as_hash().unwrap();
     let iter = globals.iter();
     println!("\nGlobals: {:?}\n", globals);
     for (arg, val) in iter {
@@ -63,6 +63,15 @@ fn generic_experiment() -> Pipeline {
 }
 
 fn main() {
+    let mut global_globals = OperatorArgs::new();
+    global_globals.insert("ellps", "GRS80");
+
+    println!("Global_globals: {:?}", global_globals);
+    let (steps, globals) = geodesy::steps_and_globals("plain");
+    println!("Globals: {:?}", globals);
+    global_globals.append(&globals);
+    println!("Global_globals: {:?}", global_globals);
+
     let pipeline = generic_experiment();
     println!("MAIN*****************************");
     for x in &pipeline {
