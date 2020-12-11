@@ -37,7 +37,7 @@ pub fn ellipsoid(name: &str) -> Ellipsoid {
     if ELLIPSOIDS.contains_key(name) {
         return ELLIPSOIDS[name];
     }
-    return ELLIPSOIDS["GRS80"];
+    ELLIPSOIDS["GRS80"]
 }
 
 /// Misc. auxiliary latitudes
@@ -57,7 +57,7 @@ impl Latitude for f64 {
         if forward {
             return ((1.0 - f * (2.0 - f)) * self.tan()).atan();
         }
-        return (self.tan() / (1.0 - f * (2.0 - f))).atan();
+        (self.tan() / (1.0 - f * (2.0 - f))).atan()
     }
 
     fn reduced(&self, f: f64, forward: bool) -> f64 {

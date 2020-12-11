@@ -1,7 +1,6 @@
 extern crate yaml_rust;
 use yaml_rust::{Yaml, YamlLoader};
 
-
 use std::collections::HashMap;
 pub mod foundations;
 pub mod operators;
@@ -55,20 +54,21 @@ pub trait OperatorCore {
 
     // implementations must override at least one of {inv, invertible}
     fn inv(&self, _ws: &mut OperatorWorkSpace) -> bool {
-        return false;
+        false
     }
     fn invertible(&self) -> bool {
-        return true;
+        true
     }
 
     fn name(&self) -> &'static str {
-        return "UNKNOWN";
+        "UNKNOWN"
     }
 
     fn error_message(&self) -> &'static str {
-        return "";
+        "Unknown error"
     }
-    //fn is_inverted(&self) -> bool .. return self.inverted
+
+    fn is_inverted(&self) -> bool;
     //fn operate(&self, dir: bool) .. if inverted dir=!dir if dir fwd else inv
     //fn left(&self) -> CoordType;
     //fn right(&self) -> CoordType;
@@ -115,7 +115,7 @@ impl OperatorArgs {
             let arg = &arg[1..];
             return self.value_recursive_search(arg, default);
         }
-        return arg;
+        arg
     }
 
     /// Return the arg for a given key; maintain usage info.
@@ -124,7 +124,7 @@ impl OperatorArgs {
         if arg != default {
             self.used.insert(key.to_string(), arg.to_string());
         }
-        return arg;
+        arg
     }
 
     pub fn numeric_value(&mut self, key: &str, default: f64) -> f64 {
@@ -134,7 +134,12 @@ impl OperatorArgs {
             return default;
         }
         // key given, but not numeric: return NaN
-        return arg.parse().unwrap_or(f64::NAN);
+        arg.parse().unwrap_or(f64::NAN)
+    }
+
+    // If key is given, and value != false: true; else: false
+    pub fn boolean_value(&mut self, key: &str) -> bool {
+        self.value(key, "false") != "false"
     }
 }
 
@@ -146,7 +151,7 @@ pub fn operator_factory(name: &str, args: &mut OperatorArgs) -> Operator {
     if name == "helm" {
         return Box::new(co::helmert::Helm::new(args));
     }
-    return Box::new(co::helmert::Helm::new(args));
+    Box::new(co::helmert::Helm::new(args))
 }
 
 
@@ -173,7 +178,7 @@ pub fn steps_and_globals(name: &str) -> (Vec<Yaml>, OperatorArgs) {
         }
     }
 
-    return (steps.to_vec(), args);
+    (steps.to_vec(), args)
 }
 
 

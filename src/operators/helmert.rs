@@ -2,11 +2,11 @@ use crate::OperatorArgs;
 use crate::OperatorCore;
 use crate::OperatorWorkSpace;
 
-// ----------------- HELM -------------------------------------------------
 pub struct Helm {
     dx: f64,
     dy: f64,
     dz: f64,
+    inverted: bool,
 }
 
 impl Helm {
@@ -15,6 +15,7 @@ impl Helm {
             dx: args.numeric_value("dx", 0.0),
             dy: args.numeric_value("dy", 0.0),
             dz: args.numeric_value("dz", 0.0),
+            inverted: args.boolean_value("inv"),
         }
     }
 }
@@ -24,18 +25,22 @@ impl OperatorCore for Helm {
         ws.coord.0 += self.dx;
         ws.coord.1 += self.dy;
         ws.coord.2 += self.dz;
-        return true;
+        true
     }
 
     fn inv(&self, ws: &mut OperatorWorkSpace) -> bool {
         ws.coord.0 -= self.dx;
         ws.coord.1 -= self.dy;
         ws.coord.2 -= self.dz;
-        return true;
+        true
     }
 
     fn name(&self) -> &'static str {
-        return "HELM";
+        "Helmert"
+    }
+
+    fn is_inverted(&self) -> bool {
+        self.inverted
     }
 }
 
