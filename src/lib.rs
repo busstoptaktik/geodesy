@@ -207,6 +207,7 @@ mod tests {
 
         assert_eq!("3", pargs.value("dz", ""));
         assert_eq!(3.0, pargs.numeric_value("dz", 42.0));
+        assert_eq!("", pargs.value("abcdefg", ""));
         println!("used: {:?}", &pargs.used);
         println!("all_used: {:?}", &pargs.all_used);
 
