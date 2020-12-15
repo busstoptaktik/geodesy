@@ -67,7 +67,7 @@ fn main() {
     global_globals.insert("ellps", "GRS80");
 
     println!("Global_globals: {:?}", global_globals);
-    let (steps, globals) = geodesy::steps_and_globals("recipe");
+    let (_steps, globals) = geodesy::steps_and_globals("recipe");
     println!("Globals: {:?}", globals);
     global_globals.append(&globals);
     println!("Global_globals: {:?}", global_globals);

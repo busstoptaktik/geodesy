@@ -37,7 +37,7 @@ main:
     fwd: true
 
   steps:
-    - cart: {dir: fwd, dirt: ^b}
+    - cart: {inv: fwd, dirt: ^b}
     - helmert: {dx: 221., dy: 222, dz: 87}
     - cart: {dir: inv, salat: banan, steak}
     - embed: {name: cucumber, dir: inv}

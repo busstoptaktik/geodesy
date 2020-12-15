@@ -1,6 +1,5 @@
-use phf::phf_map;
 use crate::CoordinateTuple;
-use std::f64::consts::PI;
+use std::f64::consts::FRAC_PI_2;
 
 pub struct DMS {
     pub s: f32,
@@ -19,6 +18,7 @@ impl DMS {
 
 #[derive(Clone, Copy, Debug)]
 pub struct Ellipsoid {
+    pub name: &'static str,
     pub a: f64,
     pub f: f64,
 }
@@ -35,7 +35,7 @@ impl Ellipsoid {
     pub fn second_eccentricity_squared(&self) -> f64 {
         let b = self.semiminor_axis();
         let bb = b*b;
-        (self.a*self.a - bb) / bb
+        (self.a.powi(2) - bb) / bb
     }
 
     pub fn second_eccentricity(&self) -> f64 {
@@ -51,11 +51,11 @@ impl Ellipsoid {
         if self.f == 0.0 {
             return self.a;
         }
-        self.a / (1.0 - sinlat * sinlat * self.eccentricity_squared())
+        self.a / (1.0 - sinlat * sinlat * self.eccentricity_squared()).sqrt()
     }
 
     #[allow(non_snake_case)]
-    pub fn cartesian(&self, geographic: CoordinateTuple) -> CoordinateTuple {
+    pub fn cartesian(&self, geographic: &CoordinateTuple) -> CoordinateTuple {
         let lam = geographic.first();
         let phi = geographic.second();
         let h = geographic.third();
@@ -76,7 +76,7 @@ impl Ellipsoid {
 
 
     #[allow(non_snake_case)]
-    pub fn geographic(&self, cartesian: CoordinateTuple) -> CoordinateTuple {
+    pub fn geographic(&self, cartesian: &CoordinateTuple) -> CoordinateTuple {
         let X = cartesian.first();
         let Y = cartesian.second();
         let Z = cartesian.third();
@@ -92,53 +92,50 @@ impl Ellipsoid {
 
         // Perpendicular distance from point to Z-axis (HM eq. 5-28)
         let p = X.hypot(Y);
+        println!("CRT: {:?}", cartesian);
 
-        // Close to the Z-axis, we simplify to avoid numerical havoc.
+        // When less than a picometer from the Z-axis, we simplify to avoid numerical havoc.
         if p < 1.0e-12 {
             let hemisphere = Z.signum();
-            let phi = hemisphere * PI / 2.0;
+            let phi = hemisphere * FRAC_PI_2;
             let h = Z.abs() - self.a;
             return CoordinateTuple{0: lam, 1: phi, 2: h, 3: t};
         }
 
-        // HM eq. (5-36) and (5-37) with numerical simplifications by Even Rouault:
-        // Theta is the approximation angle, but we do not need the angle itself, just
-        // its sine and cosine components, and since theta is expressed as a fraction,
-        // these are readily available
+        // HM eq. (5-36) and (5-37), with some added numerical efficiency due to
+        // Even Rouault, who replaced 3 trigs with a hypot and two divisions.
         let theta_num = Z * self.a;
         let theta_denom = p * b;
         let length = theta_num.hypot(theta_denom);
-        let c = theta_num / length;
-        let s = theta_denom / length;
+        let c = theta_denom / length; // cos(theta)
+        let s = theta_num / length;   // sin(theta)
 
         let phi_num = Z + eps * b * s * s * s;
         let phi_denom = p - es * self.a * c * c * c;
-        let phi = (phi_num / phi_denom).atan();
+        let phi = phi_num.atan2(phi_denom);
 
         let h = p / phi.cos() - self.prime_vertical_radius_of_curvature(phi);
         CoordinateTuple{0: lam, 1: phi, 2: h, 3: t}
     }
-
 }
 
 
-// We use a map based on a perfect hash function (phf) here - not because
-// perfect hashing is important for the core functionality, but because
-// the phf::map can be constructed at compile time. This is not the case for
-// ordinary hashmaps.
-static ELLIPSOIDS: phf::Map<&'static str, Ellipsoid> = phf_map! {
-    "GRS80"  =>  Ellipsoid {a: 6378137.0,   f: 1./298.257222100882711243},
-    "intl"   =>  Ellipsoid {a: 6378388.0,   f: 1./297.},
-    "Helmert"=>  Ellipsoid {a: 6378200.0,   f: 1./298.3},
-    "clrk66" =>  Ellipsoid {a: 6378206.4,   f: 1./294.9786982},
-    "clrk80" =>  Ellipsoid {a: 6378249.145, f: 1./293.465}
-};
+// A hashmap would be better, but you cannot statically initialize a hashmap.
+static ELLIPSOIDS: [Ellipsoid; 5] =  [
+    Ellipsoid {name: "GRS80"  ,  a: 6378137.0,   f: 1./298.257222100882711243},
+    Ellipsoid {name: "intl"   ,  a: 6378388.0,   f: 1./297.},
+    Ellipsoid {name: "Helmert",  a: 6378200.0,   f: 1./298.3},
+    Ellipsoid {name: "clrk66" ,  a: 6378206.4,   f: 1./294.9786982},
+    Ellipsoid {name: "clrk80" ,  a: 6378249.145, f: 1./293.465}
+];
 
 pub fn ellipsoid(name: &str) -> Ellipsoid {
-    if ELLIPSOIDS.contains_key(name) {
-        return ELLIPSOIDS[name];
+    for e in ELLIPSOIDS.iter() {
+        if e.name==name {
+            return *e;
+        }
     }
-    ELLIPSOIDS["GRS80"]
+    ELLIPSOIDS[0]
 }
 
 
@@ -168,7 +165,7 @@ impl Latitude for f64 {
         if forward {
             return ((1.0 - f) * self.tan()).atan();
         }
-        return (self.tan() / (1.0 - f)).atan();
+        (self.tan() / (1.0 - f)).atan()
     }
 }
 
@@ -189,12 +186,14 @@ mod tests {
         assert_eq!(ellps.a, 6378137.0);
         assert_eq!(ellps.f, 1. / 298.257222100882711243);
 
-        let geo = super::CoordinateTuple{0: 12f64.to_radians(), 1: 55f64.to_radians(), 2: 100.0, 3: 0.};
-        let cart = ellps.cartesian(geo);
-        let geo2 = ellps.geographic(cart);
-        println!("geo {:?}, {:?} {:?}", geo, geo2, cart);
-        assert!((geo.0-geo2.0) < 1.0e-10);
-        assert!((geo.1-geo2.1) < 1.0e-10);
+        let ellps = super::ellipsoid("intl");
+        assert_eq!(ellps.f, 1. / 297.);
+
+        let geo = super::CoordinateTuple{0: 12_f64.to_radians(), 1: 55_f64.to_radians(), 2: 100.0, 3: 0.};
+        let cart = ellps.cartesian(&geo);
+        let geo2 = ellps.geographic(&cart);
+        assert!((geo.0-geo2.0) < 1.0e-12);
+        assert!((geo.1-geo2.1) < 1.0e-12);
 
     }
 
