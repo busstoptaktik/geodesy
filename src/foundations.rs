@@ -87,14 +87,14 @@ impl Ellipsoid {
         let eps = self.second_eccentricity_squared();
         let es = self.eccentricity_squared();
 
-
+        // The longitude is easy
         let lam = Y.atan2(X);
 
-        // Perpendicular distance from point to Z-axis (HM eq. 5-28)
+        // The perpendicular distance from the point coordinate to the Z-axis
+        // (HM eq. 5-28)
         let p = X.hypot(Y);
-        println!("CRT: {:?}", cartesian);
 
-        // When less than a picometer from the Z-axis, we simplify to avoid numerical havoc.
+        // For p < 1 picometer, we simplify things to avoid numerical havoc.
         if p < 1.0e-12 {
             let hemisphere = Z.signum();
             let phi = hemisphere * FRAC_PI_2;
@@ -120,7 +120,7 @@ impl Ellipsoid {
 }
 
 
-// A hashmap would be better, but you cannot statically initialize a hashmap.
+// A hashmap would be better, but Rust cannot statically initialize a hashmap.
 static ELLIPSOIDS: [Ellipsoid; 5] =  [
     Ellipsoid {name: "GRS80"  ,  a: 6378137.0,   f: 1./298.257222100882711243},
     Ellipsoid {name: "intl"   ,  a: 6378388.0,   f: 1./297.},
@@ -131,7 +131,7 @@ static ELLIPSOIDS: [Ellipsoid; 5] =  [
 
 pub fn ellipsoid(name: &str) -> Ellipsoid {
     for e in ELLIPSOIDS.iter() {
-        if e.name==name {
+        if e.name == name {
             return *e;
         }
     }

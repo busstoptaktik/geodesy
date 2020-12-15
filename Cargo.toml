@@ -9,4 +9,5 @@ default-run = "ost"
 
 [dependencies]
 yaml-rust = "0.4"
-# phf = { version = "0.7.24", features = ["macros"] }
+# pyo3 = "0.12.4"
+# inline-python = "0.6.0"
