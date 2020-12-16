@@ -87,7 +87,7 @@ impl Ellipsoid {
         let eps = self.second_eccentricity_squared();
         let es = self.eccentricity_squared();
 
-        // The longitude is easy
+        // The longitude is straightforward
         let lam = Y.atan2(X);
 
         // The perpendicular distance from the point coordinate to the Z-axis
@@ -107,11 +107,11 @@ impl Ellipsoid {
         let theta_num = Z * self.a;
         let theta_denom = p * b;
         let length = theta_num.hypot(theta_denom);
-        let c = theta_denom / length; // cos(theta)
-        let s = theta_num / length;   // sin(theta)
+        let c = theta_denom / length; // i.e. cos(theta)
+        let s = theta_num / length;   // i.e. sin(theta)
 
-        let phi_num = Z + eps * b * s * s * s;
-        let phi_denom = p - es * self.a * c * c * c;
+        let phi_num = Z + eps * b * s.powi(3);
+        let phi_denom = p - es * self.a * c.powi(3);
         let phi = phi_num.atan2(phi_denom);
 
         let h = p / phi.cos() - self.prime_vertical_radius_of_curvature(phi);
@@ -120,7 +120,9 @@ impl Ellipsoid {
 }
 
 
-// A hashmap would be better, but Rust cannot statically initialize a hashmap.
+// A hashmap indexed by the ellipsoid name would be better, but Rust cannot
+// statically initialize a hashmap, so we put the name into the struct and
+// use a static array instead.
 static ELLIPSOIDS: [Ellipsoid; 5] =  [
     Ellipsoid {name: "GRS80"  ,  a: 6378137.0,   f: 1./298.257222100882711243},
     Ellipsoid {name: "intl"   ,  a: 6378388.0,   f: 1./297.},
