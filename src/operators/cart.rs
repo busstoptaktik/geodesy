@@ -2,7 +2,6 @@ use crate::OperatorArgs;
 use crate::OperatorCore;
 use crate::OperatorWorkSpace;
 use crate::foundations::Ellipsoid;
-use crate::foundations::ellipsoid;
 
 // For now, we just use the shrinkwrapped Ellipsoid-methods, but we can
 // potentially speed up by extending struct Cart with additional
@@ -15,7 +14,7 @@ pub struct Cart {
 impl Cart {
     pub fn new(args: &mut OperatorArgs) -> Cart {
         let c = Cart {
-            ellps: ellipsoid(&args.value("ellps", "GRS80")),
+            ellps: Ellipsoid::named(&args.value("ellps", "GRS80")),
             inverted: args.boolean_value("inv"),
         };
         println!("Cart: {:?}", c.ellps);
@@ -60,7 +59,7 @@ mod tests {
 
         // First check that (0,0,0) takes us to (a,0,0)
         c.fwd(&mut o);
-        let a = ellipsoid("intl").a;
+        let a = Ellipsoid::named("intl").a;
         assert_eq!(o.coord.0, a);
         assert_eq!(o.coord.1, 0.0);
         assert_eq!(o.coord.1, 0.0);

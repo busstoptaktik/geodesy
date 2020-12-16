@@ -30,7 +30,7 @@ pub struct Ellipsoid {
 // statically initialize a hashmap, so we put the name into the struct and
 // use a static array instead.
 static ELLIPSOIDS: [Ellipsoid; 5] =  [
-    Ellipsoid {name: "GRS80"  ,  a: 6378137.0,   f: 1./298.257222100882711243},
+    Ellipsoid {name: "GRS80"  ,  a: 6378137.0,   f: 1./298.25722_21008_82711_24316},
     Ellipsoid {name: "intl"   ,  a: 6378388.0,   f: 1./297.},
     Ellipsoid {name: "Helmert",  a: 6378200.0,   f: 1./298.3},
     Ellipsoid {name: "clrk66" ,  a: 6378206.4,   f: 1./294.9786982},
@@ -38,17 +38,14 @@ static ELLIPSOIDS: [Ellipsoid; 5] =  [
 ];
 
 
-pub fn ellipsoid(name: &str) -> Ellipsoid {
-    for e in ELLIPSOIDS.iter() {
-        if e.name == name {
-            return *e;
+impl Ellipsoid {
+    pub fn new(semimajor_axis: f64, flattening: f64) -> Ellipsoid {
+        Ellipsoid{
+            name: "",
+            a: semimajor_axis,
+            f: flattening,
         }
     }
-    ELLIPSOIDS[0]
-}
-
-
-impl Ellipsoid {
 
     pub fn named(name: &str) -> Ellipsoid {
         for e in ELLIPSOIDS.iter() {
@@ -57,6 +54,10 @@ impl Ellipsoid {
             }
         }
         ELLIPSOIDS[0]
+    }
+
+    pub fn name(&self) -> &'static str {
+        self.name
     }
 
 
@@ -190,6 +191,8 @@ impl Ellipsoid {
     }
 }
 
+
+#[cfg(test)]
 mod tests {
     #[test]
     fn test_dms() {
@@ -203,29 +206,63 @@ mod tests {
 
     #[test]
     fn test_ellipsoid() {
+        use std::f64::consts::FRAC_PI_2;
         use super::Ellipsoid;
-        let ellps = Ellipsoid::named("GRS80");
-        assert_eq!(ellps.a, 6378137.0);
-        assert_eq!(ellps.f, 1. / 298.257222100882711243);
+        use super::CoordinateTuple;
 
+        // Constructors
         let ellps = Ellipsoid::named("intl");
         assert_eq!(ellps.f, 1. / 297.);
+        assert_eq!(ellps.name(), "intl");
 
-        let geo = super::CoordinateTuple{0: 12_f64.to_radians(), 1: 55_f64.to_radians(), 2: 100.0, 3: 0.};
+        let ellps = Ellipsoid::named("GRS80");
+        assert_eq!(ellps.a, 6378137.0);
+        assert_eq!(ellps.f, 1. / 298.25722_21008_82711_24316);
+        assert_eq!(ellps.name, "GRS80");
+
+        let ellps = Ellipsoid::new(ellps.a, ellps.f);
+        assert_eq!(ellps.semimajor_axis(), 6378137.0);
+        assert_eq!(ellps.flattening(), 1. / 298.25722_21008_82711_24316);
+        assert_eq!(ellps.name(), "");
+
+        // Additional shape descriptors
+        assert!((ellps.eccentricity() - 0.081819191).abs() < 1.0e-10);
+        assert!((ellps.eccentricity_squared() - 0.00669_43800_22903_41574).abs() < 1.0e-10);
+
+        // The curvatures at the North Pole
+        assert!((ellps.meridian_radius_of_curvature(90_f64.to_radians()) - 6_399_593.6259).abs() < 1.0e-4);
+        assert!((ellps.prime_vertical_radius_of_curvature(90_f64.to_radians()) - 6_399_593.6259).abs() < 1.0e-4);
+
+        // The curvatures at the Equator
+        assert!((ellps.meridian_radius_of_curvature(0.0) - 6_335_439.3271).abs() < 1.0e-4);
+        assert!((ellps.prime_vertical_radius_of_curvature(0.0) - ellps.semimajor_axis()).abs() < 1.0e-4);
+
+        // Additional size descriptors
+        assert!((ellps.semiminor_axis() - 6_356_752.31414_0347).abs() < 1.0e-9);
+        assert!((ellps.semimajor_axis() - 6_378_137.0).abs() < 1.0e-9);
+
+
+        // Roundtrip geographic <-> cartesian
+        let geo = CoordinateTuple{0: 12_f64.to_radians(), 1: 55_f64.to_radians(), 2: 100.0, 3: 0.};
         let cart = ellps.cartesian(&geo);
         let geo2 = ellps.geographic(&cart);
-        assert!((geo.0-geo2.0) < 1.0e-12);
-        assert!((geo.1-geo2.1) < 1.0e-12);
+        assert!((geo.0-geo2.0).abs() < 1.0e-12);
+        assert!((geo.1-geo2.1).abs() < 1.0e-12);
+        assert!((geo.2-geo2.2).abs() < 1.0e-12);
 
         // Roundtrip geocentric latitude
         let lat = 55_f64.to_radians();
         let lat2 = ellps.geocentric_latitude(ellps.geocentric_latitude(lat, true), false);
         assert!((lat-lat2) < 1.0e-12);
+        assert!(ellps.geocentric_latitude(0.0, true).abs() < 1.0e-10);
+        assert!((ellps.geocentric_latitude(FRAC_PI_2, true) - FRAC_PI_2).abs() < 1.0e-10);
 
         // Roundtrip reduced latitude
         let lat = 55_f64.to_radians();
         let lat2 = ellps.reduced_latitude(ellps.reduced_latitude(lat, true), false);
         assert!((lat-lat2) < 1.0e-12);
+        assert!(ellps.reduced_latitude(0.0, true).abs() < 1.0e-10);
+        assert!((ellps.reduced_latitude(FRAC_PI_2, true) - FRAC_PI_2).abs() < 1.0e-10);
 
     }
 }
