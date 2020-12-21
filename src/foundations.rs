@@ -17,12 +17,11 @@ impl DMS {
 }
 
 
-
 #[derive(Clone, Copy, Debug)]
 pub struct Ellipsoid {
-    pub name: &'static str,
-    pub a: f64,
-    pub f: f64,
+    name: &'static str,
+    a: f64,
+    f: f64,
 }
 
 
@@ -60,7 +59,6 @@ impl Ellipsoid {
         self.name
     }
 
-
     pub fn eccentricity_squared(&self) -> f64 {
         self.f*(2_f64 - self.f)
     }
@@ -91,6 +89,16 @@ impl Ellipsoid {
         self.f
     }
 
+    pub fn second_flattening(&self) -> f64 {
+        let b = self.semiminor_axis();
+        (self.a - b) / b
+    }
+
+    pub fn third_flattening(&self) -> f64 {
+        let b = self.semiminor_axis();
+        (self.a - b) / (self.a + b)
+    }
+
     pub fn prime_vertical_radius_of_curvature(&self, latitude: f64) -> f64 {
         if self.f == 0.0 {
             return self.a;
@@ -113,7 +121,7 @@ impl Ellipsoid {
         if forward {
             return ((1.0 - self.f * (2.0 - self.f)) * latitude.tan()).atan();
         }
-        (latitude.tan() / (1.0 -self.eccentricity_squared())).atan()
+        (latitude.tan() / (1.0 - self.eccentricity_squared())).atan()
     }
 
     /// Geographic latitude to reduced latitude
@@ -124,7 +132,6 @@ impl Ellipsoid {
         }
         (latitude.tan() / (1.0 - self.f)).atan()
     }
-
 
     #[allow(non_snake_case)]
     pub fn cartesian(&self, geographic: &CoordinateTuple) -> CoordinateTuple {
@@ -143,9 +150,16 @@ impl Ellipsoid {
         let Y = (N + h) * cosphi * sinlam;
         let Z = (N * (1.0 - self.eccentricity_squared()) + h) * sinphi;
 
-        CoordinateTuple{0: X, 1: Y, 2: Z, 3: t}
+        CoordinateTuple::new(X, Y, Z, t)
     }
 
+    ///
+    ///
+    /// B.R. Bowring (1976): Transformation from spatial to geographical coordinates.
+    ///     Survey Review 23(181), pp. 323–327
+    /// B.R. Bowring (1985): The accuracy of geodetic latitude and height equations,
+    ///     Survey Review, 28(218), pp.202-206, DOI: 10.1179/sre.1985.28.218.202
+    ///
 
     #[allow(non_snake_case)]
     pub fn geographic(&self, cartesian: &CoordinateTuple) -> CoordinateTuple {
@@ -168,14 +182,16 @@ impl Ellipsoid {
 
         // For p < 1 picometer, we simplify things to avoid numerical havoc.
         if p < 1.0e-12 {
-            let hemisphere = Z.signum();
-            let phi = hemisphere * FRAC_PI_2;
-            let h = Z.abs() - self.a;
-            return CoordinateTuple{0: lam, 1: phi, 2: h, 3: t};
+            // The sign of Z determines the hemisphere
+            let phi = FRAC_PI_2.copysign(Z);
+            // We have forced phi to one of the poles, so the height is Z - b
+            let h = Z.abs() - self.semiminor_axis();
+            return CoordinateTuple::new(lam, phi, h, t);
         }
 
         // HM eq. (5-36) and (5-37), with some added numerical efficiency due to
-        // Even Rouault, who replaced 3 trigs with a hypot and two divisions.
+        // Even Rouault, who replaced 3 trigs with a hypot and two divisions, cf.
+        // https://github.com/OSGeo/PROJ/commit/78c1df51e0621a4e0b2314f3af9478627e018db3
         let theta_num = Z * self.a;
         let theta_denom = p * b;
         let length = theta_num.hypot(theta_denom);
@@ -185,10 +201,22 @@ impl Ellipsoid {
         let phi_num = Z + eps * b * s.powi(3);
         let phi_denom = p - es * self.a * c.powi(3);
         let phi = phi_num.atan2(phi_denom);
+        let lenphi = phi_num.hypot(phi_denom);
+        let sinphi = phi_num/lenphi;
+        let cosphi = phi_denom/lenphi;
 
-        let h = p / phi.cos() - self.prime_vertical_radius_of_curvature(phi);
-        CoordinateTuple{0: lam, 1: phi, 2: h, 3: t}
+        // We already have sinphi and es, so we can compute the radius
+        // of curvature faster by inlining, rather than calling the
+        // prime_vertical_radius_of_curvature() method.
+        let N = self.a / (1.0 - sinphi.powi(2) * es).sqrt();
+
+        // Bowring (1985), as quoted by Burtch (2006), suggests this expression
+        // as more accurate than the commonly used h = p / cosphi - N;
+        let h = p*cosphi + Z * sinphi - self.a*self.a/N;
+        println!("h = {}", h);
+        CoordinateTuple::new(lam, phi, h, t)
     }
+
 }
 
 
@@ -229,6 +257,10 @@ mod tests {
         assert!((ellps.eccentricity() - 0.081819191).abs() < 1.0e-10);
         assert!((ellps.eccentricity_squared() - 0.00669_43800_22903_41574).abs() < 1.0e-10);
 
+        // Additional size descriptors
+        assert!((ellps.semiminor_axis() - 6_356_752.31414_0347).abs() < 1.0e-9);
+        assert!((ellps.semimajor_axis() - 6_378_137.0).abs() < 1.0e-9);
+
         // The curvatures at the North Pole
         assert!((ellps.meridian_radius_of_curvature(90_f64.to_radians()) - 6_399_593.6259).abs() < 1.0e-4);
         assert!((ellps.prime_vertical_radius_of_curvature(90_f64.to_radians()) - 6_399_593.6259).abs() < 1.0e-4);
@@ -237,18 +269,14 @@ mod tests {
         assert!((ellps.meridian_radius_of_curvature(0.0) - 6_335_439.3271).abs() < 1.0e-4);
         assert!((ellps.prime_vertical_radius_of_curvature(0.0) - ellps.semimajor_axis()).abs() < 1.0e-4);
 
-        // Additional size descriptors
-        assert!((ellps.semiminor_axis() - 6_356_752.31414_0347).abs() < 1.0e-9);
-        assert!((ellps.semimajor_axis() - 6_378_137.0).abs() < 1.0e-9);
-
 
         // Roundtrip geographic <-> cartesian
-        let geo = CoordinateTuple{0: 12_f64.to_radians(), 1: 55_f64.to_radians(), 2: 100.0, 3: 0.};
+        let geo = CoordinateTuple::new(12_f64.to_radians(), 55_f64.to_radians(), 100.0, 0.);
         let cart = ellps.cartesian(&geo);
         let geo2 = ellps.geographic(&cart);
         assert!((geo.0-geo2.0).abs() < 1.0e-12);
         assert!((geo.1-geo2.1).abs() < 1.0e-12);
-        assert!((geo.2-geo2.2).abs() < 1.0e-12);
+        assert!((geo.2-geo2.2).abs() < 1.0e-9);
 
         // Roundtrip geocentric latitude
         let lat = 55_f64.to_radians();

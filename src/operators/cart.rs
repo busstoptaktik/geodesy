@@ -1,6 +1,6 @@
-use crate::OperatorArgs;
-use crate::OperatorCore;
-use crate::OperatorWorkSpace;
+use super::OperatorArgs;
+use super::OperatorCore;
+use super::OperatorWorkSpace;
 use crate::foundations::Ellipsoid;
 
 // For now, we just use the shrinkwrapped Ellipsoid-methods, but we can
@@ -46,7 +46,7 @@ impl OperatorCore for Cart {
 
 #[cfg(test)]
 mod tests {
-    use crate::operator_factory;
+    use crate::operators::operator_factory;
 
     #[test]
     fn cart() {
@@ -59,7 +59,7 @@ mod tests {
 
         // First check that (0,0,0) takes us to (a,0,0)
         c.fwd(&mut o);
-        let a = Ellipsoid::named("intl").a;
+        let a = Ellipsoid::named("intl").semimajor_axis();
         assert_eq!(o.coord.0, a);
         assert_eq!(o.coord.1, 0.0);
         assert_eq!(o.coord.1, 0.0);

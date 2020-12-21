@@ -1,17 +1,17 @@
-use crate::OperatorArgs;
-use crate::OperatorCore;
-use crate::OperatorWorkSpace;
+use super::OperatorArgs;
+use super::OperatorCore;
+use super::OperatorWorkSpace;
 
-pub struct Helm {
+pub struct Helmert {
     dx: f64,
     dy: f64,
     dz: f64,
     inverted: bool,
 }
 
-impl Helm {
-    pub fn new(args: &mut OperatorArgs) -> Helm {
-        Helm {
+impl Helmert {
+    pub fn new(args: &mut OperatorArgs) -> Helmert {
+        Helmert {
             dx: args.numeric_value("dx", 0.0),
             dy: args.numeric_value("dy", 0.0),
             dz: args.numeric_value("dz", 0.0),
@@ -20,7 +20,7 @@ impl Helm {
     }
 }
 
-impl OperatorCore for Helm {
+impl OperatorCore for Helmert {
     fn fwd(&self, ws: &mut OperatorWorkSpace) -> bool {
         ws.coord.0 += self.dx;
         ws.coord.1 += self.dy;
@@ -46,10 +46,10 @@ impl OperatorCore for Helm {
 
 #[cfg(test)]
 mod tests {
-    use crate::operator_factory;
+    use crate::operators::operator_factory;
 
     #[test]
-    fn helm() {
+    fn helmert() {
         use super::*;
         let mut o = OperatorWorkSpace::new();
         let mut args = OperatorArgs::new();
@@ -58,7 +58,7 @@ mod tests {
         args.insert("dy", "-96");
         args.insert("dz", "-120");
         println!("\nargs: {:?}\n", args);
-        let h = operator_factory("helm", &mut args);
+        let h = operator_factory("helmert", &mut args);
         h.fwd(&mut o);
         assert_eq!(o.coord.first(), -87.);
 
