@@ -212,7 +212,7 @@ impl Ellipsoid {
         // Bowring (1985), as quoted by Burtch (2006), suggests this expression
         // as more accurate than the commonly used h = p / cosphi - N;
         let h = p*cosphi + Z * sinphi - self.a*self.a/N;
-        println!("h = {}", h);
+
         CoordinateTuple::new(lam, phi, h, t)
     }
 

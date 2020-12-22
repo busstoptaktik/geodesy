@@ -15,7 +15,7 @@ impl Helmert {
             dx: args.numeric_value("dx", 0.0),
             dy: args.numeric_value("dy", 0.0),
             dz: args.numeric_value("dz", 0.0),
-            inverted: args.boolean_value("inv"),
+            inverted: args.flag("inv"),
         }
     }
 }

@@ -1,8 +1,7 @@
 use super::OperatorArgs;
 use super::OperatorCore;
 use super::OperatorWorkSpace;
-//use crate::foundations::Ellipsoid;
-use super::super::Ellipsoid;
+use crate::Ellipsoid;
 
 // For now, we just use the shrinkwrapped Ellipsoid-methods, but we can
 // potentially speed up by extending struct Cart with additional
@@ -14,12 +13,10 @@ pub struct Cart {
 
 impl Cart {
     pub fn new(args: &mut OperatorArgs) -> Cart {
-        let c = Cart {
+        Cart {
             ellps: Ellipsoid::named(&args.value("ellps", "GRS80")),
-            inverted: args.boolean_value("inv"),
-        };
-        println!("Cart: {:?}", c.ellps);
-        c
+            inverted: args.flag("inv"),
+        }
     }
 }
 

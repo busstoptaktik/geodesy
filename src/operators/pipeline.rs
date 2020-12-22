@@ -12,16 +12,12 @@ pub struct Pipeline {
     inverted: bool,
 }
 
-
-
 impl Pipeline {
     pub fn new(args: &mut OperatorArgs) -> Pipeline {
-        let c = Pipeline {
+        Pipeline {
             ellps: Ellipsoid::named(&args.value("ellps", "GRS80")),
-            inverted: args.boolean_value("inv"),
-        };
-        println!("Pipeline: {:?}", c.ellps);
-        c
+            inverted: args.flag("inv"),
+        }
     }
 }
 
@@ -52,7 +48,7 @@ mod tests {
     use crate::operators::operator_factory;
 
     #[test]
-    fn cart() {
+    fn pipeline() {
         use super::*;
         let mut o = OperatorWorkSpace::new();
         let mut args = OperatorArgs::new();
