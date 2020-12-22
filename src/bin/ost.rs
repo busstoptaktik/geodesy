@@ -2,7 +2,7 @@ use geodesy::operators::operator_factory;
 use geodesy::operators::steps_and_globals;
 use geodesy::operators::OperatorArgs;
 use geodesy::operators::OperatorWorkSpace;
-use geodesy::operators::Pipeline;
+use geodesy::operators::Steps;
 use yaml_rust::{Yaml, YamlLoader};
 
 /*
@@ -44,7 +44,7 @@ fn salat_(py: Python) -> PyResult<()> {
 }
 */
 
-fn generic_experiment() -> Pipeline {
+fn generic_experiment() -> Steps {
     // Se https://docs.rs/yaml-rust/0.4.4/yaml_rust/yaml/enum.Yaml.html
     let mut pap = OperatorArgs::new();
     let txt = std::fs::read_to_string("src/transformations.yml").unwrap();
@@ -90,7 +90,7 @@ fn generic_experiment() -> Pipeline {
     println!("{}", c.name());
     println!("{}", h.name());
 
-    let mut pipeline: Pipeline = Vec::new();
+    let mut pipeline: Steps = Vec::new();
     pipeline.push(c);
     pipeline.push(h);
     for x in &pipeline {
@@ -106,7 +106,7 @@ fn main() {
     global_globals.insert("ellps", "GRS80");
 
     println!("Global_globals: {:?}", global_globals);
-    let (_steps, globals) = steps_and_globals("recipe");
+    let (_steps, globals) = steps_and_globals("pipeline");
     println!("Globals: {:?}", globals);
     global_globals.append(&globals);
     println!("Global_globals: {:?}", global_globals);

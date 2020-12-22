@@ -36,7 +36,7 @@ impl OperatorCore for Helmert {
     }
 
     fn name(&self) -> &'static str {
-        "Helmert"
+        "helmert"
     }
 
     fn is_inverted(&self) -> bool {

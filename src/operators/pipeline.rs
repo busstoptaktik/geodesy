@@ -2,28 +2,30 @@ use super::OperatorArgs;
 use super::OperatorCore;
 use super::OperatorWorkSpace;
 //use crate::foundations::Ellipsoid;
-use super::super::Ellipsoid;
+use crate::Ellipsoid;
 
 // For now, we just use the shrinkwrapped Ellipsoid-methods, but we can
 // potentially speed up by extending struct Cart with additional
 // precomputed ellipsoidal parameters.
-pub struct Cart {
+pub struct Pipeline {
     ellps: Ellipsoid,
     inverted: bool,
 }
 
-impl Cart {
-    pub fn new(args: &mut OperatorArgs) -> Cart {
-        let c = Cart {
+
+
+impl Pipeline {
+    pub fn new(args: &mut OperatorArgs) -> Pipeline {
+        let c = Pipeline {
             ellps: Ellipsoid::named(&args.value("ellps", "GRS80")),
             inverted: args.boolean_value("inv"),
         };
-        println!("Cart: {:?}", c.ellps);
+        println!("Pipeline: {:?}", c.ellps);
         c
     }
 }
 
-impl OperatorCore for Cart {
+impl OperatorCore for Pipeline {
     fn fwd(&self, ws: &mut OperatorWorkSpace) -> bool {
         ws.coord = self.ellps.cartesian(&ws.coord);
         true
@@ -35,7 +37,7 @@ impl OperatorCore for Cart {
     }
 
     fn name(&self) -> &'static str {
-        "cart"
+        "pipeline"
     }
 
     fn is_inverted(&self) -> bool {

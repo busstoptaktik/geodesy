@@ -1,0 +1,55 @@
+pipeline:
+  meta:
+    desc: bla bla bla
+          blu blu blu
+    from: epsg:4371
+    to: epsg:4444
+    region: DK
+    accuracy: 1 m
+
+  globals:
+    x: ylophon
+    y: 7.7
+    z: 7
+    t: true
+    inv: true
+
+  steps:
+    - cart: {ellps: intl}
+    - helmert: {dx: -87., dy: -96, dz: -120.}
+    - cart: {inv: true, ellps: GRS80}
+
+hundehvalp:
+  steps:
+    - cart: {ellps: intl}
+    - helmert: {dx: -87., dy: -96, dz: -120.}
+    - cart: {inv: true, ellps: GRS80}
+
+---
+
+main:
+  meta:
+    desc: bla bla bla
+          blu blu blu
+    from: epsg:4371
+    to: epsg:4444
+    region: DK
+    accuracy: 1 m
+
+  globals:
+    ellps: Ost
+    a: Gurk
+    b: 7
+    fwd: true
+
+  steps:
+    - cart: {inv: fwd, dirt: ^b}
+    - helmert: {dx: 221., dy: 222, dz: 87}
+    - cart: {dir: inv, salat: banan, steak}
+    - embed: {name: cucumber, dir: inv}
+
+cucumber:
+  steps:
+    - cart: {}
+    - helmert: {dx: 1, dy: 22, dz: 3}
+    - cart: {dir: inv}

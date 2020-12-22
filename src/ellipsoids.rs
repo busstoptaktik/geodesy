@@ -1,22 +1,8 @@
 use crate::CoordinateTuple;
 use std::f64::consts::FRAC_PI_2;
 
-pub struct DMS {
-    pub s: f32,
-    pub d: i16,
-    pub m: i8,
-}
 
-impl DMS {
-    pub fn new(d: i16, m: i8, s: f32) -> DMS {
-        DMS { d: d, m: m, s: s }
-    }
-    pub fn to_deg(&self) -> f64 {
-        return (self.s as f64 / 60. + self.m as f64) / 60. + self.d as f64;
-    }
-}
-
-
+/// Representation of an ellipsoid.
 #[derive(Clone, Copy, Debug)]
 pub struct Ellipsoid {
     name: &'static str,
@@ -38,6 +24,7 @@ static ELLIPSOIDS: [Ellipsoid; 5] =  [
 
 
 impl Ellipsoid {
+    /// User defined ellipsoid
     pub fn new(semimajor_axis: f64, flattening: f64) -> Ellipsoid {
         Ellipsoid{
             name: "",
@@ -46,6 +33,7 @@ impl Ellipsoid {
         }
     }
 
+    /// Predefined ellipsoid
     pub fn named(name: &str) -> Ellipsoid {
         for e in ELLIPSOIDS.iter() {
             if e.name == name {
@@ -59,46 +47,56 @@ impl Ellipsoid {
         self.name
     }
 
+    /// The squared eccentricity *e² = (a² - b²) / a²*.
     pub fn eccentricity_squared(&self) -> f64 {
         self.f*(2_f64 - self.f)
     }
 
+    /// The eccentricity *e*
     pub fn eccentricity(&self) -> f64 {
         self.eccentricity_squared().sqrt()
     }
 
+    /// The squared second eccentricity *e'² = (a² - b²) / b²*
     pub fn second_eccentricity_squared(&self) -> f64 {
         let b = self.semiminor_axis();
         let bb = b*b;
         (self.a.powi(2) - bb) / bb
     }
 
+    /// The second eccentricity *e'*
     pub fn second_eccentricity(&self) -> f64 {
         self.second_eccentricity_squared().sqrt()
     }
 
+    /// The semiminor axis, *b*
     pub fn semiminor_axis(&self) -> f64 {
         self.a * (1.0 - self.f)
     }
 
+    /// The semimajor axis, *a*
     pub fn semimajor_axis(&self) -> f64 {
         self.a
     }
 
+    /// The flattening, *f = (a - b)/a*
     pub fn flattening(&self) -> f64 {
         self.f
     }
 
+    /// The second flattening, *f = (a - b) / b*
     pub fn second_flattening(&self) -> f64 {
         let b = self.semiminor_axis();
         (self.a - b) / b
     }
 
+    /// The third flattening, *f = (a - b) / (a + b)*
     pub fn third_flattening(&self) -> f64 {
         let b = self.semiminor_axis();
         (self.a - b) / (self.a + b)
     }
 
+    /// The radius of curvature in the prime vertical *N*
     pub fn prime_vertical_radius_of_curvature(&self, latitude: f64) -> f64 {
         if self.f == 0.0 {
             return self.a;
@@ -106,6 +104,7 @@ impl Ellipsoid {
         self.a / (1.0 - latitude.sin().powi(2) * self.eccentricity_squared()).sqrt()
     }
 
+    /// The meridian curvature *M*
     pub fn meridian_radius_of_curvature(&self, latitude: f64) -> f64 {
         if self.f == 0.0 {
             return self.a;
@@ -222,16 +221,6 @@ impl Ellipsoid {
 
 #[cfg(test)]
 mod tests {
-    #[test]
-    fn test_dms() {
-        let dms = super::DMS::new(60, 24, 36.);
-        assert_eq!(dms.d, 60);
-        assert_eq!(dms.m, 24);
-        assert_eq!(dms.s, 36.);
-        let d = dms.to_deg();
-        assert_eq!(d, 60.41);
-    }
-
     #[test]
     fn test_ellipsoid() {
         use std::f64::consts::FRAC_PI_2;

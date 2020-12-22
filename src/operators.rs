@@ -1,20 +1,17 @@
 use std::collections::HashMap;
 
-use yaml_rust::{Yaml, YamlLoader};
+use yaml_rust::{Yaml, YamlEmitter, YamlLoader};
 
-use super::CoordinateTuple;
+use crate::CoordinateTuple;
 
+mod badvalue;
 mod cart;
 mod helmert;
-//use crate::OperatorArgs;
-//use crate::Operator;
-
-
-
-
+mod noop;
+mod pipeline;
 
 pub type Operator = Box<dyn OperatorCore>;
-pub type Pipeline = Vec<Operator>;
+pub type Steps = Vec<Operator>;
 
 
 #[derive(Debug)]
@@ -58,6 +55,15 @@ pub trait OperatorCore {
     }
 
     fn is_inverted(&self) -> bool;
+
+    fn is_noop(&self) -> bool {
+        false
+    }
+
+    fn is_badvalue(&self) -> bool {
+        false
+    }
+
     //fn operate(&self, dir: bool) .. if inverted dir=!dir if dir fwd else inv
     //fn left(&self) -> CoordType;
     //fn right(&self) -> CoordType;
@@ -134,30 +140,71 @@ impl OperatorArgs {
     }
 }
 
-
-pub fn steps_and_globals(name: &str) -> (Vec<Yaml>, OperatorArgs) {
-    // Read YAML-document, locate "name", extract steps and globals
-    let txt = std::fs::read_to_string("src/transformations.yml").unwrap();
-    let docs = YamlLoader::load_from_str(&txt).unwrap();
-    let steps = docs[0][name]["steps"].as_vec().unwrap();
-    let globals = docs[0][name]["globals"].as_hash().unwrap();
-
-    // Loop over all globals, create corresponding OperartorArgs object
-    let mut args = OperatorArgs::new();
-    let iter = globals.iter();
+fn combine_globals(globals: &mut OperatorArgs, moreglobals: &Yaml) {
+    let iter = moreglobals.as_hash().unwrap().iter();
     for (arg, val) in iter {
-        if arg.as_str().unwrap() != "inv" {
-            let vall = match val {
+        let thearg = arg.as_str().unwrap();
+        if thearg != "inv" {
+            let theval = match val {
                 Yaml::Integer(val) => val.to_string(),
                 Yaml::Real(val) => val.as_str().to_string(),
                 Yaml::String(val) => val.to_string(),
                 Yaml::Boolean(val) => val.to_string(),
                 _ => "".to_string(),
             };
-            args.insert(arg.as_str().unwrap(), &vall);
+            if theval != "" {
+                globals.insert(thearg, &theval);
+            }
+        }
+    }
+}
+
+pub fn steps_and_globals(name: &str) -> (Vec<Yaml>, OperatorArgs) {
+    // Read YAML-document, locate "name", extract steps and globals
+    let txt = std::fs::read_to_string("tests/tests.yml").unwrap();
+    let docs = YamlLoader::load_from_str(&txt).unwrap();
+    let steps = docs[0][name]["steps"].as_vec().unwrap();
+    let nsteps = docs[0][name]["steps"].as_vec().unwrap().len();
+    let mut out_str = String::new();
+    {
+        let mut emitter = YamlEmitter::new(&mut out_str);
+        emitter.dump(&steps[0]).unwrap(); // dump the YAML object to a String
+    }
+
+    out_str = format!("step: {}\n{}",0, &out_str);
+
+    println!("*************STEP 0!!! {:?}", out_str);
+    let redoc = YamlLoader::load_from_str(&out_str).unwrap();
+    println!("*************STEP 0!!! {:?}", redoc[0]["step"].as_i64().unwrap_or(999999999));
+    println!("*************STEP 0!!! {:?}", redoc[1]);
+    println!("*************STEP 0!!! {:?}", docs[0][name]["steps"][0]);
+    let globals = docs[0][name]["globals"].as_hash().unwrap();
+    let moreglobals = &docs[0][name]["globals"];
+
+    // Loop over all globals, create corresponding OperartorArgs object
+    let mut args = OperatorArgs::new();
+    println!("Args {:?}", args);
+    combine_globals(&mut args, moreglobals);
+    println!("AArgs {:?}", args);
+
+    let iter = globals.iter();
+    for (arg, val) in iter {
+        let thearg = arg.as_str().unwrap();
+        if thearg != "inv" {
+            let theval = match val {
+                Yaml::Integer(val) => val.to_string(),
+                Yaml::Real(val) => val.as_str().to_string(),
+                Yaml::String(val) => val.to_string(),
+                Yaml::Boolean(val) => val.to_string(),
+                _ => "".to_string(),
+            };
+            if theval != "" {
+                args.insert(thearg, &theval);
+            }
         }
     }
 
+    println!("Args: {:?}", args);
     (steps.to_vec(), args)
 }
 
@@ -167,44 +214,69 @@ mod tests {
     #[test]
     fn operator_args() {
         use super::*;
-        let mut pargs = OperatorArgs::new();
+        let mut args = OperatorArgs::new();
 
         // dx and dy are straightforward
-        pargs.insert("dx", "1");
-        pargs.insert("dy", "2");
+        args.insert("dx", "1");
+        args.insert("dy", "2");
 
         // But we hide dz behind two levels of indirection
-        pargs.insert("dz", "^ddz");
-        pargs.insert("ddz", "^dddz");
-        pargs.insert("dddz", "3");
-        println!("pargs: {:?}", pargs);
+        args.insert("dz", "^ddz");
+        args.insert("ddz", "^dddz");
+        args.insert("dddz", "3");
+        println!("args: {:?}", args);
 
-        assert_eq!("1", pargs.value("dx", ""));
-        println!("used: {:?}", &pargs.used);
+        assert_eq!("1", args.value("dx", ""));
+        assert_eq!("2", args.value("dy", ""));
+        assert_eq!(args.used.len(), 2);
 
-        assert_eq!("2", pargs.value("dy", ""));
-        println!("used: {:?}", &pargs.used);
+        assert_eq!("3", args.value("dz", ""));
+        assert_eq!(3.0, args.numeric_value("dz", 42.0));
 
-        assert_eq!("3", pargs.value("dz", ""));
-        assert_eq!(3.0, pargs.numeric_value("dz", 42.0));
-        assert_eq!("", pargs.value("abcdefg", ""));
-        println!("used: {:?}", &pargs.used);
-        println!("all_used: {:?}", &pargs.all_used);
+        assert_eq!(args.used.len(), 3);
+        assert_eq!(args.all_used.len(), 5);
+
+        println!("used: {:?}", &args.used);
+        println!("all_used: {:?}", &args.all_used);
+
+        assert_eq!("", args.value("abcdefg", ""));
 
         // Finally one for testing NAN returned for non-numerics
-        pargs.insert("ds", "foo");
-        assert!(pargs.numeric_value("ds", 0.0).is_nan());
+        args.insert("ds", "foo");
+        assert!(args.numeric_value("ds", 0.0).is_nan());
+    }
+
+    #[test]
+    fn bad_value() {
+        use super::*;
+        let v = Yaml::BadValue;
+        assert!(v.is_badvalue());
+        let v = Yaml::Null;
+        assert!(v.is_null());
+        let v = Yaml::Integer(77);
+        assert!(v == Yaml::Integer(77));
     }
 }
 
 
 pub fn operator_factory(name: &str, args: &mut OperatorArgs) -> Operator {
     use crate::operators as co;
+    if name == "badvalue" {
+        return Box::new(co::badvalue::BadValue::new(args))
+    }
     if name == "cart" {
         return Box::new(co::cart::Cart::new(args));
     }
     if name == "helmert" {
         return Box::new(co::helmert::Helmert::new(args));
     }
-    Box::new(co::helmert::Helmert::new(args))
+    if name == "noop" {
+        return Box::new(co::noop::Noop::new(args));
+    }
+    if name == "pipeline" {
+        return Box::new(co::pipeline::Pipeline::new(args));
+    }
+
+    // Herefter: Søg efter 'name' i filbøtten
+    Box::new(co::badvalue::BadValue::new(args))
 }
