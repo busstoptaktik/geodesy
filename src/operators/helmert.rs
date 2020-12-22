@@ -57,14 +57,16 @@ mod tests {
         args.insert("dx", "-87");
         args.insert("dy", "-96");
         args.insert("dz", "-120");
-        println!("\nargs: {:?}\n", args);
+        assert_eq!(args.value("dz", ""), "-120");
         let h = operator_factory("helmert", &mut args);
         h.fwd(&mut o);
-        assert_eq!(o.coord.first(), -87.);
+        assert_eq!(o.coord.first(),  -87.);
+        assert_eq!(o.coord.second(), -96.);
+        assert_eq!(o.coord.third(), -120.);
 
         h.inv(&mut o);
-        assert_eq!(o.coord.first(), 0.);
+        assert_eq!(o.coord.first(),  0.);
         assert_eq!(o.coord.second(), 0.);
-        assert_eq!(o.coord.third(), 0.);
+        assert_eq!(o.coord.third(),  0.);
     }
 }

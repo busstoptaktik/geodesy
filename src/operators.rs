@@ -259,7 +259,7 @@ mod tests {
         args.insert("dz", "^ddz");
         args.insert("ddz", "^dddz");
         args.insert("dddz", "3");
-        println!("args: {:?}", args);
+        // println!("args: {:?}", args);
 
         assert_eq!("1", args.value("dx", ""));
         assert_eq!("2", args.value("dy", ""));
@@ -271,8 +271,8 @@ mod tests {
         assert_eq!(args.used.len(), 3);
         assert_eq!(args.all_used.len(), 5);
 
-        println!("used: {:?}", &args.used);
-        println!("all_used: {:?}", &args.all_used);
+        // println!("used: {:?}", &args.used);
+        // println!("all_used: {:?}", &args.all_used);
 
         assert_eq!("", args.value("abcdefg", ""));
 
