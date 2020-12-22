@@ -1,5 +1,4 @@
 use geodesy::operators::operator_factory;
-use geodesy::operators::steps_and_globals;
 use geodesy::operators::OperatorArgs;
 use geodesy::operators::OperatorWorkSpace;
 use geodesy::operators::Steps;
@@ -106,10 +105,10 @@ fn main() {
     global_globals.insert("ellps", "GRS80");
 
     println!("Global_globals: {:?}", global_globals);
-    let (_steps, globals) = steps_and_globals("pipeline");
-    println!("Globals: {:?}", globals);
-    global_globals.append(&globals);
-    println!("Global_globals: {:?}", global_globals);
+    //let (_steps, globals) = steps_and_globals("pipeline");
+    //println!("Globals: {:?}", globals);
+    //global_globals.append(&globals);
+    //println!("Global_globals: {:?}", global_globals);
 
     let pipeline = generic_experiment();
     println!("MAIN*****************************");

@@ -140,9 +140,14 @@ impl OperatorArgs {
     }
 }
 
-fn combine_globals(globals: &mut OperatorArgs, moreglobals: &Yaml) {
-    let iter = moreglobals.as_hash().unwrap().iter();
-    for (arg, val) in iter {
+
+pub fn steps_and_globals(full_text: String, name: &str, globals: &mut OperatorArgs) {
+    // Read YAML-document, locate "name", extract steps and globals
+    let docs = YamlLoader::load_from_str(&full_text).unwrap();
+
+    // Loop over all globals and create corresponding OperartorArgs entries
+    let moreglobals = &docs[0][name]["globals"].as_hash().unwrap();
+    for (arg, val) in moreglobals.iter() {
         let thearg = arg.as_str().unwrap();
         if thearg != "inv" {
             let theval = match val {
@@ -157,55 +162,37 @@ fn combine_globals(globals: &mut OperatorArgs, moreglobals: &Yaml) {
             }
         }
     }
-}
 
-pub fn steps_and_globals(name: &str) -> (Vec<Yaml>, OperatorArgs) {
-    // Read YAML-document, locate "name", extract steps and globals
-    let txt = std::fs::read_to_string("tests/tests.yml").unwrap();
-    let docs = YamlLoader::load_from_str(&txt).unwrap();
+
+    if docs[0][name]["steps"].as_vec().is_some() {
+        println!("************************** EMPTY ****************************");
+    }
+
+    // Locate the step definitions, and insert the number of steps
+    // into the argument list
     let steps = docs[0][name]["steps"].as_vec().unwrap();
-    let nsteps = docs[0][name]["steps"].as_vec().unwrap().len();
-    let mut out_str = String::new();
-    {
-        let mut emitter = YamlEmitter::new(&mut out_str);
-        emitter.dump(&steps[0]).unwrap(); // dump the YAML object to a String
+    let nsteps = steps.len();
+    globals.insert("nsteps", &nsteps.to_string());
+
+    // Insert each step into the argument list, formatted as YAML.
+    // Unfortunately the compact mode does not work.
+    for (index, step) in steps.iter().enumerate() {
+        // Write the step definition to a new string
+        let mut step_definition = String::new();
+        let mut emitter = YamlEmitter::new(&mut step_definition);
+        emitter.compact(true);
+        assert_eq!(emitter.is_compact(), true);
+        emitter.dump(step).unwrap();
+
+        // Remove the initial doc separator "---\n"
+        let stripped_definition = step_definition.trim_start_matches("---\n");
+        let step_key = format!("step_{}", index);
+        globals.insert(&step_key, stripped_definition);
     }
 
-    out_str = format!("step: {}\n{}",0, &out_str);
 
-    println!("*************STEP 0!!! {:?}", out_str);
-    let redoc = YamlLoader::load_from_str(&out_str).unwrap();
-    println!("*************STEP 0!!! {:?}", redoc[0]["step"].as_i64().unwrap_or(999999999));
-    println!("*************STEP 0!!! {:?}", redoc[1]);
-    println!("*************STEP 0!!! {:?}", docs[0][name]["steps"][0]);
-    let globals = docs[0][name]["globals"].as_hash().unwrap();
-    let moreglobals = &docs[0][name]["globals"];
-
-    // Loop over all globals, create corresponding OperartorArgs object
-    let mut args = OperatorArgs::new();
-    println!("Args {:?}", args);
-    combine_globals(&mut args, moreglobals);
-    println!("AArgs {:?}", args);
-
-    let iter = globals.iter();
-    for (arg, val) in iter {
-        let thearg = arg.as_str().unwrap();
-        if thearg != "inv" {
-            let theval = match val {
-                Yaml::Integer(val) => val.to_string(),
-                Yaml::Real(val) => val.as_str().to_string(),
-                Yaml::String(val) => val.to_string(),
-                Yaml::Boolean(val) => val.to_string(),
-                _ => "".to_string(),
-            };
-            if theval != "" {
-                args.insert(thearg, &theval);
-            }
-        }
-    }
-
-    println!("Args: {:?}", args);
-    (steps.to_vec(), args)
+    // Finally, we provide the full text to enable recursive definitions
+    globals.insert("full_text", &full_text);
 }
 
 
@@ -244,6 +231,18 @@ mod tests {
         // Finally one for testing NAN returned for non-numerics
         args.insert("ds", "foo");
         assert!(args.numeric_value("ds", 0.0).is_nan());
+    }
+
+    #[test]
+    fn parsing_steps() {
+        use super::*;
+        let mut globals = OperatorArgs::new();
+        // Read YAML-document, locate "name", extract steps and globals
+        let txt = std::fs::read_to_string("tests/tests.yml").unwrap();
+
+        globals.insert("ellps", "GRS80");
+        steps_and_globals(txt, "pipeline", &mut globals);
+        println!("GLOBALS****: {:?}", globals);
     }
 
     #[test]
