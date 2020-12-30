@@ -1,6 +1,6 @@
 use super::OperatorArgs;
 use super::OperatorCore;
-use super::OperatorWorkSpace;
+use super::Operand;
 
 pub struct BadValue {
 }
@@ -12,11 +12,11 @@ impl BadValue {
 }
 
 impl OperatorCore for BadValue {
-    fn fwd(&self, _ws: &mut OperatorWorkSpace) -> bool {
+    fn fwd(&self, _ws: &mut Operand) -> bool {
         true
     }
 
-    fn inv(&self, _ws: &mut OperatorWorkSpace) -> bool {
+    fn inv(&self, _ws: &mut Operand) -> bool {
         true
     }
 
@@ -41,7 +41,7 @@ mod tests {
     #[test]
     fn badvalue() {
         use super::*;
-        let mut o = OperatorWorkSpace::new();
+        let mut o = Operand::new();
         let mut args = OperatorArgs::new();
         let c = operator_factory("badvalue", &mut args);
 

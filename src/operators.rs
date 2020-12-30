@@ -4,6 +4,9 @@ use yaml_rust::{Yaml, YamlEmitter, YamlLoader};
 
 use crate::CoordinateTuple;
 
+// Renovering af Poder/Engsager tmerc i B:\2019\Projects\FIRE\tramp\tramp\tramp.c
+// Detaljer i C:\Users\B004330\Downloads\2.1.2 A HIGHLY ACCURATE WORLD WIDE ALGORITHM FOR THE TRANSVE (1).doc
+
 mod badvalue;
 mod cart;
 mod helmert;
@@ -15,16 +18,16 @@ pub type Steps = Vec<Operator>;
 
 
 #[derive(Debug)]
-pub struct OperatorWorkSpace {
+pub struct Operand {
     pub coord: CoordinateTuple,
     pub stack: Vec<f64>,
     pub coordinate_stack: Vec<CoordinateTuple>,
     pub last_failing_operation: &'static str,
 }
 
-impl OperatorWorkSpace {
-    pub fn new() -> OperatorWorkSpace {
-        OperatorWorkSpace {
+impl Operand {
+    pub fn new() -> Operand {
+        Operand {
             coord: CoordinateTuple(0., 0., 0., 0.),
             stack: vec![],
             coordinate_stack: vec![],
@@ -36,10 +39,10 @@ impl OperatorWorkSpace {
 
 
 pub trait OperatorCore {
-    fn fwd(&self, ws: &mut OperatorWorkSpace) -> bool;
+    fn fwd(&self, ws: &mut Operand) -> bool;
 
     // implementations must override at least one of {inv, invertible}
-    fn inv(&self, _ws: &mut OperatorWorkSpace) -> bool {
+    fn inv(&self, _ws: &mut Operand) -> bool {
         false
     }
     fn invertible(&self) -> bool {
@@ -51,7 +54,7 @@ pub trait OperatorCore {
     }
 
     fn error_message(&self) -> &'static str {
-        "Unknown error"
+        "Generic error"
     }
 
     fn is_inverted(&self) -> bool;
@@ -124,12 +127,12 @@ impl OperatorArgs {
     /// let mut args = OperatorArgs::global_defaults();
     /// let txt = std::fs::read_to_string("tests/tests.yml").unwrap_or_default();
     ///
-    /// assert!(args.prepare_from_yaml(&txt, "pipeline"));
+    /// assert!(args.populate(&txt, "pipeline"));
     /// assert_eq!(&args.value("_step_0", "")[0..4], "cart");
     /// ```
     ///
     ///
-    pub fn prepare_from_yaml(&mut self, definition: &str, which: &str) -> bool {
+    pub fn populate(&mut self, definition: &str, which: &str) -> bool {
         // Read YAML-document, locate "name", extract steps and globals
         let docs = YamlLoader::load_from_str(definition).unwrap();
 
@@ -287,7 +290,7 @@ mod tests {
         let mut args = OperatorArgs::global_defaults();
 
         let txt = std::fs::read_to_string("tests/tests.yml").unwrap_or_default();
-        assert!(args.prepare_from_yaml(&txt, "pipeline"));
+        assert!(args.populate(&txt, "pipeline"));
         assert_eq!(&args.value("_step_0", "    ")[0..4], "cart");
     }
 

@@ -1,6 +1,6 @@
 use super::OperatorArgs;
 use super::OperatorCore;
-use super::OperatorWorkSpace;
+use super::Operand;
 
 pub struct Helmert {
     dx: f64,
@@ -21,14 +21,14 @@ impl Helmert {
 }
 
 impl OperatorCore for Helmert {
-    fn fwd(&self, ws: &mut OperatorWorkSpace) -> bool {
+    fn fwd(&self, ws: &mut Operand) -> bool {
         ws.coord.0 += self.dx;
         ws.coord.1 += self.dy;
         ws.coord.2 += self.dz;
         true
     }
 
-    fn inv(&self, ws: &mut OperatorWorkSpace) -> bool {
+    fn inv(&self, ws: &mut Operand) -> bool {
         ws.coord.0 -= self.dx;
         ws.coord.1 -= self.dy;
         ws.coord.2 -= self.dz;
@@ -51,7 +51,7 @@ mod tests {
     #[test]
     fn helmert() {
         use super::*;
-        let mut o = OperatorWorkSpace::new();
+        let mut o = Operand::new();
         let mut args = OperatorArgs::new();
         // EPSG:1134 - 3 parameter, ED50/WGS84, s = sqrt(27) m
         args.insert("dx", "-87");

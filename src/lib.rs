@@ -1,5 +1,5 @@
-mod coordinates;
-mod ellipsoids;
+pub mod coordinates;
+pub mod ellipsoids;
 pub mod operators;
 
 pub use ellipsoids::Ellipsoid;

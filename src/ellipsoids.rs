@@ -1,7 +1,6 @@
 use crate::CoordinateTuple;
 use std::f64::consts::FRAC_PI_2;
 
-
 /// Representation of an ellipsoid.
 #[derive(Clone, Copy, Debug)]
 pub struct Ellipsoid {
@@ -57,11 +56,10 @@ impl Ellipsoid {
         self.eccentricity_squared().sqrt()
     }
 
-    /// The squared second eccentricity *e'² = (a² - b²) / b²*
+    /// The squared second eccentricity *e'² = (a² - b²) / b² = e² / (1 - e²)*
     pub fn second_eccentricity_squared(&self) -> f64 {
-        let b = self.semiminor_axis();
-        let bb = b*b;
-        (self.a.powi(2) - bb) / bb
+        let es = self.eccentricity_squared();
+        es / (1.0 - es)
     }
 
     /// The second eccentricity *e'*
@@ -90,13 +88,12 @@ impl Ellipsoid {
         (self.a - b) / b
     }
 
-    /// The third flattening, *f = (a - b) / (a + b)*
+    /// The third flattening, *n = (a - b) / (a + b) = f / (2 - f)*
     pub fn third_flattening(&self) -> f64 {
-        let b = self.semiminor_axis();
-        (self.a - b) / (self.a + b)
+        self.f / (2.0 - self.f)
     }
 
-    /// The radius of curvature in the prime vertical *N*
+    /// The radius of curvature in the prime vertical, *N*
     pub fn prime_vertical_radius_of_curvature(&self, latitude: f64) -> f64 {
         if self.f == 0.0 {
             return self.a;
@@ -104,7 +101,7 @@ impl Ellipsoid {
         self.a / (1.0 - latitude.sin().powi(2) * self.eccentricity_squared()).sqrt()
     }
 
-    /// The meridian curvature *M*
+    /// The meridian curvature, *M*
     pub fn meridian_radius_of_curvature(&self, latitude: f64) -> f64 {
         if self.f == 0.0 {
             return self.a;
@@ -113,6 +110,9 @@ impl Ellipsoid {
         let denom = (1.0 - latitude.sin().powi(2) * self.eccentricity_squared()).powf(1.5);
         num / denom
     }
+
+    // Charles F.F. Karney: Algorithms for Geodesics. https://arxiv.org/pdf/1109.4448.pdf
+    // Rust implementation: https://docs.rs/crate/geographiclib-rs/0.2.0
 
     /// Geographic latitude to geocentric latitude
     /// (or vice versa if `forward` is `false`).
@@ -183,7 +183,7 @@ impl Ellipsoid {
         if p < 1.0e-12 {
             // The sign of Z determines the hemisphere
             let phi = FRAC_PI_2.copysign(Z);
-            // We have forced phi to one of the poles, so the height is Z - b
+            // We have forced phi to one of the poles, so the height is |Z| - b
             let h = Z.abs() - self.semiminor_axis();
             return CoordinateTuple::new(lam, phi, h, t);
         }

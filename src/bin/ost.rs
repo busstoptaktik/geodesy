@@ -1,6 +1,6 @@
 use geodesy::operators::operator_factory;
 use geodesy::operators::OperatorArgs;
-use geodesy::operators::OperatorWorkSpace;
+use geodesy::operators::Operand;
 use geodesy::operators::Steps;
 use yaml_rust::{Yaml, YamlLoader};
 
@@ -71,7 +71,7 @@ fn generic_experiment() -> Steps {
     println!("\nPap: {:?}\n", pap);
 
     println!("GENERIC *****************************");
-    let mut o = OperatorWorkSpace::new();
+    let mut o = Operand::new();
     let mut args = OperatorArgs::new();
     operator_factory("cart", &mut args);
     args.insert("dx", "1");

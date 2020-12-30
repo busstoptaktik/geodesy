@@ -1,6 +1,6 @@
 use super::OperatorArgs;
 use super::OperatorCore;
-use super::OperatorWorkSpace;
+use super::Operand;
 use crate::Ellipsoid;
 
 // For now, we just use the shrinkwrapped Ellipsoid-methods, but we can
@@ -21,12 +21,12 @@ impl Cart {
 }
 
 impl OperatorCore for Cart {
-    fn fwd(&self, ws: &mut OperatorWorkSpace) -> bool {
+    fn fwd(&self, ws: &mut Operand) -> bool {
         ws.coord = self.ellps.cartesian(&ws.coord);
         true
     }
 
-    fn inv(&self, ws: &mut OperatorWorkSpace) -> bool {
+    fn inv(&self, ws: &mut Operand) -> bool {
         ws.coord = self.ellps.geographic(&ws.coord);
         true
     }
@@ -49,7 +49,7 @@ mod tests {
     #[test]
     fn cart() {
         use super::*;
-        let mut o = OperatorWorkSpace::new();
+        let mut o = Operand::new();
         let mut args = OperatorArgs::new();
         args.insert("ellps", "intl");
 
