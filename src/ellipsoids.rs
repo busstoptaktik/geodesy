@@ -167,9 +167,34 @@ impl Ellipsoid {
         (latitude.tan() / (1.0 - self.f)).atan()
     }
 
+    /// Isometric latitude, 𝜓
     pub fn isometric_latitude(&self, latitude: f64) -> f64 {
         let e = self.eccentricity();
         latitude.tan().asinh() - (e * latitude.sin()).atanh() * e
+    }
+
+    /// The distance, `M`, along a meridian from the equator to the given
+    /// `latitude`.
+    ///
+    /// Following the remarkably simple algorithm by Bowring (1983).
+    ///
+    /// B. R. Bowring (1983), New equations for meridional distance.
+    /// [Bull. Geodesique 57, 374–381](https://doi.org/10.1007/BF02520940).
+    ///
+    /// See also
+    /// [Wikipedia: Transverse Mercator](https://en.wikipedia.org/wiki/Transverse_Mercator:_Bowring_series)
+    #[allow(non_snake_case)]
+    pub fn meridional_distance(&self, latitude: f64) -> f64 {
+        let n = self.third_flattening();
+        let m = 1.0 + n*n/8.0;
+        let A = self.a * m * m / (1.0 + n);
+        let B = 9.0 * (1.0 - 3.0 * n * n / 8.0);
+        let x = 1.0 + 13.0/12.0 * n * (2.0*latitude).cos();
+        let y = 0.0 + 13.0/12.0 * n * (2.0*latitude).sin();
+        let r = y.hypot(x);
+        let v = y.atan2(x);
+        let theta = latitude - B * r.powf(-2.0/13.0) * (2.0 * v / 13.0).sin();
+        A * theta
     }
 
     #[allow(non_snake_case)]
@@ -324,9 +349,10 @@ mod tests {
         assert!(ellps.reduced_latitude(0.0, true).abs() < 1.0e-10);
         assert!((ellps.reduced_latitude(FRAC_PI_2, true) - FRAC_PI_2).abs() < 1.0e-10);
 
-        // Isometric latitude
-        use std::f64::consts::FRAC_PI_4;
-        assert!((ellps.isometric_latitude(FRAC_PI_4).to_degrees() - 50.227465815385806).abs() < 1e-17);
+        // Isometric latitude, 𝜓
+        assert!((ellps.isometric_latitude(45f64.to_radians()) - 50.227465815385806f64.to_radians()).abs() < 1e-15);
 
+        // Meridional distance, M
+        assert!((ellps.meridional_distance(FRAC_PI_2) - ellps.meridian_quadrant()).abs() < 1e-15);
     }
 }
