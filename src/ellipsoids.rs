@@ -1,3 +1,5 @@
+//! Ellipsoids
+
 use crate::CoordinateTuple;
 use std::f64::consts::FRAC_PI_2;
 
@@ -46,15 +48,18 @@ impl Ellipsoid {
         self.name
     }
 
+
     /// The squared eccentricity *e² = (a² - b²) / a²*.
     pub fn eccentricity_squared(&self) -> f64 {
         self.f*(2_f64 - self.f)
     }
 
+
     /// The eccentricity *e*
     pub fn eccentricity(&self) -> f64 {
         self.eccentricity_squared().sqrt()
     }
+
 
     /// The squared second eccentricity *e'² = (a² - b²) / b² = e² / (1 - e²)*
     pub fn second_eccentricity_squared(&self) -> f64 {
@@ -62,25 +67,30 @@ impl Ellipsoid {
         es / (1.0 - es)
     }
 
+
     /// The second eccentricity *e'*
     pub fn second_eccentricity(&self) -> f64 {
         self.second_eccentricity_squared().sqrt()
     }
+
 
     /// The semiminor axis, *b*
     pub fn semiminor_axis(&self) -> f64 {
         self.a * (1.0 - self.f)
     }
 
+
     /// The semimajor axis, *a*
     pub fn semimajor_axis(&self) -> f64 {
         self.a
     }
 
+
     /// The flattening, *f = (a - b)/a*
     pub fn flattening(&self) -> f64 {
         self.f
     }
+
 
     /// The second flattening, *f = (a - b) / b*
     pub fn second_flattening(&self) -> f64 {
@@ -88,10 +98,12 @@ impl Ellipsoid {
         (self.a - b) / b
     }
 
+
     /// The third flattening, *n = (a - b) / (a + b) = f / (2 - f)*
     pub fn third_flattening(&self) -> f64 {
         self.f / (2.0 - self.f)
     }
+
 
     /// The radius of curvature in the prime vertical, *N*
     pub fn prime_vertical_radius_of_curvature(&self, latitude: f64) -> f64 {
@@ -100,6 +112,7 @@ impl Ellipsoid {
         }
         self.a / (1.0 - latitude.sin().powi(2) * self.eccentricity_squared()).sqrt()
     }
+
 
     /// The meridian curvature, *M*
     pub fn meridian_radius_of_curvature(&self, latitude: f64) -> f64 {
@@ -111,8 +124,29 @@ impl Ellipsoid {
         num / denom
     }
 
+
+    /// The Normalized Meridian Arc Unit, `Qn`, is the mean length of one radian
+    ///  of the meridian. "Normalized", because we measure it in units of the
+    /// semimajor axis, `a`.
+    /// König und Weise p.50 (96), p.19 (38b), p.5 (2)
+    pub fn normalized_meridian_arc_unit(&self) -> f64 {
+        let n = self.third_flattening();
+        let nn = n*n;
+        (1.0 + nn*(1.0/4.0 + nn*(1.0/64.0 + nn/256.0))) / (1.0 + n)
+    }
+
+
+    /// The Meridian Quadrant, `Qm`, is the distance from the equator to one of the poles.
+    /// i.e. `π/2 * Qn * a`, where `Qn` is the
+    /// [`normalized_meridian_arc_unit`](Ellipsoid::normalized_meridian_arc_unit)
+    pub fn meridian_quadrant(&self) -> f64 {
+        self.a * FRAC_PI_2 * self.normalized_meridian_arc_unit()
+    }
+
+
     // Charles F.F. Karney: Algorithms for Geodesics. https://arxiv.org/pdf/1109.4448.pdf
     // Rust implementation: https://docs.rs/crate/geographiclib-rs/0.2.0
+
 
     /// Geographic latitude to geocentric latitude
     /// (or vice versa if `forward` is `false`).
@@ -123,6 +157,7 @@ impl Ellipsoid {
         (latitude.tan() / (1.0 - self.eccentricity_squared())).atan()
     }
 
+
     /// Geographic latitude to reduced latitude
     /// (or vice versa if `forward` is  `false`).
     pub fn reduced_latitude(&self, latitude: f64, forward: bool) -> f64 {
@@ -130,6 +165,11 @@ impl Ellipsoid {
             return ((1.0 - self.f) * latitude.tan()).atan();
         }
         (latitude.tan() / (1.0 - self.f)).atan()
+    }
+
+    pub fn isometric_latitude(&self, latitude: f64) -> f64 {
+        let e = self.eccentricity();
+        latitude.tan().asinh() - (e * latitude.sin()).atanh() * e
     }
 
     #[allow(non_snake_case)]
@@ -237,6 +277,9 @@ mod tests {
         assert_eq!(ellps.f, 1. / 298.25722_21008_82711_24316);
         assert_eq!(ellps.name, "GRS80");
 
+        assert!((ellps.normalized_meridian_arc_unit() - 0.9983242984230415).abs() < 1e-13);
+        assert!((4.0 * ellps.meridian_quadrant() - 40007862.9169218).abs() < 1e-7);
+
         let ellps = Ellipsoid::new(ellps.a, ellps.f);
         assert_eq!(ellps.semimajor_axis(), 6378137.0);
         assert_eq!(ellps.flattening(), 1. / 298.25722_21008_82711_24316);
@@ -280,6 +323,10 @@ mod tests {
         assert!((lat-lat2) < 1.0e-12);
         assert!(ellps.reduced_latitude(0.0, true).abs() < 1.0e-10);
         assert!((ellps.reduced_latitude(FRAC_PI_2, true) - FRAC_PI_2).abs() < 1.0e-10);
+
+        // Isometric latitude
+        use std::f64::consts::FRAC_PI_4;
+        assert!((ellps.isometric_latitude(FRAC_PI_4).to_degrees() - 50.227465815385806).abs() < 1e-17);
 
     }
 }
