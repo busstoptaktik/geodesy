@@ -114,7 +114,7 @@ impl Ellipsoid {
     }
 
 
-    /// The meridian curvature, *M*
+    /// The meridian radius of curvature, *M*
     pub fn meridian_radius_of_curvature(&self, latitude: f64) -> f64 {
         if self.f == 0.0 {
             return self.a;
@@ -122,6 +122,12 @@ impl Ellipsoid {
         let num = self.a * (1.0 - self.eccentricity_squared());
         let denom = (1.0 - latitude.sin().powi(2) * self.eccentricity_squared()).powf(1.5);
         num / denom
+    }
+
+
+    /// The polar radius of curvature, *c*
+    pub fn polar_radius_of_curvature(&self) -> f64 {
+        self.a * self.a / self.semiminor_axis()
     }
 
 
@@ -321,6 +327,8 @@ mod tests {
         // The curvatures at the North Pole
         assert!((ellps.meridian_radius_of_curvature(90_f64.to_radians()) - 6_399_593.6259).abs() < 1.0e-4);
         assert!((ellps.prime_vertical_radius_of_curvature(90_f64.to_radians()) - 6_399_593.6259).abs() < 1.0e-4);
+        assert!((ellps.prime_vertical_radius_of_curvature(90_f64.to_radians()) - ellps.meridian_radius_of_curvature(90_f64.to_radians())).abs() < 1.0e-5);
+        assert!((ellps.polar_radius_of_curvature() - ellps.meridian_radius_of_curvature(90_f64.to_radians())).abs() < 1.0e-6);
 
         // The curvatures at the Equator
         assert!((ellps.meridian_radius_of_curvature(0.0) - 6_335_439.3271).abs() < 1.0e-4);
