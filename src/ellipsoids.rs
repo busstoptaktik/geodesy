@@ -179,7 +179,7 @@ impl Ellipsoid {
         latitude.tan().asinh() - (e * latitude.sin()).atanh() * e
     }
 
-    /// The distance, `M`, along a meridian from the equator to the given
+    /// The distance, *M*, along a meridian from the equator to the given
     /// `latitude`.
     ///
     /// Following the remarkably simple algorithm by Bowring (1983).
@@ -187,8 +187,10 @@ impl Ellipsoid {
     /// B. R. Bowring (1983), New equations for meridional distance.
     /// [Bull. Geodesique 57, 374–381](https://doi.org/10.1007/BF02520940).
     ///
+    ///    z/(e^z - 1) = \sum_{k=1}^\infty \frac {B_k}{k!} z^k.
+    ///
     /// See also
-    /// [Wikipedia: Transverse Mercator](https://en.wikipedia.org/wiki/Transverse_Mercator:_Bowring_series)
+    /// [Wikipedia: Transverse Mercator](https://en.wikipedia.org/wiki/Transverse_Mercator:_Bowring_series).
     #[allow(non_snake_case)]
     pub fn meridional_distance(&self, latitude: f64) -> f64 {
         let n = self.third_flattening();
@@ -223,14 +225,11 @@ impl Ellipsoid {
         CoordinateTuple::new(X, Y, Z, t)
     }
 
+    /// Cartesian to geogaphic conversion.
     ///
-    ///
-    /// B.R. Bowring (1976): Transformation from spatial to geographical coordinates.
-    ///     Survey Review 23(181), pp. 323–327
-    /// B.R. Bowring (1985): The accuracy of geodetic latitude and height equations,
-    ///     Survey Review, 28(218), pp.202-206, DOI: 10.1179/sre.1985.28.218.202
-    ///
-
+    /// Follows the the implementation given by
+    /// Bowring ([1976](crate::Bibliography::Bow76) and
+    /// [1985](crate::Bibliography::Bow85))
     #[allow(non_snake_case)]
     pub fn geographic(&self, cartesian: &CoordinateTuple) -> CoordinateTuple {
         let X = cartesian.first();
@@ -321,14 +320,14 @@ mod tests {
         assert!((ellps.eccentricity_squared() - 0.00669_43800_22903_41574).abs() < 1.0e-10);
 
         // Additional size descriptors
-        assert!((ellps.semiminor_axis() - 6_356_752.31414_0347).abs() < 1.0e-9);
-        assert!((ellps.semimajor_axis() - 6_378_137.0).abs() < 1.0e-9);
+        assert!((ellps.semiminor_axis() - 6_356_752.31414_0347).abs() < 1e-9);
+        assert!((ellps.semimajor_axis() - 6_378_137.0).abs() < 1e-9);
 
         // The curvatures at the North Pole
-        assert!((ellps.meridian_radius_of_curvature(90_f64.to_radians()) - 6_399_593.6259).abs() < 1.0e-4);
-        assert!((ellps.prime_vertical_radius_of_curvature(90_f64.to_radians()) - 6_399_593.6259).abs() < 1.0e-4);
-        assert!((ellps.prime_vertical_radius_of_curvature(90_f64.to_radians()) - ellps.meridian_radius_of_curvature(90_f64.to_radians())).abs() < 1.0e-5);
-        assert!((ellps.polar_radius_of_curvature() - ellps.meridian_radius_of_curvature(90_f64.to_radians())).abs() < 1.0e-6);
+        assert!((ellps.meridian_radius_of_curvature(90_f64.to_radians()) - 6_399_593.6259).abs() < 1e-4);
+        assert!((ellps.prime_vertical_radius_of_curvature(90_f64.to_radians()) - 6_399_593.6259).abs() < 1e-4);
+        assert!((ellps.prime_vertical_radius_of_curvature(90_f64.to_radians()) - ellps.meridian_radius_of_curvature(90_f64.to_radians())).abs() < 1e-5);
+        assert!((ellps.polar_radius_of_curvature() - ellps.meridian_radius_of_curvature(90_f64.to_radians())).abs() < 1e-6);
 
         // The curvatures at the Equator
         assert!((ellps.meridian_radius_of_curvature(0.0) - 6_335_439.3271).abs() < 1.0e-4);
@@ -360,7 +359,29 @@ mod tests {
         // Isometric latitude, 𝜓
         assert!((ellps.isometric_latitude(45f64.to_radians()) - 50.227465815385806f64.to_radians()).abs() < 1e-15);
 
+        // --------------------------------------------------------------------
         // Meridional distance, M
+        // --------------------------------------------------------------------
+
+        // Internal consistency: Check that at 90°, the meridional distance
+        // is identical to the meridian quadrant.
         assert!((ellps.meridional_distance(FRAC_PI_2) - ellps.meridian_quadrant()).abs() < 1e-15);
+
+        // Compare with Karney's algorithm for geodesics.
+        // We expect deviations to be less than 6 𝜇m.FRAC_PI_2
+
+        // Meridional distances for angles 0, 10, 20, 30 ... 90, obtained from Charles Karney's
+        // online geodesic solver, https://geographiclib.sourceforge.io/cgi-bin/GeodSolve
+        let s = [
+            0000000.000000000, 1105854.833198446, 2212366.254102976, 3320113.397845014, 4429529.030236580,
+            5540847.041560960, 6654072.819367435, 7768980.727655508, 8885139.871836751, 10001965.729230457
+        ];
+        for i in 0..s.len() {
+            assert!((ellps.meridional_distance((10.0*i as f64).to_radians()) - s[i]).abs() < 6e-6);
+        }
+
+        // Since we suspect the deviation might be worst at 45°, we check that as well
+        assert!((ellps.meridional_distance(45f64.to_radians()) - 4984944.377857987).abs() < 6e-6);
+
     }
 }
