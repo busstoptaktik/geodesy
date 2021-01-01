@@ -1,33 +1,50 @@
 use super::OperatorArgs;
 use super::OperatorCore;
 use super::Operand;
-use crate::Ellipsoid;
+use super::Operator;
+use super::operator_factory;
 
-// For now, we just use the shrinkwrapped Ellipsoid-methods, but we can
-// potentially speed up by extending struct Cart with additional
-// precomputed ellipsoidal parameters.
 pub struct Pipeline {
-    ellps: Ellipsoid,
+    name: String,
+    steps: Vec<Operator>,
     inverted: bool,
 }
 
 impl Pipeline {
     pub fn new(args: &mut OperatorArgs) -> Pipeline {
+        let inverted = args.flag("inv");
+        let mut steps: Vec<Operator> = Vec::new();
+        let n = args.numeric_value("_nsteps", 0.0) as usize;
+
+        for i in 0..n {
+            let step_name = format!("_step_{}", i);
+            let step_args = &args.args[&step_name];
+
+            // We need a copy of "all recursive globals so far"
+            let mut oa = OperatorArgs::new();
+            for (arg, val) in args.args.iter() {
+                oa.insert(arg, val);
+            }
+            oa.populate(step_args, "");
+            steps.push(operator_factory(&mut oa));
+            println!("****** STEPS: {:?}", steps[i].name());
+        }
         Pipeline {
-            ellps: Ellipsoid::named(&args.value("ellps", "GRS80")),
-            inverted: args.flag("inv"),
+            name: args.name.clone(),
+            inverted: inverted,
+            steps: steps
         }
     }
 }
 
 impl OperatorCore for Pipeline {
     fn fwd(&self, ws: &mut Operand) -> bool {
-        ws.coord = self.ellps.cartesian(&ws.coord);
+        // ws.coord = self.ellps.cartesian(&ws.coord);
         true
     }
 
     fn inv(&self, ws: &mut Operand) -> bool {
-        ws.coord = self.ellps.geographic(&ws.coord);
+        // ws.coord = self.ellps.geographic(&ws.coord);
         true
     }
 
@@ -44,14 +61,15 @@ impl OperatorCore for Pipeline {
 
 #[cfg(test)]
 mod tests {
-    use crate::operators::operator_factory;
 
     #[test]
     fn pipeline() {
         use super::*;
+        use crate::Ellipsoid;
         let mut o = Operand::new();
         let mut args = OperatorArgs::new();
         args.insert("ellps", "intl");
+        args.name("cart");
 
         let c = operator_factory("cart", &mut args);
 

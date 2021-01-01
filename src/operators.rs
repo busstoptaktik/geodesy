@@ -14,7 +14,6 @@ mod noop;
 mod pipeline;
 
 pub type Operator = Box<dyn OperatorCore>;
-pub type Steps = Vec<Operator>;
 
 
 #[derive(Debug)]
@@ -253,6 +252,10 @@ impl OperatorArgs {
 
 
 
+    pub fn name(&mut self, name: &str) {
+        self.name = name.to_string();
+    }
+
     pub fn insert(&mut self, key: &str, value: &str) {
         self.args.insert(key.to_string(), value.to_string());
     }
@@ -379,22 +382,23 @@ mod tests {
 }
 
 
-pub fn operator_factory(name: &str, args: &mut OperatorArgs) -> Operator {
+pub fn operator_factory(args: &mut OperatorArgs) -> Operator {
     use crate::operators as co;
-    if name == "badvalue" {
+
+    if args.name == "pipeline" || args.numeric_value("_nsteps", 0.0) as i64 > 0 {
+        return Box::new(co::pipeline::Pipeline::new(args));
+    }
+    if args.name == "badvalue" {
         return Box::new(co::badvalue::BadValue::new(args))
     }
-    if name == "cart" {
+    if args.name == "cart" {
         return Box::new(co::cart::Cart::new(args));
     }
-    if name == "helmert" {
+    if args.name == "helmert" {
         return Box::new(co::helmert::Helmert::new(args));
     }
-    if name == "noop" {
+    if args.name == "noop" {
         return Box::new(co::noop::Noop::new(args));
-    }
-    if name == "pipeline" {
-        return Box::new(co::pipeline::Pipeline::new(args));
     }
 
     // Herefter: Søg efter 'name' i filbøtten

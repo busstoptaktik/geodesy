@@ -1,7 +1,7 @@
 use geodesy::operators::operator_factory;
 use geodesy::operators::OperatorArgs;
 use geodesy::operators::Operand;
-use geodesy::operators::Steps;
+use geodesy::operators::Operator;
 use yaml_rust::{Yaml, YamlLoader};
 
 /*
@@ -43,7 +43,7 @@ fn salat_(py: Python) -> PyResult<()> {
 }
 */
 
-fn generic_experiment() -> Steps {
+fn generic_experiment() -> Vec<Operator> {
     // Se https://docs.rs/yaml-rust/0.4.4/yaml_rust/yaml/enum.Yaml.html
     let mut pap = OperatorArgs::new();
     let txt = std::fs::read_to_string("src/transformations.yml").unwrap();
@@ -73,13 +73,15 @@ fn generic_experiment() -> Steps {
     println!("GENERIC *****************************");
     let mut o = Operand::new();
     let mut args = OperatorArgs::new();
-    operator_factory("cart", &mut args);
+    args.name("cart");
+    operator_factory(&mut args);
     args.insert("dx", "1");
     args.insert("dy", "2");
     args.insert("dz", "3");
     println!("\nargs: {:?}\n", args);
-    let c = operator_factory("cart", &mut args);
-    let h = operator_factory("helm", &mut args);
+    let c = operator_factory(&mut args);
+    args.name("helm");
+    let h = operator_factory(&mut args);
 
     c.fwd(&mut o);
     println!("{:?}", o);
@@ -89,7 +91,7 @@ fn generic_experiment() -> Steps {
     println!("{}", c.name());
     println!("{}", h.name());
 
-    let mut pipeline: Steps = Vec::new();
+    let mut pipeline = Vec::new();
     pipeline.push(c);
     pipeline.push(h);
     for x in &pipeline {
