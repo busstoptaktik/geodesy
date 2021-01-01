@@ -76,6 +76,7 @@ pub trait OperatorCore {
 
 #[derive(Debug)]
 pub struct OperatorArgs {
+    name: String,
     args: HashMap<String, String>,
     used: HashMap<String, String>,
     all_used: HashMap<String, String>,
@@ -84,6 +85,7 @@ pub struct OperatorArgs {
 impl OperatorArgs {
     pub fn new() -> OperatorArgs {
         OperatorArgs {
+            name: String::new(),
             args: HashMap::new(),
             used: HashMap::new(),
             all_used: HashMap::new(),
@@ -93,6 +95,7 @@ impl OperatorArgs {
     /// Provides an OperatorArgs object, populated by the global defaults (`ellps: GRS80`)
     pub fn global_defaults() -> OperatorArgs {
         let mut op = OperatorArgs {
+            name: String::new(),
             args: HashMap::new(),
             used: HashMap::new(),
             all_used: HashMap::new(),
@@ -133,14 +136,45 @@ impl OperatorArgs {
     ///
     ///
     pub fn populate(&mut self, definition: &str, which: &str) -> bool {
-        // Read YAML-document, locate "name", extract steps and globals
-        let docs = YamlLoader::load_from_str(definition).unwrap();
-
-        // We copy the full text in the args, to enable recursive definitions
+        // First, we copy the full text in the args, to enable recursive definitions
         self.insert("_definition", definition);
 
+        // Read the entire YAML-document and extract the first sub-document
+        let docs = YamlLoader::load_from_str(definition).unwrap();
+        let main = &docs[0].as_hash();
+        if main.is_none() {
+            return self.badvalue("Cannot parse definition");
+        }
+        let main = main.unwrap();
+
+        // Is it conforming?
+        let it = main.iter();
+        let mut main_entry_name = which;
+        if main_entry_name == "" {
+            for (arg, val) in it {
+                if val.is_badvalue() {
+                    return self.badvalue("Cannot parse definition");
+                }
+                let name = &arg.as_str().unwrap();
+                if name.starts_with("_") {
+                    continue;
+                }
+                if main_entry_name != "" {
+                    return self.badvalue("Too many items in definition root");
+                }
+                main_entry_name = name;
+            }
+        }
+        self.name = main_entry_name.to_string();
+
+        // Grab the sub-tree defining 'main_entry_name'
+        let main_entry = &docs[0][main_entry_name];
+        if main_entry.is_badvalue() {
+            return self.badvalue("Cannot locate definition");
+        }
+
         // Loop over all globals and create corresponding OperartorArgs entries
-        let globals = &docs[0][which]["globals"].as_hash();
+        let globals = main_entry["globals"].as_hash();
         if globals.is_some() {
             let globals = globals.unwrap();
             for (arg, val) in globals.iter() {
@@ -160,14 +194,34 @@ impl OperatorArgs {
             }
         }
 
-        // Locate the step definitions, and insert the number of steps
-        // into the argument list
-        let steps = docs[0][which]["steps"].as_vec();
+        // Try to locate the step definitions, to determine whether we
+        // are handling a pipeline or a plain operator definition
+        let steps = main_entry["steps"].as_vec();
+
+        // Not a pipeline? Just insert the operator args and return
         if steps.is_none() {
-            self.insert("_nsteps", &0.to_string());
-            self.insert("_operator_name", "badvalue");
-            return false;
+            let args = main_entry.as_hash();
+            if args.is_none() {
+                return self.badvalue("Cannot read args");
+            }
+            let args = args.unwrap();
+            for (arg, val) in args.iter() {
+                let thearg = arg.as_str().unwrap();
+                let theval = match val {
+                    Yaml::Integer(val) => val.to_string(),
+                    Yaml::Real(val) => val.as_str().to_string(),
+                    Yaml::String(val) => val.to_string(),
+                    Yaml::Boolean(val) => val.to_string(),
+                    _ => "".to_string(),
+                };
+                if theval != "" {
+                    self.insert(thearg, &theval);
+                }
+            }
+            return true;
         }
+
+        // It's a pipeline - insert the number of steps into the argument list.
         let steps = steps.unwrap();
         let nsteps = steps.len();
         self.insert("_nsteps", &nsteps.to_string());
@@ -189,6 +243,12 @@ impl OperatorArgs {
         }
 
         true
+    }
+
+    fn badvalue(&mut self, cause: &str) -> bool {
+        self.name = "badvalue".to_string();
+        self.insert("cause", cause);
+        false
     }
 
 
@@ -289,9 +349,21 @@ mod tests {
         use super::*;
         let mut args = OperatorArgs::global_defaults();
 
+        // Explicitly stating the name of the pipeline
         let txt = std::fs::read_to_string("tests/tests.yml").unwrap_or_default();
         assert!(args.populate(&txt, "pipeline"));
         assert_eq!(&args.value("_step_0", "    ")[0..4], "cart");
+
+        // Let populate() figure out what we want
+        let mut args = OperatorArgs::global_defaults();
+        assert!(args.populate(&txt, ""));
+        assert_eq!(&args.value("_step_0", "    ")[0..4], "cart");
+
+        // When op is not a pipeline
+        let mut args = OperatorArgs::global_defaults();
+        assert!(args.populate("cart: {ellps: intl}", ""));
+        assert_eq!(args.name, "cart");
+        assert_eq!(&args.value("ellps", ""), "intl");
     }
 
     #[test]

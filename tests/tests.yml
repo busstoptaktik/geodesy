@@ -14,11 +14,6 @@ pipeline:
     t: true
     inv: true
 
-  bananer: |
-      Et digt om
-          Fire grønne
-          Bananer
-
   steps:
     - cart: {ellps: intl}
     - helmert: {dx: -87., dy: -96, dz: -120.}
@@ -29,11 +24,12 @@ pipeline:
                 Fire grønne
                 Bananer
 
-hundehvalp:
+_hundehvalp:
   steps:
     - cart: {ellps: intl}
     - helmert: {dx: -87., dy: -96, dz: -120.}
     - cart: {inv: true, ellps: GRS80}
+
 
 ---
 

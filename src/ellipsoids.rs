@@ -227,7 +227,7 @@ impl Ellipsoid {
 
     /// Cartesian to geogaphic conversion.
     ///
-    /// Follows the the implementation given by
+    /// Follows the the derivation given by
     /// Bowring ([1976](crate::Bibliography::Bow76) and
     /// [1985](crate::Bibliography::Bow85))
     #[allow(non_snake_case)]
