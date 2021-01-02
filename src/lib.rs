@@ -24,5 +24,24 @@ pub enum Bibliography {
     Bow76,
     /// B.R. Bowring (1985): *The accuracy of geodetic latitude and height equations*.
     /// Survey Review, 28(218), pp.202-206, DOI: 10.1179/sre.1985.28.218.202
-    Bow85
+    Bow85,
+
+    /// Charles F.F. Karney (2011): *Transverse Mercator with an accuracy of a few nanometers*.
+    /// J. Geodesy. 85(8): 475–485.
+    /// arXiv:1002.1417. Bibcode:2011JGeod..85..475K.
+    /// doi:10.1007/s00190-011-0445-3. S2CID 118619524.
+    Kar11,
+
+    /// R.E. Deakin, M.N. Hunter and C.F.F. Karney (2012):
+    /// A fresh look at the UTM projection:
+    /// Karney-Krueger equations.
+    /// Surveying and Spatial Sciences Institute (SSSI)
+    /// Land Surveying Commission National Conference,
+    /// Melbourne, 18-21 April, 2012
+    Dea12,
+
+    /// Krüger, L. (1912). Konforme Abbildung des Erdellipsoids in der Ebene.
+    /// Royal Prussian Geodetic Institute, New Series 52.
+    /// https://dx.doi.org/10.2312/GFZ.b103-krueger28
+    Kru12,
 }

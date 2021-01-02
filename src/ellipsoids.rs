@@ -131,20 +131,37 @@ impl Ellipsoid {
     }
 
 
-    /// The Normalized Meridian Arc Unit, `Qn`, is the mean length of one radian
+    /// The Normalized Meridian Arc Unit, *Qn*, is the mean length of one radian
     ///  of the meridian. "Normalized", because we measure it in units of the
-    /// semimajor axis, `a`.
-    /// König und Weise p.50 (96), p.19 (38b), p.5 (2)
+    /// semimajor axis, *a*.
+    ///
+    /// König und Weise p.50 (96), p.19 (38b), p.5 (2), here using the extended
+    /// version from [Deakin et al 2012](crate::Bibliography::Dea12) eq. (41)
     pub fn normalized_meridian_arc_unit(&self) -> f64 {
         let n = self.third_flattening();
         let nn = n*n;
-        (1.0 + nn*(1.0/4.0 + nn*(1.0/64.0 + nn/256.0))) / (1.0 + n)
+        (1. + nn*(1./4. + nn*(1./64. + nn*(1./256. + 25.*nn/16384.)))) / (1.0 + n)
     }
 
 
-    /// The Meridian Quadrant, `Qm`, is the distance from the equator to one of the poles.
-    /// i.e. `π/2 * Qn * a`, where `Qn` is the
-    /// [`normalized_meridian_arc_unit`](Ellipsoid::normalized_meridian_arc_unit)
+    /// The rectifying radius, *A*, is the radius of a sphere of the same circumference
+    /// as the length of a full meridian on the ellipsoid.
+    ///
+    /// Closely related to the [normalized meridian arc unit](Ellipsoid::normalized_meridian_arc_unit).
+    ///
+    /// [Deakin et al 2012](crate::Bibliography::Dea12) eq. (41)
+    pub fn rectifying_radius(&self) -> f64 {
+        let n = self.third_flattening();
+        let nn = n*n;
+        let d = (1. + nn*(1./4. + nn*(1./64. + nn*(1./256. + 25.*nn/16384.)))) / (1.0 + n);
+
+        self.a * d / (1.+ n)
+    }
+
+
+    /// The Meridian Quadrant, *Qm*, is the distance from the equator to one of the poles.
+    /// i.e. *π/2 ·	Qn · a*, where *Qn* is the
+    /// [normalized meridian arc unit](Ellipsoid::normalized_meridian_arc_unit)
     pub fn meridian_quadrant(&self) -> f64 {
         self.a * FRAC_PI_2 * self.normalized_meridian_arc_unit()
     }
@@ -180,29 +197,45 @@ impl Ellipsoid {
     }
 
     /// The distance, *M*, along a meridian from the equator to the given
-    /// `latitude`.
+    /// latitude.
     ///
     /// Following the remarkably simple algorithm by Bowring (1983).
     ///
     /// B. R. Bowring (1983), New equations for meridional distance.
     /// [Bull. Geodesique 57, 374–381](https://doi.org/10.1007/BF02520940).
     ///
-    ///    z/(e^z - 1) = \sum_{k=1}^\infty \frac {B_k}{k!} z^k.
     ///
     /// See also
     /// [Wikipedia: Transverse Mercator](https://en.wikipedia.org/wiki/Transverse_Mercator:_Bowring_series).
+    ///
+    /// [Deakin et al](crate::Bibliography::Dea12) provides a higher order (*n⁸*) derivation.
+    ///
     #[allow(non_snake_case)]
-    pub fn meridional_distance(&self, latitude: f64) -> f64 {
+    pub fn meridional_distance(&self, latitude: f64, forward: bool) -> f64 {
         let n = self.third_flattening();
-        let m = 1.0 + n*n/8.0;
-        let A = self.a * m * m / (1.0 + n);
-        let B = 9.0 * (1.0 - 3.0 * n * n / 8.0);
-        let x = 1.0 + 13.0/12.0 * n * (2.0*latitude).cos();
-        let y = 0.0 + 13.0/12.0 * n * (2.0*latitude).sin();
+        let m = 1. + n * n / 8.;
+
+        // Rectifying radius - truncated after the n⁴ term
+        let A = self.a * m * m / (1. + n);
+
+        if forward {
+            let B = 9. * (1. - 3. * n * n / 8.0);
+            let x = 1. + 13./12. * n * (2.* latitude).cos();
+            let y = 0. + 13./12. * n * (2.* latitude).sin();
+            let r = y.hypot(x);
+            let v = y.atan2(x);
+            let theta = latitude - B * r.powf(-2./13.) * (2. * v / 13.).sin();
+            return A * theta;
+        }
+
+        let C = 1. - 9. * n * n / 16.;
+        let theta = latitude / A;
+        let x = 1. - 155. / 84. * n * (2. * theta).cos();
+        let y = 0. + 155. / 84. * n * (2. * theta).sin();
         let r = y.hypot(x);
         let v = y.atan2(x);
-        let theta = latitude - B * r.powf(-2.0/13.0) * (2.0 * v / 13.0).sin();
-        A * theta
+
+        theta + 63./4. * C * r.powf(8./155.) * (8./155. * v).sin()
     }
 
     #[allow(non_snake_case)]
@@ -359,16 +392,39 @@ mod tests {
         // Isometric latitude, 𝜓
         assert!((ellps.isometric_latitude(45f64.to_radians()) - 50.227465815385806f64.to_radians()).abs() < 1e-15);
 
+        // Rectifying radius, A
+        assert!((ellps.rectifying_radius() - 6356774.720017125).abs() < 1e-9);
+
         // --------------------------------------------------------------------
         // Meridional distance, M
         // --------------------------------------------------------------------
 
         // Internal consistency: Check that at 90°, the meridional distance
         // is identical to the meridian quadrant.
-        assert!((ellps.meridional_distance(FRAC_PI_2) - ellps.meridian_quadrant()).abs() < 1e-15);
+        assert!((ellps.meridional_distance(FRAC_PI_2, true) - ellps.meridian_quadrant()).abs() < 1e-15);
+        assert!((ellps.meridional_distance(ellps.meridian_quadrant(), false) - FRAC_PI_2).abs() < 1e-15);
+
+        // Internal consistency: Roundtrip replication accuracy.
+        for i in 0..10 {
+            // latitude -> distance -> latitude
+            let b = (10. * i as f64).to_radians();
+            assert!((
+                ellps.meridional_distance(
+                    ellps.meridional_distance(b, true), false
+                ) - b
+            ).abs() < 5e-11);
+
+            // distance -> latitude -> distance;
+            let d = 1_000_000. * i as f64;
+            assert!((
+                ellps.meridional_distance(
+                    ellps.meridional_distance(d, false), true
+                ) - d
+            ).abs() < 6e-5);
+        }
 
         // Compare with Karney's algorithm for geodesics.
-        // We expect deviations to be less than 6 𝜇m.FRAC_PI_2
+        // We expect deviations to be less than 6 𝜇m.
 
         // Meridional distances for angles 0, 10, 20, 30 ... 90, obtained from Charles Karney's
         // online geodesic solver, https://geographiclib.sourceforge.io/cgi-bin/GeodSolve
@@ -377,11 +433,13 @@ mod tests {
             5540847.041560960, 6654072.819367435, 7768980.727655508, 8885139.871836751, 10001965.729230457
         ];
         for i in 0..s.len() {
-            assert!((ellps.meridional_distance((10.0*i as f64).to_radians()) - s[i]).abs() < 6e-6);
+            assert!((ellps.meridional_distance((10.0*i as f64).to_radians(), true) - s[i]).abs() < 6e-6);
+            assert!((ellps.meridional_distance(s[i], false) - (10.0*i as f64).to_radians()).abs() < 6e-11);
         }
 
         // Since we suspect the deviation might be worst at 45°, we check that as well
-        assert!((ellps.meridional_distance(45f64.to_radians()) - 4984944.377857987).abs() < 6e-6);
+        assert!((ellps.meridional_distance(45f64.to_radians(), true) - 4984944.377857987).abs() < 4e-6);
+        assert!((ellps.meridional_distance(4984944.377857987, false) - 45f64.to_radians()).abs() < 4e-6);
 
     }
 }

@@ -23,13 +23,13 @@ impl Cart {
 }
 
 impl OperatorCore for Cart {
-    fn fwd(&self, ws: &mut Operand) -> bool {
-        ws.coord = self.ellps.cartesian(&ws.coord);
+    fn fwd(&self, operand: &mut Operand) -> bool {
+        operand.coord = self.ellps.cartesian(&operand.coord);
         true
     }
 
-    fn inv(&self, ws: &mut Operand) -> bool {
-        ws.coord = self.ellps.geographic(&ws.coord);
+    fn inv(&self, operand: &mut Operand) -> bool {
+        operand.coord = self.ellps.geographic(&operand.coord);
         true
     }
 
@@ -44,7 +44,6 @@ impl OperatorCore for Cart {
     fn args(&self, _step: usize) -> &OperatorArgs {
         &self.args
     }
-
 }
 
 

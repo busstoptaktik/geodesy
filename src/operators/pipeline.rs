@@ -37,13 +37,21 @@ impl Pipeline {
 }
 
 impl OperatorCore for Pipeline {
-    fn fwd(&self, ws: &mut Operand) -> bool {
-        // ws.coord = self.ellps.cartesian(&ws.coord);
+    fn fwd(&self, operand: &mut Operand) -> bool {
+        for step in &self.steps {
+            if !step.operate(operand, true) {
+                return false
+            }
+        }
         true
     }
 
-    fn inv(&self, ws: &mut Operand) -> bool {
-        // ws.coord = self.ellps.geographic(&ws.coord);
+    fn inv(&self, operand: &mut Operand) -> bool {
+        for step in self.steps.iter().rev() {
+            if !step.operate(operand, false) {
+                return false
+            }
+        }
         true
     }
 
@@ -115,48 +123,55 @@ mod tests {
         args.populate(&pipeline, "");
         let op = Pipeline::new(&mut args);
 
-        // Check that the steps are as expected
+        // Check step-by-step that the pipeline was formed as expected
         assert_eq!(op.steps(), 3);
         assert_eq!(op.steps[0].name(), "cart");
         assert_eq!(op.steps[0].is_inverted(), false);
+
         assert_eq!(op.steps[1].name(), "helmert");
         assert_eq!(op.steps[1].is_inverted(), false);
+
         assert_eq!(op.steps[2].name(), "cart");
         assert_eq!(op.steps[2].is_inverted(), true);
 
         // Check that definition argument introspection works
         assert_eq!(op.args(0).used["ellps"], "intl");
+
         assert_eq!(op.args(1).used["dx"], "-87");
         assert_eq!(op.args(1).used["dy"], "-96");
         assert_eq!(op.args(1).used["dz"], "-120");
+
+        // Note: It's superfluous to give the arg "ellps: GRS80", so it is not registered as "used"
         assert_eq!(op.args(2).used["inv"], "true");
-        // Note: Superfluous to give the arg "ellps: GRS80", so it is not registered as "used"
         assert!(op.args(2).used.get("ellps").is_none());
 
+        // -------------------------------------------------------------------------
+        // This is the first example of a running pipeline in Rust Geodesy. Awesome!
+        let mut operand = Operand::new();
+        operand.coord = crate::CoordinateTuple(12f64.to_radians(), 55f64.to_radians(), 100., 0.);
+        /* DRUM ROLL... */ op.operate(&mut operand, true); // TA-DAA!
 
-        /*
-        // First check that (0,0,0) takes us to (a,0,0)
-        c.fwd(&mut o);
-        let a = Ellipsoid::named("intl").semimajor_axis();
-        assert_eq!(o.coord.0, a);
-        assert_eq!(o.coord.1, 0.0);
-        assert_eq!(o.coord.1, 0.0);
+        // For comparison: the point (12, 55, 100, 0) transformed by the cct
+        // application of the PROJ package yields:
+        // 11.998815342385206861  54.999382648950991381  131.202401081100106239  0.0000
+        // cct -d18 proj=pipeline step proj=cart ellps=intl step proj=helmert x=-87 y=-96 z=-120 step proj=cart inv --
+        operand.coord.0 = operand.coord.0.to_degrees();
+        operand.coord.1 = operand.coord.1.to_degrees();
+        assert!((operand.coord.0 - 11.998815342385206861).abs() < 1e-10);
+        assert!((operand.coord.1 - 54.999382648950991381).abs() < 1e-10);
+        // We use an improved height expression, so this is better than PROJ
+        assert!((operand.coord.2 - 131.202401081100106239).abs() < 1e-8);
 
-        // Some arbitrary spot - southwest of Copenhagen
-        o.coord.0 = 12f64.to_radians();
-        o.coord.1 = 55f64.to_radians();
-        o.coord.2 = 100.0;
+        operand.coord.0 = operand.coord.0.to_radians();
+        operand.coord.1 = operand.coord.1.to_radians();
+        /* DRUM ROLL... */ op.operate(&mut operand, false); // TA-DAA!
+        operand.coord.0 = operand.coord.0.to_degrees();
+        operand.coord.1 = operand.coord.1.to_degrees();
+        assert!((operand.coord.0 - 12.).abs() < 1e-10);
+        assert!((operand.coord.1 - 55.).abs() < 1e-10);
+        // We use an improved height expression, so this is better than PROJ
+        assert!((operand.coord.2 - 100.).abs() < 1e-8);
 
-        // Roundtrip
-        c.fwd(&mut o);
-        c.inv(&mut o);
-
-        // And check that we're back
-        assert!((o.coord.first().to_degrees() -  12.).abs() < 1.0e-10);
-        assert!((o.coord.third() - 100.).abs() < 1.0e-10);
-        assert!((o.coord.second().to_degrees() - 55.).abs() < 1.0e-10);
-  */  }
-
-
-
+        // -------------------------------------------------------------------------
+    }
 }

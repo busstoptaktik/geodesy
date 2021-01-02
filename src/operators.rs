@@ -1,7 +1,5 @@
 use std::collections::HashMap;
-
 use yaml_rust::{Yaml, YamlEmitter, YamlLoader};
-
 use crate::CoordinateTuple;
 
 // Renovering af Poder/Engsager tmerc i B:\2019\Projects\FIRE\tramp\tramp\tramp.c
@@ -15,13 +13,13 @@ mod pipeline;
 
 pub type Operator = Box<dyn OperatorCore>;
 
-
 #[derive(Debug)]
 pub struct Operand {
     pub coord: CoordinateTuple,
     pub stack: Vec<f64>,
     pub coordinate_stack: Vec<CoordinateTuple>,
     pub last_failing_operation: &'static str,
+    pub cause: &'static str,
 }
 
 impl Operand {
@@ -31,17 +29,19 @@ impl Operand {
             stack: vec![],
             coordinate_stack: vec![],
             last_failing_operation: "",
+            cause: "",
         }
     }
 }
-
 
 
 pub trait OperatorCore {
     fn fwd(&self, ws: &mut Operand) -> bool;
 
     // implementations must override at least one of {inv, invertible}
-    fn inv(&self, _ws: &mut Operand) -> bool {
+    fn inv(&self, operand: &mut Operand) -> bool {
+        operand.last_failing_operation = self.name();
+        operand.cause = "Operator not invertible";
         false
     }
 
@@ -50,15 +50,14 @@ pub trait OperatorCore {
     }
 
     // operate fwd/inv, taking operator inversion into account
-    fn operate(&self, ws: &mut Operand, forward: bool) -> bool {
-        let inverted = self.is_inverted();
-        if (inverted && !forward) || (forward && !inverted) {
-            return self.fwd(ws)
+    fn operate(&self, operand: &mut Operand, forward: bool) -> bool {
+        // Short form of (inverted && !forward) || (forward && !inverted)
+        if self.is_inverted() != forward {
+            return self.fwd(operand)
         }
-        if !self.invertible() {
-            return false;
-        }
-        self.inv(ws)
+        // We do not need to check for self.invertible() here, since non-invertible
+        // operators will return false as per the default-defined fn inv() above.
+        self.inv(operand)
     }
 
     // number of steps. 1 unless the operator is a pipeline
