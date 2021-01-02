@@ -3,11 +3,12 @@ use super::OperatorCore;
 use super::Operand;
 
 pub struct Noop {
+    args: OperatorArgs
 }
 
 impl Noop {
-    pub fn new(_args: &mut OperatorArgs) -> Noop {
-        Noop{}
+    pub fn new(args: &mut OperatorArgs) -> Noop {
+        Noop{args: args.clone()}
     }
 }
 
@@ -31,6 +32,11 @@ impl OperatorCore for Noop {
     fn is_noop(&self) -> bool {
         true
     }
+
+    fn args(&self, _step: usize) -> &OperatorArgs {
+        &self.args
+    }
+
 }
 
 
@@ -43,7 +49,8 @@ mod tests {
         use super::*;
         let mut o = Operand::new();
         let mut args = OperatorArgs::new();
-        let c = operator_factory("noop", &mut args);
+        args.name("noop");
+        let c = operator_factory(&mut args);
 
         // Make sure we do not do anything
         c.fwd(&mut o);

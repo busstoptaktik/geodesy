@@ -9,6 +9,7 @@ use crate::Ellipsoid;
 pub struct Cart {
     ellps: Ellipsoid,
     inverted: bool,
+    args: OperatorArgs
 }
 
 impl Cart {
@@ -16,6 +17,7 @@ impl Cart {
         Cart {
             ellps: Ellipsoid::named(&args.value("ellps", "GRS80")),
             inverted: args.flag("inv"),
+            args: args.clone(),
         }
     }
 }
@@ -39,6 +41,10 @@ impl OperatorCore for Cart {
         self.inverted
     }
 
+    fn args(&self, _step: usize) -> &OperatorArgs {
+        &self.args
+    }
+
 }
 
 
@@ -51,9 +57,10 @@ mod tests {
         use super::*;
         let mut o = Operand::new();
         let mut args = OperatorArgs::new();
+        args.name("cart");
         args.insert("ellps", "intl");
 
-        let c = operator_factory("cart", &mut args);
+        let c = operator_factory(&mut args);
 
         // First check that (0,0,0) takes us to (a,0,0)
         c.fwd(&mut o);

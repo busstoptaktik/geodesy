@@ -44,9 +44,29 @@ pub trait OperatorCore {
     fn inv(&self, _ws: &mut Operand) -> bool {
         false
     }
+
     fn invertible(&self) -> bool {
         true
     }
+
+    // operate fwd/inv, taking operator inversion into account
+    fn operate(&self, ws: &mut Operand, forward: bool) -> bool {
+        let inverted = self.is_inverted();
+        if (inverted && !forward) || (forward && !inverted) {
+            return self.fwd(ws)
+        }
+        if !self.invertible() {
+            return false;
+        }
+        self.inv(ws)
+    }
+
+    // number of steps. 1 unless the operator is a pipeline
+    fn steps(&self) -> usize {
+        1 as usize
+    }
+
+    fn args(&self, step: usize) -> &OperatorArgs;
 
     fn name(&self) -> &'static str {
         "UNKNOWN"
@@ -66,14 +86,12 @@ pub trait OperatorCore {
         false
     }
 
-    //fn operate(&self, dir: bool) .. if inverted dir=!dir if dir fwd else inv
     //fn left(&self) -> CoordType;
     //fn right(&self) -> CoordType;
 }
 
 
-
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct OperatorArgs {
     name: String,
     args: HashMap<String, String>,
@@ -104,6 +122,19 @@ impl OperatorArgs {
     }
 
 
+    /// Provides an OperatorArgs object, populated by the defaults from an existing
+    pub fn with_globals_from(existing: &OperatorArgs, definition: &str, which: &str) -> OperatorArgs {
+        // We need a recursive copy of "all globals so far"
+        let mut oa = OperatorArgs::new();
+        for (arg, val) in &existing.args {
+            if arg.starts_with("_") || (arg == "inv") {
+                continue
+            }
+            oa.insert(arg, val);
+        }
+        oa.populate(definition, which);
+        oa
+    }
 
     ///
     /// Insert PROJ style operator definition arguments, converted from a YAML
@@ -147,10 +178,9 @@ impl OperatorArgs {
         let main = main.unwrap();
 
         // Is it conforming?
-        let it = main.iter();
         let mut main_entry_name = which;
         if main_entry_name == "" {
-            for (arg, val) in it {
+            for (arg, val) in main {
                 if val.is_badvalue() {
                     return self.badvalue("Cannot parse definition");
                 }
@@ -166,17 +196,17 @@ impl OperatorArgs {
         }
         self.name = main_entry_name.to_string();
 
-        // Grab the sub-tree defining 'main_entry_name'
+        // Grab the sub-tree defining the 'main_entry_name'
         let main_entry = &docs[0][main_entry_name];
         if main_entry.is_badvalue() {
             return self.badvalue("Cannot locate definition");
         }
 
-        // Loop over all globals and create corresponding OperartorArgs entries
+        // Loop over all globals and create the corresponding OperatorArgs entries
         let globals = main_entry["globals"].as_hash();
         if globals.is_some() {
             let globals = globals.unwrap();
-            for (arg, val) in globals.iter() {
+            for (arg, val) in globals {
                 let thearg = arg.as_str().unwrap();
                 if thearg != "inv" {
                     let theval = match val {
@@ -204,7 +234,7 @@ impl OperatorArgs {
                 return self.badvalue("Cannot read args");
             }
             let args = args.unwrap();
-            for (arg, val) in args.iter() {
+            for (arg, val) in args {
                 let thearg = arg.as_str().unwrap();
                 let theval = match val {
                     Yaml::Integer(val) => val.to_string(),

@@ -7,6 +7,7 @@ pub struct Helmert {
     dy: f64,
     dz: f64,
     inverted: bool,
+    args: OperatorArgs
 }
 
 impl Helmert {
@@ -16,6 +17,7 @@ impl Helmert {
             dy: args.numeric_value("dy", 0.0),
             dz: args.numeric_value("dz", 0.0),
             inverted: args.flag("inv"),
+            args: args.clone()
         }
     }
 }
@@ -42,6 +44,10 @@ impl OperatorCore for Helmert {
     fn is_inverted(&self) -> bool {
         self.inverted
     }
+
+    fn args(&self, _step: usize) -> &OperatorArgs {
+        &self.args
+    }
 }
 
 #[cfg(test)]
@@ -53,12 +59,13 @@ mod tests {
         use super::*;
         let mut o = Operand::new();
         let mut args = OperatorArgs::new();
+        args.name("helmert");
         // EPSG:1134 - 3 parameter, ED50/WGS84, s = sqrt(27) m
         args.insert("dx", "-87");
         args.insert("dy", "-96");
         args.insert("dz", "-120");
         assert_eq!(args.value("dz", ""), "-120");
-        let h = operator_factory("helmert", &mut args);
+        let h = operator_factory(&mut args);
         h.fwd(&mut o);
         assert_eq!(o.coord.first(),  -87.);
         assert_eq!(o.coord.second(), -96.);
