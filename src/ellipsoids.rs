@@ -48,6 +48,7 @@ impl Ellipsoid {
         self.name
     }
 
+    // ----- Eccentricities --------------------------------------------------------
 
     /// The squared eccentricity *e² = (a² - b²) / a²*.
     pub fn eccentricity_squared(&self) -> f64 {
@@ -74,6 +75,9 @@ impl Ellipsoid {
     }
 
 
+    // ----- Axes ------------------------------------------------------------------
+
+
     /// The semiminor axis, *b*
     pub fn semiminor_axis(&self) -> f64 {
         self.a * (1.0 - self.f)
@@ -84,6 +88,9 @@ impl Ellipsoid {
     pub fn semimajor_axis(&self) -> f64 {
         self.a
     }
+
+
+    // ----- Flatteningss ----------------------------------------------------------
 
 
     /// The flattening, *f = (a - b)/a*
@@ -103,6 +110,9 @@ impl Ellipsoid {
     pub fn third_flattening(&self) -> f64 {
         self.f / (2.0 - self.f)
     }
+
+
+    // ----- Curvatures ------------------------------------------------------------
 
 
     /// The radius of curvature in the prime vertical, *N*
@@ -129,6 +139,9 @@ impl Ellipsoid {
     pub fn polar_radius_of_curvature(&self) -> f64 {
         self.a * self.a / self.semiminor_axis()
     }
+
+
+    // ----- Meridian geometry -----------------------------------------------------
 
 
     /// The Normalized Meridian Arc Unit, *Qn*, is the mean length of one radian
@@ -166,35 +179,6 @@ impl Ellipsoid {
         self.a * FRAC_PI_2 * self.normalized_meridian_arc_unit()
     }
 
-
-    // Charles F.F. Karney: Algorithms for Geodesics. https://arxiv.org/pdf/1109.4448.pdf
-    // Rust implementation: https://docs.rs/crate/geographiclib-rs/0.2.0
-
-
-    /// Geographic latitude to geocentric latitude
-    /// (or vice versa if `forward` is `false`).
-    pub fn geocentric_latitude(&self, latitude: f64, forward: bool) -> f64 {
-        if forward {
-            return ((1.0 - self.f * (2.0 - self.f)) * latitude.tan()).atan();
-        }
-        (latitude.tan() / (1.0 - self.eccentricity_squared())).atan()
-    }
-
-
-    /// Geographic latitude to reduced latitude
-    /// (or vice versa if `forward` is  `false`).
-    pub fn reduced_latitude(&self, latitude: f64, forward: bool) -> f64 {
-        if forward {
-            return ((1.0 - self.f) * latitude.tan()).atan();
-        }
-        (latitude.tan() / (1.0 - self.f)).atan()
-    }
-
-    /// Isometric latitude, 𝜓
-    pub fn isometric_latitude(&self, latitude: f64) -> f64 {
-        let e = self.eccentricity();
-        latitude.tan().asinh() - (e * latitude.sin()).atanh() * e
-    }
 
     /// The distance, *M*, along a meridian from the equator to the given
     /// latitude.
@@ -238,6 +222,48 @@ impl Ellipsoid {
         theta + 63./4. * C * r.powf(8./155.) * (8./155. * v).sin()
     }
 
+
+    // Charles F.F. Karney: Algorithms for Geodesics. https://arxiv.org/pdf/1109.4448.pdf
+    // Rust implementation: https://docs.rs/crate/geographiclib-rs/0.2.0
+
+
+    // ----- Latitudes -------------------------------------------------------------
+
+
+    /// Geographic latitude to geocentric latitude
+    /// (or vice versa if `forward` is `false`).
+    pub fn geocentric_latitude(&self, latitude: f64, forward: bool) -> f64 {
+        if forward {
+            return ((1.0 - self.f * (2.0 - self.f)) * latitude.tan()).atan();
+        }
+        (latitude.tan() / (1.0 - self.eccentricity_squared())).atan()
+    }
+
+
+    /// Geographic latitude to reduced latitude
+    /// (or vice versa if `forward` is  `false`).
+    pub fn reduced_latitude(&self, latitude: f64, forward: bool) -> f64 {
+        if forward {
+            return ((1.0 - self.f) * latitude.tan()).atan();
+        }
+        (latitude.tan() / (1.0 - self.f)).atan()
+    }
+
+    /// Isometric latitude, 𝜓
+    pub fn isometric_latitude(&self, latitude: f64) -> f64 {
+        let e = self.eccentricity();
+        latitude.tan().asinh() - (e * latitude.sin()).atanh() * e
+    }
+
+
+    // ----- Cartesian <--> Geographic conversion ----------------------------------
+
+
+    /// Geographic to cartesian conversion.
+    ///
+    /// Follows the the derivation given by
+    /// Bowring ([1976](crate::Bibliography::Bow76) and
+    /// [1985](crate::Bibliography::Bow85))
     #[allow(non_snake_case)]
     pub fn cartesian(&self, geographic: &CoordinateTuple) -> CoordinateTuple {
         let lam = geographic.first();
@@ -257,6 +283,7 @@ impl Ellipsoid {
 
         CoordinateTuple::new(X, Y, Z, t)
     }
+
 
     /// Cartesian to geogaphic conversion.
     ///
@@ -320,6 +347,9 @@ impl Ellipsoid {
     }
 
 }
+
+
+// ----- Tests ---------------------------------------------------------------------
 
 
 #[cfg(test)]

@@ -3,9 +3,6 @@ use super::OperatorCore;
 use super::Operand;
 use crate::Ellipsoid;
 
-// For now, we just use the shrinkwrapped Ellipsoid-methods, but we can
-// potentially speed up by extending struct Cart with additional
-// precomputed ellipsoidal parameters.
 pub struct Cart {
     ellps: Ellipsoid,
     inverted: bool,
@@ -23,6 +20,11 @@ impl Cart {
 }
 
 impl OperatorCore for Cart {
+    // For now, we just use the shrinkwrapped Ellipsoid-methods in
+    // fwd() and inv(). But we can potentially speed up by
+    // extending struct Cart with additional precomputed ellipsoidal
+    // parameters, so we don't need to let Ellipsoid:: compute them
+    // over and over on each invocation.
     fn fwd(&self, operand: &mut Operand) -> bool {
         operand.coord = self.ellps.cartesian(&operand.coord);
         true

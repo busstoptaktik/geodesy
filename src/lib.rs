@@ -23,8 +23,15 @@ pub enum Bibliography {
     /// Survey Review 23(181), pp. 323–327
     Bow76,
     /// B.R. Bowring (1985): *The accuracy of geodetic latitude and height equations*.
-    /// Survey Review, 28(218), pp.202-206, DOI: 10.1179/sre.1985.28.218.202
+    /// Survey Review, 28(218), pp.202-206,
+    /// [DOI](https://doi.org/10.1179/sre.1985.28.218.202)
     Bow85,
+
+    /// B.R. Bowring (1989): *Transverse mercator equations obtained from a spherical basis*.
+    /// Survey Review 30(233), pp.125-133,
+    /// [DOI](https://doi.org/10.1179/sre.1989.30.233.125)
+    /// (See also [Transverse Mercator: Bowring series](https://en.wikipedia.org/wiki/Transverse_Mercator:_Bowring_series)).
+    Bow89,
 
     /// Charles F.F. Karney (2011): *Transverse Mercator with an accuracy of a few nanometers*.
     /// J. Geodesy. 85(8): 475–485.

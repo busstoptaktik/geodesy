@@ -122,8 +122,8 @@ impl OperatorArgs {
 
 
     /// Provides an OperatorArgs object, populated by the defaults from an existing
+    /// OperatorArgs, combined with a new object definition.
     pub fn with_globals_from(existing: &OperatorArgs, definition: &str, which: &str) -> OperatorArgs {
-        // We need a recursive copy of "all globals so far"
         let mut oa = OperatorArgs::new();
         for (arg, val) in &existing.args {
             if arg.starts_with("_") || (arg == "inv") {
@@ -414,6 +414,8 @@ mod tests {
 pub fn operator_factory(args: &mut OperatorArgs) -> Operator {
     use crate::operators as co;
 
+    // Pipelines do not need to be named "pipeline": They are characterized simply
+    // by containing steps.
     if args.name == "pipeline" || args.numeric_value("_nsteps", 0.0) as i64 > 0 {
         return Box::new(co::pipeline::Pipeline::new(args));
     }

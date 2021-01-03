@@ -1,3 +1,5 @@
+//! For now, Helmert only supports the basic 3-parameter version
+
 use super::OperatorArgs;
 use super::OperatorCore;
 use super::Operand;
