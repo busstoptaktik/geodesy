@@ -10,6 +10,7 @@ mod cart;
 mod helmert;
 mod noop;
 mod pipeline;
+mod tmerc;
 
 pub type Operator = Box<dyn OperatorCore>;
 
@@ -427,6 +428,12 @@ pub fn operator_factory(args: &mut OperatorArgs) -> Operator {
     }
     if args.name == "helmert" {
         return Box::new(co::helmert::Helmert::new(args));
+    }
+    if args.name == "tmerc" {
+        return Box::new(co::tmerc::Tmerc::new(args));
+    }
+    if args.name == "utm" {
+        return Box::new(co::tmerc::Tmerc::utm(args));
     }
     if args.name == "noop" {
         return Box::new(co::noop::Noop::new(args));
