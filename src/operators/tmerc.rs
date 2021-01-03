@@ -12,6 +12,7 @@ pub struct Tmerc {
     eps: f64,
     k_0: f64,
     lon_0: f64,
+    lat_0: f64,
     x_0: f64,
     y_0: f64,
     args: OperatorArgs,
@@ -26,6 +27,7 @@ impl Tmerc {
             args: args.clone(),
             k_0: args.numeric_value("k_0", 1.),
             lon_0: args.numeric_value("lon_0", 0.).to_radians(),
+            lat_0: args.numeric_value("lat_0", 0.).to_radians(),
             x_0: args.numeric_value("x_0", 0.),
             y_0: args.numeric_value("y_0", 0.),
             eps: ellps.second_eccentricity_squared(),
@@ -41,6 +43,7 @@ impl Tmerc {
             args: args.clone(),
             k_0: 0.9996,
             lon_0: (-177. + 6.*(zone - 1.)).to_radians(),
+            lat_0: 0.,
             x_0: 500000.,
             y_0: 0.,
             eps: ellps.second_eccentricity_squared(),
@@ -87,19 +90,26 @@ impl OperatorCore for Tmerc {
         // Footpoint latitude, i.e. the latitude of a point on the central meridian
         // having the same northing as the point of interest
         let lat = self.ellps.meridional_distance((operand.coord.1 - self.y_0)/self.k_0, false);
+//      println!("lat_f: {}", lat.to_degrees());
         let t = lat.tan();
         let c = lat.cos();
         let cc = c * c;
         let N = self.ellps.prime_vertical_radius_of_curvature(lat);
+//      println!("N: {}", N);
         let x = (operand.coord.0 - self.x_0) / (self.k_0 * N);
+        let xx = x * x;
         let theta_4 = x.sinh().atan2(c);
         let theta_5 = (t * theta_4.cos()).atan();
 
         // Latitude
-        lat xt = self.eps * x.powi(4) * t / 24.
-        operand.coord.1 = (1 + cc * self.eps) * (theta_5 - xt * (9. - 10. * cc))
+        let xet = xx*xx * self.eps * t / 24.;
+        operand.coord.1 = self.lat_0 + (1. + cc * self.eps)
+                        * (theta_5 - xet * (9. - 10. * cc))
+                        - self.eps * cc * lat;
 
-
+        // Longitude
+        operand.coord.0 = self.lon_0 + theta_4
+                        + self.eps/60. * xx*x * c * (10. - 4.*xx/cc + xx*cc);
         true
     }
 
@@ -138,6 +148,14 @@ mod tests {
         assert!((operand.coord.1 - 6098907.825005011633038521).abs() < 1e-5);
 
         // Roundtrip...
+        op.inv(&mut operand);
+
+        // The latitude roundtrips beautifully, at better than 0.1 mm
+        println!("LAT: {}", operand.coord.1.to_degrees());
+        assert!((operand.coord.1.to_degrees() - 55.0).abs()*111_000_000. < 0.05);
+
+        // The longitude is much worse - slightly worse than a decimeter.
+        assert!((operand.coord.0.to_degrees() - 12.0).abs()*55_500_000. < 111.);
     }
 
     #[test]
