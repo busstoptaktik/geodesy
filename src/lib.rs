@@ -23,7 +23,8 @@ pub const INV: bool = false;
 /// Literature, that has been useful in designing and implementing this library.
 pub enum Bibliography {
     /// B.R. Bowring (1976): *Transformation from spatial to geographical coordinates*.
-    /// Survey Review 23(181), pp. 323–327
+    /// Survey Review 23(181), pp. 323–327.
+    ///
     Bow76,
     /// B.R. Bowring (1985): *The accuracy of geodetic latitude and height equations*.
     /// Survey Review, 28(218), pp.202-206,

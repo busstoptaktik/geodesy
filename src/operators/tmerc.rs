@@ -53,6 +53,7 @@ impl Tmerc {
 
 #[allow(non_snake_case)]
 impl OperatorCore for Tmerc {
+    // Forward transverse mercator, following Bowring
     fn fwd(&self, operand: &mut Operand) -> bool {
         let lat = operand.coord.1;
         let c = lat.cos();
@@ -86,16 +87,15 @@ impl OperatorCore for Tmerc {
         true
     }
 
+    // Forward transverse mercator, following Bowring (1989)
     fn inv(&self, operand: &mut Operand) -> bool {
         // Footpoint latitude, i.e. the latitude of a point on the central meridian
         // having the same northing as the point of interest
         let lat = self.ellps.meridional_distance((operand.coord.1 - self.y_0)/self.k_0, false);
-//      println!("lat_f: {}", lat.to_degrees());
         let t = lat.tan();
         let c = lat.cos();
         let cc = c * c;
         let N = self.ellps.prime_vertical_radius_of_curvature(lat);
-//      println!("N: {}", N);
         let x = (operand.coord.0 - self.x_0) / (self.k_0 * N);
         let xx = x * x;
         let theta_4 = x.sinh().atan2(c);
@@ -108,8 +108,9 @@ impl OperatorCore for Tmerc {
                         - self.eps * cc * lat;
 
         // Longitude
-        operand.coord.0 = self.lon_0 + theta_4
-                        + self.eps/60. * xx*x * c * (10. - 4.*xx/cc + xx*cc);
+        let approx = self.lon_0 + theta_4;
+        let coef = self.eps/60. * xx*x * c;
+        operand.coord.0 = approx - coef * (10. - 4.*xx/cc + xx*cc);
         true
     }
 
@@ -151,11 +152,9 @@ mod tests {
         op.inv(&mut operand);
 
         // The latitude roundtrips beautifully, at better than 0.1 mm
-        println!("LAT: {}", operand.coord.1.to_degrees());
         assert!((operand.coord.1.to_degrees() - 55.0).abs()*111_000_000. < 0.05);
-
-        // The longitude is much worse - slightly worse than a decimeter.
-        assert!((operand.coord.0.to_degrees() - 12.0).abs()*55_500_000. < 111.);
+        // And the longitude even trumps that by a factor of 10.
+        assert!((operand.coord.0.to_degrees() - 12.0).abs()*56_000_000. < 0.005);
     }
 
     #[test]
