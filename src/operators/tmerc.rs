@@ -25,18 +25,18 @@ impl Tmerc {
             ellps: ellps,
             inverted: args.flag("inv"),
             args: args.clone(),
-            k_0: args.numeric_value("k_0", 1.),
-            lon_0: args.numeric_value("lon_0", 0.).to_radians(),
-            lat_0: args.numeric_value("lat_0", 0.).to_radians(),
-            x_0: args.numeric_value("x_0", 0.),
-            y_0: args.numeric_value("y_0", 0.),
+            k_0: args.numeric_value("Tmerc", "k_0", 1.)?,
+            lon_0: args.numeric_value("Tmerc", "lon_0", 0.)?.to_radians(),
+            lat_0: args.numeric_value("Tmerc", "lat_0", 0.)?.to_radians(),
+            x_0: args.numeric_value("Tmerc", "x_0", 0.)?,
+            y_0: args.numeric_value("Tmerc", "y_0", 0.)?,
             eps: ellps.second_eccentricity_squared(),
         })
     }
 
     pub fn utm(args: &mut OperatorArgs) ->  Result <Tmerc, String> {
         let ellps = Ellipsoid::named(&args.value("ellps", "GRS80"));
-        let zone = args.numeric_value("zone", f64::NAN);
+        let zone = args.numeric_value("Utm", "zone", f64::NAN)?;
         Ok(Tmerc {
             ellps: ellps,
             inverted: args.flag("inv"),

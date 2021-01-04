@@ -1,12 +1,20 @@
-//! A playground for experimentation with alternative models for geodetic
-//! data flow and coordinate representation.
+//! *A playground for experimentation with alternative models for geodetic
+//! data flow and coordinate representation*.
+//!
+//! Bam bam bam
+//! ===========
 //!
 //! Specifically designed to facilitate experiments toward solving
 //! identified shortcomings in the [PROJ](https://proj.org) data flow,
 //! and the [ISO-19111](https://www.iso.org/standard/74039.html) model
 //! for referencing by coordinates.
 //!
+//! Bum bum bum
+//! -----------
+//!
 //! Thomas Knudsen, thokn@sdfe.dk, 2020/2021
+//!
+//!
 
 pub mod coordinates;
 pub mod ellipsoids;

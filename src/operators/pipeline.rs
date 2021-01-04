@@ -16,7 +16,7 @@ impl Pipeline {
     pub fn new(args: &mut OperatorArgs) -> Result <Pipeline, String> {
         let inverted = args.flag("inv");
         let mut steps = Vec::new();
-        let n = args.numeric_value("_nsteps", 0.0) as usize;
+        let n = args.numeric_value("Pipeline", "_nsteps", 0.0)? as usize;
 
         for i in 0..n {
             // Each step is represented as args[_step_0] = YAML step definition.

@@ -310,7 +310,7 @@ impl OperatorArgs {
         arg
     }
 
-    pub fn numeric_value(&mut self, key: &str, default: f64) -> f64 {
+    pub fn numaric_value(&mut self, key: &str, default: f64) -> f64 {
         let arg = self.value(key, "");
         // key not given: return default
         if arg == "" {
@@ -319,6 +319,25 @@ impl OperatorArgs {
         // key given, but not numeric: return NaN
         arg.parse().unwrap_or(f64::NAN)
     }
+
+    pub fn numeric_value(
+        &mut self,
+        operator_name: &str,
+        key: &str,
+        default: f64
+    ) -> Result<f64, String> {
+
+        let arg = self.value(key, "");
+        // key not given: return default
+        if arg == "" {
+            return Ok(default);
+        }
+        // key given, but not numeric: return None
+        let v = arg.parse();
+        if v.is_ok() { return Ok(v.unwrap()) }
+        Err(format!("{}: Got [{}: {}] - expected numeric value.", operator_name, key, arg))
+    }
+
 
     // If key is given, and value != false: true; else: false
     pub fn flag(&mut self, key: &str) -> bool {
@@ -349,7 +368,7 @@ mod tests {
         assert_eq!(args.used.len(), 2);
 
         assert_eq!("3", args.value("dz", ""));
-        assert_eq!(3.0, args.numeric_value("dz", 42.0));
+        assert_eq!(3.0, args.numeric_value("foo", "dz", 42.0).unwrap());
 
         assert_eq!(args.used.len(), 3);
         assert_eq!(args.all_used.len(), 5);
@@ -361,7 +380,7 @@ mod tests {
 
         // Finally one for testing NAN returned for non-numerics
         args.insert("ds", "foo");
-        assert!(args.numeric_value("ds", 0.0).is_nan());
+        assert!(args.numeric_value("foo", "ds", 0.0).is_err());
     }
 
     #[test]
@@ -404,7 +423,7 @@ pub fn operator_factory(args: &mut OperatorArgs) -> Result <Operator, String> {
 
     // Pipelines do not need to be named "pipeline": They are characterized simply
     // by containing steps.
-    if args.name == "pipeline" || args.numeric_value("_nsteps", 0.0) as i64 > 0 {
+    if args.name == "pipeline" || args.numeric_value("operator_factory", "_nsteps", 0.0)? as i64 > 0 {
         let op = co::pipeline::Pipeline::new(args)?;
         return Ok(Box::new(op))
     }

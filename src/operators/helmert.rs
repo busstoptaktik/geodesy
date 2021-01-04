@@ -15,9 +15,9 @@ pub struct Helmert {
 impl Helmert {
     pub fn new(args: &mut OperatorArgs) -> Result <Helmert, String> {
         Ok(Helmert {
-            dx: args.numeric_value("dx", 0.0),
-            dy: args.numeric_value("dy", 0.0),
-            dz: args.numeric_value("dz", 0.0),
+            dx: args.numeric_value("Helmert", "dx", 0.0)?,
+            dy: args.numeric_value("Helmert", "dy", 0.0)?,
+            dz: args.numeric_value("Helmert", "dz", 0.0)?,
             inverted: args.flag("inv"),
             args: args.clone()
         })
@@ -61,13 +61,24 @@ mod tests {
         use super::*;
         let mut o = Operand::new();
         let mut args = OperatorArgs::new();
+
+        // Check that non-numeric value, for key expecting numeric, errs properly.
         args.name("helmert");
-        // EPSG:1134 - 3 parameter, ED50/WGS84, s = sqrt(27) m
-        args.insert("dx", "-87");
+        args.insert("dx", "foo");  // Bad value here.
         args.insert("dy", "-96");
         args.insert("dz", "-120");
+
+        let h = operator_factory(&mut args);
+        assert!(h.is_err());
+
+        // EPSG:1134 - 3 parameter, ED50/WGS84, s = sqrt(27) m
+        args.insert("dx", "-87");
+        assert_eq!(args.value("dx", ""), "-87");
+        assert_eq!(args.value("dy", ""), "-96");
         assert_eq!(args.value("dz", ""), "-120");
+
         let h = operator_factory(&mut args).unwrap();
+
         h.fwd(&mut o);
         assert_eq!(o.coord.first(),  -87.);
         assert_eq!(o.coord.second(), -96.);
