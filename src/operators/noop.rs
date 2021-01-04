@@ -7,8 +7,8 @@ pub struct Noop {
 }
 
 impl Noop {
-    pub fn new(args: &mut OperatorArgs) -> Noop {
-        Noop{args: args.clone()}
+    pub fn new(args: &mut OperatorArgs) -> Result <Noop, String> {
+        Ok(Noop{args: args.clone()})
     }
 }
 
@@ -29,10 +29,6 @@ impl OperatorCore for Noop {
         false
     }
 
-    fn is_noop(&self) -> bool {
-        true
-    }
-
     fn args(&self, _step: usize) -> &OperatorArgs {
         &self.args
     }
@@ -50,7 +46,7 @@ mod tests {
         let mut o = Operand::new();
         let mut args = OperatorArgs::new();
         args.name("noop");
-        let c = operator_factory(&mut args);
+        let c = operator_factory(&mut args).unwrap();
 
         // Make sure we do not do anything
         c.fwd(&mut o);
@@ -63,7 +59,6 @@ mod tests {
         assert_eq!(o.coord.2, 0.0);
 
         // Make sure we say what we are
-        assert!(c.is_noop());
         assert!(c.name() == "noop");
     }
 }

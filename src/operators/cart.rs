@@ -10,12 +10,12 @@ pub struct Cart {
 }
 
 impl Cart {
-    pub fn new(args: &mut OperatorArgs) -> Cart {
-        Cart {
+    pub fn new(args: &mut OperatorArgs) -> Result <Cart, String> {
+        Ok(Cart {
             ellps: Ellipsoid::named(&args.value("ellps", "GRS80")),
             inverted: args.flag("inv"),
             args: args.clone(),
-        }
+        })
     }
 }
 
@@ -61,7 +61,7 @@ mod tests {
         args.name("cart");
         args.insert("ellps", "intl");
 
-        let c = operator_factory(&mut args);
+        let c = operator_factory(&mut args).unwrap();
 
         // First check that (0,0,0) takes us to (a,0,0)
         c.fwd(&mut o);

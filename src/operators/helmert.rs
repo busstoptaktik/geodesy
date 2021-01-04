@@ -13,14 +13,14 @@ pub struct Helmert {
 }
 
 impl Helmert {
-    pub fn new(args: &mut OperatorArgs) -> Helmert {
-        Helmert {
+    pub fn new(args: &mut OperatorArgs) -> Result <Helmert, String> {
+        Ok(Helmert {
             dx: args.numeric_value("dx", 0.0),
             dy: args.numeric_value("dy", 0.0),
             dz: args.numeric_value("dz", 0.0),
             inverted: args.flag("inv"),
             args: args.clone()
-        }
+        })
     }
 }
 
@@ -67,7 +67,7 @@ mod tests {
         args.insert("dy", "-96");
         args.insert("dz", "-120");
         assert_eq!(args.value("dz", ""), "-120");
-        let h = operator_factory(&mut args);
+        let h = operator_factory(&mut args).unwrap();
         h.fwd(&mut o);
         assert_eq!(o.coord.first(),  -87.);
         assert_eq!(o.coord.second(), -96.);

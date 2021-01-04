@@ -5,7 +5,6 @@ use crate::CoordinateTuple;
 // Renovering af Poder/Engsager tmerc i B:\2019\Projects\FIRE\tramp\tramp\tramp.c
 // Detaljer i C:\Users\B004330\Downloads\2.1.2 A HIGHLY ACCURATE WORLD WIDE ALGORITHM FOR THE TRANSVE (1).doc
 
-mod badvalue;
 mod cart;
 mod helmert;
 mod noop;
@@ -61,6 +60,10 @@ pub trait OperatorCore {
         self.inv(operand)
     }
 
+    fn name(&self) -> &'static str {
+        "UNKNOWN"
+    }
+
     // number of steps. 1 unless the operator is a pipeline
     fn steps(&self) -> usize {
         1 as usize
@@ -68,23 +71,7 @@ pub trait OperatorCore {
 
     fn args(&self, step: usize) -> &OperatorArgs;
 
-    fn name(&self) -> &'static str {
-        "UNKNOWN"
-    }
-
-    fn error_message(&self) -> &'static str {
-        "Generic error"
-    }
-
     fn is_inverted(&self) -> bool;
-
-    fn is_noop(&self) -> bool {
-        false
-    }
-
-    fn is_badvalue(&self) -> bool {
-        false
-    }
 
     //fn left(&self) -> CoordType;
     //fn right(&self) -> CoordType;
@@ -412,33 +399,36 @@ mod tests {
 }
 
 
-pub fn operator_factory(args: &mut OperatorArgs) -> Operator {
+pub fn operator_factory(args: &mut OperatorArgs) -> Result <Operator, String> {
     use crate::operators as co;
 
     // Pipelines do not need to be named "pipeline": They are characterized simply
     // by containing steps.
     if args.name == "pipeline" || args.numeric_value("_nsteps", 0.0) as i64 > 0 {
-        return Box::new(co::pipeline::Pipeline::new(args));
-    }
-    if args.name == "badvalue" {
-        return Box::new(co::badvalue::BadValue::new(args))
+        let op = co::pipeline::Pipeline::new(args)?;
+        return Ok(Box::new(op))
     }
     if args.name == "cart" {
-        return Box::new(co::cart::Cart::new(args));
+        let op = co::cart::Cart::new(args)?;
+        return Ok(Box::new(op))
     }
     if args.name == "helmert" {
-        return Box::new(co::helmert::Helmert::new(args));
+        let op = co::helmert::Helmert::new(args)?;
+        return Ok(Box::new(op))
     }
     if args.name == "tmerc" {
-        return Box::new(co::tmerc::Tmerc::new(args));
+        let op = co::tmerc::Tmerc::new(args)?;
+        return Ok(Box::new(op))
     }
     if args.name == "utm" {
-        return Box::new(co::tmerc::Tmerc::utm(args));
+        let op = co::tmerc::Tmerc::utm(args)?;
+        return Ok(Box::new(op))
     }
     if args.name == "noop" {
-        return Box::new(co::noop::Noop::new(args));
+        let op = co::noop::Noop::new(args)?;
+        return Ok(Box::new(op))
     }
 
     // Herefter: Søg efter 'name' i filbøtten
-    Box::new(co::badvalue::BadValue::new(args))
+    Err(format!("Unknown operator '{}'", args.name))
 }

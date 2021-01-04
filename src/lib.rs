@@ -16,8 +16,10 @@ pub use ellipsoids::Ellipsoid;
 pub use coordinates::CoordinateTuple;
 pub use coordinates::DMS;
 
-pub const FWD: bool = true;
-pub const INV: bool = false;
+#[allow(non_upper_case_globals)]
+pub const fwd: bool = true;
+#[allow(non_upper_case_globals)]
+pub const inv: bool = false;
 
 
 /// Literature, that has been useful in designing and implementing this library.

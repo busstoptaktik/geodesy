@@ -19,9 +19,9 @@ pub struct Tmerc {
 }
 
 impl Tmerc {
-    pub fn new(args: &mut OperatorArgs) -> Tmerc {
+    pub fn new(args: &mut OperatorArgs) -> Result <Tmerc, String> {
         let ellps = Ellipsoid::named(&args.value("ellps", "GRS80"));
-        Tmerc {
+        Ok(Tmerc {
             ellps: ellps,
             inverted: args.flag("inv"),
             args: args.clone(),
@@ -31,23 +31,23 @@ impl Tmerc {
             x_0: args.numeric_value("x_0", 0.),
             y_0: args.numeric_value("y_0", 0.),
             eps: ellps.second_eccentricity_squared(),
-        }
+        })
     }
 
-    pub fn utm(args: &mut OperatorArgs) -> Tmerc {
+    pub fn utm(args: &mut OperatorArgs) ->  Result <Tmerc, String> {
         let ellps = Ellipsoid::named(&args.value("ellps", "GRS80"));
         let zone = args.numeric_value("zone", f64::NAN);
-        Tmerc {
+        Ok(Tmerc {
             ellps: ellps,
             inverted: args.flag("inv"),
             args: args.clone(),
             k_0: 0.9996,
-            lon_0: (-177. + 6.*(zone - 1.)).to_radians(),
+            lon_0: (-183. + 6. * zone).to_radians(),
             lat_0: 0.,
             x_0: 500000.,
             y_0: 0.,
             eps: ellps.second_eccentricity_squared(),
-        }
+        })
     }
 }
 
@@ -137,7 +137,7 @@ mod tests {
         let utm = "utm: {zone: 32}";
         let mut args = OperatorArgs::global_defaults();
         args.populate(&utm, "");
-        let op = Tmerc::utm(&mut args);
+        let op = Tmerc::utm(&mut args).unwrap();
 
         let mut operand = Operand::new();
         operand.coord = crate::CoordinateTuple(12f64.to_radians(), 55f64.to_radians(), 100., 0.);
@@ -165,7 +165,7 @@ mod tests {
         let tmerc = "tmerc: {k_0: 0.9996, lon_0: 9, x_0: 500000}";
         let mut args = OperatorArgs::global_defaults();
         args.populate(&tmerc, "");
-        let op = Tmerc::new(&mut args);
+        let op = Tmerc::new(&mut args).unwrap();
 
         let mut operand = Operand::new();
         operand.coord = crate::CoordinateTuple(12f64.to_radians(), 55f64.to_radians(), 100., 0.);

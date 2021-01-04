@@ -74,14 +74,14 @@ fn generic_experiment() -> Vec<Operator> {
     let mut o = Operand::new();
     let mut args = OperatorArgs::new();
     args.name("cart");
-    operator_factory(&mut args);
+    operator_factory(&mut args).unwrap();
     args.insert("dx", "1");
     args.insert("dy", "2");
     args.insert("dz", "3");
     println!("\nargs: {:?}\n", args);
-    let c = operator_factory(&mut args);
+    let c = operator_factory(&mut args).unwrap();
     args.name("helm");
-    let h = operator_factory(&mut args);
+    let h = operator_factory(&mut args).unwrap();
 
     c.fwd(&mut o);
     println!("{:?}", o);

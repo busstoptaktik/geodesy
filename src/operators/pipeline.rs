@@ -3,7 +3,7 @@ use super::OperatorCore;
 use super::Operand;
 use super::Operator;
 use super::operator_factory;
-
+use crate::{fwd, inv};
 
 pub struct Pipeline {
     args: OperatorArgs,
@@ -13,7 +13,7 @@ pub struct Pipeline {
 
 
 impl Pipeline {
-    pub fn new(args: &mut OperatorArgs) -> Pipeline {
+    pub fn new(args: &mut OperatorArgs) -> Result <Pipeline, String> {
         let inverted = args.flag("inv");
         let mut steps = Vec::new();
         let n = args.numeric_value("_nsteps", 0.0) as usize;
@@ -26,22 +26,23 @@ impl Pipeline {
 
             // We need a recursive copy of "all globals so far"
             let mut oa = OperatorArgs::with_globals_from(args, step_args, "");
-            steps.push(operator_factory(&mut oa));
+            let op = operator_factory(&mut oa)?;
+            steps.push(op);
         }
 
         // if args.name == "badvalue" ... returner en fejl med cause som besked
-        Pipeline {
+        Ok(Pipeline {
             inverted: inverted,
             steps: steps,
             args: args.clone()
-        }
+        })
     }
 }
 
 impl OperatorCore for Pipeline {
     fn fwd(&self, operand: &mut Operand) -> bool {
         for step in &self.steps {
-            if !step.operate(operand, true) {
+            if !step.operate(operand, fwd) {
                 return false
             }
         }
@@ -50,7 +51,7 @@ impl OperatorCore for Pipeline {
 
     fn inv(&self, operand: &mut Operand) -> bool {
         for step in self.steps.iter().rev() {
-            if !step.operate(operand, false) {
+            if !step.operate(operand, inv) {
                 return false
             }
         }
@@ -88,7 +89,7 @@ mod tests {
         let pipeline = "ed50_etrs89: {steps: [cart: {ellps: intl}, helmert: {dx: -87, dy: -96, dz: -120}, cart: {inv: true, ellps: GRS80}]}";
         let mut args = OperatorArgs::global_defaults();
         args.populate(&pipeline, "");
-        let op = Pipeline::new(&mut args);
+        let op = Pipeline::new(&mut args).unwrap();
 
         // Check step-by-step that the pipeline was formed as expected
         assert_eq!(op.steps(), 3);
