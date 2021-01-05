@@ -16,6 +16,15 @@
 //!
 //!
 
+// #![feature(external_doc)]
+// #![doc(include = "../README.md")]
+// or
+// #![doc = r###"contents
+// of
+// README.md
+// here
+// "###]
+
 pub mod coordinates;
 pub mod ellipsoids;
 pub mod operators;
