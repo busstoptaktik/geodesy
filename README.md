@@ -1,8 +1,8 @@
 # Rust Geodesy
 
-*Rust Geodesy* (RG), is a platform for experiments with geodetic software and standards. *RG* vaguely resembles the [PROJ](https://proj.org) transformation system, and was built in part to facilitate experiments with alternative data flow models for PROJ. So in order to focus on the data flow, the transformation functionality of *RG* is reduced to the bare minimum.
+*Rust Geodesy* (RG), is a platform for experiments with geodetic software, transformations, and standards. *RG* vaguely resembles the [PROJ](https://proj.org) transformation system, and was built in part to facilitate experiments with alternative data flow models for PROJ. So in order to focus on the data flow, the transformation functionality of *RG* is reduced to the bare minimum.
 
-Hence, seeing *RG* as *"a new PROJ"*, *"another PROJ"*, or *"PROJ [RIIR](https://github.com/ansuz/RIIR)"*, will lead to bad disappointment. At best, you may catch a weak mirage of a *potential* [shape of jazz to come](https://en.wikipedia.org/wiki/The_Shape_of_Jazz_to_Come) for the PROJ internal dataflow.
+Hence, viewing *RG* as a *new PROJ*, *another PROJ*, or *PROJ [RIIR](https://github.com/ansuz/RIIR)*, will lead to bad disappointment. At best, you may catch a weak mirage of a *potential* [shape of jazz to come](https://en.wikipedia.org/wiki/The_Shape_of_Jazz_to_Come) for the PROJ internal dataflow.
 
 But the dataflow experimentation is just one of the aims of *RG*, and not the most important - it just happens to be quite visible, since it relates to a hugely important geospatial infrastructure component. Overall, the aims of *RG* are fourfold:
 
@@ -11,7 +11,7 @@ But the dataflow experimentation is just one of the aims of *RG*, and not the mo
 3. Hence, provide access to a large number of basic geodetic operations, not limited to coordinate operations.
 4. Support experiments with data flow and alternative abstractions. Both as a tool for aims (1, 2, 3), and as potential input to the evolution of PROJ.
 
-All four aims are guided by explicitly identified shortcomings in the existing geodetic system landscape.
+All four aims are guided by the wish to amend explicitly identified shortcomings in the existing geodetic system landscape.
 
 ## Aims
 

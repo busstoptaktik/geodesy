@@ -155,6 +155,27 @@ mod tests {
         assert!((operand.coord.1.to_degrees() - 55.0).abs()*111_000_000. < 0.05);
         // And the longitude even trumps that by a factor of 10.
         assert!((operand.coord.0.to_degrees() - 12.0).abs()*56_000_000. < 0.005);
+
+        // Test a Greenland extreme value (a zone 19 point projected in zone 24)
+        let utm = "utm: {zone: 24}";
+        let mut args = OperatorArgs::global_defaults();
+        args.populate(&utm, "");
+        let op = Tmerc::utm(&mut args).unwrap();
+        operand.coord = crate::CoordinateTuple(-72f64.to_radians(), 80f64.to_radians(), 100., 0.);
+        op.fwd(&mut operand);
+        op.inv(&mut operand);
+        operand.coord.1 = operand.coord.1.to_degrees();
+        operand.coord.0 = operand.coord.0.to_degrees();
+        println!("{:?}", operand.coord);
+        assert!((operand.coord.1 - 80.0).abs()*111_000. < 1.02);
+        assert!((operand.coord.0 + 72.0).abs()*20_000. < 0.04);
+        // i.e. much better than Snyder:
+        // echo -72 80 0 0 | cct +proj=utm +approx +zone=24 +ellps=GRS80 | cct -I +proj=utm +approx +zone=24 +ellps=GRS80
+        // -71.9066920547   80.0022281660        0.0000        0.0000
+        // But obviously much worse than Poder/Engsager:
+        // echo -72 80 0 0 | cct +proj=utm +zone=24 +ellps=GRS80 | cct -I +proj=utm +zone=24 +ellps=GRS80
+        // -72.0000000022   80.0000000001        0.0000        0.0000
+
     }
 
     #[test]
@@ -175,6 +196,7 @@ mod tests {
         // echo 12 55 0 0 | cct -d18 +proj=utm +zone=32
         assert!((operand.coord.0 - 691875.6321396606508642440).abs() < 1e-5);
         assert!((operand.coord.1 - 6098907.825005011633038521).abs() < 1e-5);
+
 
     }
 }

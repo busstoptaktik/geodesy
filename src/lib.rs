@@ -43,7 +43,6 @@ pub const inv: bool = false;
 pub enum Bibliography {
     /// B.R. Bowring (1976): *Transformation from spatial to geographical coordinates*.
     /// Survey Review 23(181), pp. 323–327.
-    ///
     Bow76,
     /// B.R. Bowring (1985): *The accuracy of geodetic latitude and height equations*.
     /// Survey Review, 28(218), pp.202-206,
@@ -67,11 +66,20 @@ pub enum Bibliography {
     /// Karney-Krueger equations.
     /// Surveying and Spatial Sciences Institute (SSSI)
     /// Land Surveying Commission National Conference,
-    /// Melbourne, 18-21 April, 2012
+    /// Melbourne, 18-21 April, 2012.
     Dea12,
 
-    /// Krüger, L. (1912). Konforme Abbildung des Erdellipsoids in der Ebene.
+    /// L. Krüger (1912). Konforme Abbildung des Erdellipsoids in der Ebene.
     /// Royal Prussian Geodetic Institute, New Series 52.
-    /// https://dx.doi.org/10.2312/GFZ.b103-krueger28
+    /// [DOI](https://dx.doi.org/10.2312/GFZ.b103-krueger28).
     Kru12,
+
+    /// T. Vincenty (1975) Direct and Inverse Solutions of Geodesics on the Ellipsoid
+    /// with application of nested equations.
+    /// Survey Review, 23(176): 88-93.
+    /// [pdf](https://www.ngs.noaa.gov/PUBS_LIB/inverse.pdf).
+    Vin75,
+
+    /// T. Vincenty (1976). Correspondence. Survey Review. 23(180): 294.
+    Vin76,
 }
