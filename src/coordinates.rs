@@ -1,4 +1,4 @@
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct CoordinateTuple(pub f64, pub f64, pub f64, pub f64);
 impl CoordinateTuple {
     pub fn new(x: f64, y: f64, z: f64, t: f64) -> CoordinateTuple {
@@ -10,15 +10,35 @@ impl CoordinateTuple {
         }
     }
 
+    pub fn deg(x: f64, y: f64, z: f64, t: f64) -> CoordinateTuple {
+        CoordinateTuple {
+            0: x.to_radians(),
+            1: y.to_radians(),
+            2: z,
+            3: t,
+        }
+    }
+
+    pub fn to_degrees(&self) -> CoordinateTuple {
+        CoordinateTuple::new(self.0.to_degrees(), self.1.to_degrees(), self.2, self.3)
+    }
+
+    pub fn to_radians(&self) -> CoordinateTuple {
+        CoordinateTuple::new(self.0.to_radians(), self.1.to_radians(), self.2, self.3)
+    }
+
     pub fn first(&self) -> f64 {
         self.0
     }
+
     pub fn second(&self) -> f64 {
         self.1
     }
+
     pub fn third(&self) -> f64 {
         self.2
     }
+
     pub fn fourth(&self) -> f64 {
         self.3
     }
@@ -45,13 +65,26 @@ impl DMS {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     #[test]
     fn test_dms() {
-        let dms = super::DMS::new(60, 24, 36.);
+        let dms = DMS::new(60, 24, 36.);
         assert_eq!(dms.d, 60);
         assert_eq!(dms.m, 24);
         assert_eq!(dms.s, 36.);
         let d = dms.to_deg();
         assert_eq!(d, 60.41);
     }
+
+    #[test]
+    fn test_coordinatetuple() {
+        let c = CoordinateTuple::new(12., 55., 100., 0.).to_radians();
+        let d = CoordinateTuple::deg(12., 55., 100., 0.);
+        assert_eq!(c, d);
+        d.to_degrees();
+        assert_eq!(d.0, 12f64.to_radians());
+        let e = d.to_degrees();
+        assert_eq!(e.0, c.to_degrees().0);
+    }
+
 }

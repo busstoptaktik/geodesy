@@ -429,10 +429,6 @@ mod tests {
     use super::*;
     #[test]
     fn test_ellipsoid() {
-        use super::CoordinateTuple;
-        use super::Ellipsoid;
-        use std::f64::consts::FRAC_PI_2;
-
         // Constructors
         let ellps = Ellipsoid::named("intl");
         assert_eq!(ellps.f, 1. / 297.);
@@ -487,9 +483,10 @@ mod tests {
         );
 
         // Roundtrip geographic <-> cartesian
-        let geo = CoordinateTuple::new(12_f64.to_radians(), 55_f64.to_radians(), 100.0, 0.);
+        let geo = CoordinateTuple::deg(12., 55., 100., 0.);
         let cart = ellps.cartesian(&geo);
         let geo2 = ellps.geographic(&cart);
+        assert_eq!(geo.0, geo2.0);
         assert!((geo.0 - geo2.0).abs() < 1.0e-12);
         assert!((geo.1 - geo2.1).abs() < 1.0e-12);
         assert!((geo.2 - geo2.2).abs() < 1.0e-9);
@@ -593,8 +590,8 @@ mod tests {
 
         // Copenhagen (Denmark)--Paris (France)
         // Expect distance good to 0.01 mm, azimuths to a nanodegree
-        let p1 = CoordinateTuple::new(12f64.to_radians(), 55f64.to_radians(), 0., 0.);
-        let p2 = CoordinateTuple::new(02f64.to_radians(), 49f64.to_radians(), 0., 0.);
+        let p1 = CoordinateTuple::deg(12., 55., 0., 0.);
+        let p2 = CoordinateTuple::deg(2., 49., 0., 0.);
         let d = ellps.geodesic_inv(&p1, &p2);
         assert!((d.0.to_degrees() - (-130.15406042072)).abs() < 1e-9);
         assert!((d.1.to_degrees() - (-138.05257941874)).abs() < 1e-9);
@@ -602,10 +599,10 @@ mod tests {
 
         // Copenhagen (Denmark)--Rabat (Morocco)
         // Expect distance good to 0.1 mm, azimuths to a nanodegree
-        let p2 = CoordinateTuple::new(07f64.to_radians(), 34f64.to_radians(), 0., 0.);
-        let d = ellps.geodesic_inv(&p1, &p2);
-        assert!((d.0.to_degrees() - (-168.48914418666)).abs() < 1e-9);
-        assert!((d.1.to_degrees() - (-172.05461964948)).abs() < 1e-9);
+        let p2 = CoordinateTuple::deg(7., 34., 0., 0.);
+        let d = ellps.geodesic_inv(&p1, &p2).to_degrees();
+        assert!((d.0 - (-168.48914418666)).abs() < 1e-9);
+        assert!((d.1 - (-172.05461964948)).abs() < 1e-9);
         assert!((d.2 - 2365723.367715).abs() < 1e-4);
     }
 }
