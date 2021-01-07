@@ -247,58 +247,57 @@ impl Ellipsoid {
         // Initial estimate for λ, the longitude on the auxiliary sphere
         let mut ll = L;
 
-        // Make cos_2aa and cos2ssm visible outside of the iteration loop
-        let mut cos_2aa = 0.;
-        let mut cos2ssm = 0.;
-        let mut cosss = 0.;
-        let mut sinss = 0.;
+        let mut aacos2 = 0.;
+        let mut ssmx2cos = 0.;
+        let mut sscos = 0.;
+        let mut sssin = 0.;
         let mut ss = 0.;
-        let mut sinll = 0.;
-        let mut cosll = 1.;
+        let mut llsin = 0.;
+        let mut llcos = 1.;
         let mut i: i32 = 0;
 
         while i < 1000 {
             i += 1;
             // σ, the angular separation between the points
-            sinll = ll.sin();
-            cosll = ll.cos();
-            let t1 = U2cos * sinll;
-            let t2 = U1cos * U2sin - U2cos * U1sin * cosll;
-            sinss = t1.hypot(t2);
-            cosss = U1sin * U2sin + U1cos * U2cos * cosll;
-            ss = sinss.atan2(cosss);
+            llsin = ll.sin();
+            llcos = ll.cos();
+            let t1 = U2cos * llsin;
+            let t2 = U1cos * U2sin - U2cos * U1sin * llcos;
+            sssin = t1.hypot(t2);
+            sscos = U1sin * U2sin + U1cos * U2cos * llcos;
+            ss = sssin.atan2(sscos);
 
             // α, forward azimuth of the geodesic at equator
-            let sinaa = U1cos * U2cos * sinll / sinss;
-            cos_2aa = 1. - sinaa*sinaa;
+            let aasin = U1cos * U2cos * llsin / sssin;
+            aacos2 = 1. - aasin*aasin;
 
-            // σ_m, angular separation from the midpoint to the equator
-            cos2ssm = ss.cos() - 2. * U1sin * U2sin / cos_2aa;
+            // cosine of 2 times σ_m, the angular separation from the midpoint to the equator
+            ssmx2cos = sscos - 2. * U1sin * U2sin / aacos2;
 
-            let C = (4. + self.f * (4. - 3. * cos_2aa)) * self.f * cos_2aa / 16.;
-            let ll_next = L + (1. - C) * self.f * sinaa * (ss + C * sinss * (cos2ssm + C * cosss * (-1. + 2. * cos2ssm * cos2ssm)) );
+            let C = (4. + self.f * (4. - 3. * aacos2)) * self.f * aacos2 / 16.;
+            let ll_next = L + (1. - C) * self.f * aasin * (ss + C * sssin * (ssmx2cos + C * sscos * (-1. + 2. * ssmx2cos * ssmx2cos)) );
             let dl = (ll - ll_next).abs();
             ll = ll_next;
             if dl < 1e-12 {break}
         }
 
         // A and B according to Vincenty's update (1976)
-        let us = cos_2aa * eps;
+        let us = aacos2 * eps;
         let t = (1. + us).sqrt();
         let k1 = (t - 1.) / (t + 1.);
         let A = (1. + k1 * k1 / 4.) / (1. - k1);
         let B = k1 * (1. - 3. * k1 * k1 / 8.);
 
         // The difference between the dist on the aux sphere and on the ellipsoid.
-        let t1 = -1. + 2. * cos2ssm * cos2ssm;
-        let t2 = -3. + 4. * sinss*sinss;
-        let t3 = -3. + 4. * cos2ssm * cos2ssm;
-        let dss = B * sinss * (cos2ssm + B/4.*(cosss*t1 - B/6.*cos2ssm*t2*t3));
+        let t1 = -1. + 2. * ssmx2cos * ssmx2cos;
+        let t2 = -3. + 4. * sssin*sssin;
+        let t3 = -3. + 4. * ssmx2cos * ssmx2cos;
+        let dss = B * sssin * (ssmx2cos + B/4.*(sscos*t1 - B/6.*ssmx2cos*t2*t3));
 
         // Distance, forward azimuth, return azimuth
         let s = self.semiminor_axis() * A * (ss - dss);
-        let a1 = (U2cos * sinll).atan2( U1cos * U2sin - U1sin * U2cos * cosll);
-        let a2 = (U1cos * sinll).atan2(-U1sin * U2cos + U1cos * U2sin * cosll);
+        let a1 = (U2cos * llsin).atan2( U1cos * U2sin - U1sin * U2cos * llcos);
+        let a2 = (U1cos * llsin).atan2(-U1sin * U2cos + U1cos * U2sin * llcos);
 
 
         CoordinateTuple::new(a1, a2, s, i as f64)
@@ -550,9 +549,14 @@ mod tests {
         assert!((ellps.meridional_distance(45f64.to_radians(), true) - 4984944.377857987).abs() < 4e-6);
         assert!((ellps.meridional_distance(4984944.377857987, false) - 45f64.to_radians()).abs() < 4e-6);
 
+        // --------------------------------------------------------------------
         // Geodesics
+        // --------------------------------------------------------------------
 
-        // Copenhagen--Paris
+        // (expected values from Karney: https://geographiclib.sourceforge.io/cgi-bin/GeodSolve)
+
+        // Copenhagen (Denmark)--Paris (France)
+        // Expect distance good to 0.01 mm, azimuths to a nanodegree
         let p1 = CoordinateTuple::new(12f64.to_radians(), 55f64.to_radians(), 0., 0.);
         let p2 = CoordinateTuple::new(02f64.to_radians(), 49f64.to_radians(), 0., 0.);
         let d = ellps.geodesic_inv(&p1, &p2);
@@ -560,7 +564,8 @@ mod tests {
         assert!((d.1.to_degrees() - (-138.05257941874)).abs() < 1e-9);
         assert!((d.2 - 956066.231959).abs() < 1e-5);
 
-        // Copenhagen--Rabat (Morocco)
+        // Copenhagen (Denmark)--Rabat (Morocco)
+        // Expect distance good to 0.1 mm, azimuths to a nanodegree
         let p2 = CoordinateTuple::new(07f64.to_radians(), 34f64.to_radians(), 0., 0.);
         let d = ellps.geodesic_inv(&p1, &p2);
         assert!((d.0.to_degrees() - (-168.48914418666)).abs() < 1e-9);
