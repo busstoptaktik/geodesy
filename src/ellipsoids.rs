@@ -432,6 +432,7 @@ impl Ellipsoid {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     #[test]
     fn test_ellipsoid() {
         use std::f64::consts::FRAC_PI_2;
@@ -485,17 +486,17 @@ mod tests {
 
         // Roundtrip geocentric latitude
         let lat = 55_f64.to_radians();
-        let lat2 = ellps.geocentric_latitude(ellps.geocentric_latitude(lat, true), false);
+        let lat2 = ellps.geocentric_latitude(ellps.geocentric_latitude(lat, fwd), inv);
         assert!((lat-lat2) < 1.0e-12);
-        assert!(ellps.geocentric_latitude(0.0, true).abs() < 1.0e-10);
-        assert!((ellps.geocentric_latitude(FRAC_PI_2, true) - FRAC_PI_2).abs() < 1.0e-10);
+        assert!(ellps.geocentric_latitude(0.0, fwd).abs() < 1.0e-10);
+        assert!((ellps.geocentric_latitude(FRAC_PI_2, fwd) - FRAC_PI_2).abs() < 1.0e-10);
 
         // Roundtrip reduced latitude
         let lat = 55_f64.to_radians();
-        let lat2 = ellps.reduced_latitude(ellps.reduced_latitude(lat, true), false);
+        let lat2 = ellps.reduced_latitude(ellps.reduced_latitude(lat, fwd), inv);
         assert!((lat-lat2) < 1.0e-12);
-        assert!(ellps.reduced_latitude(0.0, true).abs() < 1.0e-10);
-        assert!((ellps.reduced_latitude(FRAC_PI_2, true) - FRAC_PI_2).abs() < 1.0e-10);
+        assert!(ellps.reduced_latitude(0.0, fwd).abs() < 1.0e-10);
+        assert!((ellps.reduced_latitude(FRAC_PI_2, fwd) - FRAC_PI_2).abs() < 1.0e-10);
 
         // Isometric latitude, 𝜓
         assert!((ellps.isometric_latitude(45f64.to_radians()) - 50.227465815385806f64.to_radians()).abs() < 1e-15);
@@ -509,8 +510,8 @@ mod tests {
 
         // Internal consistency: Check that at 90°, the meridional distance
         // is identical to the meridian quadrant.
-        assert!((ellps.meridional_distance(FRAC_PI_2, true) - ellps.meridian_quadrant()).abs() < 1e-15);
-        assert!((ellps.meridional_distance(ellps.meridian_quadrant(), false) - FRAC_PI_2).abs() < 1e-15);
+        assert!((ellps.meridional_distance(FRAC_PI_2, fwd) - ellps.meridian_quadrant()).abs() < 1e-15);
+        assert!((ellps.meridional_distance(ellps.meridian_quadrant(), inv) - FRAC_PI_2).abs() < 1e-15);
 
         // Internal consistency: Roundtrip replication accuracy.
         for i in 0..10 {
@@ -518,7 +519,7 @@ mod tests {
             let b = (10. * i as f64).to_radians();
             assert!((
                 ellps.meridional_distance(
-                    ellps.meridional_distance(b, true), false
+                    ellps.meridional_distance(b, fwd), inv
                 ) - b
             ).abs() < 5e-11);
 
@@ -526,7 +527,7 @@ mod tests {
             let d = 1_000_000. * i as f64;
             assert!((
                 ellps.meridional_distance(
-                    ellps.meridional_distance(d, false), true
+                    ellps.meridional_distance(d, inv), fwd
                 ) - d
             ).abs() < 6e-5);
         }
@@ -541,13 +542,13 @@ mod tests {
             5540847.041560960, 6654072.819367435, 7768980.727655508, 8885139.871836751, 10001965.729230457
         ];
         for i in 0..s.len() {
-            assert!((ellps.meridional_distance((10.0*i as f64).to_radians(), true) - s[i]).abs() < 6e-6);
-            assert!((ellps.meridional_distance(s[i], false) - (10.0*i as f64).to_radians()).abs() < 6e-11);
+            assert!((ellps.meridional_distance((10.0*i as f64).to_radians(), fwd) - s[i]).abs() < 6e-6);
+            assert!((ellps.meridional_distance(s[i], inv) - (10.0*i as f64).to_radians()).abs() < 6e-11);
         }
 
         // Since we suspect the deviation might be worst at 45°, we check that as well
-        assert!((ellps.meridional_distance(45f64.to_radians(), true) - 4984944.377857987).abs() < 4e-6);
-        assert!((ellps.meridional_distance(4984944.377857987, false) - 45f64.to_radians()).abs() < 4e-6);
+        assert!((ellps.meridional_distance(45f64.to_radians(), fwd) - 4984944.377857987).abs() < 4e-6);
+        assert!((ellps.meridional_distance(4984944.377857987, inv) - 45f64.to_radians()).abs() < 4e-6);
 
         // --------------------------------------------------------------------
         // Geodesics
