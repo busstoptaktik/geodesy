@@ -1,25 +1,25 @@
 //! For now, Helmert only supports the basic 3-parameter version
 
+use super::Operand;
 use super::OperatorArgs;
 use super::OperatorCore;
-use super::Operand;
 
 pub struct Helmert {
     dx: f64,
     dy: f64,
     dz: f64,
     inverted: bool,
-    args: OperatorArgs
+    args: OperatorArgs,
 }
 
 impl Helmert {
-    pub fn new(args: &mut OperatorArgs) -> Result <Helmert, String> {
+    pub fn new(args: &mut OperatorArgs) -> Result<Helmert, String> {
         Ok(Helmert {
             dx: args.numeric_value("Helmert", "dx", 0.0)?,
             dy: args.numeric_value("Helmert", "dy", 0.0)?,
             dz: args.numeric_value("Helmert", "dz", 0.0)?,
             inverted: args.flag("inv"),
-            args: args.clone()
+            args: args.clone(),
         })
     }
 }
@@ -64,7 +64,7 @@ mod tests {
 
         // Check that non-numeric value, for key expecting numeric, errs properly.
         args.name("helmert");
-        args.insert("dx", "foo");  // Bad value here.
+        args.insert("dx", "foo"); // Bad value here.
         args.insert("dy", "-96");
         args.insert("dz", "-120");
 
@@ -80,13 +80,13 @@ mod tests {
         let h = operator_factory(&mut args).unwrap();
 
         h.fwd(&mut o);
-        assert_eq!(o.coord.first(),  -87.);
+        assert_eq!(o.coord.first(), -87.);
         assert_eq!(o.coord.second(), -96.);
         assert_eq!(o.coord.third(), -120.);
 
         h.inv(&mut o);
-        assert_eq!(o.coord.first(),  0.);
+        assert_eq!(o.coord.first(), 0.);
         assert_eq!(o.coord.second(), 0.);
-        assert_eq!(o.coord.third(),  0.);
+        assert_eq!(o.coord.third(), 0.);
     }
 }

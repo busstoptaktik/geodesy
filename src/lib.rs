@@ -29,15 +29,14 @@ pub mod coordinates;
 pub mod ellipsoids;
 pub mod operators;
 
-pub use ellipsoids::Ellipsoid;
 pub use coordinates::CoordinateTuple;
 pub use coordinates::DMS;
+pub use ellipsoids::Ellipsoid;
 
 #[allow(non_upper_case_globals)]
 pub const fwd: bool = true;
 #[allow(non_upper_case_globals)]
 pub const inv: bool = false;
-
 
 /// Literature, that has been useful in designing and implementing this library.
 pub enum Bibliography {

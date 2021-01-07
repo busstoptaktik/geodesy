@@ -1,8 +1,8 @@
-use super::OperatorArgs;
-use super::OperatorCore;
+use super::operator_factory;
 use super::Operand;
 use super::Operator;
-use super::operator_factory;
+use super::OperatorArgs;
+use super::OperatorCore;
 use crate::{fwd, inv};
 
 pub struct Pipeline {
@@ -11,9 +11,8 @@ pub struct Pipeline {
     inverted: bool,
 }
 
-
 impl Pipeline {
-    pub fn new(args: &mut OperatorArgs) -> Result <Pipeline, String> {
+    pub fn new(args: &mut OperatorArgs) -> Result<Pipeline, String> {
         let inverted = args.flag("inv");
         let mut steps = Vec::new();
         let n = args.numeric_value("Pipeline", "_nsteps", 0.0)? as usize;
@@ -34,7 +33,7 @@ impl Pipeline {
         Ok(Pipeline {
             inverted: inverted,
             steps: steps,
-            args: args.clone()
+            args: args.clone(),
         })
     }
 }
@@ -43,7 +42,7 @@ impl OperatorCore for Pipeline {
     fn fwd(&self, operand: &mut Operand) -> bool {
         for step in &self.steps {
             if !step.operate(operand, fwd) {
-                return false
+                return false;
             }
         }
         true
@@ -52,7 +51,7 @@ impl OperatorCore for Pipeline {
     fn inv(&self, operand: &mut Operand) -> bool {
         for step in self.steps.iter().rev() {
             if !step.operate(operand, inv) {
-                return false
+                return false;
             }
         }
         true
@@ -77,7 +76,6 @@ impl OperatorCore for Pipeline {
         self.inverted
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -119,7 +117,8 @@ mod tests {
         let mut operand = Operand::new();
         operand.coord = crate::CoordinateTuple(12f64.to_radians(), 55f64.to_radians(), 100., 0.);
 
-        /* DRUM ROLL... */ op.operate(&mut operand, true); // TA-DAA!
+        /* DRUM ROLL... */
+        op.operate(&mut operand, true); // TA-DAA!
 
         // For comparison: the point (12, 55, 100, 0) transformed by the cct
         // application of the PROJ package yields:
@@ -136,7 +135,8 @@ mod tests {
         // And the other way round
         operand.coord.0 = operand.coord.0.to_radians();
         operand.coord.1 = operand.coord.1.to_radians();
-        /* DRUM ROLL... */ op.operate(&mut operand, false); // TA-DAA!
+        /* DRUM ROLL... */
+        op.operate(&mut operand, false); // TA-DAA!
         operand.coord.0 = operand.coord.0.to_degrees();
         operand.coord.1 = operand.coord.1.to_degrees();
         assert!((operand.coord.0 - 12.).abs() < 1e-14);

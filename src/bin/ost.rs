@@ -1,7 +1,7 @@
 use geodesy::operators::operator_factory;
-use geodesy::operators::OperatorArgs;
 use geodesy::operators::Operand;
 use geodesy::operators::Operator;
+use geodesy::operators::OperatorArgs;
 use yaml_rust::{Yaml, YamlLoader};
 
 /*

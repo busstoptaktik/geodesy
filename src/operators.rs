@@ -1,6 +1,6 @@
+use crate::CoordinateTuple;
 use std::collections::HashMap;
 use yaml_rust::{Yaml, YamlEmitter, YamlLoader};
-use crate::CoordinateTuple;
 
 // Renovering af Poder/Engsager tmerc i B:\2019\Projects\FIRE\tramp\tramp\tramp.c
 // Detaljer i C:\Users\B004330\Downloads\2.1.2 A HIGHLY ACCURATE WORLD WIDE ALGORITHM FOR THE TRANSVE (1).doc
@@ -34,7 +34,6 @@ impl Operand {
     }
 }
 
-
 pub trait OperatorCore {
     fn fwd(&self, ws: &mut Operand) -> bool;
 
@@ -53,7 +52,7 @@ pub trait OperatorCore {
     fn operate(&self, operand: &mut Operand, forward: bool) -> bool {
         // Short form of (inverted && !forward) || (forward && !inverted)
         if self.is_inverted() != forward {
-            return self.fwd(operand)
+            return self.fwd(operand);
         }
         // We do not need to check for self.invertible() here, since non-invertible
         // operators will return false as per the default-defined fn inv() above.
@@ -76,7 +75,6 @@ pub trait OperatorCore {
     //fn left(&self) -> CoordType;
     //fn right(&self) -> CoordType;
 }
-
 
 #[derive(Debug, Clone)]
 pub struct OperatorArgs {
@@ -108,14 +106,17 @@ impl OperatorArgs {
         op
     }
 
-
     /// Provides an OperatorArgs object, populated by the defaults from an existing
     /// OperatorArgs, combined with a new object definition.
-    pub fn with_globals_from(existing: &OperatorArgs, definition: &str, which: &str) -> OperatorArgs {
+    pub fn with_globals_from(
+        existing: &OperatorArgs,
+        definition: &str,
+        which: &str,
+    ) -> OperatorArgs {
         let mut oa = OperatorArgs::new();
         for (arg, val) in &existing.args {
             if arg.starts_with("_") || (arg == "inv") {
-                continue
+                continue;
             }
             oa.insert(arg, val);
         }
@@ -267,8 +268,6 @@ impl OperatorArgs {
         false
     }
 
-
-
     pub fn name(&mut self, name: &str) {
         self.name = name.to_string();
     }
@@ -324,9 +323,8 @@ impl OperatorArgs {
         &mut self,
         operator_name: &str,
         key: &str,
-        default: f64
+        default: f64,
     ) -> Result<f64, String> {
-
         let arg = self.value(key, "");
         // key not given: return default
         if arg == "" {
@@ -334,17 +332,20 @@ impl OperatorArgs {
         }
         // key given, but not numeric: return None
         let v = arg.parse();
-        if v.is_ok() { return Ok(v.unwrap()) }
-        Err(format!("{}: Got [{}: {}] - expected numeric value.", operator_name, key, arg))
+        if v.is_ok() {
+            return Ok(v.unwrap());
+        }
+        Err(format!(
+            "{}: Got [{}: {}] - expected numeric value.",
+            operator_name, key, arg
+        ))
     }
-
 
     // If key is given, and value != false: true; else: false
     pub fn flag(&mut self, key: &str) -> bool {
         self.value(key, "false") != "false"
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -417,35 +418,35 @@ mod tests {
     }
 }
 
-
-pub fn operator_factory(args: &mut OperatorArgs) -> Result <Operator, String> {
+pub fn operator_factory(args: &mut OperatorArgs) -> Result<Operator, String> {
     use crate::operators as co;
 
     // Pipelines do not need to be named "pipeline": They are characterized simply
     // by containing steps.
-    if args.name == "pipeline" || args.numeric_value("operator_factory", "_nsteps", 0.0)? as i64 > 0 {
+    if args.name == "pipeline" || args.numeric_value("operator_factory", "_nsteps", 0.0)? as i64 > 0
+    {
         let op = co::pipeline::Pipeline::new(args)?;
-        return Ok(Box::new(op))
+        return Ok(Box::new(op));
     }
     if args.name == "cart" {
         let op = co::cart::Cart::new(args)?;
-        return Ok(Box::new(op))
+        return Ok(Box::new(op));
     }
     if args.name == "helmert" {
         let op = co::helmert::Helmert::new(args)?;
-        return Ok(Box::new(op))
+        return Ok(Box::new(op));
     }
     if args.name == "tmerc" {
         let op = co::tmerc::Tmerc::new(args)?;
-        return Ok(Box::new(op))
+        return Ok(Box::new(op));
     }
     if args.name == "utm" {
         let op = co::tmerc::Tmerc::utm(args)?;
-        return Ok(Box::new(op))
+        return Ok(Box::new(op));
     }
     if args.name == "noop" {
         let op = co::noop::Noop::new(args)?;
-        return Ok(Box::new(op))
+        return Ok(Box::new(op));
     }
 
     // Herefter: Søg efter 'name' i filbøtten

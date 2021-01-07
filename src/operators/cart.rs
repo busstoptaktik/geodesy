@@ -1,16 +1,16 @@
+use super::Operand;
 use super::OperatorArgs;
 use super::OperatorCore;
-use super::Operand;
 use crate::Ellipsoid;
 
 pub struct Cart {
     ellps: Ellipsoid,
     inverted: bool,
-    args: OperatorArgs
+    args: OperatorArgs,
 }
 
 impl Cart {
-    pub fn new(args: &mut OperatorArgs) -> Result <Cart, String> {
+    pub fn new(args: &mut OperatorArgs) -> Result<Cart, String> {
         Ok(Cart {
             ellps: Ellipsoid::named(&args.value("ellps", "GRS80")),
             inverted: args.flag("inv"),
@@ -48,7 +48,6 @@ impl OperatorCore for Cart {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use crate::operators::operator_factory;
@@ -80,7 +79,7 @@ mod tests {
         c.inv(&mut o);
 
         // And check that we're back
-        assert!((o.coord.first().to_degrees() -  12.).abs() < 1.0e-10);
+        assert!((o.coord.first().to_degrees() - 12.).abs() < 1.0e-10);
         assert!((o.coord.third() - 100.).abs() < 1.0e-10);
         assert!((o.coord.second().to_degrees() - 55.).abs() < 1.0e-10);
     }

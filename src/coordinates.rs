@@ -2,7 +2,12 @@
 pub struct CoordinateTuple(pub f64, pub f64, pub f64, pub f64);
 impl CoordinateTuple {
     pub fn new(x: f64, y: f64, z: f64, t: f64) -> CoordinateTuple {
-        CoordinateTuple{0: x, 1: y, 2: z, 3: t}
+        CoordinateTuple {
+            0: x,
+            1: y,
+            2: z,
+            3: t,
+        }
     }
 
     pub fn first(&self) -> f64 {
@@ -22,7 +27,6 @@ impl CoordinateTuple {
 #[derive(Clone, Copy, Debug)]
 pub struct CoordType {}
 
-
 #[derive(Clone, Copy, Debug)]
 pub struct DMS {
     pub s: f32,
@@ -38,7 +42,6 @@ impl DMS {
         (self.s as f64 / 60. + self.m as f64) / 60. + self.d as f64
     }
 }
-
 
 #[cfg(test)]
 mod tests {

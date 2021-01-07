@@ -1,14 +1,14 @@
+use super::Operand;
 use super::OperatorArgs;
 use super::OperatorCore;
-use super::Operand;
 
 pub struct Noop {
-    args: OperatorArgs
+    args: OperatorArgs,
 }
 
 impl Noop {
-    pub fn new(args: &mut OperatorArgs) -> Result <Noop, String> {
-        Ok(Noop{args: args.clone()})
+    pub fn new(args: &mut OperatorArgs) -> Result<Noop, String> {
+        Ok(Noop { args: args.clone() })
     }
 }
 
@@ -32,9 +32,7 @@ impl OperatorCore for Noop {
     fn args(&self, _step: usize) -> &OperatorArgs {
         &self.args
     }
-
 }
-
 
 #[cfg(test)]
 mod tests {
