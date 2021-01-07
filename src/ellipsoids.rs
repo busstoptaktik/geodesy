@@ -2,7 +2,7 @@
 use std::f64::consts::FRAC_PI_2;
 
 use crate::CoordinateTuple;
-use crate::{fwd, inv};
+use crate::fwd;
 
 /// Representation of an ellipsoid.
 #[derive(Clone, Copy, Debug)]
@@ -145,6 +145,32 @@ impl Ellipsoid {
         self.a * self.a / self.semiminor_axis()
     }
 
+    // ----- Latitudes -------------------------------------------------------------
+
+    /// Geographic latitude to geocentric latitude
+    /// (or vice versa if `forward` is `false`).
+    pub fn geocentric_latitude(&self, latitude: f64, forward: bool) -> f64 {
+        if forward {
+            return ((1.0 - self.f * (2.0 - self.f)) * latitude.tan()).atan();
+        }
+        (latitude.tan() / (1.0 - self.eccentricity_squared())).atan()
+    }
+
+    /// Geographic latitude to reduced latitude
+    /// (or vice versa if `forward` is  `false`).
+    pub fn reduced_latitude(&self, latitude: f64, forward: bool) -> f64 {
+        if forward {
+            return latitude.tan().atan2(1. / (1. - self.f));
+        }
+        latitude.tan().atan2(1. - self.f)
+    }
+
+    /// Isometric latitude, 𝜓
+    pub fn isometric_latitude(&self, latitude: f64) -> f64 {
+        let e = self.eccentricity();
+        latitude.tan().asinh() - (e * latitude.sin()).atanh() * e
+    }
+
     // ----- Meridian geometry -----------------------------------------------------
 
     /// The Normalized Meridian Arc Unit, *Qn*, is the mean length of one radian
@@ -223,24 +249,102 @@ impl Ellipsoid {
         theta + 63. / 4. * C * r.powf(8. / 155.) * (8. / 155. * v).sin()
     }
 
+
+    // ----- Geodesics -------------------------------------------------------------
+
     // Charles F.F. Karney: Algorithms for Geodesics. https://arxiv.org/pdf/1109.4448.pdf
     // Rust implementation: https://docs.rs/crate/geographiclib-rs/0.2.0
+    #[allow(non_snake_case)]
+    pub fn geodesic_fwd(&self, from: &CoordinateTuple, azimuth: f64, distance: f64) -> CoordinateTuple {
+
+        // Coordinates of the point of origin, P1
+        let B1 = from.1;
+        let L1 = from.0;
+
+        // The latitude of P1 projected onto the auxiliary sphere
+        let U1 = self.reduced_latitude(B1, fwd);
+        let U1cos = U1.cos();
+        let U1sin = U1.sin();
+
+        // ss1 is the angular distance on the aux sphere from P1 to equator
+        let azicos = azimuth.cos();
+        let ss1 = ((1. - self.f) * B1.tan()).atan2(azicos);
+
+        // aa is the azimuth of the geodesic on equator
+        let aasin = U1cos * azimuth.sin();
+        let aasin2 = aasin * aasin;
+        let aacos2 = 1. - aasin2;
+
+        // A and B according to Vincenty's update (1976)
+        let eps = self.second_eccentricity_squared();
+        let us = aacos2 * eps;
+        let t = (1. + us).sqrt();
+        let k1 = (t - 1.) / (t + 1.);
+        let A = (1. + k1 * k1 / 4.) / (1. - k1);
+        let B = k1 * (1. - 3. * k1 * k1 / 8.);
+
+        // Initial estimate for λ, the longitude on the auxiliary sphere
+        let b = self.semiminor_axis();
+        let mut ss = distance / (b * A);
+        let mut i: i32 = 0;
+        let mut t1 = 0.;
+        let mut ssmx2cos = 0.;
+        let mut prevdss = 0.;
+
+        while i < 1000 {
+            i += 1;
+            let sssin = ss.sin();
+            let sscos = ss.cos();
+            let ssmx2 = 2. * ss1 + ss;
+            ssmx2cos = ssmx2.cos();
+            let ssmx2cos2 = ssmx2cos * ssmx2cos;
+            t1 = -1. + 2. * ssmx2cos2;
+            let t2 = -3. + 4. * ssmx2cos2;
+            let t3 = -3. + 4. * sssin*sssin;
+            let dss = B * sssin * (ssmx2cos + B / 4. * (sscos * t1 - B / 6. * ssmx2cos * t2 * t3));
+            ss = distance / (b * A) + dss;
+            if (prevdss - dss).abs() < 1e-14 {
+                break;
+            }
+            prevdss = dss;
+        }
+
+        // B2: Latitude of destination
+        let sssin = ss.sin();
+        let sscos = ss.cos();
+        let t4 = U1cos * azicos * sssin;
+        let t5 = U1cos * azicos * sscos;
+        let B2 = (U1sin * sscos + t4).atan2((1. - self.f)*aasin.hypot(U1sin*sssin - t5));
+
+        // L2: Longitude of destination
+        let azisin = azimuth.sin();
+        let ll = (sssin * azisin).atan2(U1cos * sscos - U1sin * sssin * azicos);
+        let C = (4. + self.f * (4. - 3. * aacos2)) * self.f * aacos2 / 16.;
+        let L = ll - (1. - C) * self.f * aasin * (ss + C * sssin * (ssmx2cos + C * sscos * t1));
+        let L2 = L1 + L;
+
+        // Return azimuth
+        let aa2 = aasin.atan2(U1cos * sscos * azicos - U1sin * sssin);
+
+        CoordinateTuple::new(L2, B2, aa2, i as f64)
+    }
 
     #[allow(non_snake_case)]
     pub fn geodesic_inv(&self, from: &CoordinateTuple, to: &CoordinateTuple) -> CoordinateTuple {
         let B1 = from.1;
         let B2 = to.1;
+
         let L1 = from.0;
         let L2 = to.0;
         let L = L2 - L1;
 
         let U1 = self.reduced_latitude(B1, fwd);
         let U2 = self.reduced_latitude(B2, fwd);
+
         let U1cos = U1.cos();
         let U2cos = U2.cos();
         let U1sin = U1.sin();
         let U2sin = U2.sin();
-
         let eps = self.second_eccentricity_squared();
 
         // Initial estimate for λ, the longitude on the auxiliary sphere
@@ -253,10 +357,12 @@ impl Ellipsoid {
         let mut ss = 0.;
         let mut llsin = 0.;
         let mut llcos = 1.;
+
         let mut i: i32 = 0;
 
         while i < 1000 {
             i += 1;
+
             // σ, the angular separation between the points
             llsin = ll.sin();
             llcos = ll.cos();
@@ -272,7 +378,6 @@ impl Ellipsoid {
 
             // cosine of 2 times σ_m, the angular separation from the midpoint to the equator
             ssmx2cos = sscos - 2. * U1sin * U2sin / aacos2;
-
             let C = (4. + self.f * (4. - 3. * aacos2)) * self.f * aacos2 / 16.;
             let ll_next = L
                 + (1. - C)
@@ -303,35 +408,11 @@ impl Ellipsoid {
         let s = self.semiminor_axis() * A * (ss - dss);
         let a1 = (U2cos * llsin).atan2(U1cos * U2sin - U1sin * U2cos * llcos);
         let a2 = (U1cos * llsin).atan2(-U1sin * U2cos + U1cos * U2sin * llcos);
-
         CoordinateTuple::new(a1, a2, s, i as f64)
     }
 
-    // ----- Latitudes -------------------------------------------------------------
 
-    /// Geographic latitude to geocentric latitude
-    /// (or vice versa if `forward` is `false`).
-    pub fn geocentric_latitude(&self, latitude: f64, forward: bool) -> f64 {
-        if forward {
-            return ((1.0 - self.f * (2.0 - self.f)) * latitude.tan()).atan();
-        }
-        (latitude.tan() / (1.0 - self.eccentricity_squared())).atan()
-    }
 
-    /// Geographic latitude to reduced latitude
-    /// (or vice versa if `forward` is  `false`).
-    pub fn reduced_latitude(&self, latitude: f64, forward: bool) -> f64 {
-        if forward {
-            return ((1.0 - self.f) * latitude.tan()).atan();
-        }
-        (latitude.tan() / (1.0 - self.f)).atan()
-    }
-
-    /// Isometric latitude, 𝜓
-    pub fn isometric_latitude(&self, latitude: f64) -> f64 {
-        let e = self.eccentricity();
-        latitude.tan().asinh() - (e * latitude.sin()).atanh() * e
-    }
 
     // ----- Cartesian <--> Geographic conversion ----------------------------------
 
@@ -441,7 +522,11 @@ mod tests {
 
         assert!((ellps.normalized_meridian_arc_unit() - 0.9983242984230415).abs() < 1e-13);
         assert!((4.0 * ellps.meridian_quadrant() - 40007862.9169218).abs() < 1e-7);
+    }
 
+    #[test]
+    fn shape_and_size() {
+        let ellps = Ellipsoid::named("GRS80");
         let ellps = Ellipsoid::new(ellps.a, ellps.f);
         assert_eq!(ellps.semimajor_axis(), 6378137.0);
         assert_eq!(ellps.flattening(), 1. / 298.25722_21008_82711_24316);
@@ -454,7 +539,11 @@ mod tests {
         // Additional size descriptors
         assert!((ellps.semiminor_axis() - 6_356_752.31414_0347).abs() < 1e-9);
         assert!((ellps.semimajor_axis() - 6_378_137.0).abs() < 1e-9);
+    }
 
+    #[test]
+    fn curvatures() {
+        let ellps = Ellipsoid::named("GRS80");
         // The curvatures at the North Pole
         assert!(
             (ellps.meridian_radius_of_curvature(90_f64.to_radians()) - 6_399_593.6259).abs() < 1e-4
@@ -481,7 +570,11 @@ mod tests {
         assert!(
             (ellps.prime_vertical_radius_of_curvature(0.0) - ellps.semimajor_axis()).abs() < 1.0e-4
         );
+    }
 
+    #[test]
+    fn geo_to_cart() {
+        let ellps = Ellipsoid::named("GRS80");
         // Roundtrip geographic <-> cartesian
         let geo = CoordinateTuple::deg(12., 55., 100., 0.);
         let cart = ellps.cartesian(&geo);
@@ -490,7 +583,11 @@ mod tests {
         assert!((geo.0 - geo2.0).abs() < 1.0e-12);
         assert!((geo.1 - geo2.1).abs() < 1.0e-12);
         assert!((geo.2 - geo2.2).abs() < 1.0e-9);
+    }
 
+    #[test]
+    fn latitudes() {
+        let ellps = Ellipsoid::named("GRS80");
         // Roundtrip geocentric latitude
         let lat = 55_f64.to_radians();
         let lat2 = ellps.geocentric_latitude(ellps.geocentric_latitude(lat, fwd), inv);
@@ -511,6 +608,11 @@ mod tests {
                 .abs()
                 < 1e-15
         );
+    }
+
+    #[test]
+    fn meridional_distance() {
+        let ellps = Ellipsoid::named("GRS80");
 
         // Rectifying radius, A
         assert!((ellps.rectifying_radius() - 6356774.720017125).abs() < 1e-9);
@@ -581,10 +683,13 @@ mod tests {
         assert!(
             (ellps.meridional_distance(4984944.377857987, inv) - 45f64.to_radians()).abs() < 4e-6
         );
+    }
 
-        // --------------------------------------------------------------------
-        // Geodesics
-        // --------------------------------------------------------------------
+
+
+    #[test]
+    fn geodesics() {
+        let ellps = Ellipsoid::named("GRS80");
 
         // (expected values from Karney: https://geographiclib.sourceforge.io/cgi-bin/GeodSolve)
 
@@ -592,17 +697,31 @@ mod tests {
         // Expect distance good to 0.01 mm, azimuths to a nanodegree
         let p1 = CoordinateTuple::deg(12., 55., 0., 0.);
         let p2 = CoordinateTuple::deg(2., 49., 0., 0.);
+
         let d = ellps.geodesic_inv(&p1, &p2);
         assert!((d.0.to_degrees() - (-130.15406042072)).abs() < 1e-9);
         assert!((d.1.to_degrees() - (-138.05257941874)).abs() < 1e-9);
         assert!((d.2 - 956066.231959).abs() < 1e-5);
 
+        // And the other way round...
+        let b = ellps.geodesic_fwd(&p1, d.0, d.2);
+        println!("*** b: {:?}", b.to_degrees());
+        assert!((b.0.to_degrees() - 2.).abs() < 1e-9);
+        assert!((b.1.to_degrees() - 49.).abs() < 1e-9);
+
         // Copenhagen (Denmark)--Rabat (Morocco)
         // Expect distance good to 0.1 mm, azimuths to a nanodegree
         let p2 = CoordinateTuple::deg(7., 34., 0., 0.);
-        let d = ellps.geodesic_inv(&p1, &p2).to_degrees();
-        assert!((d.0 - (-168.48914418666)).abs() < 1e-9);
-        assert!((d.1 - (-172.05461964948)).abs() < 1e-9);
+
+        let d = ellps.geodesic_inv(&p1, &p2);
+        assert!((d.0.to_degrees() - (-168.48914418666)).abs() < 1e-9);
+        assert!((d.1.to_degrees() - (-172.05461964948)).abs() < 1e-9);
         assert!((d.2 - 2365723.367715).abs() < 1e-4);
+
+        // And the other way round...
+        let b = ellps.geodesic_fwd(&p1, d.0, d.2).to_degrees();
+        println!("*** b: {:?}", b);
+        assert!((b.0 - p2.0.to_degrees()).abs() < 1e-9);
+        assert!((b.1 - p2.1.to_degrees()).abs() < 1e-9);
     }
 }
