@@ -43,6 +43,12 @@ pub enum Bibliography {
     /// B.R. Bowring (1976): *Transformation from spatial to geographical coordinates*.
     /// Survey Review 23(181), pp. 323–327.
     Bow76,
+
+    /// B. R. Bowring (1983): *New equations for meridional distance*.
+    /// Bull. Geodesique 57, 374–381.
+    /// [DOI](https://doi.org/10.1007/BF02520940).
+    Bow83,
+
     /// B.R. Bowring (1985): *The accuracy of geodetic latitude and height equations*.
     /// Survey Review, 28(218), pp.202-206,
     /// [DOI](https://doi.org/10.1179/sre.1985.28.218.202)
@@ -54,11 +60,22 @@ pub enum Bibliography {
     /// (See also [Transverse Mercator: Bowring series](https://en.wikipedia.org/wiki/Transverse_Mercator:_Bowring_series)).
     Bow89,
 
+    /// Charles F.F. Karney (2010): *Transverse Mercator with an accuracy of a few nanometers*.
+    /// [pdf](https://arxiv.org/pdf/1002.1417.pdf)
+    Kar10,
+
     /// Charles F.F. Karney (2011): *Transverse Mercator with an accuracy of a few nanometers*.
     /// J. Geodesy. 85(8): 475–485.
-    /// arXiv:1002.1417. Bibcode:2011JGeod..85..475K.
-    /// doi:10.1007/s00190-011-0445-3. S2CID 118619524.
+    /// [DOI](https://doi.org/10.1007/s00190-011-0445-3).
     Kar11,
+
+    /// Charles F.F. Karney (2012) Algorithms for geodesics.
+    /// [pdf](https://arxiv.org/pdf/1109.4448.pdf)
+    Kar12,
+
+    /// Charles F.F. Karney (2013) Algorithms for geodesics. Journal of Geodesy 87, 43–55.
+    /// [DOI](https://doi.org/10.1007/s00190-012-0578-z)
+    Kar13,
 
     /// R.E. Deakin, M.N. Hunter and C.F.F. Karney (2012):
     /// A fresh look at the UTM projection:
@@ -76,7 +93,8 @@ pub enum Bibliography {
     /// T. Vincenty (1975) Direct and Inverse Solutions of Geodesics on the Ellipsoid
     /// with application of nested equations.
     /// Survey Review, 23(176): 88-93.
-    /// [pdf](https://www.ngs.noaa.gov/PUBS_LIB/inverse.pdf).
+    /// [pdf](https://www.ngs.noaa.gov/PUBS_LIB/inverse.pdf)
+    /// (See also Wikipedia: [Vincenty's formulae](https://en.wikipedia.org/wiki/Vincenty's_formulae)).
     Vin75,
 
     /// T. Vincenty (1976). Correspondence. Survey Review. 23(180): 294.

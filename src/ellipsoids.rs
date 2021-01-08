@@ -195,7 +195,7 @@ impl Ellipsoid {
         let n = self.third_flattening();
         let nn = n * n;
         let d = (1. + nn * (1. / 4. + nn * (1. / 64. + nn * (1. / 256. + 25. * nn / 16384.))))
-            / (1.0 + n);
+            / (1. + n);
 
         self.a * d / (1. + n)
     }
@@ -207,14 +207,19 @@ impl Ellipsoid {
         self.a * FRAC_PI_2 * self.normalized_meridian_arc_unit()
     }
 
+
+
+
+    // ----- Geodesics -------------------------------------------------------------
+
+
     /// The distance, *M*, along a meridian from the equator to the given
-    /// latitude.
+    /// latitude is a special case of a geodesic length.
     ///
-    /// Following the remarkably simple algorithm by Bowring (1983).
-    ///
-    /// B. R. Bowring (1983), New equations for meridional distance.
-    /// [Bull. Geodesique 57, 374–381](https://doi.org/10.1007/BF02520940).
-    ///
+    /// This implementation follows the
+    /// [remarkably simple algorithm](crate::Bibliography::Bow83) by Bowring (1983).
+    /// The forward case computes the meridian distance given a latitude.
+    /// The inverse case computes the latitude given a meridian distance.
     ///
     /// See also
     /// [Wikipedia: Transverse Mercator](https://en.wikipedia.org/wiki/Transverse_Mercator:_Bowring_series).
@@ -250,10 +255,16 @@ impl Ellipsoid {
     }
 
 
-    // ----- Geodesics -------------------------------------------------------------
-
-    // Charles F.F. Karney: Algorithms for Geodesics. https://arxiv.org/pdf/1109.4448.pdf
-    // Rust implementation: https://docs.rs/crate/geographiclib-rs/0.2.0
+    /// For general geodesics, we use the algorithm by Vincenty
+    /// ([1975](crate::Bibliography::Vin75)), with updates by the same author
+    /// ([1976](crate::Bibliography::Vin76)).
+    /// The Vincenty algorithm is relatively simple to implement, but for near-antipodal
+    /// cases, it suffers from lack of convergence and loss of accuracy.
+    ///
+    /// Karney ([2012](crate::Bibliography::Kar12), [2013](crate::Bibliography::Kar13))
+    /// presented an algorithm which is exact to machine precision, and converges everywhere.
+    /// The crate [geographiclib-rs](https://crates.io/crates/geographiclib-rs), by
+    /// Federico Dolce and Michael Kirk, provides a Rust implementation of Karney's algorithm.
     #[allow(non_snake_case)]
     pub fn geodesic_fwd(&self, from: &CoordinateTuple, azimuth: f64, distance: f64) -> CoordinateTuple {
 
@@ -266,11 +277,11 @@ impl Ellipsoid {
         let U1cos = U1.cos();
         let U1sin = U1.sin();
 
-        // ss1 is the angular distance on the aux sphere from P1 to equator
+        // σ_1, here ss1, is the angular distance on the aux sphere from P1 to equator
         let azicos = azimuth.cos();
         let ss1 = ((1. - self.f) * B1.tan()).atan2(azicos);
 
-        // aa is the azimuth of the geodesic on equator
+        // α, the forward azimuth of the geodesic at equator
         let aasin = U1cos * azimuth.sin();
         let aasin2 = aasin * aasin;
         let aacos2 = 1. - aasin2;
@@ -289,24 +300,30 @@ impl Ellipsoid {
         let mut i: i32 = 0;
         let mut t1 = 0.;
         let mut ssmx2cos = 0.;
-        let mut prevdss = 0.;
 
         while i < 1000 {
             i += 1;
-            let sssin = ss.sin();
-            let sscos = ss.cos();
+
+            // 2σ_m, where σ_m is the latitude of the midpoint on the aux sphere
             let ssmx2 = 2. * ss1 + ss;
+
+            // dσ = dss: The correction term for σ
             ssmx2cos = ssmx2.cos();
             let ssmx2cos2 = ssmx2cos * ssmx2cos;
             t1 = -1. + 2. * ssmx2cos2;
             let t2 = -3. + 4. * ssmx2cos2;
+            let sssin = ss.sin();
+            let sscos = ss.cos();
             let t3 = -3. + 4. * sssin*sssin;
             let dss = B * sssin * (ssmx2cos + B / 4. * (sscos * t1 - B / 6. * ssmx2cos * t2 * t3));
+
+            let prevss = ss;
             ss = distance / (b * A) + dss;
-            if (prevdss - dss).abs() < 1e-14 {
+
+            // Stop criterion: Last update of σ made little difference
+            if (prevss - ss).abs() < 1e-13 {
                 break;
             }
-            prevdss = dss;
         }
 
         // B2: Latitude of destination
@@ -329,6 +346,7 @@ impl Ellipsoid {
         CoordinateTuple::new(L2, B2, aa2, i as f64)
     }
 
+    /// See [geodesic_fwd](crate::Ellipsoid::geodesic_fwd)
     #[allow(non_snake_case)]
     pub fn geodesic_inv(&self, from: &CoordinateTuple, to: &CoordinateTuple) -> CoordinateTuple {
         let B1 = from.1;
@@ -372,7 +390,7 @@ impl Ellipsoid {
             sscos = U1sin * U2sin + U1cos * U2cos * llcos;
             ss = sssin.atan2(sscos);
 
-            // α, forward azimuth of the geodesic at equator
+            // α, the forward azimuth of the geodesic at equator
             let aasin = U1cos * U2cos * llsin / sssin;
             aacos2 = 1. - aasin * aasin;
 
@@ -508,6 +526,7 @@ impl Ellipsoid {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::inv;
     #[test]
     fn test_ellipsoid() {
         // Constructors
