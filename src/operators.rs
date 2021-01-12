@@ -309,16 +309,6 @@ impl OperatorArgs {
         arg
     }
 
-    pub fn numaric_value(&mut self, key: &str, default: f64) -> f64 {
-        let arg = self.value(key, "");
-        // key not given: return default
-        if arg == "" {
-            return default;
-        }
-        // key given, but not numeric: return NaN
-        arg.parse().unwrap_or(f64::NAN)
-    }
-
     pub fn numeric_value(
         &mut self,
         operator_name: &str,

@@ -705,7 +705,6 @@ mod tests {
     }
 
 
-
     #[test]
     fn geodesics() {
         let ellps = Ellipsoid::named("GRS80");

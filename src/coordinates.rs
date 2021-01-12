@@ -63,6 +63,35 @@ impl DMS {
     }
 }
 
+
+#[allow(dead_code)]
+enum CoordinateKind {
+    Linear,
+    Angular,
+    Parametric,
+    Pass,
+}
+
+#[allow(dead_code)]
+enum Coordinate {
+    Northish {from: usize, to: usize, scale: f64, offset: f64, nan: f64, kind: CoordinateKind},
+    Eastish {},
+    Upish {},
+    Timeish {},
+    Pass {},
+
+    // An `enum` may either be `unit-like`,
+    PageLoad,
+    PageUnload,
+    // like tuple structs,
+    KeyPress(char),
+    Paste(String),
+    // or c-like structures.
+    Click { x: i64, y: i64 },
+}
+
+
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -87,4 +116,10 @@ mod tests {
         assert_eq!(e.0, c.to_degrees().0);
     }
 
+    #[test]
+    fn test_array() {
+        let b = CoordinateTuple::new(7.,8.,9.,10.);
+        let c = [b.0, b.1, b.2, b.3, f64::NAN, f64::NAN];
+        assert_eq!(b.0, c[0]);
+    }
 }

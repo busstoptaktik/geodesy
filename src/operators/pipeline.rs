@@ -29,7 +29,6 @@ impl Pipeline {
             steps.push(op);
         }
 
-        // if args.name == "badvalue" ... returner en fejl med cause som besked
         Ok(Pipeline {
             inverted: inverted,
             steps: steps,
@@ -84,7 +83,14 @@ mod tests {
         use super::*;
 
         // Setup a 3 step pipeline
-        let pipeline = "ed50_etrs89: {steps: [cart: {ellps: intl}, helmert: {dx: -87, dy: -96, dz: -120}, cart: {inv: true, ellps: GRS80}]}";
+        let pipeline = "ed50_etrs89: {
+            steps: [
+                cart: {ellps: intl},
+                helmert: {dx: -87, dy: -96, dz: -120},
+                cart: {inv: true, ellps: GRS80}
+            ]
+        }";
+
         let mut args = OperatorArgs::global_defaults();
         args.populate(&pipeline, "");
         let op = Pipeline::new(&mut args).unwrap();
