@@ -165,7 +165,6 @@ mod tests {
         op.inv(&mut operand);
         operand.coord.1 = operand.coord.1.to_degrees();
         operand.coord.0 = operand.coord.0.to_degrees();
-        println!("{:?}", operand.coord);
         assert!((operand.coord.1 - 80.0).abs() * 111_000. < 1.02);
         assert!((operand.coord.0 + 72.0).abs() * 20_000. < 0.04);
         // i.e. much better than Snyder:

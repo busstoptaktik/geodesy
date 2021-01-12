@@ -723,7 +723,6 @@ mod tests {
 
         // And the other way round...
         let b = ellps.geodesic_fwd(&p1, d.0, d.2);
-        println!("*** b: {:?}", b.to_degrees());
         assert!((b.0.to_degrees() - 2.).abs() < 1e-9);
         assert!((b.1.to_degrees() - 49.).abs() < 1e-9);
 
@@ -738,7 +737,6 @@ mod tests {
 
         // And the other way round...
         let b = ellps.geodesic_fwd(&p1, d.0, d.2).to_degrees();
-        println!("*** b: {:?}", b);
         assert!((b.0 - p2.0.to_degrees()).abs() < 1e-9);
         assert!((b.1 - p2.1.to_degrees()).abs() < 1e-9);
     }
