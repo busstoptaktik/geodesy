@@ -377,6 +377,8 @@ pub fn operator_factory(args: &mut OperatorArgs) -> Result<Operator, String> {
     Err(format!("Unknown operator '{}'", args.name))
 }
 
+
+
 //----------------------------------------------------------------------------------
 
 #[cfg(test)]
