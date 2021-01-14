@@ -316,18 +316,22 @@ impl OperatorArgs {
         default: f64,
     ) -> Result<f64, String> {
         let arg = self.value(key, "");
+
         // key not given: return default
         if arg == "" {
             return Ok(default);
         }
-        // key given, but not numeric: return None
+
+        // key given, value numeric: return value
         let v = arg.parse();
         if v.is_ok() {
             return Ok(v.unwrap());
         }
+
+        // key given, but not numeric: return error string
         Err(format!(
-            "{}: Got [{}: {}] - expected numeric value.",
-            operator_name, key, arg
+            "Numeric value expected for '{}.{}' - got [{}: {}].",
+            operator_name, key, key, arg
         ))
     }
 
@@ -337,76 +341,6 @@ impl OperatorArgs {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn operator_args() {
-        use super::*;
-        let mut args = OperatorArgs::new();
-
-        // dx and dy are straightforward
-        args.insert("dx", "1");
-        args.insert("dy", "2");
-
-        // But we hide dz behind two levels of indirection
-        args.insert("dz", "^ddz");
-        args.insert("ddz", "^dddz");
-        args.insert("dddz", "3");
-        // println!("args: {:?}", args);
-
-        assert_eq!("1", args.value("dx", ""));
-        assert_eq!("2", args.value("dy", ""));
-        assert_eq!(args.used.len(), 2);
-
-        assert_eq!("3", args.value("dz", ""));
-        assert_eq!(3.0, args.numeric_value("foo", "dz", 42.0).unwrap());
-
-        assert_eq!(args.used.len(), 3);
-        assert_eq!(args.all_used.len(), 5);
-
-        // println!("used: {:?}", &args.used);
-        // println!("all_used: {:?}", &args.all_used);
-
-        assert_eq!("", args.value("abcdefg", ""));
-
-        // Finally one for testing NAN returned for non-numerics
-        args.insert("ds", "foo");
-        assert!(args.numeric_value("foo", "ds", 0.0).is_err());
-    }
-
-    #[test]
-    fn preparing_args() {
-        use super::*;
-        let mut args = OperatorArgs::global_defaults();
-
-        // Explicitly stating the name of the pipeline
-        let txt = std::fs::read_to_string("tests/tests.yml").unwrap_or_default();
-        assert!(args.populate(&txt, "pipeline"));
-        assert_eq!(&args.value("_step_0", "    ")[0..4], "cart");
-
-        // Let populate() figure out what we want
-        let mut args = OperatorArgs::global_defaults();
-        assert!(args.populate(&txt, ""));
-        assert_eq!(&args.value("_step_0", "    ")[0..4], "cart");
-
-        // When op is not a pipeline
-        let mut args = OperatorArgs::global_defaults();
-        assert!(args.populate("cart: {ellps: intl}", ""));
-        assert_eq!(args.name, "cart");
-        assert_eq!(&args.value("ellps", ""), "intl");
-    }
-
-    #[test]
-    fn bad_value() {
-        use super::*;
-        let v = Yaml::BadValue;
-        assert!(v.is_badvalue());
-        let v = Yaml::Null;
-        assert!(v.is_null());
-        let v = Yaml::Integer(77);
-        assert!(v == Yaml::Integer(77));
-    }
-}
 
 pub fn operator_factory(args: &mut OperatorArgs) -> Result<Operator, String> {
     use crate::operators as co;
@@ -441,4 +375,82 @@ pub fn operator_factory(args: &mut OperatorArgs) -> Result<Operator, String> {
 
     // Herefter: Søg efter 'name' i filbøtten
     Err(format!("Unknown operator '{}'", args.name))
+}
+
+//----------------------------------------------------------------------------------
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn operator_args() {
+        use super::*;
+        let mut args = OperatorArgs::new();
+
+        // dx and dy are straightforward
+        args.insert("dx", "11");
+        args.insert("dy", "22");
+
+        // But we hide dz behind two levels of indirection
+        args.insert("dz", "^ddz");
+        args.insert("ddz", "^dddz");
+        args.insert("dddz", "33");
+        // println!("args: {:?}", args);
+
+        assert_eq!("00", args.value("", "00"));
+        assert_eq!("11", args.value("dx", ""));
+        assert_eq!("22", args.value("dy", ""));
+        assert_eq!(args.used.len(), 2);
+
+        assert_eq!("33", args.value("dz", ""));
+        assert_eq!(33.0, args.numeric_value("foo", "dz", 42.0).unwrap());
+        assert_eq!(42.0, args.numeric_value("foo", "bar", 42.0).unwrap());
+
+        assert_eq!(args.used.len(), 3);
+        assert_eq!(args.all_used.len(), 5);
+
+        // println!("used: {:?}", &args.used);
+        // println!("all_used: {:?}", &args.all_used);
+
+        assert_eq!("", args.value("abcdefg", ""));
+
+        // Finally one for testing 'err' returned for non-numerics
+        args.insert("ds", "foo");
+        assert!(args.numeric_value("bar", "ds", 0.0).is_err());
+        // if let Err(msg) = args.numeric_value("bar", "ds", 0.0) {
+        //     println!("**** err: {}", msg)
+        // }
+    }
+
+    #[test]
+    fn preparing_args() {
+        use super::*;
+        let mut args = OperatorArgs::global_defaults();
+
+        // Explicitly stating the name of the pipeline
+        let txt = std::fs::read_to_string("tests/tests.yml").unwrap_or_default();
+        assert!(args.populate(&txt, "pipeline"));
+        assert_eq!(&args.value("_step_0", "    ")[0..4], "cart");
+
+        // Let populate() figure out what we want
+        let mut args = OperatorArgs::global_defaults();
+        assert!(args.populate(&txt, ""));
+        assert_eq!(&args.value("_step_0", "    ")[0..4], "cart");
+
+        // When op is not a pipeline
+        let mut args = OperatorArgs::global_defaults();
+        assert!(args.populate("cart: {ellps: intl}", ""));
+        assert_eq!(args.name, "cart");
+        assert_eq!(&args.value("ellps", ""), "intl");
+    }
+
+    #[test]
+    fn bad_value() {
+        use super::*;
+        let v = Yaml::BadValue;
+        assert!(v.is_badvalue());
+        let v = Yaml::Null;
+        assert!(v.is_null());
+        let v = Yaml::Integer(77);
+        assert!(v == Yaml::Integer(77));
+    }
 }

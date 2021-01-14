@@ -1,8 +1,8 @@
 //! Ellipsoids
 use std::f64::consts::FRAC_PI_2;
 
-use crate::CoordinateTuple;
 use crate::fwd;
+use crate::CoordinateTuple;
 
 /// Representation of an ellipsoid.
 #[derive(Clone, Copy, Debug)]
@@ -207,11 +207,7 @@ impl Ellipsoid {
         self.a * FRAC_PI_2 * self.normalized_meridian_arc_unit()
     }
 
-
-
-
     // ----- Geodesics -------------------------------------------------------------
-
 
     /// The distance, *M*, along a meridian from the equator to the given
     /// latitude is a special case of a geodesic length.
@@ -254,7 +250,6 @@ impl Ellipsoid {
         theta + 63. / 4. * C * r.powf(8. / 155.) * (8. / 155. * v).sin()
     }
 
-
     /// For general geodesics, we use the algorithm by Vincenty
     /// ([1975](crate::Bibliography::Vin75)), with updates by the same author
     /// ([1976](crate::Bibliography::Vin76)).
@@ -266,8 +261,12 @@ impl Ellipsoid {
     /// The crate [geographiclib-rs](https://crates.io/crates/geographiclib-rs), by
     /// Federico Dolce and Michael Kirk, provides a Rust implementation of Karney's algorithm.
     #[allow(non_snake_case)]
-    pub fn geodesic_fwd(&self, from: &CoordinateTuple, azimuth: f64, distance: f64) -> CoordinateTuple {
-
+    pub fn geodesic_fwd(
+        &self,
+        from: &CoordinateTuple,
+        azimuth: f64,
+        distance: f64,
+    ) -> CoordinateTuple {
         // Coordinates of the point of origin, P1
         let B1 = from.1;
         let L1 = from.0;
@@ -314,7 +313,7 @@ impl Ellipsoid {
             let t2 = -3. + 4. * ssmx2cos2;
             let sssin = ss.sin();
             let sscos = ss.cos();
-            let t3 = -3. + 4. * sssin*sssin;
+            let t3 = -3. + 4. * sssin * sssin;
             let dss = B * sssin * (ssmx2cos + B / 4. * (sscos * t1 - B / 6. * ssmx2cos * t2 * t3));
 
             let prevss = ss;
@@ -331,7 +330,7 @@ impl Ellipsoid {
         let sscos = ss.cos();
         let t4 = U1cos * azicos * sssin;
         let t5 = U1cos * azicos * sscos;
-        let B2 = (U1sin * sscos + t4).atan2((1. - self.f)*aasin.hypot(U1sin*sssin - t5));
+        let B2 = (U1sin * sscos + t4).atan2((1. - self.f) * aasin.hypot(U1sin * sssin - t5));
 
         // L2: Longitude of destination
         let azisin = azimuth.sin();
@@ -428,9 +427,6 @@ impl Ellipsoid {
         let a2 = (U1cos * llsin).atan2(-U1sin * U2cos + U1cos * U2sin * llcos);
         CoordinateTuple::new(a1, a2, s, i as f64)
     }
-
-
-
 
     // ----- Cartesian <--> Geographic conversion ----------------------------------
 
@@ -703,7 +699,6 @@ mod tests {
             (ellps.meridional_distance(4984944.377857987, inv) - 45f64.to_radians()).abs() < 4e-6
         );
     }
-
 
     #[test]
     fn geodesics() {
