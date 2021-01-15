@@ -121,7 +121,7 @@ mod tests {
         // This is the first example of a running pipeline in Rust Geodesy. Awesome!
         // -------------------------------------------------------------------------
         let mut operand = Operand::new();
-        operand.coord = crate::CoordinateTuple(12f64.to_radians(), 55f64.to_radians(), 100., 0.);
+        operand.coord = crate::CoordinateTuple::deg(12f64, 55f64, 100., 0.);
 
         /* DRUM ROLL... */
         op.operate(&mut operand, true); // TA-DAA!
