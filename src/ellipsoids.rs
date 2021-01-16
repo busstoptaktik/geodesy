@@ -453,6 +453,32 @@ impl Ellipsoid {
         CoordinateTuple::new(a1, a2, s, f64::from(i))
     }
 
+    /// Geodesic distance between two points. Assumes first coordinate is longitude,
+    /// second is latitude.
+    ///
+    /// # See also:
+    ///
+    /// [`hypot2`](crate::coordinates::CoordinateTuple::hypot2),
+    /// [`hypot3`](crate::coordinates::CoordinateTuple::hypot3)
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// // Compute the distance between Copenhagen and Paris
+    /// use geodesy::ellipsoids::Ellipsoid;
+    /// use geodesy::coordinates::CoordinateTuple;
+    /// let ellps = Ellipsoid::named("GRS80");
+    /// let p0 = CoordinateTuple::deg(12., 55., 0., 0.);
+    /// let p1 = CoordinateTuple::deg(2., 49., 0., 0.);
+    /// let d = ellps.distance(&p0, &p1);
+    /// assert!((d - 956_066.231_959).abs() < 1e-5);
+    /// ```
+    #[must_use]
+    pub fn distance(&self, from: &CoordinateTuple, to: &CoordinateTuple) -> f64 {
+        self.geodesic_inv(from, to).2
+    }
+
+
     // ----- Cartesian <--> Geographic conversion ----------------------------------
 
     /// Geographic to cartesian conversion.

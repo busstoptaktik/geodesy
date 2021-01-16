@@ -50,6 +50,64 @@ impl CoordinateTuple {
     pub fn fourth(&self) -> f64 {
         self.3
     }
+
+    /// Euclidean distance between two points in the 2D plane.
+    ///
+    /// Primarily used to compute the distance between two projected points
+    /// in their projected plane. Typically, this distance will differ from
+    /// the actual distance in the real world.
+    ///
+    /// The distance is computed in the subspace spanned by the first and
+    /// second coordinate of the `CoordinateTuple`s
+    ///
+    /// # See also:
+    ///
+    /// [`hypot3`](crate::coordinates::CoordinateTuple::hypot3),
+    /// [`distance`](crate::ellipsoids::Ellipsoid::distance)
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use geodesy::CoordinateTuple;
+    /// let t = 1000.;
+    /// let p0 = CoordinateTuple::new(0., 0., 0., 0.);
+    /// let p1 = CoordinateTuple::new(t, t, 0., 0.);
+    /// assert_eq!(p0.hypot2(&p1), t.hypot(t));
+    /// ```
+    #[must_use]
+    pub fn hypot2(&self, other: &CoordinateTuple) -> f64 {
+        (self.0 - other.0).hypot(self.1 - other.1)
+    }
+
+    /// Euclidean distance between two points in the 3D space.
+    ///
+    /// Primarily used to compute the distance between two points in the
+    /// 3D cartesian space. The typical case is GNSS-observations, in which
+    /// case, the distance computed will reflect the actual distance
+    /// in the real world.
+    ///
+    /// The distance is computed in the subspace spanned by the first,
+    /// second and third coordinate of the `CoordinateTuple`s
+    ///
+    /// # See also:
+    ///
+    /// [`hypot2`](crate::coordinates::CoordinateTuple::hypot2),
+    /// [`distance`](crate::ellipsoids::Ellipsoid::distance)
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use geodesy::CoordinateTuple;
+    /// let t = 1000.;
+    /// let p0 = CoordinateTuple::new(0., 0., 0., 0.);
+    /// let p1 = CoordinateTuple::new(t, t, t, 0.);
+    /// assert_eq!(p0.hypot3(&p1), t.hypot(t).hypot(t));
+    /// ```
+    #[must_use]
+    pub fn hypot3(&self, other: &CoordinateTuple) -> f64 {
+        (self.0 - other.0).hypot(self.1 - other.1).hypot(self.2 - other.2)
+    }
+
 }
 
 #[derive(Clone, Copy, Debug)]
