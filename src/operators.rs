@@ -13,7 +13,7 @@ mod tmerc;
 
 pub type Operator = Box<dyn OperatorCore>;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Operand {
     pub coord: CoordinateTuple,
     pub stack: Vec<f64>,
@@ -65,7 +65,7 @@ pub trait OperatorCore {
 
     // number of steps. 1 unless the operator is a pipeline
     fn steps(&self) -> usize {
-        1 as usize
+        1_usize
     }
 
     fn args(&self, step: usize) -> &OperatorArgs;
@@ -76,7 +76,7 @@ pub trait OperatorCore {
     //fn right(&self) -> CoordType;
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct OperatorArgs {
     name: String,
     args: HashMap<String, String>,
@@ -115,7 +115,7 @@ impl OperatorArgs {
     ) -> OperatorArgs {
         let mut oa = OperatorArgs::new();
         for (arg, val) in &existing.args {
-            if arg.starts_with("_") || (arg == "inv") {
+            if arg.starts_with('_') || (arg == "inv") {
                 continue;
             }
             oa.insert(arg, val);
@@ -167,16 +167,16 @@ impl OperatorArgs {
 
         // Is it conforming?
         let mut main_entry_name = which;
-        if main_entry_name == "" {
+        if main_entry_name.is_empty() {
             for (arg, val) in main {
                 if val.is_badvalue() {
                     return self.badvalue("Cannot parse definition");
                 }
                 let name = &arg.as_str().unwrap();
-                if name.starts_with("_") {
+                if name.starts_with('_') {
                     continue;
                 }
-                if main_entry_name != "" {
+                if !main_entry_name.is_empty() {
                     return self.badvalue("Too many items in definition root");
                 }
                 main_entry_name = name;
@@ -191,9 +191,7 @@ impl OperatorArgs {
         }
 
         // Loop over all globals and create the corresponding OperatorArgs entries
-        let globals = main_entry["globals"].as_hash();
-        if globals.is_some() {
-            let globals = globals.unwrap();
+        if let Some(globals) = main_entry["globals"].as_hash() {
             for (arg, val) in globals {
                 let thearg = arg.as_str().unwrap();
                 if thearg != "inv" {
@@ -204,7 +202,7 @@ impl OperatorArgs {
                         Yaml::Boolean(val) => val.to_string(),
                         _ => "".to_string(),
                     };
-                    if theval != "" {
+                    if !theval.is_empty() {
                         self.insert(thearg, &theval);
                     }
                 }
@@ -231,7 +229,7 @@ impl OperatorArgs {
                     Yaml::Boolean(val) => val.to_string(),
                     _ => "".to_string(),
                 };
-                if theval != "" {
+                if !theval.is_empty() {
                     self.insert(thearg, &theval);
                 }
             }
@@ -293,8 +291,8 @@ impl OperatorArgs {
         };
         // all_used includes intermediate steps in indirect definitions
         self.all_used.insert(key.to_string(), arg.to_string());
-        if arg.starts_with("^") {
-            let arg = &arg[1..];
+
+        if let Some(arg) = arg.strip_prefix("^") {
             return self.value_recursive_search(arg, default);
         }
         arg
@@ -318,14 +316,13 @@ impl OperatorArgs {
         let arg = self.value(key, "");
 
         // key not given: return default
-        if arg == "" {
+        if arg.is_empty() {
             return Ok(default);
         }
 
         // key given, value numeric: return value
-        let v = arg.parse();
-        if v.is_ok() {
-            return Ok(v.unwrap());
+        if let Ok(v) = arg.parse::<f64>() {
+            return Ok(v);
         }
 
         // key given, but not numeric: return error string
@@ -340,7 +337,6 @@ impl OperatorArgs {
         self.value(key, "false") != "false"
     }
 }
-
 
 pub fn operator_factory(args: &mut OperatorArgs) -> Result<Operator, String> {
     use crate::operators as co;
@@ -376,8 +372,6 @@ pub fn operator_factory(args: &mut OperatorArgs) -> Result<Operator, String> {
     // Herefter: Søg efter 'name' i filbøtten
     Err(format!("Unknown operator '{}'", args.name))
 }
-
-
 
 //----------------------------------------------------------------------------------
 

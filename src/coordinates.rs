@@ -1,4 +1,4 @@
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Default)]
 pub struct CoordinateTuple(pub f64, pub f64, pub f64, pub f64);
 impl CoordinateTuple {
     pub fn new(x: f64, y: f64, z: f64, t: f64) -> CoordinateTuple {
@@ -47,7 +47,7 @@ impl CoordinateTuple {
 #[derive(Clone, Copy, Debug)]
 pub struct CoordType {}
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Default)]
 pub struct DMS {
     pub s: f32,
     pub d: i16,
@@ -56,9 +56,9 @@ pub struct DMS {
 
 impl DMS {
     pub fn new(d: i16, m: i8, s: f32) -> DMS {
-        DMS { d: d, m: m, s: s }
+        DMS { d, m, s }
     }
-    pub fn to_deg(&self) -> f64 {
+    pub fn to_degrees(&self) -> f64 {
         (self.s as f64 / 60. + self.m as f64) / 60. + self.d as f64
     }
 }
@@ -108,7 +108,7 @@ mod tests {
         assert_eq!(dms.d, 60);
         assert_eq!(dms.m, 24);
         assert_eq!(dms.s, 36.);
-        let d = dms.to_deg();
+        let d = dms.to_degrees();
         assert_eq!(d, 60.41);
     }
 

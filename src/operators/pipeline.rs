@@ -29,10 +29,12 @@ impl Pipeline {
             steps.push(op);
         }
 
+        let args = args.clone();
+
         Ok(Pipeline {
-            inverted: inverted,
-            steps: steps,
-            args: args.clone(),
+            inverted,
+            steps,
+            args,
         })
     }
 }
@@ -64,7 +66,7 @@ impl OperatorCore for Pipeline {
         if step >= self.steps() {
             return &self.args;
         }
-        self.steps[step].args(0 as usize)
+        self.steps[step].args(0_usize)
     }
 
     fn name(&self) -> &'static str {

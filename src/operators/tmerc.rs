@@ -21,32 +21,49 @@ pub struct Tmerc {
 impl Tmerc {
     pub fn new(args: &mut OperatorArgs) -> Result<Tmerc, String> {
         let ellps = Ellipsoid::named(&args.value("ellps", "GRS80"));
+        let inverted = args.flag("inv");
+        let k_0 = args.numeric_value("Tmerc", "k_0", 1.)?;
+        let lon_0 = args.numeric_value("Tmerc", "lon_0", 0.)?.to_radians();
+        let lat_0 = args.numeric_value("Tmerc", "lat_0", 0.)?.to_radians();
+        let x_0 = args.numeric_value("Tmerc", "x_0", 0.)?;
+        let y_0 = args.numeric_value("Tmerc", "y_0", 0.)?;
+        let eps = ellps.second_eccentricity_squared();
+        let args = args.clone();
         Ok(Tmerc {
-            ellps: ellps,
-            inverted: args.flag("inv"),
-            args: args.clone(),
-            k_0: args.numeric_value("Tmerc", "k_0", 1.)?,
-            lon_0: args.numeric_value("Tmerc", "lon_0", 0.)?.to_radians(),
-            lat_0: args.numeric_value("Tmerc", "lat_0", 0.)?.to_radians(),
-            x_0: args.numeric_value("Tmerc", "x_0", 0.)?,
-            y_0: args.numeric_value("Tmerc", "y_0", 0.)?,
-            eps: ellps.second_eccentricity_squared(),
+            ellps,
+            inverted,
+            args,
+            k_0,
+            lon_0,
+            lat_0,
+            x_0,
+            y_0,
+            eps,
         })
     }
 
     pub fn utm(args: &mut OperatorArgs) -> Result<Tmerc, String> {
         let ellps = Ellipsoid::named(&args.value("ellps", "GRS80"));
         let zone = args.numeric_value("Utm", "zone", f64::NAN)?;
+        let inverted = args.flag("inv");
+        let k_0 = 0.9996;
+        let lon_0 = (-183. + 6. * zone).to_radians();
+        let lat_0 = 0.;
+        let x_0 = 500000.;
+        let y_0 = 0.;
+        let eps = ellps.second_eccentricity_squared();
+        let args = args.clone();
+
         Ok(Tmerc {
-            ellps: ellps,
-            inverted: args.flag("inv"),
-            args: args.clone(),
-            k_0: 0.9996,
-            lon_0: (-183. + 6. * zone).to_radians(),
-            lat_0: 0.,
-            x_0: 500000.,
-            y_0: 0.,
-            eps: ellps.second_eccentricity_squared(),
+            ellps,
+            inverted,
+            args,
+            k_0,
+            lon_0,
+            lat_0,
+            x_0,
+            y_0,
+            eps,
         })
     }
 }

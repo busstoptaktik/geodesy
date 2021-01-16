@@ -33,8 +33,8 @@ pub use coordinates::CoordinateTuple;
 pub use coordinates::DMS;
 pub use ellipsoids::Ellipsoid;
 
-pub use operators::Operator;
 pub use operators::Operand;
+pub use operators::Operator;
 
 #[allow(non_upper_case_globals)]
 pub const fwd: bool = true;
@@ -83,7 +83,7 @@ mod tests {
         assert_eq!(o.coord.third(), 0.);
 
         // A non-existing operator
-        let h  = operator("unimplemented_operator: {dx: -87, dy: -96, dz: -120}");
+        let h = operator("unimplemented_operator: {dx: -87, dy: -96, dz: -120}");
         assert!(h.is_err());
 
         // A pipeline
@@ -97,10 +97,8 @@ mod tests {
 
         let h = operator(pipeline);
         assert!(h.is_ok());
-
     }
 }
-
 
 /// Literature, that has been useful in designing and implementing this library.
 pub enum Bibliography {

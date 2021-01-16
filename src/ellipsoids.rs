@@ -19,7 +19,7 @@ static ELLIPSOIDS: [Ellipsoid; 5] = [
     Ellipsoid {
         name: "GRS80",
         a: 6378137.0,
-        f: 1. / 298.25722_21008_82711_24316,
+        f: 1. / 298.257_222_100_882_7, // 11_24316,
     },
     Ellipsoid {
         name: "intl",
@@ -222,7 +222,8 @@ impl Ellipsoid {
     ///
     /// [Deakin et al](crate::Bibliography::Dea12) provides a higher order (*n⁸*) derivation.
     ///
-    #[allow(non_snake_case)]
+    #[allow(non_snake_case)] // make it possible to mimic math notation from original paper
+    #[allow(clippy::many_single_char_names)] // ditto
     pub fn meridional_distance(&self, latitude: f64, forward: bool) -> f64 {
         let n = self.third_flattening();
         let m = 1. + n * n / 8.;
@@ -435,7 +436,8 @@ impl Ellipsoid {
     /// Follows the the derivation given by
     /// Bowring ([1976](crate::Bibliography::Bow76) and
     /// [1985](crate::Bibliography::Bow85))
-    #[allow(non_snake_case)]
+    #[allow(non_snake_case)] // make it possible to mimic math notation from original paper
+    #[allow(clippy::many_single_char_names)] // ditto
     pub fn cartesian(&self, geographic: &CoordinateTuple) -> CoordinateTuple {
         let lam = geographic.first();
         let phi = geographic.second();
@@ -460,7 +462,8 @@ impl Ellipsoid {
     /// Follows the the derivation given by
     /// Bowring ([1976](crate::Bibliography::Bow76) and
     /// [1985](crate::Bibliography::Bow85))
-    #[allow(non_snake_case)]
+    #[allow(non_snake_case)] // make it possible to mimic math notation from original paper
+    #[allow(clippy::many_single_char_names)] // ditto
     pub fn geographic(&self, cartesian: &CoordinateTuple) -> CoordinateTuple {
         let X = cartesian.first();
         let Y = cartesian.second();
