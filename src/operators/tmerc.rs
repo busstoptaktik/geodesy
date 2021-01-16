@@ -49,7 +49,7 @@ impl Tmerc {
         let k_0 = 0.9996;
         let lon_0 = (-183. + 6. * zone).to_radians();
         let lat_0 = 0.;
-        let x_0 = 500000.;
+        let x_0 = 500_000.;
         let y_0 = 0.;
         let eps = ellps.second_eccentricity_squared();
         let args = args.clone();

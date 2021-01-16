@@ -18,33 +18,34 @@ pub struct Ellipsoid {
 static ELLIPSOIDS: [Ellipsoid; 5] = [
     Ellipsoid {
         name: "GRS80",
-        a: 6378137.0,
+        a: 6_378_137.0,
         f: 1. / 298.257_222_100_882_7, // 11_24316,
     },
     Ellipsoid {
         name: "intl",
-        a: 6378388.0,
+        a: 6_378_388.0,
         f: 1. / 297.,
     },
     Ellipsoid {
         name: "Helmert",
-        a: 6378200.0,
+        a: 6_378_200.0,
         f: 1. / 298.3,
     },
     Ellipsoid {
         name: "clrk66",
-        a: 6378206.4,
-        f: 1. / 294.9786982,
+        a: 6_378_206.4,
+        f: 1. / 294.978_698_2,
     },
     Ellipsoid {
         name: "clrk80",
-        a: 6378249.145,
+        a: 6_378_249.145,
         f: 1. / 293.465,
     },
 ];
 
 impl Ellipsoid {
     /// User defined ellipsoid
+    #[must_use]
     pub fn new(semimajor_axis: f64, flattening: f64) -> Ellipsoid {
         Ellipsoid {
             name: "",
@@ -54,8 +55,9 @@ impl Ellipsoid {
     }
 
     /// Predefined ellipsoid
+    #[must_use]
     pub fn named(name: &str) -> Ellipsoid {
-        for e in ELLIPSOIDS.iter() {
+        for e in &ELLIPSOIDS {
             if e.name == name {
                 return *e;
             }
@@ -63,6 +65,7 @@ impl Ellipsoid {
         ELLIPSOIDS[0]
     }
 
+    #[must_use]
     pub fn name(&self) -> &'static str {
         self.name
     }
@@ -70,22 +73,26 @@ impl Ellipsoid {
     // ----- Eccentricities --------------------------------------------------------
 
     /// The squared eccentricity *e² = (a² - b²) / a²*.
+    #[must_use]
     pub fn eccentricity_squared(&self) -> f64 {
         self.f * (2_f64 - self.f)
     }
 
     /// The eccentricity *e*
+    #[must_use]
     pub fn eccentricity(&self) -> f64 {
         self.eccentricity_squared().sqrt()
     }
 
     /// The squared second eccentricity *e'² = (a² - b²) / b² = e² / (1 - e²)*
+    #[must_use]
     pub fn second_eccentricity_squared(&self) -> f64 {
         let es = self.eccentricity_squared();
         es / (1.0 - es)
     }
 
     /// The second eccentricity *e'*
+    #[must_use]
     pub fn second_eccentricity(&self) -> f64 {
         self.second_eccentricity_squared().sqrt()
     }
@@ -93,11 +100,13 @@ impl Ellipsoid {
     // ----- Axes ------------------------------------------------------------------
 
     /// The semiminor axis, *b*
+    #[must_use]
     pub fn semiminor_axis(&self) -> f64 {
         self.a * (1.0 - self.f)
     }
 
     /// The semimajor axis, *a*
+    #[must_use]
     pub fn semimajor_axis(&self) -> f64 {
         self.a
     }
@@ -105,17 +114,20 @@ impl Ellipsoid {
     // ----- Flatteningss ----------------------------------------------------------
 
     /// The flattening, *f = (a - b)/a*
+    #[must_use]
     pub fn flattening(&self) -> f64 {
         self.f
     }
 
     /// The second flattening, *f = (a - b) / b*
+    #[must_use]
     pub fn second_flattening(&self) -> f64 {
         let b = self.semiminor_axis();
         (self.a - b) / b
     }
 
     /// The third flattening, *n = (a - b) / (a + b) = f / (2 - f)*
+    #[must_use]
     pub fn third_flattening(&self) -> f64 {
         self.f / (2.0 - self.f)
     }
@@ -123,6 +135,7 @@ impl Ellipsoid {
     // ----- Curvatures ------------------------------------------------------------
 
     /// The radius of curvature in the prime vertical, *N*
+    #[must_use]
     pub fn prime_vertical_radius_of_curvature(&self, latitude: f64) -> f64 {
         if self.f == 0.0 {
             return self.a;
@@ -131,6 +144,7 @@ impl Ellipsoid {
     }
 
     /// The meridian radius of curvature, *M*
+    #[must_use]
     pub fn meridian_radius_of_curvature(&self, latitude: f64) -> f64 {
         if self.f == 0.0 {
             return self.a;
@@ -141,6 +155,7 @@ impl Ellipsoid {
     }
 
     /// The polar radius of curvature, *c*
+    #[must_use]
     pub fn polar_radius_of_curvature(&self) -> f64 {
         self.a * self.a / self.semiminor_axis()
     }
@@ -149,6 +164,7 @@ impl Ellipsoid {
 
     /// Geographic latitude to geocentric latitude
     /// (or vice versa if `forward` is `false`).
+    #[must_use]
     pub fn geocentric_latitude(&self, latitude: f64, forward: bool) -> f64 {
         if forward {
             return ((1.0 - self.f * (2.0 - self.f)) * latitude.tan()).atan();
@@ -158,6 +174,7 @@ impl Ellipsoid {
 
     /// Geographic latitude to reduced latitude
     /// (or vice versa if `forward` is  `false`).
+    #[must_use]
     pub fn reduced_latitude(&self, latitude: f64, forward: bool) -> f64 {
         if forward {
             return latitude.tan().atan2(1. / (1. - self.f));
@@ -166,6 +183,7 @@ impl Ellipsoid {
     }
 
     /// Isometric latitude, 𝜓
+    #[must_use]
     pub fn isometric_latitude(&self, latitude: f64) -> f64 {
         let e = self.eccentricity();
         latitude.tan().asinh() - (e * latitude.sin()).atanh() * e
@@ -179,6 +197,7 @@ impl Ellipsoid {
     ///
     /// König und Weise p.50 (96), p.19 (38b), p.5 (2), here using the extended
     /// version from [Deakin et al 2012](crate::Bibliography::Dea12) eq. (41)
+    #[must_use]
     pub fn normalized_meridian_arc_unit(&self) -> f64 {
         let n = self.third_flattening();
         let nn = n * n;
@@ -191,6 +210,7 @@ impl Ellipsoid {
     /// Closely related to the [normalized meridian arc unit](Ellipsoid::normalized_meridian_arc_unit).
     ///
     /// [Deakin et al 2012](crate::Bibliography::Dea12) eq. (41)
+    #[must_use]
     pub fn rectifying_radius(&self) -> f64 {
         let n = self.third_flattening();
         let nn = n * n;
@@ -203,6 +223,7 @@ impl Ellipsoid {
     /// The Meridian Quadrant, *Qm*, is the distance from the equator to one of the poles.
     /// i.e. *π/2 · Qn · a*, where *Qn* is the
     /// [normalized meridian arc unit](Ellipsoid::normalized_meridian_arc_unit)
+    #[must_use]
     pub fn meridian_quadrant(&self) -> f64 {
         self.a * FRAC_PI_2 * self.normalized_meridian_arc_unit()
     }
@@ -222,6 +243,7 @@ impl Ellipsoid {
     ///
     /// [Deakin et al](crate::Bibliography::Dea12) provides a higher order (*n⁸*) derivation.
     ///
+    #[must_use]
     #[allow(non_snake_case)] // make it possible to mimic math notation from original paper
     #[allow(clippy::many_single_char_names)] // ditto
     pub fn meridional_distance(&self, latitude: f64, forward: bool) -> f64 {
@@ -261,6 +283,7 @@ impl Ellipsoid {
     /// presented an algorithm which is exact to machine precision, and converges everywhere.
     /// The crate [geographiclib-rs](https://crates.io/crates/geographiclib-rs), by
     /// Federico Dolce and Michael Kirk, provides a Rust implementation of Karney's algorithm.
+    #[must_use]
     #[allow(non_snake_case)]
     pub fn geodesic_fwd(
         &self,
@@ -343,10 +366,11 @@ impl Ellipsoid {
         // Return azimuth
         let aa2 = aasin.atan2(U1cos * sscos * azicos - U1sin * sssin);
 
-        CoordinateTuple::new(L2, B2, aa2, i as f64)
+        CoordinateTuple::new(L2, B2, aa2, f64::from(i))
     }
 
-    /// See [geodesic_fwd](crate::Ellipsoid::geodesic_fwd)
+    /// See [`geodesic_fwd`](crate::Ellipsoid::geodesic_fwd)
+    #[must_use]
     #[allow(non_snake_case)]
     pub fn geodesic_inv(&self, from: &CoordinateTuple, to: &CoordinateTuple) -> CoordinateTuple {
         let B1 = from.1;
@@ -426,7 +450,7 @@ impl Ellipsoid {
         let s = self.semiminor_axis() * A * (ss - dss);
         let a1 = (U2cos * llsin).atan2(U1cos * U2sin - U1sin * U2cos * llcos);
         let a2 = (U1cos * llsin).atan2(-U1sin * U2cos + U1cos * U2sin * llcos);
-        CoordinateTuple::new(a1, a2, s, i as f64)
+        CoordinateTuple::new(a1, a2, s, f64::from(i))
     }
 
     // ----- Cartesian <--> Geographic conversion ----------------------------------
@@ -436,6 +460,7 @@ impl Ellipsoid {
     /// Follows the the derivation given by
     /// Bowring ([1976](crate::Bibliography::Bow76) and
     /// [1985](crate::Bibliography::Bow85))
+    #[must_use]
     #[allow(non_snake_case)] // make it possible to mimic math notation from original paper
     #[allow(clippy::many_single_char_names)] // ditto
     pub fn cartesian(&self, geographic: &CoordinateTuple) -> CoordinateTuple {
@@ -462,6 +487,7 @@ impl Ellipsoid {
     /// Follows the the derivation given by
     /// Bowring ([1976](crate::Bibliography::Bow76) and
     /// [1985](crate::Bibliography::Bow85))
+    #[must_use]
     #[allow(non_snake_case)] // make it possible to mimic math notation from original paper
     #[allow(clippy::many_single_char_names)] // ditto
     pub fn geographic(&self, cartesian: &CoordinateTuple) -> CoordinateTuple {

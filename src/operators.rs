@@ -23,6 +23,7 @@ pub struct Operand {
 }
 
 impl Operand {
+    #[must_use]
     pub fn new() -> Operand {
         Operand {
             coord: CoordinateTuple(0., 0., 0., 0.),
@@ -85,6 +86,7 @@ pub struct OperatorArgs {
 }
 
 impl OperatorArgs {
+    #[must_use]
     pub fn new() -> OperatorArgs {
         OperatorArgs {
             name: String::new(),
@@ -94,7 +96,8 @@ impl OperatorArgs {
         }
     }
 
-    /// Provides an OperatorArgs object, populated by the global defaults (`ellps: GRS80`)
+    /// Provides an `OperatorArgs` object, populated by the global defaults (`ellps: GRS80`)
+    #[must_use]
     pub fn global_defaults() -> OperatorArgs {
         let mut op = OperatorArgs {
             name: String::new(),
@@ -106,8 +109,9 @@ impl OperatorArgs {
         op
     }
 
-    /// Provides an OperatorArgs object, populated by the defaults from an existing
-    /// OperatorArgs, combined with a new object definition.
+    /// Provides an `OperatorArgs` object, populated by the defaults from an existing
+    /// `OperatorArgs`, combined with a new object definition.
+    #[must_use]
     pub fn with_globals_from(
         existing: &OperatorArgs,
         definition: &str,
@@ -238,8 +242,7 @@ impl OperatorArgs {
 
         // It's a pipeline - insert the number of steps into the argument list.
         let steps = steps.unwrap();
-        let nsteps = steps.len();
-        self.insert("_nsteps", &nsteps.to_string());
+        self.insert("_nsteps", &steps.len().to_string());
 
         // Insert each step into the argument list, formatted as YAML.
         // Unfortunately the compact mode does not work.
@@ -343,8 +346,7 @@ pub fn operator_factory(args: &mut OperatorArgs) -> Result<Operator, String> {
 
     // Pipelines do not need to be named "pipeline": They are characterized simply
     // by containing steps.
-    if args.name == "pipeline" || args.numeric_value("operator_factory", "_nsteps", 0.0)? as i64 > 0
-    {
+    if args.name == "pipeline" || args.numeric_value("operator_factory", "_nsteps", 0.0)? > 0.0 {
         let op = co::pipeline::Pipeline::new(args)?;
         return Ok(Box::new(op));
     }

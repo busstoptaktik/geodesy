@@ -1,6 +1,7 @@
 #[derive(Clone, Copy, Debug, PartialEq, Default)]
 pub struct CoordinateTuple(pub f64, pub f64, pub f64, pub f64);
 impl CoordinateTuple {
+    #[must_use]
     pub fn new(x: f64, y: f64, z: f64, t: f64) -> CoordinateTuple {
         CoordinateTuple {
             0: x,
@@ -10,6 +11,7 @@ impl CoordinateTuple {
         }
     }
 
+    #[must_use]
     pub fn deg(x: f64, y: f64, z: f64, t: f64) -> CoordinateTuple {
         CoordinateTuple {
             0: x.to_radians(),
@@ -19,26 +21,32 @@ impl CoordinateTuple {
         }
     }
 
+    #[must_use]
     pub fn to_degrees(&self) -> CoordinateTuple {
         CoordinateTuple::new(self.0.to_degrees(), self.1.to_degrees(), self.2, self.3)
     }
 
+    #[must_use]
     pub fn to_radians(&self) -> CoordinateTuple {
         CoordinateTuple::new(self.0.to_radians(), self.1.to_radians(), self.2, self.3)
     }
 
+    #[must_use]
     pub fn first(&self) -> f64 {
         self.0
     }
 
+    #[must_use]
     pub fn second(&self) -> f64 {
         self.1
     }
 
+    #[must_use]
     pub fn third(&self) -> f64 {
         self.2
     }
 
+    #[must_use]
     pub fn fourth(&self) -> f64 {
         self.3
     }
@@ -55,11 +63,17 @@ pub struct DMS {
 }
 
 impl DMS {
+    #[must_use]
     pub fn new(d: i16, m: i8, s: f32) -> DMS {
         DMS { d, m, s }
     }
-    pub fn to_degrees(&self) -> f64 {
-        (self.s as f64 / 60. + self.m as f64) / 60. + self.d as f64
+    #[must_use]
+    pub fn to_degrees(self) -> f64 {
+        (f64::from(self.s) / 60. + f64::from(self.m)) / 60. + f64::from(self.d)
+    }
+    #[must_use]
+    pub fn to_radians(self) -> f64 {
+        self.to_degrees().to_radians()
     }
 }
 
@@ -117,7 +131,6 @@ mod tests {
         let c = CoordinateTuple::new(12., 55., 100., 0.).to_radians();
         let d = CoordinateTuple::deg(12., 55., 100., 0.);
         assert_eq!(c, d);
-        d.to_degrees();
         assert_eq!(d.0, 12f64.to_radians());
         let e = d.to_degrees();
         assert_eq!(e.0, c.to_degrees().0);
