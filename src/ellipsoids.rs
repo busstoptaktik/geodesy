@@ -478,7 +478,6 @@ impl Ellipsoid {
         self.geodesic_inv(from, to).2
     }
 
-
     // ----- Cartesian <--> Geographic conversion ----------------------------------
 
     /// Geographic to cartesian conversion.

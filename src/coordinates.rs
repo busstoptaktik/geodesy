@@ -105,9 +105,10 @@ impl CoordinateTuple {
     /// ```
     #[must_use]
     pub fn hypot3(&self, other: &CoordinateTuple) -> f64 {
-        (self.0 - other.0).hypot(self.1 - other.1).hypot(self.2 - other.2)
+        (self.0 - other.0)
+            .hypot(self.1 - other.1)
+            .hypot(self.2 - other.2)
     }
-
 }
 
 #[derive(Clone, Copy, Debug)]
