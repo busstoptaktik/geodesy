@@ -43,6 +43,17 @@ static ELLIPSOIDS: [Ellipsoid; 5] = [
     },
 ];
 
+/// GRS80 is the default ellipsoid.
+impl Default for Ellipsoid {
+    fn default() -> Ellipsoid {
+        Ellipsoid{
+            name: "GRS80",
+            a: 6_378_137.0,
+            f: 1. / 298.257_222_100_882_7, // 11_24316,
+        }
+    }
+}
+
 impl Ellipsoid {
     /// User defined ellipsoid
     #[must_use]
@@ -371,7 +382,7 @@ impl Ellipsoid {
 
     /// See [`geodesic_fwd`](crate::Ellipsoid::geodesic_fwd)
     #[must_use]
-    #[allow(non_snake_case)]
+    #[allow(non_snake_case)] // allow math-like notation
     pub fn geodesic_inv(&self, from: &CoordinateTuple, to: &CoordinateTuple) -> CoordinateTuple {
         let B1 = from.1;
         let B2 = to.1;

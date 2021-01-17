@@ -147,47 +147,52 @@ impl OperatorCore for Tmerc {
 mod tests {
     #[test]
     fn utm() {
-        use super::*;
+        use crate::{operator, Operand, CoordinateTuple, ellipsoids::Ellipsoid};
 
         // Test the UTM implementation
-        let utm = "utm: {zone: 32}";
-        let mut args = OperatorArgs::global_defaults();
-        args.populate(&utm, "");
-        let op = Tmerc::utm(&mut args).unwrap();
+        let op = operator("utm: {zone: 32}").unwrap();
 
         let mut operand = Operand::new();
-        operand.coord = crate::CoordinateTuple(12f64.to_radians(), 55f64.to_radians(), 100., 0.);
-        op.fwd(&mut operand);
+        let geo = CoordinateTuple::deg(12., 55., 100., 0.);
+        operand.coord = geo;
 
         // Validation value from PROJ:
         // echo 12 55 0 0 | cct -d18 +proj=utm +zone=32
-        assert!((operand.coord.0 - 691875.6321396606508642440).abs() < 1e-5);
-        assert!((operand.coord.1 - 6098907.825005011633038521).abs() < 1e-5);
+        let utm_proj = CoordinateTuple(691_875.632_139_661, 6_098_907.825_005_012, 100., 0.);
+        assert!(op.fwd(&mut operand));
+        assert!(operand.coord.hypot2(&utm_proj) < 1e-5);
 
         // Roundtrip...
-        op.inv(&mut operand);
+        assert!(op.inv(&mut operand));
 
         // The latitude roundtrips beautifully, at better than 0.1 mm
         assert!((operand.coord.1.to_degrees() - 55.0).abs() * 111_000_000. < 0.05);
         // And the longitude even trumps that by a factor of 10.
         assert!((operand.coord.0.to_degrees() - 12.0).abs() * 56_000_000. < 0.005);
 
+        // So also the geodesic distance is smaller than 0.1 mm
+        let ellps = Ellipsoid::default();
+        assert!(ellps.distance(&operand.coord, &geo) < 1e-4);
+
         // Test a Greenland extreme value (a zone 19 point projected in zone 24)
-        let utm = "utm: {zone: 24}";
-        let mut args = OperatorArgs::global_defaults();
-        args.populate(&utm, "");
-        let op = Tmerc::utm(&mut args).unwrap();
-        operand.coord = crate::CoordinateTuple(-72f64.to_radians(), 80f64.to_radians(), 100., 0.);
+        let op = operator("utm: {zone: 24}").unwrap();
+        let geo = CoordinateTuple::deg(-72., 80., 100., 0.);
+        operand.coord = geo;
+        // Roundtrip...
         op.fwd(&mut operand);
         op.inv(&mut operand);
+        assert!(ellps.distance(&operand.coord, &geo) < 1.05);
+
         operand.coord.1 = operand.coord.1.to_degrees();
         operand.coord.0 = operand.coord.0.to_degrees();
         assert!((operand.coord.1 - 80.0).abs() * 111_000. < 1.02);
         assert!((operand.coord.0 + 72.0).abs() * 20_000. < 0.04);
-        // i.e. much better than Snyder:
+
+        // i.e. Bowring's verion is much better than Snyder's:
         // echo -72 80 0 0 | cct +proj=utm +approx +zone=24 +ellps=GRS80 | cct -I +proj=utm +approx +zone=24 +ellps=GRS80
         // -71.9066920547   80.0022281660        0.0000        0.0000
-        // But obviously much worse than Poder/Engsager:
+        //
+        // But obviously much worse than Poder/Engsager's:
         // echo -72 80 0 0 | cct +proj=utm +zone=24 +ellps=GRS80 | cct -I +proj=utm +zone=24 +ellps=GRS80
         // -72.0000000022   80.0000000001        0.0000        0.0000
     }
