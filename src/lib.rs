@@ -127,6 +127,11 @@ pub enum Bibliography {
     /// [DOI](https://doi.org/10.1007/s001900050271)
     Fuk99,
 
+    /// Toshio Fukushima (2006): *Transformation from Cartesian to Geodetic Coordinates Accelerated by Halley’s Method*.
+    /// Journal of Geodesy, 79(12), pp.689-693
+    /// [DOI](https://doi.org/10.1007/s00190-006-0023-2)
+    Fuk06,
+
     /// Charles F.F. Karney (2010): *Transverse Mercator with an accuracy of a few nanometers*.
     /// [pdf](https://arxiv.org/pdf/1002.1417.pdf)
     Kar10,
