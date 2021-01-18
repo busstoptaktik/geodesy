@@ -1,7 +1,7 @@
-use geodesy::OperatorArgs;
-use geodesy::OperatorCore;
 use geodesy::Operand;
 use geodesy::Operator;
+use geodesy::OperatorArgs;
+use geodesy::OperatorCore;
 use yaml_rust::{Yaml, YamlLoader};
 
 /*
@@ -43,7 +43,7 @@ fn salat_(py: Python) -> PyResult<()> {
 }
 */
 
-fn main()  {
+fn main() {
     // Se https://docs.rs/yaml-rust/0.4.4/yaml_rust/yaml/enum.Yaml.html
     let mut pap = OperatorArgs::new();
     let txt = std::fs::read_to_string("src/transformations.yml").unwrap();
@@ -72,7 +72,7 @@ fn main()  {
 
     println!("GENERIC *****************************");
     let c = Operator::new("cart: {}").unwrap();
-    let h = Operator::new("helm: {dx: 1, dy: 2, dz: 3}").unwrap();
+    let h = Operator::new("helmert: {dx: 1, dy: 2, dz: 3}").unwrap();
     let mut o = Operand::new();
 
     c.fwd(&mut o);

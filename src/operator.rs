@@ -1,5 +1,5 @@
-use crate::OperatorArgs;
 use crate::Operand;
+use crate::OperatorArgs;
 
 // Operator used to be a typedef: Operator = Box<dyn OperatorCore>, but now it's
 // a newtype around a Boxed OperatorCore, in order to be able to define methods on
@@ -67,7 +67,7 @@ impl OperatorCore for Operator {
 mod operator {
     #[test]
     fn test() {
-        use crate::{Operator, OperatorCore, Operand, fwd, inv};
+        use crate::{fwd, inv, Operand, Operator, OperatorCore};
         let mut o = Operand::new();
 
         // A plain operator: Helmert, EPSG:1134 - 3 parameter, ED50/WGS84

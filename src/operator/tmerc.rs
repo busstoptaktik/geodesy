@@ -150,7 +150,7 @@ impl OperatorCore for Tmerc {
 mod tests {
     #[test]
     fn utm() {
-        use crate::{Ellipsoid, Operator, OperatorCore, CoordinateTuple, Operand};
+        use crate::{CoordinateTuple, Ellipsoid, Operand, Operator, OperatorCore};
 
         // Test the UTM implementation
         let op = Operator::new("utm: {zone: 32}").unwrap();
