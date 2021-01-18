@@ -95,6 +95,9 @@ mod tests {
 
         let mut args = OperatorArgs::global_defaults();
         args.populate(&pipeline, "");
+        // We cannot use Operator::new here, because we want to access internal
+        // elements of the Pipeline struct below. These are unaccesible after
+        // boxing.
         let op = Pipeline::new(&mut args).unwrap();
 
         // Check step-by-step that the pipeline was formed as expected
@@ -123,10 +126,10 @@ mod tests {
         // This is the first example of a running pipeline in Rust Geodesy. Awesome!
         // -------------------------------------------------------------------------
         let mut operand = Operand::new();
-        operand.coord = crate::CoordinateTuple::deg(12f64, 55f64, 100., 0.);
+        operand.coord = crate::CoordinateTuple::deg(12., 55., 100., 0.);
 
         /* DRUM ROLL... */
-        op.operate(&mut operand, true); // TA-DAA!
+        op.operate(&mut operand, fwd); // TA-DAA!
 
         // For comparison: the point (12, 55, 100, 0) transformed by the cct
         // application of the PROJ package yields:

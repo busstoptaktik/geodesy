@@ -36,15 +36,11 @@ impl OperatorCore for Noop {
 
 #[cfg(test)]
 mod tests {
-    use crate::operator::operator_factory;
-
     #[test]
     fn noop() {
-        use super::*;
+        use crate::*;
         let mut o = Operand::new();
-        let mut args = OperatorArgs::new();
-        args.name("noop");
-        let c = operator_factory(&mut args).unwrap();
+        let c = Operator::new("noop: {}").unwrap();
 
         // Make sure we do not do anything
         c.fwd(&mut o);

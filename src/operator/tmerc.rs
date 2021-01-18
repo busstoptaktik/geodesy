@@ -202,21 +202,18 @@ mod tests {
 
     #[test]
     fn tmerc() {
-        use super::*;
+        use crate::*;
 
         // Test the plain tmerc, by reimplementing the UTM above manually
-        let tmerc = "tmerc: {k_0: 0.9996, lon_0: 9, x_0: 500000}";
-        let mut args = OperatorArgs::global_defaults();
-        args.populate(&tmerc, "");
-        let op = Tmerc::new(&mut args).unwrap();
+        let op = Operator::new("tmerc: {k_0: 0.9996, lon_0: 9, x_0: 500000}").unwrap();
 
         let mut operand = Operand::new();
-        operand.coord = crate::CoordinateTuple(12f64.to_radians(), 55f64.to_radians(), 100., 0.);
-        op.fwd(&mut operand);
+        operand.coord = crate::CoordinateTuple::deg(12., 55., 100., 0.);
+        assert!(op.fwd(&mut operand));
 
         // Validation value from PROJ:
         // echo 12 55 0 0 | cct -d18 +proj=utm +zone=32
-        assert!((operand.coord.0 - 691875.6321396606508642440).abs() < 1e-5);
-        assert!((operand.coord.1 - 6098907.825005011633038521).abs() < 1e-5);
+        let utm_proj = CoordinateTuple(691_875.632_139_661, 6_098_907.825_005_012, 100., 0.);
+        assert!(operand.coord.hypot2(&utm_proj) < 1e-5);
     }
 }

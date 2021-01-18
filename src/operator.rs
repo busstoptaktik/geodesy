@@ -64,9 +64,9 @@ impl OperatorCore for Operator {
 }
 
 #[cfg(test)]
-mod operator {
+mod tests {
     #[test]
-    fn test() {
+    fn operator() {
         use crate::{fwd, inv, Operand, Operator, OperatorCore};
         let mut o = Operand::new();
 

@@ -50,17 +50,11 @@ impl OperatorCore for Cart {
 
 #[cfg(test)]
 mod tests {
-    use crate::operator::operator_factory;
-
     #[test]
     fn cart() {
-        use super::*;
+        use crate::*;
+        let c = Operator::new("cart: {ellps: intl}").unwrap();
         let mut o = Operand::new();
-        let mut args = OperatorArgs::new();
-        args.name("cart");
-        args.insert("ellps", "intl");
-
-        let c = operator_factory(&mut args).unwrap();
 
         // First check that (0,0,0) takes us to (a,0,0)
         c.fwd(&mut o);
@@ -70,9 +64,7 @@ mod tests {
         assert_eq!(o.coord.1, 0.0);
 
         // Some arbitrary spot - southwest of Copenhagen
-        o.coord.0 = 12f64.to_radians();
-        o.coord.1 = 55f64.to_radians();
-        o.coord.2 = 100.0;
+        o.coord = CoordinateTuple::deg(12., 55., 100., 0.);
 
         // Roundtrip
         c.fwd(&mut o);
