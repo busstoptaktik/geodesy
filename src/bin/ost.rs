@@ -1,7 +1,7 @@
-use geodesy::operators::operator_factory;
-use geodesy::operators::Operand;
-use geodesy::operators::Operator;
-use geodesy::operators::OperatorArgs;
+use geodesy::OperatorArgs;
+use geodesy::OperatorCore;
+use geodesy::Operand;
+use geodesy::Operator;
 use yaml_rust::{Yaml, YamlLoader};
 
 /*
@@ -43,7 +43,7 @@ fn salat_(py: Python) -> PyResult<()> {
 }
 */
 
-fn generic_experiment() -> Vec<Operator> {
+fn main()  {
     // Se https://docs.rs/yaml-rust/0.4.4/yaml_rust/yaml/enum.Yaml.html
     let mut pap = OperatorArgs::new();
     let txt = std::fs::read_to_string("src/transformations.yml").unwrap();
@@ -71,17 +71,9 @@ fn generic_experiment() -> Vec<Operator> {
     println!("\nPap: {:?}\n", pap);
 
     println!("GENERIC *****************************");
+    let c = Operator::new("cart: {}").unwrap();
+    let h = Operator::new("helm: {dx: 1, dy: 2, dz: 3}").unwrap();
     let mut o = Operand::new();
-    let mut args = OperatorArgs::new();
-    args.name("cart");
-    operator_factory(&mut args).unwrap();
-    args.insert("dx", "1");
-    args.insert("dy", "2");
-    args.insert("dz", "3");
-    println!("\nargs: {:?}\n", args);
-    let c = operator_factory(&mut args).unwrap();
-    args.name("helm");
-    let h = operator_factory(&mut args).unwrap();
 
     c.fwd(&mut o);
     println!("{:?}", o);
@@ -90,34 +82,4 @@ fn generic_experiment() -> Vec<Operator> {
 
     println!("{}", c.name());
     println!("{}", h.name());
-
-    let mut pipeline = Vec::new();
-    pipeline.push(c);
-    pipeline.push(h);
-    for x in &pipeline {
-        println!("{}", x.name());
-    }
-    println!("{:?}", o);
-
-    pipeline
-}
-
-fn main() {
-    let mut global_globals = OperatorArgs::new();
-    global_globals.insert("ellps", "GRS80");
-
-    println!("Global_globals: {:?}", global_globals);
-    //let (_steps, globals) = steps_and_globals("pipeline");
-    //println!("Globals: {:?}", globals);
-    //global_globals.append(&globals);
-    //println!("Global_globals: {:?}", global_globals);
-
-    let pipeline = generic_experiment();
-    println!("MAIN*****************************");
-    for x in &pipeline {
-        println!("{}", x.name());
-    }
-
-    // salat();
-    // inline_main();
 }

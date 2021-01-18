@@ -476,8 +476,8 @@ impl Ellipsoid {
     ///
     /// ```rust
     /// // Compute the distance between Copenhagen and Paris
-    /// use geodesy::ellipsoids::Ellipsoid;
-    /// use geodesy::coordinates::CoordinateTuple;
+    /// use geodesy::Ellipsoid;
+    /// use geodesy::CoordinateTuple;
     /// let ellps = Ellipsoid::named("GRS80");
     /// let p0 = CoordinateTuple::deg(12., 55., 0., 0.);
     /// let p1 = CoordinateTuple::deg(2., 49., 0., 0.);
@@ -598,12 +598,12 @@ mod tests {
     fn test_ellipsoid() {
         // Constructors
         let ellps = Ellipsoid::named("intl");
-        assert_eq!(ellps.f, 1. / 297.);
+        assert_eq!(ellps.flattening(), 1. / 297.);
         assert_eq!(ellps.name(), "intl");
 
         let ellps = Ellipsoid::named("GRS80");
-        assert_eq!(ellps.a, 6378137.0);
-        assert_eq!(ellps.f, 1. / 298.25722_21008_82711_24316);
+        assert_eq!(ellps.semimajor_axis(), 6378137.0);
+        assert_eq!(ellps.flattening(), 1. / 298.25722_21008_82711_24316);
         assert_eq!(ellps.name, "GRS80");
 
         assert!((ellps.normalized_meridian_arc_unit() - 0.9983242984230415).abs() < 1e-13);
@@ -613,7 +613,7 @@ mod tests {
     #[test]
     fn shape_and_size() {
         let ellps = Ellipsoid::named("GRS80");
-        let ellps = Ellipsoid::new(ellps.a, ellps.f);
+        let ellps = Ellipsoid::new(ellps.semimajor_axis(), ellps.flattening());
         assert_eq!(ellps.semimajor_axis(), 6378137.0);
         assert_eq!(ellps.flattening(), 1. / 298.25722_21008_82711_24316);
         assert_eq!(ellps.name(), "");

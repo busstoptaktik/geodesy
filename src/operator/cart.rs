@@ -50,7 +50,7 @@ impl OperatorCore for Cart {
 
 #[cfg(test)]
 mod tests {
-    use crate::operators::operator_factory;
+    use crate::operator::operator_factory;
 
     #[test]
     fn cart() {

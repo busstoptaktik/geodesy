@@ -25,80 +25,25 @@
 // here
 // "###]
 
-pub mod coordinates;
-pub mod ellipsoids;
-pub mod operators;
+mod coordinates;
+mod ellipsoids;
+mod operand;
+mod operator;
+mod operatorargs;
 
 pub use coordinates::CoordinateTuple;
 pub use coordinates::DMS;
 pub use ellipsoids::Ellipsoid;
 
-pub use operators::Operand;
-pub use operators::Operator;
+pub use operand::Operand;
+pub use operator::Operator;
+pub use operator::OperatorCore;
+pub use operatorargs::OperatorArgs;
 
 #[allow(non_upper_case_globals)]
 pub const fwd: bool = true;
 #[allow(non_upper_case_globals)]
 pub const inv: bool = false;
-
-/// The equivalent of the PROJ `proj_create()` function: Create an operator object
-/// from a text string.
-///
-/// Example:
-/// ```rust
-/// // EPSG:1134 - 3 parameter, ED50/WGS84
-/// let h = geodesy::operator("helmert: {dx: -87, dy: -96, dz: -120}");
-/// assert!(h.is_ok());
-/// let h = h.unwrap();
-/// let mut o = geodesy::Operand::new();
-/// h.operate(&mut o, geodesy::fwd);
-/// ```
-pub fn operator(definition: &str) -> Result<Operator, String> {
-    let mut oa = operators::OperatorArgs::global_defaults();
-    oa.populate(definition, "");
-    operators::operator_factory(&mut oa)
-}
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn operator() {
-        use super::*;
-        use crate::operators::Operand;
-        let mut o = Operand::new();
-
-        // A plain operator: Helmert, EPSG:1134 - 3 parameter, ED50/WGS84
-        let h = operator("helmert: {dx: -87, dy: -96, dz: -120}");
-        assert!(h.is_ok());
-        let h = h.unwrap();
-
-        h.operate(&mut o, fwd);
-        assert_eq!(o.coord.first(), -87.);
-        assert_eq!(o.coord.second(), -96.);
-        assert_eq!(o.coord.third(), -120.);
-
-        h.operate(&mut o, inv);
-        assert_eq!(o.coord.first(), 0.);
-        assert_eq!(o.coord.second(), 0.);
-        assert_eq!(o.coord.third(), 0.);
-
-        // A non-existing operator
-        let h = operator("unimplemented_operator: {dx: -87, dy: -96, dz: -120}");
-        assert!(h.is_err());
-
-        // A pipeline
-        let pipeline = "ed50_etrs89: {
-            steps: [
-                cart: {ellps: intl},
-                helmert: {dx: -87, dy: -96, dz: -120},
-                cart: {inv: true, ellps: GRS80}
-            ]
-        }";
-
-        let h = operator(pipeline);
-        assert!(h.is_ok());
-    }
-}
 
 /// Literature, that has been useful in designing and implementing this library.
 pub enum Bibliography {

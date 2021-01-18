@@ -54,7 +54,7 @@ impl OperatorCore for Helmert {
 
 #[cfg(test)]
 mod tests {
-    use crate::operators::operator_factory;
+    use crate::operator::operator_factory;
 
     #[test]
     fn helmert() {

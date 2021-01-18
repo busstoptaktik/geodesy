@@ -1,5 +1,8 @@
 //! Transverse Mercator
 
+// Renovering af Poder/Engsager tmerc i B:\2019\Projects\FIRE\tramp\tramp\tramp.c
+// Detaljer i C:\Users\B004330\Downloads\2.1.2 A HIGHLY ACCURATE WORLD WIDE ALGORITHM FOR THE TRANSVE (1).doc
+
 use super::Operand;
 use super::OperatorArgs;
 use super::OperatorCore;
@@ -147,10 +150,10 @@ impl OperatorCore for Tmerc {
 mod tests {
     #[test]
     fn utm() {
-        use crate::{ellipsoids::Ellipsoid, operator, CoordinateTuple, Operand};
+        use crate::{Ellipsoid, Operator, OperatorCore, CoordinateTuple, Operand};
 
         // Test the UTM implementation
-        let op = operator("utm: {zone: 32}").unwrap();
+        let op = Operator::new("utm: {zone: 32}").unwrap();
 
         let mut operand = Operand::new();
         let geo = CoordinateTuple::deg(12., 55., 100., 0.);
@@ -175,7 +178,7 @@ mod tests {
         assert!(ellps.distance(&operand.coord, &geo) < 1e-4);
 
         // Test a Greenland extreme value (a zone 19 point projected in zone 24)
-        let op = operator("utm: {zone: 24}").unwrap();
+        let op = Operator::new("utm: {zone: 24}").unwrap();
         let geo = CoordinateTuple::deg(-72., 80., 100., 0.);
         operand.coord = geo;
         // Roundtrip...

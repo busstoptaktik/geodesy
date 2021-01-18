@@ -1,88 +1,12 @@
-use crate::CoordinateTuple;
 use std::collections::HashMap;
 use yaml_rust::{Yaml, YamlEmitter, YamlLoader};
 
-// Renovering af Poder/Engsager tmerc i B:\2019\Projects\FIRE\tramp\tramp\tramp.c
-// Detaljer i C:\Users\B004330\Downloads\2.1.2 A HIGHLY ACCURATE WORLD WIDE ALGORITHM FOR THE TRANSVE (1).doc
-
-mod cart;
-mod helmert;
-mod noop;
-mod pipeline;
-mod tmerc;
-
-pub type Operator = Box<dyn OperatorCore>;
-
-#[derive(Debug, Default)]
-pub struct Operand {
-    pub coord: CoordinateTuple,
-    pub stack: Vec<f64>,
-    pub coordinate_stack: Vec<CoordinateTuple>,
-    pub last_failing_operation: &'static str,
-    pub cause: &'static str,
-}
-
-impl Operand {
-    #[must_use]
-    pub fn new() -> Operand {
-        Operand {
-            coord: CoordinateTuple(0., 0., 0., 0.),
-            stack: vec![],
-            coordinate_stack: vec![],
-            last_failing_operation: "",
-            cause: "",
-        }
-    }
-}
-
-pub trait OperatorCore {
-    fn fwd(&self, ws: &mut Operand) -> bool;
-
-    // implementations must override at least one of {inv, invertible}
-    fn inv(&self, operand: &mut Operand) -> bool {
-        operand.last_failing_operation = self.name();
-        operand.cause = "Operator not invertible";
-        false
-    }
-
-    fn invertible(&self) -> bool {
-        true
-    }
-
-    // operate fwd/inv, taking operator inversion into account
-    fn operate(&self, operand: &mut Operand, forward: bool) -> bool {
-        // Short form of (inverted && !forward) || (forward && !inverted)
-        if self.is_inverted() != forward {
-            return self.fwd(operand);
-        }
-        // We do not need to check for self.invertible() here, since non-invertible
-        // operators will return false as per the default-defined fn inv() above.
-        self.inv(operand)
-    }
-
-    fn name(&self) -> &'static str {
-        "UNKNOWN"
-    }
-
-    // number of steps. 1 unless the operator is a pipeline
-    fn steps(&self) -> usize {
-        1_usize
-    }
-
-    fn args(&self, step: usize) -> &OperatorArgs;
-
-    fn is_inverted(&self) -> bool;
-
-    //fn left(&self) -> CoordType;
-    //fn right(&self) -> CoordType;
-}
-
 #[derive(Debug, Clone, Default)]
 pub struct OperatorArgs {
-    name: String,
-    args: HashMap<String, String>,
-    used: HashMap<String, String>,
-    all_used: HashMap<String, String>,
+    pub name: String,
+    pub args: HashMap<String, String>,
+    pub used: HashMap<String, String>,
+    pub all_used: HashMap<String, String>,
 }
 
 impl OperatorArgs {
@@ -111,6 +35,8 @@ impl OperatorArgs {
 
     /// Provides an `OperatorArgs` object, populated by the defaults from an existing
     /// `OperatorArgs`, combined with a new object definition.
+    ///
+    /// This is the mechanism for inheritance of global args in pipelines.
     #[must_use]
     pub fn with_globals_from(
         existing: &OperatorArgs,
@@ -147,7 +73,7 @@ impl OperatorArgs {
     /// # Examples
     ///
     /// ```rust
-    /// use geodesy::operators::OperatorArgs;
+    /// use geodesy::OperatorArgs;
     ///
     /// let mut args = OperatorArgs::global_defaults();
     /// let txt = std::fs::read_to_string("tests/tests.yml").unwrap_or_default();
@@ -339,40 +265,6 @@ impl OperatorArgs {
     pub fn flag(&mut self, key: &str) -> bool {
         self.value(key, "false") != "false"
     }
-}
-
-pub fn operator_factory(args: &mut OperatorArgs) -> Result<Operator, String> {
-    use crate::operators as co;
-
-    // Pipelines do not need to be named "pipeline": They are characterized simply
-    // by containing steps.
-    if args.name == "pipeline" || args.numeric_value("operator_factory", "_nsteps", 0.0)? > 0.0 {
-        let op = co::pipeline::Pipeline::new(args)?;
-        return Ok(Box::new(op));
-    }
-    if args.name == "cart" {
-        let op = co::cart::Cart::new(args)?;
-        return Ok(Box::new(op));
-    }
-    if args.name == "helmert" {
-        let op = co::helmert::Helmert::new(args)?;
-        return Ok(Box::new(op));
-    }
-    if args.name == "tmerc" {
-        let op = co::tmerc::Tmerc::new(args)?;
-        return Ok(Box::new(op));
-    }
-    if args.name == "utm" {
-        let op = co::tmerc::Tmerc::utm(args)?;
-        return Ok(Box::new(op));
-    }
-    if args.name == "noop" {
-        let op = co::noop::Noop::new(args)?;
-        return Ok(Box::new(op));
-    }
-
-    // Herefter: Søg efter 'name' i filbøtten
-    Err(format!("Unknown operator '{}'", args.name))
 }
 
 //----------------------------------------------------------------------------------
