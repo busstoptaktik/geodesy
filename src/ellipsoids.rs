@@ -46,7 +46,7 @@ static ELLIPSOIDS: [Ellipsoid; 5] = [
 /// GRS80 is the default ellipsoid.
 impl Default for Ellipsoid {
     fn default() -> Ellipsoid {
-        Ellipsoid{
+        Ellipsoid {
             name: "GRS80",
             a: 6_378_137.0,
             f: 1. / 298.257_222_100_882_7, // 11_24316,
@@ -556,15 +556,21 @@ impl Ellipsoid {
         // HM eq. (5-36) and (5-37), with some added numerical efficiency due to
         // Even Rouault, who replaced 3 trigs with a hypot and two divisions, cf.
         // https://github.com/OSGeo/PROJ/commit/78c1df51e0621a4e0b2314f3af9478627e018db3
-        let theta_num = Z * self.a;
-        let theta_denom = p * b;
-        let length = theta_num.hypot(theta_denom);
-        let c = theta_denom / length; // i.e. cos(theta)
-        let s = theta_num / length; // i.e. sin(theta)
+        // let theta_num = Z * self.a;
+        // let theta_denom = p * b;
+        // let length = theta_num.hypot(theta_denom);
+        // let c = theta_denom / length; // i.e. cos(theta)
+        // let s = theta_num / length; // i.e. sin(theta)
+
+        // Even faster than Even Rouault: Fukushima (1999), Appendix B
+        let T = (Z * self.a) / (p * b);
+        let c = 1.0 / (1.0 + T * T).sqrt();
+        let s = c * T;
 
         let phi_num = Z + eps * b * s.powi(3);
         let phi_denom = p - es * self.a * c.powi(3);
         let phi = phi_num.atan2(phi_denom);
+
         let lenphi = phi_num.hypot(phi_denom);
         let sinphi = phi_num / lenphi;
         let cosphi = phi_denom / lenphi;

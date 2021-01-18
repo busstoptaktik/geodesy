@@ -122,6 +122,11 @@ pub enum Bibliography {
     /// (See also [Transverse Mercator: Bowring series](https://en.wikipedia.org/wiki/Transverse_Mercator:_Bowring_series)).
     Bow89,
 
+    /// Toshio Fukushima (1999): *Fast transform from geocentric to geodetic coordinates*.
+    /// Journal of Geodesy, 73(11), pp.603–610
+    /// [DOI](https://doi.org/10.1007/s001900050271)
+    Fuk99,
+
     /// Charles F.F. Karney (2010): *Transverse Mercator with an accuracy of a few nanometers*.
     /// [pdf](https://arxiv.org/pdf/1002.1417.pdf)
     Kar10,
