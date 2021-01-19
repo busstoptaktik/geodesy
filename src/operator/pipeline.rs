@@ -58,12 +58,12 @@ impl OperatorCore for Pipeline {
         true
     }
 
-    fn steps(&self) -> usize {
+    fn len(&self) -> usize {
         self.steps.len()
     }
 
     fn args(&self, step: usize) -> &OperatorArgs {
-        if step >= self.steps() {
+        if step >= self.len() {
             return &self.args;
         }
         self.steps[step].args(0_usize)
@@ -93,15 +93,15 @@ mod tests {
             ]
         }";
 
-        let mut args = OperatorArgs::global_defaults();
-        args.populate(&pipeline, "");
         // We cannot use Operator::new here, because we want to access internal
         // elements of the Pipeline struct below. These are unaccesible after
         // boxing.
+        let mut args = OperatorArgs::global_defaults();
+        args.populate(&pipeline, "");
         let op = Pipeline::new(&mut args).unwrap();
 
         // Check step-by-step that the pipeline was formed as expected
-        assert_eq!(op.steps(), 3);
+        assert_eq!(op.len(), 3);
         assert_eq!(op.steps[0].name(), "cart");
         assert_eq!(op.steps[0].is_inverted(), false);
 

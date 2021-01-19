@@ -1,7 +1,7 @@
 use crate::Operand;
 use crate::OperatorArgs;
 
-// Operator used to be a typedef: Operator = Box<dyn OperatorCore>, but now it's
+// Operator used to be a `pub type Operator = Box<dyn OperatorCore>`, but now it's
 // a newtype around a Boxed OperatorCore, in order to be able to define methods on
 // it. There's a good description of the crux here:
 // https://stackoverflow.com/questions/35568871/is-it-possible-to-implement-methods-on-type-aliases
@@ -25,9 +25,20 @@ impl Operator {
         oa.populate(definition, "");
         operator_factory(&mut oa)
     }
+
+    pub fn forward(&self, ws: &mut Operand) -> bool {
+        self.0.fwd(ws)
+    }
+
+    pub fn inverse(&self, ws: &mut Operand) -> bool {
+        self.0.inv(ws)
+    }
+
 }
 
 // Forwarding all OperatorCore methods to the boxed content
+// Perhaps not necessary: We could deem Core low level and
+// build a high level interface on top of Core (cf forward above).
 impl OperatorCore for Operator {
     fn fwd(&self, ws: &mut Operand) -> bool {
         self.0.fwd(ws)
@@ -50,8 +61,8 @@ impl OperatorCore for Operator {
     }
 
     // number of steps. 1 unless the operator is a pipeline
-    fn steps(&self) -> usize {
-        self.0.steps()
+    fn len(&self) -> usize {
+        self.0.len()
     }
 
     fn args(&self, step: usize) -> &OperatorArgs {
@@ -60,46 +71,6 @@ impl OperatorCore for Operator {
 
     fn is_inverted(&self) -> bool {
         self.0.is_inverted()
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn operator() {
-        use crate::{fwd, inv, Operand, Operator, OperatorCore};
-        let mut o = Operand::new();
-
-        // A plain operator: Helmert, EPSG:1134 - 3 parameter, ED50/WGS84
-        let h = Operator::new("helmert: {dx: -87, dy: -96, dz: -120}");
-        assert!(h.is_ok());
-        let h = h.unwrap();
-
-        h.operate(&mut o, fwd);
-        assert_eq!(o.coord.first(), -87.);
-        assert_eq!(o.coord.second(), -96.);
-        assert_eq!(o.coord.third(), -120.);
-
-        h.operate(&mut o, inv);
-        assert_eq!(o.coord.first(), 0.);
-        assert_eq!(o.coord.second(), 0.);
-        assert_eq!(o.coord.third(), 0.);
-
-        // A non-existing operator
-        let h = Operator::new("unimplemented_operator: {dx: -87, dy: -96, dz: -120}");
-        assert!(h.is_err());
-
-        // A pipeline
-        let pipeline = "ed50_etrs89: {
-            steps: [
-                cart: {ellps: intl},
-                helmert: {dx: -87, dy: -96, dz: -120},
-                cart: {inv: true, ellps: GRS80}
-            ]
-        }";
-
-        let h = Operator::new(pipeline);
-        assert!(h.is_ok());
     }
 }
 
@@ -117,7 +88,7 @@ pub trait OperatorCore {
         true
     }
 
-    // operate fwd/inv, taking operator inversion into account
+    // operate fwd/inv, taking operator inversion into account.
     fn operate(&self, operand: &mut Operand, forward: bool) -> bool {
         // Short form of (inverted && !forward) || (forward && !inverted)
         if self.is_inverted() != forward {
@@ -132,9 +103,9 @@ pub trait OperatorCore {
         "UNKNOWN"
     }
 
-    // number of steps. 1 unless the operator is a pipeline
-    fn steps(&self) -> usize {
-        1_usize
+    // number of steps. 0 unless the operator is a pipeline
+    fn len(&self) -> usize {
+        0_usize
     }
 
     fn args(&self, step: usize) -> &OperatorArgs;
@@ -183,4 +154,59 @@ pub fn operator_factory(args: &mut OperatorArgs) -> Result<Operator, String> {
 
     // Herefter: Søg efter 'name' i filbøtten
     Err(format!("Unknown operator '{}'", args.name))
+}
+
+
+
+
+// --------------------------------------------------------------------------------------
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn operator() {
+        use crate::{fwd, inv, Operand, Operator, OperatorCore};
+        let mut o = Operand::new();
+
+        // A plain operator: Helmert, EPSG:1134 - 3 parameter, ED50/WGS84
+        let h = Operator::new("helmert: {dx: -87, dy: -96, dz: -120}");
+        assert!(h.is_ok());
+        let h = h.unwrap();
+
+        h.operate(&mut o, fwd);
+        assert_eq!(o.coord.first(), -87.);
+        assert_eq!(o.coord.second(), -96.);
+        assert_eq!(o.coord.third(), -120.);
+
+        h.operate(&mut o, inv);
+        assert_eq!(o.coord.first(), 0.);
+        assert_eq!(o.coord.second(), 0.);
+        assert_eq!(o.coord.third(), 0.);
+
+        h.forward(&mut o);
+        assert_eq!(o.coord.first(), -87.);
+        assert_eq!(o.coord.second(), -96.);
+        assert_eq!(o.coord.third(), -120.);
+
+        h.inverse(&mut o);
+        assert_eq!(o.coord.first(), 0.);
+        assert_eq!(o.coord.second(), 0.);
+        assert_eq!(o.coord.third(), 0.);
+
+        // A non-existing operator
+        let h = Operator::new("unimplemented_operator: {dx: -87, dy: -96, dz: -120}");
+        assert!(h.is_err());
+
+        // A pipeline
+        let pipeline = "ed50_etrs89: {
+            steps: [
+                cart: {ellps: intl},
+                helmert: {dx: -87, dy: -96, dz: -120},
+                cart: {inv: true, ellps: GRS80}
+            ]
+        }";
+
+        let h = Operator::new(pipeline);
+        assert!(h.is_ok());
+    }
 }

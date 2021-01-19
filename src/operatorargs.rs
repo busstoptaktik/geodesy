@@ -176,7 +176,7 @@ impl OperatorArgs {
             // Write the step definition to a new string
             let mut step_definition = String::new();
             let mut emitter = YamlEmitter::new(&mut step_definition);
-            emitter.compact(true);
+            // emitter.compact(true);
             assert_eq!(emitter.is_compact(), true);
             emitter.dump(step).unwrap();
 
