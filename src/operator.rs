@@ -60,7 +60,6 @@ impl OperatorCore for Operator {
         self.0.name()
     }
 
-    // number of steps. 1 unless the operator is a pipeline
     fn len(&self) -> usize {
         self.0.len()
     }
@@ -74,6 +73,10 @@ impl OperatorCore for Operator {
     }
 }
 
+/// The core functionality exposed by the individual operator implementations.
+/// This is not immediately intended for application program consumption: The
+/// actual API is in the `impl`ementation for the [`Operator`](Operator) newtype struct,
+/// which builds on this `trait` (which will probably soon lose its `pub`ness).
 pub trait OperatorCore {
     fn fwd(&self, ws: &mut Operand) -> bool;
 
