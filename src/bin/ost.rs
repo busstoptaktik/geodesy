@@ -1,9 +1,9 @@
-use geodesy::Operand;
-use geodesy::Operator;
-use geodesy::OperatorArgs;
-use geodesy::OperatorCore;
-use yaml_rust::{Yaml, YamlLoader};
-
+// use geodesy::Operand;
+// use geodesy::Operator;
+// use geodesy::OperatorArgs;
+// use geodesy::OperatorCore;
+// use yaml_rust::{Yaml, YamlLoader};
+use minimal_yaml::{Yaml, parse};
 /*
 use pyo3::prelude::*;
 use pyo3::types::IntoPyDict;
@@ -44,15 +44,27 @@ fn salat_(py: Python) -> PyResult<()> {
 */
 
 fn main() {
+
     // Se https://docs.rs/yaml-rust/0.4.4/yaml_rust/yaml/enum.Yaml.html
-    let mut pap = OperatorArgs::new();
-    let txt = std::fs::read_to_string("src/transformations.yml").unwrap();
-    let docs = YamlLoader::load_from_str(&txt).unwrap();
-    //println!("OOOOOOOOOOOOOOOOOOOOooooooo {}", docs[0]["main"].as_hash().unwrap().iter().len());
-    let steps = docs[0]["recipe"]["steps"].as_vec().unwrap();
-    for _s in steps {
-        //println!("OOOOOOOOOOOOOOOOOOOOooooooo {:#?}", _s);
+    // let mut pap = OperatorArgs::new();
+    let txt = std::fs::read_to_string("src/simple.yml").unwrap();
+    //let docs = YamlLoader::load_from_str(&txt).unwrap();
+    println!("{}", txt);
+    let rep = parse(&txt).unwrap();
+    println!("{:?}", rep);
+
+    /*
+    for dd in &rep {
+        println!("dd: {:?}", dd);
     }
+    */
+
+    /*
+    let steps = docs["recipe"]["steps"].as_vec().unwrap();
+    for _s in steps {
+        println!("OOOOOOOOOOOOOOOOOOOOooooooo {:#?}", _s);
+    }
+
     let globals = docs[0]["recipe"]["globals"].as_hash().unwrap();
     let iter = globals.iter();
     println!("\nGlobals: {:?}\n", globals);
@@ -82,4 +94,5 @@ fn main() {
 
     println!("{}", c.name());
     println!("{}", h.name());
+    */
 }
