@@ -3,7 +3,7 @@ name = "geodesy"
 version = "0.1.0"
 authors = ["Thomas Knudsen <knudsen.thomas@gmail.com>"]
 edition = "2018"
-default-run = "ost"
+default-run = "kp"
 readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -11,5 +11,4 @@ readme = "README.md"
 [dependencies]
 yaml-rust = "0.4"
 # pyo3 = "0.12.4"
-minimal-yaml = "0.1.5"
-
+# minimal-yaml = "0.1.5"

@@ -5,6 +5,7 @@
 // use yaml_rust::{Yaml, YamlLoader};
 
 fn main() {
+    println!("Hello from kp!")
     /*
     // Se https://docs.rs/yaml-rust/0.4.4/yaml_rust/yaml/enum.Yaml.html
     // let mut pap = OperatorArgs::new();
