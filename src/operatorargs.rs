@@ -78,7 +78,7 @@ impl OperatorArgs {
     /// let mut args = OperatorArgs::global_defaults();
     /// let txt = std::fs::read_to_string("tests/tests.yml").unwrap_or_default();
     ///
-    /// assert!(args.populate(&txt, "pipeline"));
+    /// assert!(args.populate(&txt, "a_pipeline_for_testing"));
     /// assert_eq!(&args.value("_step_0", "")[0..4], "cart");
     /// ```
     ///
@@ -318,7 +318,7 @@ mod tests {
 
         // Explicitly stating the name of the pipeline
         let txt = std::fs::read_to_string("tests/tests.yml").unwrap_or_default();
-        assert!(args.populate(&txt, "pipeline"));
+        assert!(args.populate(&txt, "a_pipeline_for_testing"));
         assert_eq!(&args.value("_step_0", "    ")[0..4], "cart");
 
         // Let populate() figure out what we want

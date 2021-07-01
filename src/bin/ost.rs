@@ -4,6 +4,7 @@
 // use geodesy::OperatorCore;
 // use yaml_rust::{Yaml, YamlLoader};
 use minimal_yaml::parse;
+use minimal_yaml::Yaml;
 /*
 use pyo3::prelude::*;
 use pyo3::types::IntoPyDict;
@@ -44,19 +45,25 @@ fn salat_(py: Python) -> PyResult<()> {
 */
 
 fn main() {
-
     // Se https://docs.rs/yaml-rust/0.4.4/yaml_rust/yaml/enum.Yaml.html
     // let mut pap = OperatorArgs::new();
     let txt = std::fs::read_to_string("src/simple.yml").unwrap();
     //let docs = YamlLoader::load_from_str(&txt).unwrap();
     println!("{}", txt);
     let rep = parse(&txt).unwrap();
+    match &rep {
+        Yaml::Scalar(value) => println!("Aaaaargh!"),
+        Yaml::Mapping(map) => {
+            for entry in map.iter() {
+                println!("{}: {:?}", entry.key, entry.value)
+            }
+        }
+        Yaml::Sequence(ref seq) => println!("Aaaaargh!"),
+    }
     println!("{:?}", rep);
-
 
     // let dd = rep.get(0);
     // println!("dd: {:?}", dd);
-
 
     /*
     let steps = docs["recipe"]["steps"].as_vec().unwrap();

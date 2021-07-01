@@ -1,8 +1,8 @@
 use super::Operand;
 use super::OperatorArgs;
 use super::OperatorCore;
-use crate::Ellipsoid;
 use crate::CoordinateTuple;
+use crate::Ellipsoid;
 
 pub struct Cart {
     // The usual suspects...
@@ -12,7 +12,6 @@ pub struct Cart {
 
     // We precompute a number of anciallary ellipsoidal parameters
     // to speed up the computations
-
     es: f64,  // eccentricity squared, Fukushima's E, Claessens' c3 = 1-c2
     b: f64,   // semiminor axis
     ra: f64,  // reciproque of a
@@ -53,7 +52,6 @@ impl Cart {
     }
 }
 
-
 impl OperatorCore for Cart {
     // For now, we just use the shrinkwrapped Ellipsoid-methods in
     // fwd() and inv(). But we can potentially speed up by
@@ -68,7 +66,6 @@ impl OperatorCore for Cart {
     #[allow(non_snake_case)] // make it possible to mimic math notation from original paper
     #[allow(clippy::many_single_char_names)] // ditto
     fn inv(&self, operand: &mut Operand) -> bool {
-
         let X = operand.coord.first();
         let Y = operand.coord.second();
         let Z = operand.coord.third();
@@ -98,9 +95,9 @@ impl OperatorCore for Cart {
             return true;
         }
 
-        let P = ra*p;
-        let S0 = ra*Z;
-        let C0 = ar*P;
+        let P = ra * p;
+        let S0 = ra * Z;
+        let C0 = ar * P;
 
         // There's a lot of common subexpressions in the following which,
         // in Fukushima's and Claessens' Fortranesque implementations,
@@ -108,15 +105,15 @@ impl OperatorCore for Cart {
         // For clarity, we keep the full expressions here, and leave the
         // elimination task to the Rust optimizer.
         let A = S0.hypot(C0);
-        let F = P * A*A*A - es * C0*C0*C0;
-        let B = ce4 * S0*S0 * C0*C0 * P * (A - ar);
+        let F = P * A * A * A - es * C0 * C0 * C0;
+        let B = ce4 * S0 * S0 * C0 * C0 * P * (A - ar);
 
-        let S1 = ( ar * S0 * A*A*A + es * S0*S0*S0 ) * F - B * S0;
+        let S1 = (ar * S0 * A * A * A + es * S0 * S0 * S0) * F - B * S0;
         let C1 = F * F - B * C0;
         let CC = ar * C1;
 
         let phi = S1.atan2(CC);
-        let h = ( p * CC + Z.abs() * S1 - a * CC.hypot(ar * S1) ) / CC.hypot(S1);
+        let h = (p * CC + Z.abs() * S1 - a * CC.hypot(ar * S1)) / CC.hypot(S1);
         // Bowring's height formula works better close to the ellipsoid, but requires a (sin, cos)-pair
         operand.coord = CoordinateTuple::new(lam, phi, h, t);
         true

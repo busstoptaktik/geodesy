@@ -149,7 +149,6 @@ impl Ellipsoid {
         1.0 - self.f
     }
 
-
     // ----- Curvatures ------------------------------------------------------------
 
     /// The radius of curvature in the prime vertical, *N*

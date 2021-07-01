@@ -33,7 +33,6 @@ impl Operator {
     pub fn inverse(&self, ws: &mut Operand) -> bool {
         self.0.inv(ws)
     }
-
 }
 
 // Forwarding all OperatorCore methods to the boxed content
@@ -158,9 +157,6 @@ pub fn operator_factory(args: &mut OperatorArgs) -> Result<Operator, String> {
     // Herefter: Søg efter 'name' i filbøtten
     Err(format!("Unknown operator '{}'", args.name))
 }
-
-
-
 
 // --------------------------------------------------------------------------------------
 
