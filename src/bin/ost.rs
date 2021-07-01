@@ -3,7 +3,7 @@
 // use geodesy::OperatorArgs;
 // use geodesy::OperatorCore;
 // use yaml_rust::{Yaml, YamlLoader};
-use minimal_yaml::{Yaml, parse};
+use minimal_yaml::parse;
 /*
 use pyo3::prelude::*;
 use pyo3::types::IntoPyDict;
@@ -53,11 +53,10 @@ fn main() {
     let rep = parse(&txt).unwrap();
     println!("{:?}", rep);
 
-    /*
-    for dd in &rep {
-        println!("dd: {:?}", dd);
-    }
-    */
+
+    // let dd = rep.get(0);
+    // println!("dd: {:?}", dd);
+
 
     /*
     let steps = docs["recipe"]["steps"].as_vec().unwrap();

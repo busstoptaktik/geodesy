@@ -67,6 +67,11 @@ pub enum Bibliography {
     /// (See also [Transverse Mercator: Bowring series](https://en.wikipedia.org/wiki/Transverse_Mercator:_Bowring_series)).
     Bow89,
 
+    /// S.J. Claessens (2019): *Efficient transformation from Cartesian to geodetic coordinates*.
+    /// Computers and Geosciences, Vol. 133, article 104307
+    /// [DOI](https://doi.org/10.1016/j.cageo.2019.104307)
+    Cla19,
+
     /// Toshio Fukushima (1999): *Fast transform from geocentric to geodetic coordinates*.
     /// Journal of Geodesy, 73(11), pp.603–610
     /// [DOI](https://doi.org/10.1007/s001900050271)

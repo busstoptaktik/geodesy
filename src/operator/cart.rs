@@ -103,10 +103,10 @@ impl OperatorCore for Cart {
         let C0 = ar*P;
 
         // There's a lot of common subexpressions in the following which,
-        // in Fukushima's and Claessens' implementations, were explicitly
-        // eliminated (by introducing s02 = S0*S0, etc.). For clarity, we
-        // keep the full expressions and leave the elimination task to the
-        // Rust optimizer.
+        // in Fukushima's and Claessens' Fortranesque implementations,
+        // were explicitly eliminated (by introducing s02 = S0*S0, etc.).
+        // For clarity, we keep the full expressions here, and leave the
+        // elimination task to the Rust optimizer.
         let A = S0.hypot(C0);
         let F = P * A*A*A - es * C0*C0*C0;
         let B = ce4 * S0*S0 * C0*C0 * P * (A - ar);
@@ -117,6 +117,7 @@ impl OperatorCore for Cart {
 
         let phi = S1.atan2(CC);
         let h = ( p * CC + Z.abs() * S1 - a * CC.hypot(ar * S1) ) / CC.hypot(S1);
+        // Bowring's height formula works better close to the ellipsoid, but requires a (sin, cos)-pair
         operand.coord = CoordinateTuple::new(lam, phi, h, t);
         true
     }
@@ -155,11 +156,11 @@ mod tests {
         // Roundtrip
         c.fwd(&mut o);
         c.inv(&mut o);
-        println!("**** {:?}", o.coord.to_degrees());
+        let result = o.coord.to_degrees();
 
         // And check that we're back
-        assert!((o.coord.first().to_degrees() - 12.).abs() < 1.0e-10);
-        assert!((o.coord.second().to_degrees() - 55.).abs() < 1.0e-10);
-        assert!((o.coord.third() - 100.).abs() < 1.0e-8);
+        assert!((result.0 - 12.).abs() < 1.0e-10);
+        assert!((result.1 - 55.).abs() < 1.0e-10);
+        assert!((result.2 - 100.).abs() < 1.0e-8);
     }
 }

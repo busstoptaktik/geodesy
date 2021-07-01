@@ -122,7 +122,7 @@ impl Ellipsoid {
         self.a
     }
 
-    // ----- Flatteningss ----------------------------------------------------------
+    // ----- Flattenings -----------------------------------------------------------
 
     /// The flattening, *f = (a - b)/a*
     #[must_use]
@@ -142,6 +142,13 @@ impl Ellipsoid {
     pub fn third_flattening(&self) -> f64 {
         self.f / (2.0 - self.f)
     }
+
+    /// The aspect ratio, *b / a  =  1 - f  =  sqrt(1 - e²)*
+    #[must_use]
+    pub fn aspect_ratio(&self) -> f64 {
+        1.0 - self.f
+    }
+
 
     // ----- Curvatures ------------------------------------------------------------
 
@@ -562,7 +569,9 @@ impl Ellipsoid {
         // let c = theta_denom / length; // i.e. cos(theta)
         // let s = theta_num / length; // i.e. sin(theta)
 
-        // Even faster than Even Rouault: Fukushima (1999), Appendix B
+        // Fukushima (1999), Appendix B: Equivalent to Even Rouault's, implementation,
+        // but not as clear - although a bit faster due to the substitution of sqrt
+        // for hypot.
         let T = (Z * self.a) / (p * b);
         let c = 1.0 / (1.0 + T * T).sqrt();
         let s = c * T;
