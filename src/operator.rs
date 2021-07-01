@@ -1,4 +1,4 @@
-use crate::Operand;
+use crate::Shuttle;
 use crate::OperatorArgs;
 
 // Operator used to be a `pub type Operator = Box<dyn OperatorCore>`, but now it's
@@ -17,7 +17,7 @@ impl Operator {
     /// let h = geodesy::Operator::new("helmert: {dx: -87, dy: -96, dz: -120}");
     /// assert!(h.is_ok());
     /// let h = h.unwrap();
-    /// let mut o = geodesy::Operand::new();
+    /// let mut o = geodesy::Shuttle::new();
     /// h.operate(&mut o, geodesy::fwd);
     /// ```
     pub fn new(definition: &str) -> Result<Operator, String> {
@@ -26,11 +26,11 @@ impl Operator {
         operator_factory(&mut oa)
     }
 
-    pub fn forward(&self, ws: &mut Operand) -> bool {
+    pub fn forward(&self, ws: &mut Shuttle) -> bool {
         self.0.fwd(ws)
     }
 
-    pub fn inverse(&self, ws: &mut Operand) -> bool {
+    pub fn inverse(&self, ws: &mut Shuttle) -> bool {
         self.0.inv(ws)
     }
 }
@@ -39,15 +39,15 @@ impl Operator {
 // Perhaps not necessary: We could deem Core low level and
 // build a high level interface on top of Core (cf forward above).
 impl OperatorCore for Operator {
-    fn fwd(&self, ws: &mut Operand) -> bool {
+    fn fwd(&self, ws: &mut Shuttle) -> bool {
         self.0.fwd(ws)
     }
 
-    fn inv(&self, ws: &mut Operand) -> bool {
+    fn inv(&self, ws: &mut Shuttle) -> bool {
         self.0.inv(ws)
     }
 
-    fn operate(&self, operand: &mut Operand, forward: bool) -> bool {
+    fn operate(&self, operand: &mut Shuttle, forward: bool) -> bool {
         self.0.operate(operand, forward)
     }
 
@@ -77,10 +77,10 @@ impl OperatorCore for Operator {
 /// actual API is in the `impl`ementation for the [`Operator`](Operator) newtype struct,
 /// which builds on this `trait` (which will probably soon lose its `pub`ness).
 pub trait OperatorCore {
-    fn fwd(&self, ws: &mut Operand) -> bool;
+    fn fwd(&self, ws: &mut Shuttle) -> bool;
 
     // implementations must override at least one of {inv, invertible}
-    fn inv(&self, operand: &mut Operand) -> bool {
+    fn inv(&self, operand: &mut Shuttle) -> bool {
         operand.last_failing_operation = self.name();
         operand.cause = "Operator not invertible";
         false
@@ -91,7 +91,7 @@ pub trait OperatorCore {
     }
 
     // operate fwd/inv, taking operator inversion into account.
-    fn operate(&self, operand: &mut Operand, forward: bool) -> bool {
+    fn operate(&self, operand: &mut Shuttle, forward: bool) -> bool {
         // Short form of (inverted && !forward) || (forward && !inverted)
         if self.is_inverted() != forward {
             return self.fwd(operand);
@@ -164,8 +164,8 @@ pub fn operator_factory(args: &mut OperatorArgs) -> Result<Operator, String> {
 mod tests {
     #[test]
     fn operator() {
-        use crate::{fwd, inv, Operand, Operator, OperatorCore};
-        let mut o = Operand::new();
+        use crate::{fwd, inv, Shuttle, Operator, OperatorCore};
+        let mut o = Shuttle::new();
 
         // A plain operator: Helmert, EPSG:1134 - 3 parameter, ED50/WGS84
         let h = Operator::new("helmert: {dx: -87, dy: -96, dz: -120}");

@@ -23,12 +23,12 @@ impl CoordinateTuple {
 
     #[must_use]
     pub fn to_degrees(&self) -> CoordinateTuple {
-        CoordinateTuple::new(self.0.to_degrees(), self.1.to_degrees(), self.2, self.3)
+        CoordinateTuple(self.0.to_degrees(), self.1.to_degrees(), self.2, self.3)
     }
 
     #[must_use]
     pub fn to_radians(&self) -> CoordinateTuple {
-        CoordinateTuple::new(self.0.to_radians(), self.1.to_radians(), self.2, self.3)
+        CoordinateTuple(self.0.to_radians(), self.1.to_radians(), self.2, self.3)
     }
 
     #[must_use]

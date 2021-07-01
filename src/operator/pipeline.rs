@@ -1,5 +1,5 @@
 use super::operator_factory;
-use super::Operand;
+use super::Shuttle;
 use super::Operator;
 use super::OperatorArgs;
 use super::OperatorCore;
@@ -40,7 +40,7 @@ impl Pipeline {
 }
 
 impl OperatorCore for Pipeline {
-    fn fwd(&self, operand: &mut Operand) -> bool {
+    fn fwd(&self, operand: &mut Shuttle) -> bool {
         for step in &self.steps {
             if !step.operate(operand, fwd) {
                 return false;
@@ -49,7 +49,7 @@ impl OperatorCore for Pipeline {
         true
     }
 
-    fn inv(&self, operand: &mut Operand) -> bool {
+    fn inv(&self, operand: &mut Shuttle) -> bool {
         for step in self.steps.iter().rev() {
             if !step.operate(operand, inv) {
                 return false;
@@ -125,7 +125,7 @@ mod tests {
         // -------------------------------------------------------------------------
         // This is the first example of a running pipeline in Rust Geodesy. Awesome!
         // -------------------------------------------------------------------------
-        let mut operand = Operand::new();
+        let mut operand = Shuttle::new();
         operand.coord = crate::CoordinateTuple::deg(12., 55., 100., 0.);
 
         /* DRUM ROLL... */

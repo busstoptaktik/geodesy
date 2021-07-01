@@ -1,6 +1,6 @@
 //! For now, Helmert only supports the basic 3-parameter version
 
-use super::Operand;
+use super::Shuttle;
 use super::OperatorArgs;
 use super::OperatorCore;
 
@@ -25,14 +25,14 @@ impl Helmert {
 }
 
 impl OperatorCore for Helmert {
-    fn fwd(&self, ws: &mut Operand) -> bool {
+    fn fwd(&self, ws: &mut Shuttle) -> bool {
         ws.coord.0 += self.dx;
         ws.coord.1 += self.dy;
         ws.coord.2 += self.dz;
         true
     }
 
-    fn inv(&self, ws: &mut Operand) -> bool {
+    fn inv(&self, ws: &mut Shuttle) -> bool {
         ws.coord.0 -= self.dx;
         ws.coord.1 -= self.dy;
         ws.coord.2 -= self.dz;
@@ -59,7 +59,7 @@ mod tests {
     #[test]
     fn helmert() {
         use super::*;
-        let mut o = Operand::new();
+        let mut o = Shuttle::new();
         let mut args = OperatorArgs::new();
 
         // Check that non-numeric value, for key expecting numeric, errs properly.
