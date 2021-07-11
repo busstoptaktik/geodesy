@@ -27,7 +27,7 @@
 
 mod coordinates;
 mod ellipsoids;
-mod shuttle;
+mod context;
 mod operator;
 mod operatorargs;
 
@@ -35,7 +35,7 @@ pub use coordinates::CoordinateTuple;
 pub use coordinates::DMS;
 pub use ellipsoids::Ellipsoid;
 
-pub use shuttle::Shuttle;
+pub use context::Context;
 pub use operator::Operator;
 pub use operator::OperatorCore;
 pub use operatorargs::OperatorArgs;

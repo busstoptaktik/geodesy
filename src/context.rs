@@ -19,7 +19,7 @@ impl Resource {
 }
 
 #[derive(Debug, Default)]
-pub struct Shuttle {
+pub struct Context {
     pub coord: CoordinateTuple,
     pub stack: Vec<f64>,
     pub coordinate_stack: Vec<CoordinateTuple>,
@@ -28,10 +28,10 @@ pub struct Shuttle {
     pub cause: &'static str,
 }
 
-impl Shuttle {
+impl Context {
     #[must_use]
-    pub fn new() -> Shuttle {
-        Shuttle {
+    pub fn new() -> Context {
+        Context {
             coord: CoordinateTuple(0., 0., 0., 0.),
             stack: vec![],
             coordinate_stack: vec![],
@@ -52,8 +52,8 @@ impl Shuttle {
 mod tests {
     #[test]
     fn operand() {
-        use crate::Shuttle;
-        let ond = Shuttle::new();
+        use crate::Context;
+        let ond = Context::new();
         assert_eq!(ond.stack.len(), 0);
         assert_eq!(ond.coordinate_stack.len(), 0);
         assert_eq!(ond.coord.0, 0.);
@@ -65,7 +65,7 @@ mod tests {
     #[test]
     fn operate() {
         use crate::Operator;
-        use crate::Shuttle;
+        use crate::Context;
         use crate::{fwd, inv};
         let pipeline = "ed50_etrs89: {
             steps: [
@@ -75,7 +75,7 @@ mod tests {
             ]
         }";
         let op = Operator::new(pipeline).unwrap();
-        let mut ond = Shuttle::new();
+        let mut ond = Context::new();
         ond.coord = crate::CoordinateTuple::deg(12., 55., 100., 0.);
         ond.operate(&op, fwd);
         assert!((ond.coord.to_degrees().0 - 11.998815342385206861).abs() < 1e-12);

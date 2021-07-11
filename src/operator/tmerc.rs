@@ -3,7 +3,7 @@
 // Renovering af Poder/Engsager tmerc i B:\2019\Projects\FIRE\tramp\tramp\tramp.c
 // Detaljer i C:\Users\B004330\Downloads\2.1.2 A HIGHLY ACCURATE WORLD WIDE ALGORITHM FOR THE TRANSVE (1).doc
 
-use super::Shuttle;
+use super::Context;
 use super::OperatorArgs;
 use super::OperatorCore;
 use crate::Ellipsoid;
@@ -74,7 +74,7 @@ impl Tmerc {
 #[allow(non_snake_case)]
 impl OperatorCore for Tmerc {
     // Forward transverse mercator, following Bowring
-    fn fwd(&self, operand: &mut Shuttle) -> bool {
+    fn fwd(&self, operand: &mut Context) -> bool {
         let lat = operand.coord.1;
         let c = lat.cos();
         let s = lat.sin();
@@ -106,7 +106,7 @@ impl OperatorCore for Tmerc {
     }
 
     // Forward transverse mercator, following Bowring (1989)
-    fn inv(&self, operand: &mut Shuttle) -> bool {
+    fn inv(&self, operand: &mut Context) -> bool {
         // Footpoint latitude, i.e. the latitude of a point on the central meridian
         // having the same northing as the point of interest
         let lat = self
@@ -150,12 +150,12 @@ impl OperatorCore for Tmerc {
 mod tests {
     #[test]
     fn utm() {
-        use crate::{CoordinateTuple, Ellipsoid, Shuttle, Operator, OperatorCore};
+        use crate::{CoordinateTuple, Ellipsoid, Context, Operator, OperatorCore};
 
         // Test the UTM implementation
         let op = Operator::new("utm: {zone: 32}").unwrap();
 
-        let mut operand = Shuttle::new();
+        let mut operand = Context::new();
         let geo = CoordinateTuple::deg(12., 55., 100., 0.);
         operand.coord = geo;
 
@@ -207,7 +207,7 @@ mod tests {
         // Test the plain tmerc, by reimplementing the UTM above manually
         let op = Operator::new("tmerc: {k_0: 0.9996, lon_0: 9, x_0: 500000}").unwrap();
 
-        let mut operand = Shuttle::new();
+        let mut operand = Context::new();
         operand.coord = crate::CoordinateTuple::deg(12., 55., 100., 0.);
         assert!(op.fwd(&mut operand));
 

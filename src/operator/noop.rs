@@ -1,4 +1,4 @@
-use super::Shuttle;
+use super::Context;
 use super::OperatorArgs;
 use super::OperatorCore;
 
@@ -13,11 +13,11 @@ impl Noop {
 }
 
 impl OperatorCore for Noop {
-    fn fwd(&self, _ws: &mut Shuttle) -> bool {
+    fn fwd(&self, _ws: &mut Context) -> bool {
         true
     }
 
-    fn inv(&self, _ws: &mut Shuttle) -> bool {
+    fn inv(&self, _ws: &mut Context) -> bool {
         true
     }
 
@@ -39,7 +39,7 @@ mod tests {
     #[test]
     fn noop() {
         use crate::*;
-        let mut o = Shuttle::new();
+        let mut o = Context::new();
         let c = Operator::new("noop: {}").unwrap();
 
         // Make sure we do not do anything

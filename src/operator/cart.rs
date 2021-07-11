@@ -1,4 +1,4 @@
-use super::Shuttle;
+use super::Context;
 use super::OperatorArgs;
 use super::OperatorCore;
 use crate::CoordinateTuple;
@@ -58,14 +58,14 @@ impl OperatorCore for Cart {
     // extending struct Cart with additional precomputed ellipsoidal
     // parameters, so we don't need to let Ellipsoid:: compute them
     // over and over on each invocation.
-    fn fwd(&self, operand: &mut Shuttle) -> bool {
+    fn fwd(&self, operand: &mut Context) -> bool {
         operand.coord = self.ellps.cartesian(&operand.coord);
         true
     }
 
     #[allow(non_snake_case)] // make it possible to mimic math notation from original paper
     #[allow(clippy::many_single_char_names)] // ditto
-    fn inv(&self, operand: &mut Shuttle) -> bool {
+    fn inv(&self, operand: &mut Context) -> bool {
         let X = operand.coord.first();
         let Y = operand.coord.second();
         let Z = operand.coord.third();
@@ -138,7 +138,7 @@ mod tests {
     fn cart() {
         use crate::*;
         let c = Operator::new("cart: {ellps: intl}").unwrap();
-        let mut o = Shuttle::new();
+        let mut o = Context::new();
 
         // First check that (0,0,0) takes us to (a,0,0)
         c.fwd(&mut o);
