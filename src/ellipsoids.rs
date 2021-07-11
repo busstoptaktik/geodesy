@@ -4,53 +4,58 @@ use std::f64::consts::FRAC_PI_2;
 use crate::fwd;
 use crate::CoordinateTuple;
 
-/// Representation of an ellipsoid.
+/// Representation of a (potentially triaxial) ellipsoid.
 #[derive(Clone, Copy, Debug)]
 pub struct Ellipsoid {
-    name: &'static str,
     a: f64,
+    ay: f64,
     f: f64,
 }
 
-// A hashmap indexed by the ellipsoid name would be better, but Rust cannot
-// statically initialize a hashmap, so we put the name into the struct and
-// use a static array instead.
-static ELLIPSOIDS: [Ellipsoid; 5] = [
-    Ellipsoid {
-        name: "GRS80",
-        a: 6_378_137.0,
-        f: 1. / 298.257_222_100_882_7, // 11_24316,
-    },
-    Ellipsoid {
-        name: "intl",
-        a: 6_378_388.0,
-        f: 1. / 297.,
-    },
-    Ellipsoid {
-        name: "Helmert",
-        a: 6_378_200.0,
-        f: 1. / 298.3,
-    },
-    Ellipsoid {
-        name: "clrk66",
-        a: 6_378_206.4,
-        f: 1. / 294.978_698_2,
-    },
-    Ellipsoid {
-        name: "clrk80",
-        a: 6_378_249.145,
-        f: 1. / 293.465,
-    },
-];
+
+
+/// Overrepresentation of an ellipsoid: Precompute additional useful constants.
+#[allow(non_snake_case)]
+#[derive(Clone, Copy, Debug)]
+pub struct FatEllipsoid {
+    // Axes
+    a: f64,            // Semimajor axis
+    ay: f64,           // Equatoreal semiminor axis
+    b: f64,            // Semiminor axis
+    ra: f64,           // 1 / a
+    ray: f64,          // 1 / ay
+    rb: f64,           // 1 / b
+
+    // Flattenings
+    f: f64,
+    fe: f64,           // Equatoreal flattening (0 for biaxial)
+    g: f64,            // Second flattening
+    n: f64,            // Third flattening
+    rf: f64,           // 1 / f
+    rn: f64,           // 1 / n
+    ar: f64,           // Aspect ratio: 1-f
+
+    // Eccentricities
+    e: f64,            // Eccentricity
+    ee: f64,           // Equatoreal eccentricity (0 for biaxial)
+    es: f64,           // Eccentricity squared
+    ees: f64,          // Equatoreal eccentricity squared
+    e4: f64,           // Eccentricity squared, squared
+    ep: f64,           // Second eccentricity
+    eps: f64,          // Second eccentricity squared
+    E: f64,            // Linear eccentricity
+    one_es: f64,       // 1 - es
+    rone_es: f64,      // 1 / one_es
+
+    // Connection to physical geodesy
+    J: f64,            // Dynamical form factor (GRS80)
+}
+
 
 /// GRS80 is the default ellipsoid.
 impl Default for Ellipsoid {
     fn default() -> Ellipsoid {
-        Ellipsoid {
-            name: "GRS80",
-            a: 6_378_137.0,
-            f: 1. / 298.257_222_100_882_7, // 11_24316,
-        }
+        Ellipsoid::new(6_378_137.0, 1. / 298.257_222_100_882_7)
     }
 }
 
@@ -59,8 +64,16 @@ impl Ellipsoid {
     #[must_use]
     pub fn new(semimajor_axis: f64, flattening: f64) -> Ellipsoid {
         Ellipsoid {
-            name: "",
             a: semimajor_axis,
+            ay: semimajor_axis,
+            f: flattening,
+        }
+    }
+
+    pub fn triaxial(semimajor_x_axis: f64, semimajor_y_axis: f64, flattening: f64) -> Ellipsoid {
+        Ellipsoid {
+            a: semimajor_x_axis,
+            ay: semimajor_y_axis,
             f: flattening,
         }
     }
@@ -68,17 +81,14 @@ impl Ellipsoid {
     /// Predefined ellipsoid
     #[must_use]
     pub fn named(name: &str) -> Ellipsoid {
-        for e in &ELLIPSOIDS {
-            if e.name == name {
-                return *e;
-            }
+        match name {
+            "GRS80"   => return Ellipsoid::new(6_378_137.0, 1. / 298.257_222_100_882_7),
+            "intl"    => return Ellipsoid::new(6_378_388.0, 1. / 297.0),
+            "Helmert" => return Ellipsoid::new(6_378_200.0, 1. / 298.3),
+            "clrk66"  => return Ellipsoid::new(6_378_206.4, 1. / 294.978_698_2),
+            "clrk80"  => return Ellipsoid::new(6_378_249.145, 1. / 293.465),
+            _         => return Ellipsoid::new(6_378_137.0, 1. / 298.257_222_100_882_7)
         }
-        ELLIPSOIDS[0]
-    }
-
-    #[must_use]
-    pub fn name(&self) -> &'static str {
-        self.name
     }
 
     // ----- Eccentricities --------------------------------------------------------
@@ -607,12 +617,10 @@ mod tests {
         // Constructors
         let ellps = Ellipsoid::named("intl");
         assert_eq!(ellps.flattening(), 1. / 297.);
-        assert_eq!(ellps.name(), "intl");
 
         let ellps = Ellipsoid::named("GRS80");
         assert_eq!(ellps.semimajor_axis(), 6378137.0);
         assert_eq!(ellps.flattening(), 1. / 298.25722_21008_82711_24316);
-        assert_eq!(ellps.name, "GRS80");
 
         assert!((ellps.normalized_meridian_arc_unit() - 0.9983242984230415).abs() < 1e-13);
         assert!((4.0 * ellps.meridian_quadrant() - 40007862.9169218).abs() < 1e-7);
@@ -622,9 +630,9 @@ mod tests {
     fn shape_and_size() {
         let ellps = Ellipsoid::named("GRS80");
         let ellps = Ellipsoid::new(ellps.semimajor_axis(), ellps.flattening());
+        let ellps = Ellipsoid::triaxial(ellps.a, ellps.a-1., ellps.f);
         assert_eq!(ellps.semimajor_axis(), 6378137.0);
         assert_eq!(ellps.flattening(), 1. / 298.25722_21008_82711_24316);
-        assert_eq!(ellps.name(), "");
 
         // Additional shape descriptors
         assert!((ellps.eccentricity() - 0.081819191).abs() < 1.0e-10);
