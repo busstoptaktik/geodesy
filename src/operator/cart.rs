@@ -1,4 +1,4 @@
-use super::Context;
+use crate::Context;
 use super::OperatorArgs;
 use super::OperatorCore;
 use crate::CoordinateTuple;
@@ -10,7 +10,7 @@ pub struct Cart {
     inverted: bool,
     ellps: Ellipsoid,
 
-    // We precompute a number of anciallary ellipsoidal parameters
+    // We precompute a number of ancillary ellipsoidal parameters
     // to speed up the computations
     es: f64,  // eccentricity squared, Fukushima's E, Claessens' c3 = 1-c2
     b: f64,   // semiminor axis

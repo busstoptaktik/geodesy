@@ -12,14 +12,12 @@ pub struct Ellipsoid {
     f: f64,
 }
 
-
-
 /// Overrepresentation of an ellipsoid: Precompute additional useful constants.
 #[allow(non_snake_case)]
 #[derive(Clone, Copy, Debug)]
 pub struct FatEllipsoid {
     // Axes
-    a: f64,            // Semimajor axis
+    pub a: f64,            // Semimajor axis
     ay: f64,           // Equatoreal semiminor axis
     b: f64,            // Semiminor axis
     ra: f64,           // 1 / a
@@ -33,7 +31,7 @@ pub struct FatEllipsoid {
     n: f64,            // Third flattening
     rf: f64,           // 1 / f
     rn: f64,           // 1 / n
-    ar: f64,           // Aspect ratio: 1-f
+    ar: f64,           // Aspect ratio: 1 - f = b / a
 
     // Eccentricities
     e: f64,            // Eccentricity
@@ -46,11 +44,37 @@ pub struct FatEllipsoid {
     E: f64,            // Linear eccentricity
     one_es: f64,       // 1 - es
     rone_es: f64,      // 1 / one_es
-
-    // Connection to physical geodesy
-    J: f64,            // Dynamical form factor (GRS80)
 }
 
+#[allow(non_snake_case)]
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct CartographicFoundations {
+    lat_0: f64,
+    lat_1: f64,
+    lat_2: f64,
+    lat_3: f64,
+    lat_4: f64,
+
+    lon_0: f64,
+    lon_1: f64,
+    lon_2: f64,
+    lon_3: f64,
+    lon_4: f64,
+
+    N0: f64,
+    N1: f64,
+    N2: f64,
+    N3: f64,
+    N4: f64,
+
+    E0: f64,
+    E1: f64,
+    E2: f64,
+    E3: f64,
+    E4: f64,
+
+    k_0: f64
+}
 
 /// GRS80 is the default ellipsoid.
 impl Default for Ellipsoid {
@@ -58,6 +82,71 @@ impl Default for Ellipsoid {
         Ellipsoid::new(6_378_137.0, 1. / 298.257_222_100_882_7)
     }
 }
+
+
+pub trait Axes {
+    fn a(&self) -> f64;
+    fn ay(&self) -> f64;
+    fn f(&self) -> f64;
+
+    /// The semimajor axis, *a*
+    #[must_use]
+    fn semimajor_axis(&self) -> f64 {
+        self.a()
+    }
+
+    /// The semimedian axis, *ay*
+    #[must_use]
+    fn semimedian_axis(&self) -> f64 {
+        self.ay()
+    }
+
+    /// The semiminor axis, *b*
+    #[must_use]
+    fn semiminor_axis(&self) -> f64 {
+        self.a() * (1.0 - self.f())
+    }
+
+}
+
+impl Axes for Ellipsoid {
+    fn a(&self) -> f64 {self.a}
+    fn ay(&self) -> f64 {self.ay}
+    fn f(&self) -> f64 {self.f}
+}
+
+impl Axes for FatEllipsoid {
+    fn a(&self) -> f64 {self.a}
+    fn ay(&self) -> f64 {self.ay}
+    fn f(&self) -> f64 {self.f}
+}
+
+pub trait Axen<T> {
+    fn a(&self) -> f64;
+    fn ay(&self) -> f64;
+    fn f(&self) -> f64;
+
+
+    /// The semimajor axis, *a*
+    #[must_use]
+    fn semimajor_axis(&self) -> f64 {
+        self.a()
+    }
+
+    /// The semimedian axis, *ay*
+    #[must_use]
+    fn semimedian_axis(&self) -> f64 {
+        self.ay()
+    }
+
+    /// The semiminor axis, *b*
+    #[must_use]
+    fn semiminor_axis(&self) -> f64 {
+        self.a() * (1.0 - self.f())
+    }
+
+}
+
 
 impl Ellipsoid {
     /// User defined ellipsoid
@@ -118,18 +207,22 @@ impl Ellipsoid {
         self.second_eccentricity_squared().sqrt()
     }
 
-    // ----- Axes ------------------------------------------------------------------
+    /// The semimajor axis, *a*
+    #[must_use]
+    pub fn semimajor_axis(&self) -> f64 {
+        self.a
+    }
+
+    /// The semimedian axis, *ay*
+    #[must_use]
+    pub fn semimedian_axis(&self) -> f64 {
+        self.ay
+    }
 
     /// The semiminor axis, *b*
     #[must_use]
     pub fn semiminor_axis(&self) -> f64 {
         self.a * (1.0 - self.f)
-    }
-
-    /// The semimajor axis, *a*
-    #[must_use]
-    pub fn semimajor_axis(&self) -> f64 {
-        self.a
     }
 
     // ----- Flattenings -----------------------------------------------------------

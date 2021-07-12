@@ -3,7 +3,7 @@
 // Renovering af Poder/Engsager tmerc i B:\2019\Projects\FIRE\tramp\tramp\tramp.c
 // Detaljer i C:\Users\B004330\Downloads\2.1.2 A HIGHLY ACCURATE WORLD WIDE ALGORITHM FOR THE TRANSVE (1).doc
 
-use super::Context;
+use crate::Context;
 use super::OperatorArgs;
 use super::OperatorCore;
 use crate::Ellipsoid;
