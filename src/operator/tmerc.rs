@@ -153,7 +153,7 @@ mod tests {
         use crate::{CoordinateTuple, Ellipsoid, Context, Operator, OperatorCore};
 
         // Test the UTM implementation
-        let op = Operator::new("utm: {zone: 32}").unwrap();
+        let op = Operator::new("utm: {zone: 32}", None).unwrap();
 
         let mut operand = Context::new();
         let geo = CoordinateTuple::deg(12., 55., 100., 0.);
@@ -178,7 +178,7 @@ mod tests {
         assert!(ellps.distance(&operand.coord, &geo) < 1e-4);
 
         // Test a Greenland extreme value (a zone 19 point projected in zone 24)
-        let op = Operator::new("utm: {zone: 24}").unwrap();
+        let op = Operator::new("utm: {zone: 24}", None).unwrap();
         let geo = CoordinateTuple::deg(-72., 80., 100., 0.);
         operand.coord = geo;
         // Roundtrip...
@@ -205,7 +205,7 @@ mod tests {
         use crate::*;
 
         // Test the plain tmerc, by reimplementing the UTM above manually
-        let op = Operator::new("tmerc: {k_0: 0.9996, lon_0: 9, x_0: 500000}").unwrap();
+        let op = Operator::new("tmerc: {k_0: 0.9996, lon_0: 9, x_0: 500000}", None).unwrap();
 
         let mut operand = Context::new();
         operand.coord = crate::CoordinateTuple::deg(12., 55., 100., 0.);

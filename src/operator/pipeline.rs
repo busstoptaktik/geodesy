@@ -12,7 +12,7 @@ pub struct Pipeline {
 }
 
 impl Pipeline {
-    pub fn new(args: &mut OperatorArgs) -> Result<Pipeline, String> {
+    pub fn new(args: &mut OperatorArgs, ctx: Option<&Context>) -> Result<Pipeline, String> {
         let inverted = args.flag("inv");
         let mut steps = Vec::new();
         let n = args.numeric_value("Pipeline", "_nsteps", 0.0)? as usize;
@@ -25,7 +25,7 @@ impl Pipeline {
 
             // We need a recursive copy of "all globals so far"
             let mut oa = OperatorArgs::with_globals_from(args, step_args, "");
-            let op = operator_factory(&mut oa)?;
+            let op = operator_factory(&mut oa, ctx)?;
             steps.push(op);
         }
 
@@ -98,7 +98,7 @@ mod tests {
         // boxing.
         let mut args = OperatorArgs::global_defaults();
         args.populate(&pipeline, "");
-        let op = Pipeline::new(&mut args).unwrap();
+        let op = Pipeline::new(&mut args, None).unwrap();
 
         // Check step-by-step that the pipeline was formed as expected
         assert_eq!(op.len(), 3);

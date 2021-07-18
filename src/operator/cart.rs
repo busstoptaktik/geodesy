@@ -137,8 +137,8 @@ mod tests {
     #[test]
     fn cart() {
         use crate::*;
-        let c = Operator::new("cart: {ellps: intl}").unwrap();
         let mut o = Context::new();
+        let c = Operator::new("cart: {ellps: intl}", None).unwrap();
 
         // First check that (0,0,0) takes us to (a,0,0)
         c.fwd(&mut o);

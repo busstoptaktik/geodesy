@@ -1,6 +1,9 @@
 use crate::Context;
 use crate::OperatorArgs;
 
+pub type NewOperator = fn(definition: &str) -> Result<Operator, String>;
+
+
 // Operator used to be a `pub type Operator = Box<dyn OperatorCore>`, but now it's
 // a newtype around a Boxed OperatorCore, in order to be able to define methods on
 // it. There's a good description of the crux here:
@@ -14,16 +17,16 @@ impl Operator {
     /// ```rust
     /// // EPSG:1134 - 3 parameter, ED50/WGS84
     /// use geodesy::OperatorCore;
-    /// let h = geodesy::Operator::new("helmert: {dx: -87, dy: -96, dz: -120}");
+    /// let h = geodesy::Operator::new("helmert: {dx: -87, dy: -96, dz: -120}", None);
     /// assert!(h.is_ok());
     /// let h = h.unwrap();
     /// let mut o = geodesy::Context::new();
     /// h.operate(&mut o, geodesy::fwd);
     /// ```
-    pub fn new(definition: &str) -> Result<Operator, String> {
+    pub fn new(definition: &str, ctx: Option<&Context>) -> Result<Operator, String> {
         let mut oa = OperatorArgs::global_defaults();
         oa.populate(definition, "");
-        operator_factory(&mut oa)
+        operator_factory(&mut oa, ctx)
     }
 
     pub fn forward(&self, ws: &mut Context) -> bool {
@@ -75,7 +78,8 @@ impl OperatorCore for Operator {
 /// The core functionality exposed by the individual operator implementations.
 /// This is not immediately intended for application program consumption: The
 /// actual API is in the `impl`ementation for the [`Operator`](Operator) newtype struct,
-/// which builds on this `trait` (which will probably soon lose its `pub`ness).
+/// which builds on this `trait` (which only holds `pub`ness in order to support
+/// construction of user-defined operators).
 pub trait OperatorCore {
     fn fwd(&self, ws: &mut Context) -> bool;
 
@@ -124,13 +128,13 @@ mod noop;
 mod pipeline;
 mod tmerc;
 
-pub fn operator_factory(args: &mut OperatorArgs) -> Result<Operator, String> {
+pub(crate) fn operator_factory(args: &mut OperatorArgs, ctx: Option<&Context>) -> Result<Operator, String> {
     use crate::operator as co;
 
     // Pipelines do not need to be named "pipeline": They are characterized simply
     // by containing steps.
     if args.name == "pipeline" || args.numeric_value("operator_factory", "_nsteps", 0.0)? > 0.0 {
-        let op = co::pipeline::Pipeline::new(args)?;
+        let op = co::pipeline::Pipeline::new(args, ctx)?;
         return Ok(Operator(Box::new(op)));
     }
     if args.name == "cart" {
@@ -168,7 +172,7 @@ mod tests {
         let mut o = Context::new();
 
         // A plain operator: Helmert, EPSG:1134 - 3 parameter, ED50/WGS84
-        let h = Operator::new("helmert: {dx: -87, dy: -96, dz: -120}");
+        let h = Operator::new("helmert: {dx: -87, dy: -96, dz: -120}", None);
         assert!(h.is_ok());
         let h = h.unwrap();
 
@@ -193,7 +197,7 @@ mod tests {
         assert_eq!(o.coord.third(), 0.);
 
         // A non-existing operator
-        let h = Operator::new("unimplemented_operator: {dx: -87, dy: -96, dz: -120}");
+        let h = Operator::new("unimplemented_operator: {dx: -87, dy: -96, dz: -120}", None);
         assert!(h.is_err());
 
         // A pipeline
@@ -205,7 +209,7 @@ mod tests {
             ]
         }";
 
-        let h = Operator::new(pipeline);
+        let h = Operator::new(pipeline, None);
         assert!(h.is_ok());
     }
 }
