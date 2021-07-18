@@ -17,33 +17,33 @@ pub struct Ellipsoid {
 #[derive(Clone, Copy, Debug)]
 pub struct FatEllipsoid {
     // Axes
-    pub a: f64,            // Semimajor axis
-    ay: f64,           // Equatoreal semiminor axis
-    b: f64,            // Semiminor axis
-    ra: f64,           // 1 / a
-    ray: f64,          // 1 / ay
-    rb: f64,           // 1 / b
+    pub a: f64, // Semimajor axis
+    ay: f64,    // Equatoreal semiminor axis
+    b: f64,     // Semiminor axis
+    ra: f64,    // 1 / a
+    ray: f64,   // 1 / ay
+    rb: f64,    // 1 / b
 
     // Flattenings
     f: f64,
-    fe: f64,           // Equatoreal flattening (0 for biaxial)
-    g: f64,            // Second flattening
-    n: f64,            // Third flattening
-    rf: f64,           // 1 / f
-    rn: f64,           // 1 / n
-    ar: f64,           // Aspect ratio: 1 - f = b / a
+    fe: f64, // Equatoreal flattening (0 for biaxial)
+    g: f64,  // Second flattening
+    n: f64,  // Third flattening
+    rf: f64, // 1 / f
+    rn: f64, // 1 / n
+    ar: f64, // Aspect ratio: 1 - f = b / a
 
     // Eccentricities
-    e: f64,            // Eccentricity
-    ee: f64,           // Equatoreal eccentricity (0 for biaxial)
-    es: f64,           // Eccentricity squared
-    ees: f64,          // Equatoreal eccentricity squared
-    e4: f64,           // Eccentricity squared, squared
-    ep: f64,           // Second eccentricity
-    eps: f64,          // Second eccentricity squared
-    E: f64,            // Linear eccentricity
-    one_es: f64,       // 1 - es
-    rone_es: f64,      // 1 / one_es
+    e: f64,       // Eccentricity
+    ee: f64,      // Equatoreal eccentricity (0 for biaxial)
+    es: f64,      // Eccentricity squared
+    ees: f64,     // Equatoreal eccentricity squared
+    e4: f64,      // Eccentricity squared, squared
+    ep: f64,      // Second eccentricity
+    eps: f64,     // Second eccentricity squared
+    E: f64,       // Linear eccentricity
+    one_es: f64,  // 1 - es
+    rone_es: f64, // 1 / one_es
 }
 
 #[allow(non_snake_case)]
@@ -73,7 +73,7 @@ pub(crate) struct CartographicFoundations {
     E3: f64,
     E4: f64,
 
-    k_0: f64
+    k_0: f64,
 }
 
 /// GRS80 is the default ellipsoid.
@@ -82,7 +82,6 @@ impl Default for Ellipsoid {
         Ellipsoid::new(6_378_137.0, 1. / 298.257_222_100_882_7)
     }
 }
-
 
 pub trait Axes {
     fn a(&self) -> f64;
@@ -106,26 +105,36 @@ pub trait Axes {
     fn semiminor_axis(&self) -> f64 {
         self.a() * (1.0 - self.f())
     }
-
 }
 
 impl Axes for Ellipsoid {
-    fn a(&self) -> f64 {self.a}
-    fn ay(&self) -> f64 {self.ay}
-    fn f(&self) -> f64 {self.f}
+    fn a(&self) -> f64 {
+        self.a
+    }
+    fn ay(&self) -> f64 {
+        self.ay
+    }
+    fn f(&self) -> f64 {
+        self.f
+    }
 }
 
 impl Axes for FatEllipsoid {
-    fn a(&self) -> f64 {self.a}
-    fn ay(&self) -> f64 {self.ay}
-    fn f(&self) -> f64 {self.f}
+    fn a(&self) -> f64 {
+        self.a
+    }
+    fn ay(&self) -> f64 {
+        self.ay
+    }
+    fn f(&self) -> f64 {
+        self.f
+    }
 }
 
 pub trait Axen<T> {
     fn a(&self) -> f64;
     fn ay(&self) -> f64;
     fn f(&self) -> f64;
-
 
     /// The semimajor axis, *a*
     #[must_use]
@@ -144,9 +153,7 @@ pub trait Axen<T> {
     fn semiminor_axis(&self) -> f64 {
         self.a() * (1.0 - self.f())
     }
-
 }
-
 
 impl Ellipsoid {
     /// User defined ellipsoid
@@ -171,12 +178,12 @@ impl Ellipsoid {
     #[must_use]
     pub fn named(name: &str) -> Ellipsoid {
         match name {
-            "GRS80"   => return Ellipsoid::new(6_378_137.0, 1. / 298.257_222_100_882_7),
-            "intl"    => return Ellipsoid::new(6_378_388.0, 1. / 297.0),
+            "GRS80" => return Ellipsoid::new(6_378_137.0, 1. / 298.257_222_100_882_7),
+            "intl" => return Ellipsoid::new(6_378_388.0, 1. / 297.0),
             "Helmert" => return Ellipsoid::new(6_378_200.0, 1. / 298.3),
-            "clrk66"  => return Ellipsoid::new(6_378_206.4, 1. / 294.978_698_2),
-            "clrk80"  => return Ellipsoid::new(6_378_249.145, 1. / 293.465),
-            _         => return Ellipsoid::new(6_378_137.0, 1. / 298.257_222_100_882_7)
+            "clrk66" => return Ellipsoid::new(6_378_206.4, 1. / 294.978_698_2),
+            "clrk80" => return Ellipsoid::new(6_378_249.145, 1. / 293.465),
+            _ => return Ellipsoid::new(6_378_137.0, 1. / 298.257_222_100_882_7),
         }
     }
 
@@ -723,7 +730,7 @@ mod tests {
     fn shape_and_size() {
         let ellps = Ellipsoid::named("GRS80");
         let ellps = Ellipsoid::new(ellps.semimajor_axis(), ellps.flattening());
-        let ellps = Ellipsoid::triaxial(ellps.a, ellps.a-1., ellps.f);
+        let ellps = Ellipsoid::triaxial(ellps.a, ellps.a - 1., ellps.f);
         assert_eq!(ellps.semimajor_axis(), 6378137.0);
         assert_eq!(ellps.flattening(), 1. / 298.25722_21008_82711_24316);
 

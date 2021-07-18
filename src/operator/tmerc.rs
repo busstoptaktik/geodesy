@@ -3,9 +3,9 @@
 // Renovering af Poder/Engsager tmerc i B:\2019\Projects\FIRE\tramp\tramp\tramp.c
 // Detaljer i C:\Users\B004330\Downloads\2.1.2 A HIGHLY ACCURATE WORLD WIDE ALGORITHM FOR THE TRANSVE (1).doc
 
-use crate::Context;
 use super::OperatorArgs;
 use super::OperatorCore;
+use crate::Context;
 use crate::Ellipsoid;
 
 #[derive(Debug)]
@@ -150,7 +150,7 @@ impl OperatorCore for Tmerc {
 mod tests {
     #[test]
     fn utm() {
-        use crate::{CoordinateTuple, Ellipsoid, Context, Operator, OperatorCore};
+        use crate::{Context, CoordinateTuple, Ellipsoid, Operator, OperatorCore};
 
         // Test the UTM implementation
         let op = Operator::new("utm: {zone: 32}", None).unwrap();

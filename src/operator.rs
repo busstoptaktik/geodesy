@@ -3,7 +3,6 @@ use crate::OperatorArgs;
 
 pub type NewOperator = fn(definition: &str) -> Result<Operator, String>;
 
-
 // Operator used to be a `pub type Operator = Box<dyn OperatorCore>`, but now it's
 // a newtype around a Boxed OperatorCore, in order to be able to define methods on
 // it. There's a good description of the crux here:
@@ -128,7 +127,10 @@ mod noop;
 mod pipeline;
 mod tmerc;
 
-pub(crate) fn operator_factory(args: &mut OperatorArgs, ctx: Option<&Context>) -> Result<Operator, String> {
+pub(crate) fn operator_factory(
+    args: &mut OperatorArgs,
+    ctx: Option<&Context>,
+) -> Result<Operator, String> {
     use crate::operator as co;
 
     // Pipelines do not need to be named "pipeline": They are characterized simply

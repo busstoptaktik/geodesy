@@ -1,6 +1,6 @@
-use crate::Context;
 use super::OperatorArgs;
 use super::OperatorCore;
+use crate::Context;
 use crate::CoordinateTuple;
 use crate::Ellipsoid;
 

@@ -6,14 +6,14 @@ use crate::OperatorCore;
 
 #[derive(Debug, Default)]
 struct Resource {
-    bbox: CoordinateTuple
+    bbox: CoordinateTuple,
 }
 
 impl Resource {
     #[must_use]
     pub fn _new() -> Resource {
         Resource {
-            bbox: CoordinateTuple(0., 0., 0., 0.)
+            bbox: CoordinateTuple(0., 0., 0., 0.),
         }
     }
 }
@@ -30,9 +30,9 @@ pub struct Context {
     pub(crate) cause: &'static str,
 }
 
-use crate::OperatorArgs;
-use crate::operator::NewOperator;
 use crate::operator::operator_factory;
+use crate::operator::NewOperator;
+use crate::OperatorArgs;
 
 impl Context {
     #[must_use]
@@ -95,7 +95,6 @@ impl Context {
         Err(format!("Unknown operator '{}'", args.name))
     }
     */
-
 }
 
 //----------------------------------------------------------------------------------
@@ -116,8 +115,8 @@ mod tests {
 
     #[test]
     fn operate() {
-        use crate::Operator;
         use crate::Context;
+        use crate::Operator;
         use crate::{fwd, inv};
         let pipeline = "ed50_etrs89: {
             steps: [
@@ -139,5 +138,4 @@ mod tests {
         assert!((ond.coord.to_degrees().0 - 12.).abs() < 1e-12);
         assert!((ond.coord.to_degrees().1 - 55.).abs() < 1e-12);
     }
-
 }

@@ -25,9 +25,9 @@
 // here
 // "###]
 
+mod context;
 mod coordinates;
 mod ellipsoids;
-mod context;
 mod operator;
 mod operatorargs;
 
