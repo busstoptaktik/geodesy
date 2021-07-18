@@ -53,11 +53,9 @@ impl Cart {
 }
 
 impl OperatorCore for Cart {
-    // For now, we just use the shrinkwrapped Ellipsoid-methods in
-    // fwd() and inv(). But we can potentially speed up by
-    // extending struct Cart with additional precomputed ellipsoidal
-    // parameters, so we don't need to let Ellipsoid:: compute them
-    // over and over on each invocation.
+    // For now, we just use the shrinkwrapped Ellipsoid-method in
+    // fwd() and an optimized version of Fukushima (2006) in inv().
+    // We should, however, switch to Bowring (1985).
     fn fwd(&self, operand: &mut Context) -> bool {
         operand.coord = self.ellps.cartesian(&operand.coord);
         true
