@@ -59,42 +59,6 @@ impl Context {
     pub fn operator(&self, args: &mut OperatorArgs) -> Result<Operator, String> {
         operator_factory(args, Some(self))
     }
-
-    /*
-    pub fn operator_factory(&self, args: &mut OperatorArgs) -> Result<Operator, String> {
-        use crate::operator as co;
-
-        // Pipelines do not need to be named "pipeline": They are characterized simply
-        // by containing steps.
-        if args.name == "pipeline" || args.numeric_value("operator_factory", "_nsteps", 0.0)? > 0.0 {
-            let op = co::pipeline::Pipeline::new(args)?;
-            return Ok(Operator(Box::new(op)));
-        }
-        if args.name == "cart" {
-            let op = co::cart::Cart::new(args)?;
-            return Ok(Operator(Box::new(op)));
-        }
-        if args.name == "helmert" {
-            let op = co::helmert::Helmert::new(args)?;
-            return Ok(Operator(Box::new(op)));
-        }
-        if args.name == "tmerc" {
-            let op = co::tmerc::Tmerc::new(args)?;
-            return Ok(Operator(Box::new(op)));
-        }
-        if args.name == "utm" {
-            let op = co::tmerc::Tmerc::utm(args)?;
-            return Ok(Operator(Box::new(op)));
-        }
-        if args.name == "noop" {
-            let op = co::noop::Noop::new(args)?;
-            return Ok(Operator(Box::new(op)));
-        }
-
-        // Herefter: Søg efter 'name' i filbøtten
-        Err(format!("Unknown operator '{}'", args.name))
-    }
-    */
 }
 
 //----------------------------------------------------------------------------------
