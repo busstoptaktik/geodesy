@@ -1,7 +1,6 @@
 use crate::Context;
 use crate::OperatorArgs;
 
-
 // Operator used to be a `pub type Operator = Box<dyn OperatorCore>`, but now it's
 // a newtype around a Boxed OperatorCore, in order to be able to define methods on
 // it. There's a good description of the crux here:

@@ -87,9 +87,18 @@ impl OperatorArgs {
         // First, we copy the full text in the args, to enable recursive definitions
         self.insert("_definition", definition);
 
-        // Read the entire YAML-document and extract the first sub-document
+        // Read the entire YAML-document and try to locate the `which` document
         let docs = YamlLoader::load_from_str(definition).unwrap();
-        let main = &docs[0].as_hash();
+        let mut index = Some(0_usize);
+
+        if which != "" {
+            index = docs.iter().position(|doc| !doc[which].is_badvalue());
+            if index.is_none() {
+                return self.badvalue("Cannot locate definition");
+            }
+        }
+        let index = index.unwrap();
+        let main = &docs[index].as_hash();
         if main.is_none() {
             return self.badvalue("Cannot parse definition");
         }
@@ -115,7 +124,7 @@ impl OperatorArgs {
         self.name = main_entry_name.to_string();
 
         // Grab the sub-tree defining the 'main_entry_name'
-        let main_entry = &docs[0][main_entry_name];
+        let main_entry = &docs[index][main_entry_name];
         if main_entry.is_badvalue() {
             return self.badvalue("Cannot locate definition");
         }
@@ -324,7 +333,7 @@ mod tests {
         // Let populate() figure out what we want
         let mut args = OperatorArgs::global_defaults();
         assert!(args.populate(&txt, ""));
-        assert_eq!(&args.value("_step_0", "    ")[0..4], "cart");
+        assert_eq!(&args.value("x", "5"), "3");
 
         // When op is not a pipeline
         let mut args = OperatorArgs::global_defaults();

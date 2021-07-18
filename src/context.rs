@@ -6,7 +6,7 @@ use crate::OperatorCore;
 use crate::UserDefinedOperator;
 
 #[derive(Debug, Default)]
-struct Resource {
+pub struct Resource {
     bbox: CoordinateTuple,
 }
 
@@ -19,7 +19,6 @@ impl Resource {
     }
 }
 
-#[allow(dead_code)] // unused: resources
 #[derive(Default)]
 pub struct Context {
     pub coord: CoordinateTuple,
@@ -30,7 +29,6 @@ pub struct Context {
     pub(crate) last_failing_operation: &'static str,
     pub(crate) cause: &'static str,
 }
-
 
 impl Context {
     #[must_use]
@@ -52,6 +50,10 @@ impl Context {
 
     pub fn register(&mut self, name: String, constructor: UserDefinedOperator) {
         self.user_defined_operators.insert(name, constructor);
+    }
+
+    pub fn resource(&self, name: &str) -> &Resource {
+        &self.resources[name]
     }
 
     pub fn operator(&self, definition: &str) -> Result<Operator, String> {
@@ -90,13 +92,12 @@ mod tests {
         let mut ond = Context::new();
         let op = Operator::new(pipeline, None).unwrap();
         ond.coord = crate::CoordinateTuple::deg(12., 55., 100., 0.);
+
         ond.operate(&op, fwd);
         assert!((ond.coord.to_degrees().0 - 11.998815342385206861).abs() < 1e-12);
         assert!((ond.coord.to_degrees().1 - 54.999382648950991381).abs() < 1e-12);
-        println!("{:?}", ond.coord.to_degrees());
+
         ond.operate(&op, inv);
-        let e = ond.coord.to_degrees();
-        println!("{:?}", e);
         assert!((ond.coord.to_degrees().0 - 12.).abs() < 1e-12);
         assert!((ond.coord.to_degrees().1 - 55.).abs() < 1e-12);
     }

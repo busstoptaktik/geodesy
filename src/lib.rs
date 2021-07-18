@@ -92,34 +92,34 @@ pub enum Bibliography {
     /// [DOI](https://doi.org/10.1007/s00190-011-0445-3).
     Kar11,
 
-    /// Charles F.F. Karney (2012) Algorithms for geodesics.
+    /// Charles F.F. Karney (2012) *Algorithms for geodesics*.
     /// [pdf](https://arxiv.org/pdf/1109.4448.pdf)
     Kar12,
 
-    /// Charles F.F. Karney (2013) Algorithms for geodesics. Journal of Geodesy 87, 43–55.
+    /// Charles F.F. Karney (2013) *Algorithms for geodesics*. Journal of Geodesy 87, 43–55.
     /// [DOI](https://doi.org/10.1007/s00190-012-0578-z)
     Kar13,
 
     /// R.E. Deakin, M.N. Hunter and C.F.F. Karney (2012):
-    /// A fresh look at the UTM projection:
-    /// Karney-Krueger equations.
+    /// *A fresh look at the UTM projection:
+    /// Karney-Krueger equations*.
     /// Surveying and Spatial Sciences Institute (SSSI)
     /// Land Surveying Commission National Conference,
     /// Melbourne, 18-21 April, 2012.
     Dea12,
 
-    /// L. Krüger (1912). Konforme Abbildung des Erdellipsoids in der Ebene.
+    /// L. Krüger (1912). *Konforme Abbildung des Erdellipsoids in der Ebene*.
     /// Royal Prussian Geodetic Institute, New Series 52.
     /// [DOI](https://dx.doi.org/10.2312/GFZ.b103-krueger28).
     Kru12,
 
-    /// T. Vincenty (1975) Direct and Inverse Solutions of Geodesics on the Ellipsoid
-    /// with application of nested equations.
+    /// T. Vincenty (1975) *Direct and Inverse Solutions of Geodesics on the Ellipsoid
+    /// with application of nested equations*.
     /// Survey Review, 23(176): 88-93.
     /// [pdf](https://www.ngs.noaa.gov/PUBS_LIB/inverse.pdf)
     /// (See also Wikipedia: [Vincenty's formulae](https://en.wikipedia.org/wiki/Vincenty's_formulae)).
     Vin75,
 
-    /// T. Vincenty (1976). Correspondence. Survey Review. 23(180): 294.
+    /// T. Vincenty (1976). *Correspondence*. Survey Review. 23(180): 294.
     Vin76,
 }
