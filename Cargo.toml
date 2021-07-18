@@ -10,5 +10,6 @@ readme = "README.md"
 
 [dependencies]
 yaml-rust = "0.4"
+log = "0.4"
 # pyo3 = "0.12.4"
 # minimal-yaml = "0.1.5"

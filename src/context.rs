@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use crate::CoordinateTuple;
 use crate::Operator;
 use crate::OperatorCore;
+use crate::UserDefinedOperator;
 
 #[derive(Debug, Default)]
 struct Resource {
@@ -25,14 +26,11 @@ pub struct Context {
     pub stack: Vec<f64>,
     pub coordinate_stack: Vec<CoordinateTuple>,
     resources: HashMap<String, Resource>,
-    pub(crate) user_defined_operators: HashMap<String, NewOperator>,
+    pub(crate) user_defined_operators: HashMap<String, UserDefinedOperator>,
     pub(crate) last_failing_operation: &'static str,
     pub(crate) cause: &'static str,
 }
 
-use crate::operator::operator_factory;
-use crate::operator::NewOperator;
-use crate::OperatorArgs;
 
 impl Context {
     #[must_use]
@@ -52,12 +50,12 @@ impl Context {
         operator.operate(self, forward)
     }
 
-    pub fn register(&mut self, name: String, constructor: NewOperator) {
+    pub fn register(&mut self, name: String, constructor: UserDefinedOperator) {
         self.user_defined_operators.insert(name, constructor);
     }
 
-    pub fn operator(&self, args: &mut OperatorArgs) -> Result<Operator, String> {
-        operator_factory(args, Some(self))
+    pub fn operator(&self, definition: &str) -> Result<Operator, String> {
+        Operator::new(definition, Some(self))
     }
 }
 
