@@ -24,7 +24,7 @@ impl Pipeline {
             let step_args = &args.args[&step_name];
 
             // We need a recursive copy of "all globals so far"
-            let mut oa = OperatorArgs::with_globals_from(args, step_args, "");
+            let mut oa = args.spawn(step_args);
             let op = operator_factory(&mut oa, ctx)?;
             steps.push(op);
         }

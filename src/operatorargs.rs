@@ -38,21 +38,21 @@ impl OperatorArgs {
     ///
     /// This is the mechanism for inheritance of global args in pipelines.
     #[must_use]
-    pub fn with_globals_from(
-        existing: &OperatorArgs,
+    pub fn spawn(
+        &self,
         definition: &str,
-        which: &str,
     ) -> OperatorArgs {
         let mut oa = OperatorArgs::new();
-        for (arg, val) in &existing.args {
+        for (arg, val) in &self.args {
             if arg.starts_with('_') || (arg == "inv") {
                 continue;
             }
             oa.insert(arg, val);
         }
-        oa.populate(definition, which);
+        oa.populate(definition, "");
         oa
     }
+
 
     ///
     /// Insert PROJ style operator definition arguments, converted from a YAML
@@ -340,6 +340,12 @@ mod tests {
         assert!(args.populate("cart: {ellps: intl}", ""));
         assert_eq!(args.name, "cart");
         assert_eq!(&args.value("ellps", ""), "intl");
+
+        // Inheritance
+        let mut moreargs = args.spawn("foo: {bar: baz}");
+        assert_eq!(moreargs.name, "foo");
+        assert_eq!(moreargs.value("ellps", ""), "intl");
+        assert_eq!(&moreargs.value("bar", ""), "baz");
     }
 
     #[test]

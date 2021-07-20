@@ -26,6 +26,7 @@ pub struct Context {
     pub coordinate_stack: Vec<CoordinateTuple>,
     resources: HashMap<String, Resource>,
     pub(crate) user_defined_operators: HashMap<String, UserDefinedOperator>,
+    pub(crate) user_defined_macros: HashMap<String, String>,
     pub(crate) last_failing_operation: &'static str,
     pub(crate) cause: &'static str,
 }
@@ -41,6 +42,7 @@ impl Context {
             last_failing_operation: "",
             cause: "",
             user_defined_operators: HashMap::new(),
+            user_defined_macros: HashMap::new(),
         }
     }
 
@@ -48,12 +50,16 @@ impl Context {
         operator.operate(self, forward)
     }
 
-    pub fn register(&mut self, name: String, constructor: UserDefinedOperator) {
+    pub fn register_operator(&mut self, name: String, constructor: UserDefinedOperator) {
         self.user_defined_operators.insert(name, constructor);
     }
 
-    pub fn resource(&self, name: &str) -> &Resource {
-        &self.resources[name]
+    pub fn register_macro(&mut self, name: String, definition: String) {
+        self.user_defined_macros.insert(name, definition);
+    }
+
+    pub fn resource(&self, name: &str) -> Option<&Resource> {
+        self.resources.get(name)
     }
 
     pub fn operator(&self, definition: &str) -> Result<Operator, String> {

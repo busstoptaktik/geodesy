@@ -131,8 +131,7 @@ pub(crate) fn operator_factory(
 ) -> Result<Operator, String> {
     use crate::operator as co;
 
-    // Pipelines do not need to be named "pipeline": They are characterized simply
-    // by containing steps.
+    // Pipelines are characterized simply by containing steps.
     if args.name == "pipeline" || args.numeric_value("operator_factory", "_nsteps", 0.0)? > 0.0 {
         let op = co::pipeline::Pipeline::new(args, ctx)?;
         return Ok(Operator(Box::new(op)));
