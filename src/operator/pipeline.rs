@@ -86,6 +86,10 @@ mod tests {
 
         // Setup a 3 step pipeline
         let pipeline = "ed50_etrs89: {
+            globals: [
+                foo: bar,
+                baz: bonk
+            ],
             steps: [
                 cart: {ellps: intl},
                 helmert: {dx: -87, dy: -96, dz: -120},
@@ -94,9 +98,9 @@ mod tests {
         }";
 
         // We cannot use Operator::new here, because we want to access internal
-        // elements of the Pipeline struct below. These are unaccesible after
+        // elements of the Pipeline struct below. These are inaccesible after
         // boxing.
-        let mut args = OperatorArgs::global_defaults();
+        let mut args = OperatorArgs::new();
         args.populate(&pipeline, "");
         let op = Pipeline::new(&mut args, None).unwrap();
 

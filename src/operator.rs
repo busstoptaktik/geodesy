@@ -21,7 +21,7 @@ impl Operator {
     /// h.operate(&mut o, geodesy::fwd);
     /// ```
     pub fn new(definition: &str, ctx: Option<&Context>) -> Result<Operator, String> {
-        let mut oa = OperatorArgs::global_defaults();
+        let mut oa = OperatorArgs::new();
         oa.populate(definition, "");
         operator_factory(&mut oa, ctx)
     }
@@ -78,12 +78,12 @@ impl OperatorCore for Operator {
 /// which builds on this `trait` (which only holds `pub`ness in order to support
 /// construction of user-defined operators).
 pub trait OperatorCore {
-    fn fwd(&self, ws: &mut Context) -> bool;
+    fn fwd(&self, ctx: &mut Context) -> bool;
 
     // implementations must override at least one of {inv, invertible}
-    fn inv(&self, operand: &mut Context) -> bool {
-        operand.last_failing_operation = self.name();
-        operand.cause = "Operator not invertible";
+    fn inv(&self, ctx: &mut Context) -> bool {
+        ctx.last_failing_operation = self.name();
+        ctx.cause = "Operator not invertible";
         false
     }
 
@@ -92,14 +92,14 @@ pub trait OperatorCore {
     }
 
     // operate fwd/inv, taking operator inversion into account.
-    fn operate(&self, operand: &mut Context, forward: bool) -> bool {
+    fn operate(&self, ctx: &mut Context, forward: bool) -> bool {
         // Short form of (inverted && !forward) || (forward && !inverted)
         if self.is_inverted() != forward {
-            return self.fwd(operand);
+            return self.fwd(ctx);
         }
         // We do not need to check for self.invertible() here, since non-invertible
         // operators will return false as per the default-defined fn inv() above.
-        self.inv(operand)
+        self.inv(ctx)
     }
 
     fn name(&self) -> &'static str {
@@ -130,6 +130,19 @@ pub(crate) fn operator_factory(
     ctx: Option<&Context>,
 ) -> Result<Operator, String> {
     use crate::operator as co;
+
+    // Look for macro
+    if ctx.is_some() {
+        let c = ctx.unwrap();
+        // TODO: Handle globals! (done? write tests)
+        if let Some(definition) = c.user_defined_macros.get(&args.name) {
+            let mut moreargs = args.spawn(definition);
+            // let op = co::pipeline::Pipeline::new(&mut moreargs, ctx)?;
+            // return Ok(Operator(Box::new(op)));
+            // return Operator::new(&definition, ctx);
+            return operator_factory(&mut moreargs, ctx);
+        }
+    }
 
     // Pipelines are characterized simply by containing steps.
     if args.name == "pipeline" || args.numeric_value("operator_factory", "_nsteps", 0.0)? > 0.0 {

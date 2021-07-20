@@ -12,23 +12,14 @@ pub struct OperatorArgs {
 impl OperatorArgs {
     #[must_use]
     pub fn new() -> OperatorArgs {
-        OperatorArgs {
-            name: String::new(),
-            args: HashMap::new(),
-            used: HashMap::new(),
-            all_used: HashMap::new(),
-        }
-    }
-
-    /// Provides an `OperatorArgs` object, populated by the global defaults (`ellps: GRS80`)
-    #[must_use]
-    pub fn global_defaults() -> OperatorArgs {
         let mut op = OperatorArgs {
             name: String::new(),
             args: HashMap::new(),
             used: HashMap::new(),
             all_used: HashMap::new(),
         };
+
+        // Global defaults
         op.insert("ellps", "GRS80");
         op
     }
@@ -75,7 +66,7 @@ impl OperatorArgs {
     /// ```rust
     /// use geodesy::OperatorArgs;
     ///
-    /// let mut args = OperatorArgs::global_defaults();
+    /// let mut args = OperatorArgs::new();
     /// let txt = std::fs::read_to_string("tests/tests.yml").unwrap_or_default();
     ///
     /// assert!(args.populate(&txt, "a_pipeline_for_testing"));
@@ -160,7 +151,10 @@ impl OperatorArgs {
             }
             let args = args.unwrap();
             for (arg, val) in args {
-                let thearg = arg.as_str().unwrap();
+                let thearg = arg.as_str().unwrap_or("");
+                if thearg.is_empty() {
+                    continue;
+                }
                 let theval = match val {
                     Yaml::Integer(val) => val.to_string(),
                     Yaml::Real(val) => val.as_str().to_string(),
@@ -180,13 +174,10 @@ impl OperatorArgs {
         self.insert("_nsteps", &steps.len().to_string());
 
         // Insert each step into the argument list, formatted as YAML.
-        // Unfortunately the compact mode does not work.
         for (index, step) in steps.iter().enumerate() {
             // Write the step definition to a new string
             let mut step_definition = String::new();
             let mut emitter = YamlEmitter::new(&mut step_definition);
-            // emitter.compact(true);
-            assert_eq!(emitter.is_compact(), true);
             emitter.dump(step).unwrap();
 
             // Remove the initial doc separator "---\n"
@@ -197,6 +188,8 @@ impl OperatorArgs {
 
         true
     }
+
+
 
     fn badvalue(&mut self, cause: &str) -> bool {
         self.name = "badvalue".to_string();
@@ -209,19 +202,21 @@ impl OperatorArgs {
     }
 
     pub fn insert(&mut self, key: &str, value: &str) {
-        self.args.insert(key.to_string(), value.to_string());
-    }
-
-    pub fn append(&mut self, additional: &OperatorArgs) {
-        let iter = additional.args.iter();
-        for (key, val) in iter {
-            self.insert(key, val);
+        // Self-referencing keys (dx=^dx), are no-ops.
+        // The syntax dx=^dx makes sense in a nested command (or a pipeline
+        // step), but the meaning is "use the value already in the hashmap".
+        // Actually inserting it will lead to overwriting of the actual
+        // value-of-interest, and to infinite recursion on lookup.
+        if key != value.trim_start_matches("^") {
+            self.args.insert(key.to_string(), value.to_string());
         }
     }
 
-    // Workhorse for ::value - this indirection is needed in order to keep the
-    // original key available, when traversing an indirect definition.
-    fn value_recursive_search(&mut self, key: &str, default: &str) -> String {
+    // Recursive workhorse, tracing indirect definitions for ::value
+    fn value_search(&mut self, key: &str, default: &str, recursions: usize) -> String {
+        if recursions > 100 {
+            return default.to_string()
+        }
         let arg = self.args.get(key);
         let arg = match arg {
             Some(arg) => arg.to_string(),
@@ -231,14 +226,18 @@ impl OperatorArgs {
         self.all_used.insert(key.to_string(), arg.to_string());
 
         if let Some(arg) = arg.strip_prefix("^") {
-            return self.value_recursive_search(arg, default);
+            // Default if looking for an out-of-scope arg.
+            if self.args.get(arg).is_none() {
+                return default.to_string()
+            }
+            return self.value_search(arg, default, recursions + 1);
         }
         arg
     }
 
     /// Return the arg for a given key; maintain usage info.
     pub fn value(&mut self, key: &str, default: &str) -> String {
-        let arg = self.value_recursive_search(key, default);
+        let arg = self.value_search(key, default, 0);
         if arg != default {
             self.used.insert(key.to_string(), arg.to_string());
         }
@@ -293,12 +292,17 @@ mod tests {
         args.insert("dz", "^ddz");
         args.insert("ddz", "^dddz");
         args.insert("dddz", "33");
-        // println!("args: {:?}", args);
 
         assert_eq!("00", args.value("", "00"));
         assert_eq!("11", args.value("dx", ""));
         assert_eq!("22", args.value("dy", ""));
         assert_eq!(args.used.len(), 2);
+
+        args.insert("dx", "^dx");
+        assert_eq!("11", args.value("dx", ""));
+        args.insert("dx", "^^^^dx");
+        assert_eq!("11", args.value("dx", ""));
+
 
         assert_eq!("33", args.value("dz", ""));
         assert_eq!(33.0, args.numeric_value("foo", "dz", 42.0).unwrap());
@@ -323,7 +327,7 @@ mod tests {
     #[test]
     fn preparing_args() {
         use super::*;
-        let mut args = OperatorArgs::global_defaults();
+        let mut args = OperatorArgs::new();
 
         // Explicitly stating the name of the pipeline
         let txt = std::fs::read_to_string("tests/tests.yml").unwrap_or_default();
@@ -331,20 +335,20 @@ mod tests {
         assert_eq!(&args.value("_step_0", "    ")[0..4], "cart");
 
         // Let populate() figure out what we want
-        let mut args = OperatorArgs::global_defaults();
+        let mut args = OperatorArgs::new();
         assert!(args.populate(&txt, ""));
         assert_eq!(&args.value("x", "5"), "3");
 
         // When op is not a pipeline
-        let mut args = OperatorArgs::global_defaults();
+        let mut args = OperatorArgs::new();
         assert!(args.populate("cart: {ellps: intl}", ""));
         assert_eq!(args.name, "cart");
         assert_eq!(&args.value("ellps", ""), "intl");
 
         // Inheritance
         let mut moreargs = args.spawn("foo: {bar: baz}");
-        assert_eq!(moreargs.name, "foo");
-        assert_eq!(moreargs.value("ellps", ""), "intl");
+        assert_eq!(&moreargs.name, "foo");
+        assert_eq!(&moreargs.value("ellps", ""), "intl");
         assert_eq!(&moreargs.value("bar", ""), "baz");
     }
 
