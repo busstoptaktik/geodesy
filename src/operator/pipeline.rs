@@ -25,7 +25,7 @@ impl Pipeline {
 
             // We need a recursive copy of "all globals so far"
             let mut oa = args.spawn(step_args);
-            let op = operator_factory(&mut oa, ctx)?;
+            let op = operator_factory(&mut oa, ctx, 0)?;
             steps.push(op);
         }
 

@@ -54,8 +54,9 @@ impl Context {
         self.user_defined_operators.insert(name, constructor);
     }
 
-    pub fn register_macro(&mut self, name: String, definition: String) {
-        self.user_defined_macros.insert(name, definition);
+    pub fn register_macro(&mut self, name: &str, definition: &str) {
+        self.user_defined_macros
+            .insert(name.to_string(), definition.to_string());
     }
 
     pub fn resource(&self, name: &str) -> Option<&Resource> {

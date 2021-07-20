@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use yaml_rust::{Yaml, YamlEmitter, YamlLoader};
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct OperatorArgs {
     pub name: String,
     pub args: HashMap<String, String>,
@@ -29,10 +29,7 @@ impl OperatorArgs {
     ///
     /// This is the mechanism for inheritance of global args in pipelines.
     #[must_use]
-    pub fn spawn(
-        &self,
-        definition: &str,
-    ) -> OperatorArgs {
+    pub fn spawn(&self, definition: &str) -> OperatorArgs {
         let mut oa = OperatorArgs::new();
         for (arg, val) in &self.args {
             if arg.starts_with('_') || (arg == "inv") {
@@ -43,7 +40,6 @@ impl OperatorArgs {
         oa.populate(definition, "");
         oa
     }
-
 
     ///
     /// Insert PROJ style operator definition arguments, converted from a YAML
@@ -189,8 +185,6 @@ impl OperatorArgs {
         true
     }
 
-
-
     fn badvalue(&mut self, cause: &str) -> bool {
         self.name = "badvalue".to_string();
         self.insert("cause", cause);
@@ -215,7 +209,7 @@ impl OperatorArgs {
     // Recursive workhorse, tracing indirect definitions for ::value
     fn value_search(&mut self, key: &str, default: &str, recursions: usize) -> String {
         if recursions > 100 {
-            return default.to_string()
+            return default.to_string();
         }
         let arg = self.args.get(key);
         let arg = match arg {
@@ -228,7 +222,7 @@ impl OperatorArgs {
         if let Some(arg) = arg.strip_prefix("^") {
             // Default if looking for an out-of-scope arg.
             if self.args.get(arg).is_none() {
-                return default.to_string()
+                return default.to_string();
             }
             return self.value_search(arg, default, recursions + 1);
         }
@@ -302,7 +296,6 @@ mod tests {
         assert_eq!("11", args.value("dx", ""));
         args.insert("dx", "^^^^dx");
         assert_eq!("11", args.value("dx", ""));
-
 
         assert_eq!("33", args.value("dz", ""));
         assert_eq!(33.0, args.numeric_value("foo", "dz", 42.0).unwrap());

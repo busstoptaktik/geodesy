@@ -14,16 +14,16 @@ impl Operator {
     /// ```rust
     /// // EPSG:1134 - 3 parameter, ED50/WGS84
     /// use geodesy::OperatorCore;
-    /// let h = geodesy::Operator::new("helmert: {dx: -87, dy: -96, dz: -120}", None);
+    /// let mut o = geodesy::Context::new();
+    /// let h = geodesy::Operator::new("helmert: {dx: -87, dy: -96, dz: -120}", Some(&o));
     /// assert!(h.is_ok());
     /// let h = h.unwrap();
-    /// let mut o = geodesy::Context::new();
     /// h.operate(&mut o, geodesy::fwd);
     /// ```
     pub fn new(definition: &str, ctx: Option<&Context>) -> Result<Operator, String> {
         let mut oa = OperatorArgs::new();
         oa.populate(definition, "");
-        operator_factory(&mut oa, ctx)
+        operator_factory(&mut oa, ctx, 0)
     }
 
     pub fn forward(&self, ws: &mut Context) -> bool {
@@ -128,19 +128,23 @@ mod tmerc;
 pub(crate) fn operator_factory(
     args: &mut OperatorArgs,
     ctx: Option<&Context>,
+    recursions: usize,
 ) -> Result<Operator, String> {
     use crate::operator as co;
 
+    if recursions > 100 {
+        return Err(format!(
+            "Operator definition '{}' too deeply nested",
+            args.name
+        ));
+    }
+
     // Look for macro
-    if ctx.is_some() {
-        let c = ctx.unwrap();
+    if let Some(c) = ctx {
         // TODO: Handle globals! (done? write tests)
         if let Some(definition) = c.user_defined_macros.get(&args.name) {
             let mut moreargs = args.spawn(definition);
-            // let op = co::pipeline::Pipeline::new(&mut moreargs, ctx)?;
-            // return Ok(Operator(Box::new(op)));
-            // return Operator::new(&definition, ctx);
-            return operator_factory(&mut moreargs, ctx);
+            return operator_factory(&mut moreargs, ctx, recursions + 1);
         }
     }
 
@@ -183,10 +187,20 @@ mod tests {
         use crate::{fwd, inv, Context, Operator, OperatorCore};
         let mut o = Context::new();
 
+        // Define "hulmert" as a macro forwarding its args to the "helmert" builtin
+        o.register_macro("hulmert", "helmert: {dx: ^dx, dy: ^dy, dz: ^dz}");
+
         // A plain operator: Helmert, EPSG:1134 - 3 parameter, ED50/WGS84
-        let h = Operator::new("helmert: {dx: -87, dy: -96, dz: -120}", None);
+        let hh = Operator::new("helmert: {dx: -87, dy: -96, dz: -120}", Some(&o));
+        assert!(hh.is_ok());
+        let hh = hh.unwrap();
+
+        // Same operator, defined through the "hulmert" macro
+        let h = Operator::new("hulmert: {dx: -87, dy: -96, dz: -120}", Some(&o));
         assert!(h.is_ok());
         let h = h.unwrap();
+        assert_eq!(hh.args(0).name, h.args(0).name);
+        assert_eq!(hh.args(0).used, h.args(0).used);
 
         h.operate(&mut o, fwd);
         assert_eq!(o.coord.first(), -87.);
