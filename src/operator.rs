@@ -13,12 +13,11 @@ impl Operator {
     /// Example:
     /// ```rust
     /// // EPSG:1134 - 3 parameter, ED50/WGS84
-    /// use geodesy::OperatorCore;
-    /// let mut o = geodesy::Context::new();
-    /// let h = geodesy::Operator::new("helmert: {dx: -87, dy: -96, dz: -120}", Some(&o));
-    /// assert!(h.is_ok());
-    /// let h = h.unwrap();
-    /// h.operate(&mut o, geodesy::fwd);
+    /// let mut ctx = geodesy::Context::new();
+    /// let op = ctx.operator("helmert: {dx: -87, dy: -96, dz: -120}");
+    /// assert!(op.is_ok());
+    /// let op = op.unwrap();
+    /// ctx.operate(&op, geodesy::fwd);
     /// ```
     pub fn new(definition: &str, ctx: Option<&Context>) -> Result<Operator, String> {
         let mut oa = OperatorArgs::new();
@@ -182,10 +181,26 @@ pub(crate) fn operator_factory(
 
 #[cfg(test)]
 mod tests {
+    use crate::CoordinateTuple;
+
     #[test]
     fn operator() {
         use crate::{fwd, inv, Context, Operator, OperatorCore};
         let mut o = Context::new();
+
+        // A non-existing operator
+        let h = Operator::new("unimplemented_operator: {dx: -87, dy: -96, dz: -120}", None);
+        assert!(h.is_err());
+
+        // Define "hilmert" and "halmert" to circularly define each other, in order
+        // to test the operator_factory recursion breaker
+        o.register_macro("halmert", "hilmert: {}");
+        o.register_macro("hilmert", "halmert: {}");
+        if let Err(e) = Operator::new("halmert: {dx: -87, dy: -96, dz: -120}", Some(&o)) {
+            assert!(e.ends_with("too deeply nested"));
+        } else {
+            panic!();
+        }
 
         // Define "hulmert" as a macro forwarding its args to the "helmert" builtin
         o.register_macro("hulmert", "helmert: {dx: ^dx, dy: ^dy, dz: ^dz}");
@@ -199,6 +214,7 @@ mod tests {
         let h = Operator::new("hulmert: {dx: -87, dy: -96, dz: -120}", Some(&o));
         assert!(h.is_ok());
         let h = h.unwrap();
+
         assert_eq!(hh.args(0).name, h.args(0).name);
         assert_eq!(hh.args(0).used, h.args(0).used);
 
@@ -222,10 +238,6 @@ mod tests {
         assert_eq!(o.coord.second(), 0.);
         assert_eq!(o.coord.third(), 0.);
 
-        // A non-existing operator
-        let h = Operator::new("unimplemented_operator: {dx: -87, dy: -96, dz: -120}", None);
-        assert!(h.is_err());
-
         // A pipeline
         let pipeline = "ed50_etrs89: {
             steps: [
@@ -235,7 +247,57 @@ mod tests {
             ]
         }";
 
-        let h = Operator::new(pipeline, None);
+        let h = Operator::new(pipeline, Some(&o));
         assert!(h.is_ok());
+        let h = h.unwrap();
+
+        o.coord = CoordinateTuple::deg(12., 55., 100., 0.);
+        h.forward(&mut o);
+        let d = o.coord.to_degrees();
+        let r = CoordinateTuple(
+            11.998815342385209,
+            54.99938264895106,
+            131.20240108577374,
+            0.0,
+        );
+
+        assert!((d.first() - r.first()).abs() < 1.0e-10);
+        assert!((d.second() - r.second()).abs() < 1.0e-10);
+        assert!((d.third() - r.third()).abs() < 1.0e-8);
+
+        // A parameterized macro pipeline version
+        let pipeline_as_macro = "pipeline: {
+            globals: {
+                leftleft: ^left
+            },
+            steps: [
+                cart: {ellps: ^leftleft},
+                helmert: {dx: ^dx, dy: ^dy, dz: ^dz},
+                cart: {inv: true, ellps: ^right}
+            ]
+        }";
+
+        o.register_macro("geohelmert", pipeline_as_macro);
+        let ed50_etrs89 = Operator::new(
+            "geohelmert: {left: intl, right: GRS80, dx: -87, dy: -96, dz: -120}",
+            Some(&o),
+        );
+        assert!(ed50_etrs89.is_ok());
+        let ed50_etrs89 = ed50_etrs89.unwrap();
+        o.coord = CoordinateTuple::deg(12., 55., 100., 0.);
+
+        ed50_etrs89.forward(&mut o);
+        let d = o.coord.to_degrees();
+
+        assert!((d.first() - r.first()).abs() < 1.0e-10);
+        assert!((d.second() - r.second()).abs() < 1.0e-10);
+        assert!((d.third() - r.third()).abs() < 1.0e-8);
+
+        ed50_etrs89.inverse(&mut o);
+        let d = o.coord.to_degrees();
+
+        assert!((d.first() - 12.).abs() < 1.0e-10);
+        assert!((d.second() - 55.).abs() < 1.0e-10);
+        assert!((d.third() - 100.).abs() < 1.0e-8);
     }
 }

@@ -14,12 +14,17 @@ pub struct Helmert {
 
 impl Helmert {
     pub fn new(args: &mut OperatorArgs) -> Result<Helmert, String> {
+        let dx = args.numeric_value("Helmert", "dx", 0.0)?;
+        let dy = args.numeric_value("Helmert", "dy", 0.0)?;
+        let dz = args.numeric_value("Helmert", "dz", 0.0)?;
+        let inverted = args.flag("inv");
+        let argsc = args.clone();
         Ok(Helmert {
-            dx: args.numeric_value("Helmert", "dx", 0.0)?,
-            dy: args.numeric_value("Helmert", "dy", 0.0)?,
-            dz: args.numeric_value("Helmert", "dz", 0.0)?,
-            inverted: args.flag("inv"),
-            args: args.clone(),
+            dx: dx,
+            dy: dy,
+            dz: dz,
+            inverted: inverted,
+            args: argsc,
         })
     }
 }
