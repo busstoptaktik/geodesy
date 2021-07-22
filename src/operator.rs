@@ -138,13 +138,25 @@ pub(crate) fn operator_factory(
         ));
     }
 
-    // Look for macros
+    // Look for runtime defined macros
     if let Some(definition) = ctx.user_defined_macros.get(&args.name) {
         let mut moreargs = args.spawn(definition);
         return operator_factory(&mut moreargs, ctx, recursions + 1);
     }
 
+    // Look for file defined macros in current working directory
+    let definition = std::fs::read_to_string(args.name.clone() + ".yml");
+    if definition.is_ok() {
+        let mut moreargs = args.spawn(&definition.unwrap());
+        return operator_factory(&mut moreargs, ctx, recursions + 1);
+    }
 
+    // Look for runtime defined operators
+    if ctx.user_defined_operators.contains_key(&args.name) {
+        return ctx.user_defined_operators[&args.name](args, ctx);
+    }
+
+    // Builtins
 
     // Pipelines are not characterized by the name "pipeline", but simply by containing steps.
     if args.numeric_value("operator_factory", "_nsteps", 0.0)? > 0.0 {
@@ -174,7 +186,19 @@ pub(crate) fn operator_factory(
         return Ok(Operator(Box::new(op)));
     }
 
-    // Herefter: Søg efter 'name' i filbøtten
+    // Look for file defined macros in SHARE directory
+    let dld = dirs::data_local_dir();
+    if dld.is_some() {
+        let mut path = dld.unwrap();
+        path.push("geodesy");
+        path.push(args.name.clone()+".yml");
+        let definition = std::fs::read_to_string(path);
+        if definition.is_ok() {
+            let mut moreargs = args.spawn(&definition.unwrap());
+            return operator_factory(&mut moreargs, ctx, recursions + 1);
+        }
+    }
+
     Err(format!("Unknown operator '{}'", args.name))
 }
 
@@ -247,7 +271,6 @@ mod tests {
                 cart: {inv: true, ellps: GRS80}
             ]
         }";
-
         let h = Operator::new(pipeline, &o);
         assert!(h.is_ok());
         let h = h.unwrap();
@@ -265,6 +288,14 @@ mod tests {
         assert!((d.first() - r.first()).abs() < 1.0e-10);
         assert!((d.second() - r.second()).abs() < 1.0e-10);
         assert!((d.third() - r.third()).abs() < 1.0e-8);
+
+        // An externally defined version
+        let h = Operator::new("tests/ed50_etrs89: {}", &o);
+        assert!(h.is_ok());
+
+        // Try to access is from local/share: "C:\\Users\\Username\\AppData\\Local\\geodesy\\ed50_etrs89.yml"
+        let h = Operator::new("ed50_etrs89: {}", &o);
+        assert!(h.is_err());
 
         // A parameterized macro pipeline version
         let pipeline_as_macro = "pipeline: {

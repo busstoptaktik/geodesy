@@ -9,7 +9,6 @@ readme = "README.md"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-yaml-rust = "0.4"
+dirs = "3.0"
 log = "0.4"
-# pyo3 = "0.12.4"
-# minimal-yaml = "0.1.5"
+yaml-rust = "0.4"
