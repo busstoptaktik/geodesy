@@ -3,6 +3,7 @@
 use super::Context;
 use super::OperatorArgs;
 use super::OperatorCore;
+use crate::Operator;
 
 pub struct Helmert {
     dx: f64,
@@ -13,7 +14,7 @@ pub struct Helmert {
 }
 
 impl Helmert {
-    pub fn new(args: &mut OperatorArgs) -> Result<Helmert, String> {
+    fn new(args: &mut OperatorArgs) -> Result<Helmert, String> {
         let dx = args.numeric_value("Helmert", "dx", 0.0)?;
         let dy = args.numeric_value("Helmert", "dy", 0.0)?;
         let dz = args.numeric_value("Helmert", "dz", 0.0)?;
@@ -27,6 +28,12 @@ impl Helmert {
             args: argsc,
         })
     }
+
+    pub(crate) fn operator(args: &mut OperatorArgs) -> Result<Operator, String> {
+        let op = crate::operator::helmert::Helmert::new(args)?;
+        return Ok(Operator{0: Box::new(op)});
+    }
+
 }
 
 impl OperatorCore for Helmert {
@@ -73,7 +80,7 @@ mod tests {
         args.insert("dy", "-96");
         args.insert("dz", "-120");
 
-        let h = operator_factory(&mut args, None, 0);
+        let h = operator_factory(&mut args, &o, 0);
         assert!(h.is_err());
 
         // EPSG:1134 - 3 parameter, ED50/WGS84, s = sqrt(27) m
@@ -82,7 +89,7 @@ mod tests {
         assert_eq!(args.value("dy", ""), "-96");
         assert_eq!(args.value("dz", ""), "-120");
 
-        let h = operator_factory(&mut args, None, 0).unwrap();
+        let h = operator_factory(&mut args, &o, 0).unwrap();
 
         h.fwd(&mut o);
         assert_eq!(o.coord.first(), -87.);

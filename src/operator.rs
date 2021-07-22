@@ -19,7 +19,7 @@ impl Operator {
     /// let op = op.unwrap();
     /// ctx.operate(&op, geodesy::fwd);
     /// ```
-    pub fn new(definition: &str, ctx: Option<&Context>) -> Result<Operator, String> {
+    pub fn new(definition: &str, ctx: &Context) -> Result<Operator, String> {
         let mut oa = OperatorArgs::new();
         oa.populate(definition, "");
         operator_factory(&mut oa, ctx, 0)
@@ -126,7 +126,7 @@ mod tmerc;
 
 pub(crate) fn operator_factory(
     args: &mut OperatorArgs,
-    ctx: Option<&Context>,
+    ctx: &Context,
     recursions: usize,
 ) -> Result<Operator, String> {
     use crate::operator as co;
@@ -138,27 +138,28 @@ pub(crate) fn operator_factory(
         ));
     }
 
-    // Look for macro
-    if let Some(c) = ctx {
-        // TODO: Handle globals! (done? write tests)
-        if let Some(definition) = c.user_defined_macros.get(&args.name) {
-            let mut moreargs = args.spawn(definition);
-            return operator_factory(&mut moreargs, ctx, recursions + 1);
-        }
+    // Look for macros
+    if let Some(definition) = ctx.user_defined_macros.get(&args.name) {
+        let mut moreargs = args.spawn(definition);
+        return operator_factory(&mut moreargs, ctx, recursions + 1);
     }
 
-    // Pipelines are characterized simply by containing steps.
-    if args.name == "pipeline" || args.numeric_value("operator_factory", "_nsteps", 0.0)? > 0.0 {
+
+
+    // Pipelines are not characterized by the name "pipeline", but simply by containing steps.
+    if args.numeric_value("operator_factory", "_nsteps", 0.0)? > 0.0 {
         let op = co::pipeline::Pipeline::new(args, ctx)?;
         return Ok(Operator(Box::new(op)));
     }
+
     if args.name == "cart" {
         let op = co::cart::Cart::new(args)?;
         return Ok(Operator(Box::new(op)));
     }
     if args.name == "helmert" {
-        let op = co::helmert::Helmert::new(args)?;
-        return Ok(Operator(Box::new(op)));
+        return crate::operator::helmert::Helmert::operator(args);
+        // let op = crate::operator::helmert::Helmert::new(args)?;
+        // return Ok(Operator(Box::new(op)));
     }
     if args.name == "tmerc" {
         let op = co::tmerc::Tmerc::new(args)?;
@@ -189,14 +190,14 @@ mod tests {
         let mut o = Context::new();
 
         // A non-existing operator
-        let h = Operator::new("unimplemented_operator: {dx: -87, dy: -96, dz: -120}", None);
+        let h = Operator::new("unimplemented_operator: {dx: -87, dy: -96, dz: -120}", &o);
         assert!(h.is_err());
 
         // Define "hilmert" and "halmert" to circularly define each other, in order
         // to test the operator_factory recursion breaker
         o.register_macro("halmert", "hilmert: {}");
         o.register_macro("hilmert", "halmert: {}");
-        if let Err(e) = Operator::new("halmert: {dx: -87, dy: -96, dz: -120}", Some(&o)) {
+        if let Err(e) = Operator::new("halmert: {dx: -87, dy: -96, dz: -120}", &o) {
             assert!(e.ends_with("too deeply nested"));
         } else {
             panic!();
@@ -206,12 +207,12 @@ mod tests {
         o.register_macro("hulmert", "helmert: {dx: ^dx, dy: ^dy, dz: ^dz}");
 
         // A plain operator: Helmert, EPSG:1134 - 3 parameter, ED50/WGS84
-        let hh = Operator::new("helmert: {dx: -87, dy: -96, dz: -120}", Some(&o));
+        let hh = Operator::new("helmert: {dx: -87, dy: -96, dz: -120}", &o);
         assert!(hh.is_ok());
         let hh = hh.unwrap();
 
         // Same operator, defined through the "hulmert" macro
-        let h = Operator::new("hulmert: {dx: -87, dy: -96, dz: -120}", Some(&o));
+        let h = Operator::new("hulmert: {dx: -87, dy: -96, dz: -120}", &o);
         assert!(h.is_ok());
         let h = h.unwrap();
 
@@ -247,7 +248,7 @@ mod tests {
             ]
         }";
 
-        let h = Operator::new(pipeline, Some(&o));
+        let h = Operator::new(pipeline, &o);
         assert!(h.is_ok());
         let h = h.unwrap();
 
@@ -280,7 +281,7 @@ mod tests {
         o.register_macro("geohelmert", pipeline_as_macro);
         let ed50_etrs89 = Operator::new(
             "geohelmert: {left: intl, right: GRS80, dx: -87, dy: -96, dz: -120}",
-            Some(&o),
+            &o,
         );
         assert!(ed50_etrs89.is_ok());
         let ed50_etrs89 = ed50_etrs89.unwrap();

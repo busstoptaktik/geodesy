@@ -40,7 +40,7 @@ mod tests {
     fn noop() {
         use crate::*;
         let mut o = Context::new();
-        let c = Operator::new("noop: {}", None).unwrap();
+        let c = Operator::new("noop: {}", &o).unwrap();
 
         // Make sure we do not do anything
         c.fwd(&mut o);

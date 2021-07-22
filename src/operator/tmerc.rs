@@ -74,14 +74,14 @@ impl Tmerc {
 #[allow(non_snake_case)]
 impl OperatorCore for Tmerc {
     // Forward transverse mercator, following Bowring
-    fn fwd(&self, operand: &mut Context) -> bool {
-        let lat = operand.coord.1;
+    fn fwd(&self, ctx: &mut Context) -> bool {
+        let lat = ctx.coord.1;
         let c = lat.cos();
         let s = lat.sin();
         let cc = c * c;
         let ss = s * s;
 
-        let dlon = operand.coord.0 - self.lon_0;
+        let dlon = ctx.coord.0 - self.lon_0;
         let oo = dlon * dlon;
 
         let N = self.ellps.prime_vertical_radius_of_curvature(lat);
@@ -92,44 +92,44 @@ impl OperatorCore for Tmerc {
 
         // Easting
         let sd = dlon.sin();
-        operand.coord.0 =
+        ctx.coord.0 =
             self.x_0 + self.k_0 * N * ((c * sd).atanh() + z * (1. + oo * (36. * cc - 29.) / 10.));
 
         // Northing
         let m = self.ellps.meridional_distance(lat, true);
         let znos4 = z * N * dlon * s / 4.;
         let ecc = 4. * self.eps * cc;
-        operand.coord.1 =
+        ctx.coord.1 =
             self.y_0 + self.k_0 * (m + N * theta_2 + znos4 * (9. + ecc + oo * (20. * cc - 11.)));
 
         true
     }
 
     // Forward transverse mercator, following Bowring (1989)
-    fn inv(&self, operand: &mut Context) -> bool {
+    fn inv(&self, ctx: &mut Context) -> bool {
         // Footpoint latitude, i.e. the latitude of a point on the central meridian
         // having the same northing as the point of interest
         let lat = self
             .ellps
-            .meridional_distance((operand.coord.1 - self.y_0) / self.k_0, false);
+            .meridional_distance((ctx.coord.1 - self.y_0) / self.k_0, false);
         let t = lat.tan();
         let c = lat.cos();
         let cc = c * c;
         let N = self.ellps.prime_vertical_radius_of_curvature(lat);
-        let x = (operand.coord.0 - self.x_0) / (self.k_0 * N);
+        let x = (ctx.coord.0 - self.x_0) / (self.k_0 * N);
         let xx = x * x;
         let theta_4 = x.sinh().atan2(c);
         let theta_5 = (t * theta_4.cos()).atan();
 
         // Latitude
         let xet = xx * xx * self.eps * t / 24.;
-        operand.coord.1 = self.lat_0 + (1. + cc * self.eps) * (theta_5 - xet * (9. - 10. * cc))
+        ctx.coord.1 = self.lat_0 + (1. + cc * self.eps) * (theta_5 - xet * (9. - 10. * cc))
             - self.eps * cc * lat;
 
         // Longitude
         let approx = self.lon_0 + theta_4;
         let coef = self.eps / 60. * xx * x * c;
-        operand.coord.0 = approx - coef * (10. - 4. * xx / cc + xx * cc);
+        ctx.coord.0 = approx - coef * (10. - 4. * xx / cc + xx * cc);
         true
     }
 
@@ -152,44 +152,45 @@ mod tests {
     fn utm() {
         use crate::{Context, CoordinateTuple, Ellipsoid, Operator, OperatorCore};
 
-        // Test the UTM implementation
-        let op = Operator::new("utm: {zone: 32}", None).unwrap();
+        let mut ctx = Context::new();
 
-        let mut operand = Context::new();
+        // Test the UTM implementation
+        let op = Operator::new("utm: {zone: 32}", &ctx).unwrap();
+
         let geo = CoordinateTuple::deg(12., 55., 100., 0.);
-        operand.coord = geo;
+        ctx.coord = geo;
 
         // Validation value from PROJ:
         // echo 12 55 0 0 | cct -d18 +proj=utm +zone=32
         let utm_proj = CoordinateTuple(691_875.632_139_661, 6_098_907.825_005_012, 100., 0.);
-        assert!(op.fwd(&mut operand));
-        assert!(operand.coord.hypot2(&utm_proj) < 1e-5);
+        assert!(op.fwd(&mut ctx));
+        assert!(ctx.coord.hypot2(&utm_proj) < 1e-5);
 
         // Roundtrip...
-        assert!(op.inv(&mut operand));
+        assert!(op.inv(&mut ctx));
 
         // The latitude roundtrips beautifully, at better than 0.1 mm
-        assert!((operand.coord.1.to_degrees() - 55.0).abs() * 111_000_000. < 0.05);
+        assert!((ctx.coord.1.to_degrees() - 55.0).abs() * 111_000_000. < 0.05);
         // And the longitude even trumps that by a factor of 10.
-        assert!((operand.coord.0.to_degrees() - 12.0).abs() * 56_000_000. < 0.005);
+        assert!((ctx.coord.0.to_degrees() - 12.0).abs() * 56_000_000. < 0.005);
 
         // So also the geodesic distance is smaller than 0.1 mm
         let ellps = Ellipsoid::default();
-        assert!(ellps.distance(&operand.coord, &geo) < 1e-4);
+        assert!(ellps.distance(&ctx.coord, &geo) < 1e-4);
 
         // Test a Greenland extreme value (a zone 19 point projected in zone 24)
-        let op = Operator::new("utm: {zone: 24}", None).unwrap();
+        let op = Operator::new("utm: {zone: 24}", &ctx).unwrap();
         let geo = CoordinateTuple::deg(-72., 80., 100., 0.);
-        operand.coord = geo;
+        ctx.coord = geo;
         // Roundtrip...
-        op.fwd(&mut operand);
-        op.inv(&mut operand);
-        assert!(ellps.distance(&operand.coord, &geo) < 1.05);
+        op.fwd(&mut ctx);
+        op.inv(&mut ctx);
+        assert!(ellps.distance(&ctx.coord, &geo) < 1.05);
 
-        operand.coord.1 = operand.coord.1.to_degrees();
-        operand.coord.0 = operand.coord.0.to_degrees();
-        assert!((operand.coord.1 - 80.0).abs() * 111_000. < 1.02);
-        assert!((operand.coord.0 + 72.0).abs() * 20_000. < 0.04);
+        ctx.coord.1 = ctx.coord.1.to_degrees();
+        ctx.coord.0 = ctx.coord.0.to_degrees();
+        assert!((ctx.coord.1 - 80.0).abs() * 111_000. < 1.02);
+        assert!((ctx.coord.0 + 72.0).abs() * 20_000. < 0.04);
 
         // i.e. Bowring's verion is much better than Snyder's:
         // echo -72 80 0 0 | cct +proj=utm +approx +zone=24 +ellps=GRS80 | cct -I +proj=utm +approx +zone=24 +ellps=GRS80
@@ -203,17 +204,17 @@ mod tests {
     #[test]
     fn tmerc() {
         use crate::*;
+        let mut ctx = Context::new();
 
         // Test the plain tmerc, by reimplementing the UTM above manually
-        let op = Operator::new("tmerc: {k_0: 0.9996, lon_0: 9, x_0: 500000}", None).unwrap();
+        let op = Operator::new("tmerc: {k_0: 0.9996, lon_0: 9, x_0: 500000}", &ctx).unwrap();
 
-        let mut operand = Context::new();
-        operand.coord = crate::CoordinateTuple::deg(12., 55., 100., 0.);
-        assert!(op.fwd(&mut operand));
+        ctx.coord = crate::CoordinateTuple::deg(12., 55., 100., 0.);
+        assert!(op.fwd(&mut ctx));
 
         // Validation value from PROJ:
         // echo 12 55 0 0 | cct -d18 +proj=utm +zone=32
         let utm_proj = CoordinateTuple(691_875.632_139_661, 6_098_907.825_005_012, 100., 0.);
-        assert!(operand.coord.hypot2(&utm_proj) < 1e-5);
+        assert!(ctx.coord.hypot2(&utm_proj) < 1e-5);
     }
 }
