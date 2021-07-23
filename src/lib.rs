@@ -39,7 +39,7 @@ pub use context::Context;
 pub use operator::Operator;
 pub use operator::OperatorCore;
 pub use operatorargs::OperatorArgs;
-pub type UserDefinedOperator = fn(args: &OperatorArgs, ctx: &Context) -> Result<Operator, String>;
+pub type UserDefinedOperator = fn(args: &mut OperatorArgs, ctx: &mut Context) -> Result<Operator, String>;
 
 #[allow(non_upper_case_globals)]
 pub const fwd: bool = true;

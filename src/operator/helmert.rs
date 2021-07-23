@@ -79,7 +79,7 @@ mod tests {
         args.insert("dy", "-96");
         args.insert("dz", "-120");
 
-        let h = operator_factory(&mut args, &o, 0);
+        let h = operator_factory(&mut args, &mut o, 0);
         assert!(h.is_err());
 
         // EPSG:1134 - 3 parameter, ED50/WGS84, s = sqrt(27) m
@@ -88,7 +88,7 @@ mod tests {
         assert_eq!(args.value("dy", ""), "-96");
         assert_eq!(args.value("dz", ""), "-120");
 
-        let h = operator_factory(&mut args, &o, 0).unwrap();
+        let h = operator_factory(&mut args, &mut o, 0).unwrap();
 
         h.fwd(&mut o);
         assert_eq!(o.coord.first(), -87.);

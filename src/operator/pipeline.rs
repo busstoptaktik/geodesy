@@ -12,7 +12,7 @@ pub struct Pipeline {
 }
 
 impl Pipeline {
-    pub fn new(args: &mut OperatorArgs, ctx: &Context) -> Result<Pipeline, String> {
+    pub fn new(args: &mut OperatorArgs, ctx: &mut Context) -> Result<Pipeline, String> {
         let inverted = args.flag("inv");
         let mut steps = Vec::new();
         let n = args.numeric_value("Pipeline", "_nsteps", 0.0)? as usize;
@@ -103,7 +103,7 @@ mod tests {
         let mut ctx = Context::new();
         let mut args = OperatorArgs::new();
         args.populate(&pipeline, "");
-        let op = Pipeline::new(&mut args, &ctx).unwrap();
+        let op = Pipeline::new(&mut args, &mut ctx).unwrap();
 
         // Check step-by-step that the pipeline was formed as expected
         assert_eq!(op.len(), 3);

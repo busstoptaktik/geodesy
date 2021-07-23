@@ -155,7 +155,7 @@ mod tests {
         let mut ctx = Context::new();
 
         // Test the UTM implementation
-        let op = Operator::new("utm: {zone: 32}", &ctx).unwrap();
+        let op = Operator::new("utm: {zone: 32}", &mut ctx).unwrap();
 
         let geo = CoordinateTuple::deg(12., 55., 100., 0.);
         ctx.coord = geo;
@@ -179,7 +179,7 @@ mod tests {
         assert!(ellps.distance(&ctx.coord, &geo) < 1e-4);
 
         // Test a Greenland extreme value (a zone 19 point projected in zone 24)
-        let op = Operator::new("utm: {zone: 24}", &ctx).unwrap();
+        let op = Operator::new("utm: {zone: 24}", &mut ctx).unwrap();
         let geo = CoordinateTuple::deg(-72., 80., 100., 0.);
         ctx.coord = geo;
         // Roundtrip...
@@ -207,7 +207,7 @@ mod tests {
         let mut ctx = Context::new();
 
         // Test the plain tmerc, by reimplementing the UTM above manually
-        let op = Operator::new("tmerc: {k_0: 0.9996, lon_0: 9, x_0: 500000}", &ctx).unwrap();
+        let op = Operator::new("tmerc: {k_0: 0.9996, lon_0: 9, x_0: 500000}", &mut ctx).unwrap();
 
         ctx.coord = crate::CoordinateTuple::deg(12., 55., 100., 0.);
         assert!(op.fwd(&mut ctx));

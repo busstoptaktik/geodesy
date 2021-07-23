@@ -72,7 +72,7 @@ impl Context {
         self.resources.get(name)
     }
 
-    pub fn operator(&self, definition: &str) -> Result<Operator, String> {
+    pub fn operator(&mut self, definition: &str) -> Result<Operator, String> {
         Operator::new(definition, self)
     }
 }
@@ -106,7 +106,7 @@ mod tests {
             ]
         }";
         let mut ond = Context::new();
-        let op = Operator::new(pipeline, &ond).unwrap();
+        let op = Operator::new(pipeline, &mut ond).unwrap();
         ond.coord = crate::CoordinateTuple::deg(12., 55., 100., 0.);
 
         ond.operate(&op, fwd);

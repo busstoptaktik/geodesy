@@ -19,7 +19,7 @@ impl Operator {
     /// let op = op.unwrap();
     /// ctx.operate(&op, geodesy::fwd);
     /// ```
-    pub fn new(definition: &str, ctx: &Context) -> Result<Operator, String> {
+    pub fn new(definition: &str, ctx: &mut Context) -> Result<Operator, String> {
         let mut oa = OperatorArgs::new();
         oa.populate(definition, "");
         operator_factory(&mut oa, ctx, 0)
@@ -130,7 +130,7 @@ mod tmerc;
 
 pub(crate) fn operator_factory(
     args: &mut OperatorArgs,
-    ctx: &Context,
+    ctx: &mut Context,
     recursions: usize,
 ) -> Result<Operator, String> {
     use crate::operator as co;
@@ -214,14 +214,14 @@ mod tests {
         let mut o = Context::new();
 
         // A non-existing operator
-        let h = Operator::new("unimplemented_operator: {dx: -87, dy: -96, dz: -120}", &o);
+        let h = Operator::new("unimplemented_operator: {dx: -87, dy: -96, dz: -120}", &mut o);
         assert!(h.is_err());
 
         // Define "hilmert" and "halmert" to circularly define each other, in order
         // to test the operator_factory recursion breaker
         o.register_macro("halmert", "hilmert: {}");
         o.register_macro("hilmert", "halmert: {}");
-        if let Err(e) = Operator::new("halmert: {dx: -87, dy: -96, dz: -120}", &o) {
+        if let Err(e) = Operator::new("halmert: {dx: -87, dy: -96, dz: -120}", &mut o) {
             assert!(e.ends_with("too deeply nested"));
         } else {
             panic!();
@@ -231,12 +231,12 @@ mod tests {
         o.register_macro("hulmert", "helmert: {dx: ^dx, dy: ^dy, dz: ^dz}");
 
         // A plain operator: Helmert, EPSG:1134 - 3 parameter, ED50/WGS84
-        let hh = Operator::new("helmert: {dx: -87, dy: -96, dz: -120}", &o);
+        let hh = Operator::new("helmert: {dx: -87, dy: -96, dz: -120}", &mut o);
         assert!(hh.is_ok());
         let hh = hh.unwrap();
 
         // Same operator, defined through the "hulmert" macro
-        let h = Operator::new("hulmert: {dx: -87, dy: -96, dz: -120}", &o);
+        let h = Operator::new("hulmert: {dx: -87, dy: -96, dz: -120}", &mut o);
         assert!(h.is_ok());
         let h = h.unwrap();
 
@@ -271,7 +271,7 @@ mod tests {
                 cart: {inv: true, ellps: GRS80}
             ]
         }";
-        let h = Operator::new(pipeline, &o);
+        let h = Operator::new(pipeline, &mut o);
         assert!(h.is_ok());
         let h = h.unwrap();
 
@@ -290,11 +290,11 @@ mod tests {
         assert!((d.third() - r.third()).abs() < 1.0e-8);
 
         // An externally defined version
-        let h = Operator::new("tests/ed50_etrs89: {}", &o);
+        let h = Operator::new("tests/ed50_etrs89: {}", &mut o);
         assert!(h.is_ok());
 
         // Try to access is from local/share: "C:\\Users\\Username\\AppData\\Local\\geodesy\\ed50_etrs89.yml"
-        let h = Operator::new("ed50_etrs89: {}", &o);
+        let h = Operator::new("ed50_etrs89: {}", &mut o);
         assert!(h.is_err());
 
         // A parameterized macro pipeline version
@@ -312,7 +312,7 @@ mod tests {
         o.register_macro("geohelmert", pipeline_as_macro);
         let ed50_etrs89 = Operator::new(
             "geohelmert: {left: intl, right: GRS80, dx: -87, dy: -96, dz: -120}",
-            &o,
+            &mut o,
         );
         assert!(ed50_etrs89.is_ok());
         let ed50_etrs89 = ed50_etrs89.unwrap();
@@ -331,5 +331,60 @@ mod tests {
         assert!((d.first() - 12.).abs() < 1.0e-10);
         assert!((d.second() - 55.).abs() < 1.0e-10);
         assert!((d.third() - 100.).abs() < 1.0e-8);
+    }
+
+
+    use super::Context;
+    use super::Operator;
+    use super::OperatorArgs;
+    use super::OperatorCore;
+
+    pub struct Nnoopp {
+        args: OperatorArgs,
+    }
+
+    impl Nnoopp {
+        fn new(args: &mut OperatorArgs) -> Result<Nnoopp, String> {
+            Ok(Nnoopp { args: args.clone() })
+        }
+
+        pub(crate) fn operator(args: &mut OperatorArgs, _ctx: &mut Context) -> Result<Operator, String> {
+            let op = Nnoopp::new(args)?;
+            Ok(Operator { 0: Box::new(op) })
+        }
+    }
+
+    impl OperatorCore for Nnoopp {
+        fn fwd(&self, ctx: &mut Context) -> bool {
+            ctx.coord.0 = 42.;
+            true
+        }
+
+        fn inv(&self, _ws: &mut Context) -> bool {
+            true
+        }
+
+        fn name(&self) -> &'static str {
+            "nnoopp"
+        }
+
+        fn is_inverted(&self) -> bool {
+            false
+        }
+
+        fn args(&self, _step: usize) -> &OperatorArgs {
+            &self.args
+        }
+    }
+
+    #[test]
+    fn user_defined_operator() {
+        let mut ctx = Context::new();
+        ctx.user_defined_operators.insert("nnoopp".to_string(), Nnoopp::operator);
+
+        let op = ctx.operator("nnoopp: {}").unwrap();
+        let _aha = op.fwd(&mut ctx);
+        assert_eq!(ctx.coord.0, 42.);
+
     }
 }
