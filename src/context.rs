@@ -22,12 +22,11 @@ impl Resource {
 #[derive(Default)]
 pub struct Context {
     pub coord: CoordinateTuple,
-    pub stack: Vec<f64>,
-    pub coordinate_stack: Vec<CoordinateTuple>,
+    pub stack: Vec<CoordinateTuple>,
     minions: Vec<Context>,
     resources: HashMap<String, Resource>,
-    pub(crate) user_defined_operators: HashMap<String, UserDefinedOperator>,
-    pub(crate) user_defined_macros: HashMap<String, String>,
+    user_defined_operators: HashMap<String, UserDefinedOperator>,
+    user_defined_macros: HashMap<String, String>,
     pub(crate) last_failing_operation: &'static str,
     pub(crate) cause: &'static str,
 }
@@ -45,7 +44,6 @@ impl Context {
         Context {
             coord: CoordinateTuple(0., 0., 0., 0.),
             stack: vec![],
-            coordinate_stack: vec![],
             minions: vec![],
             resources: HashMap::new(),
             last_failing_operation: "",
@@ -59,13 +57,32 @@ impl Context {
         operator.operate(self, forward)
     }
 
-    pub fn register_operator(&mut self, name: String, constructor: UserDefinedOperator) {
-        self.user_defined_operators.insert(name, constructor);
+    pub fn fwd(&mut self, operator: &Operator, agurk: &mut [CoordinateTuple]) -> bool {
+        for _a in agurk {
+            operator.operate(self, true);
+        }
+        true
+    }
+
+    pub fn inv(&mut self, operator: &Operator) -> bool {
+        operator.operate(self, false)
+    }
+
+    pub fn register_operator(&mut self, name: &str, constructor: UserDefinedOperator) {
+        self.user_defined_operators.insert(name.to_string(), constructor);
+    }
+
+    pub fn locate_operator(&mut self, name: &str) -> Option<&UserDefinedOperator> {
+        self.user_defined_operators.get(name)
     }
 
     pub fn register_macro(&mut self, name: &str, definition: &str) {
         self.user_defined_macros
             .insert(name.to_string(), definition.to_string());
+    }
+
+    pub fn locate_macro(&mut self, name: &str) -> Option<&String> {
+        self.user_defined_macros.get(name)
     }
 
     pub fn resource(&self, name: &str) -> Option<&Resource> {
@@ -86,7 +103,6 @@ mod tests {
         use crate::Context;
         let ond = Context::new();
         assert_eq!(ond.stack.len(), 0);
-        assert_eq!(ond.coordinate_stack.len(), 0);
         assert_eq!(ond.coord.0, 0.);
         assert_eq!(ond.coord.1, 0.);
         assert_eq!(ond.coord.2, 0.);

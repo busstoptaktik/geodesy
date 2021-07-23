@@ -143,7 +143,7 @@ pub(crate) fn operator_factory(
     }
 
     // Look for runtime defined macros
-    if let Some(definition) = ctx.user_defined_macros.get(&args.name) {
+    if let Some(definition) = ctx.locate_macro(&args.name) {
         let mut moreargs = args.spawn(definition);
         return operator_factory(&mut moreargs, ctx, recursions + 1);
     }
@@ -155,8 +155,8 @@ pub(crate) fn operator_factory(
     }
 
     // Look for runtime defined operators
-    if ctx.user_defined_operators.contains_key(&args.name) {
-        return ctx.user_defined_operators[&args.name](args, ctx);
+    if let Some(op) = ctx.locate_operator(&args.name) {
+        return op(args, ctx);
     }
 
     // Builtins
@@ -380,7 +380,7 @@ mod tests {
     #[test]
     fn user_defined_operator() {
         let mut ctx = Context::new();
-        ctx.user_defined_operators.insert("nnoopp".to_string(), Nnoopp::operator);
+        ctx.register_operator("nnoopp", Nnoopp::operator);
 
         let op = ctx.operator("nnoopp: {}").unwrap();
         let _aha = op.fwd(&mut ctx);
