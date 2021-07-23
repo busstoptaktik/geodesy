@@ -32,9 +32,9 @@ impl Pipeline {
         let args = args.clone();
 
         Ok(Pipeline {
-            inverted,
-            steps,
             args,
+            steps,
+            inverted,
         })
     }
 }

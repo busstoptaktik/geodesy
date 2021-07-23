@@ -178,12 +178,12 @@ impl Ellipsoid {
     #[must_use]
     pub fn named(name: &str) -> Ellipsoid {
         match name {
-            "GRS80" => return Ellipsoid::new(6_378_137.0, 1. / 298.257_222_100_882_7),
-            "intl" => return Ellipsoid::new(6_378_388.0, 1. / 297.0),
-            "Helmert" => return Ellipsoid::new(6_378_200.0, 1. / 298.3),
-            "clrk66" => return Ellipsoid::new(6_378_206.4, 1. / 294.978_698_2),
-            "clrk80" => return Ellipsoid::new(6_378_249.145, 1. / 293.465),
-            _ => return Ellipsoid::new(6_378_137.0, 1. / 298.257_222_100_882_7),
+            "GRS80" => Ellipsoid::new(6_378_137.0, 1. / 298.257_222_100_882_7),
+            "intl" => Ellipsoid::new(6_378_388.0, 1. / 297.0),
+            "Helmert" => Ellipsoid::new(6_378_200.0, 1. / 298.3),
+            "clrk66" => Ellipsoid::new(6_378_206.4, 1. / 294.978_698_2),
+            "clrk80" => Ellipsoid::new(6_378_249.145, 1. / 293.465),
+            _ => Ellipsoid::new(6_378_137.0, 1. / 298.257_222_100_882_7),
         }
     }
 

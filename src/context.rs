@@ -24,6 +24,7 @@ pub struct Context {
     pub coord: CoordinateTuple,
     pub stack: Vec<f64>,
     pub coordinate_stack: Vec<CoordinateTuple>,
+    minions: Vec<Context>,
     resources: HashMap<String, Resource>,
     pub(crate) user_defined_operators: HashMap<String, UserDefinedOperator>,
     pub(crate) user_defined_macros: HashMap<String, String>,
@@ -32,12 +33,20 @@ pub struct Context {
 }
 
 impl Context {
-    #[must_use]
     pub fn new() -> Context {
+        let mut ctx = Context::_new();
+        ctx.minions.push(Context::_new());
+        ctx.minions.push(Context::_new());
+        ctx.minions.push(Context::_new());
+        ctx
+    }
+
+    fn _new() -> Context {
         Context {
             coord: CoordinateTuple(0., 0., 0., 0.),
             stack: vec![],
             coordinate_stack: vec![],
+            minions: vec![],
             resources: HashMap::new(),
             last_failing_operation: "",
             cause: "",

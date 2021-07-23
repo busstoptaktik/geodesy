@@ -35,13 +35,13 @@ impl Tmerc {
         Ok(Tmerc {
             ellps,
             inverted,
-            args,
+            eps,
             k_0,
             lon_0,
             lat_0,
             x_0,
             y_0,
-            eps,
+            args,
         })
     }
 
@@ -60,13 +60,13 @@ impl Tmerc {
         Ok(Tmerc {
             ellps,
             inverted,
-            args,
+            eps,
             k_0,
             lon_0,
             lat_0,
             x_0,
             y_0,
-            eps,
+            args,
         })
     }
 }

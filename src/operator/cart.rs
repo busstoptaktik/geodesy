@@ -39,15 +39,14 @@ impl Cart {
 
         Ok(Cart {
             args: args.clone(),
-            inverted: inverted,
-            ellps: ellps,
-            es: es,
-            b: b,
-            ra: ra,
-            ar: ar,
-            ce4: ce4,
-
-            cutoff: cutoff,
+            inverted,
+            ellps,
+            es,
+            b,
+            ra,
+            ar,
+            ce4,
+            cutoff,
         })
     }
 }
@@ -63,6 +62,7 @@ impl OperatorCore for Cart {
 
     #[allow(non_snake_case)] // make it possible to mimic math notation from original paper
     #[allow(clippy::many_single_char_names)] // ditto
+    #[allow(clippy::suspicious_operation_groupings)]
     fn inv(&self, operand: &mut Context) -> bool {
         let X = operand.coord.first();
         let Y = operand.coord.second();

@@ -78,7 +78,7 @@ impl OperatorArgs {
         let docs = YamlLoader::load_from_str(definition).unwrap();
         let mut index = Some(0_usize);
 
-        if which != "" {
+        if !which.is_empty() {
             index = docs.iter().position(|doc| !doc[which].is_badvalue());
             if index.is_none() {
                 return self.badvalue("Cannot locate definition");
@@ -201,7 +201,7 @@ impl OperatorArgs {
         // step), but the meaning is "use the value already in the hashmap".
         // Actually inserting it will lead to overwriting of the actual
         // value-of-interest, and to infinite recursion on lookup.
-        if key != value.trim_start_matches("^") {
+        if key != value.trim_start_matches('^') {
             self.args.insert(key.to_string(), value.to_string());
         }
     }

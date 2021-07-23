@@ -110,6 +110,10 @@ pub trait OperatorCore {
         0_usize
     }
 
+    fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
     fn args(&self, step: usize) -> &OperatorArgs;
 
     fn is_inverted(&self) -> bool;
@@ -145,9 +149,8 @@ pub(crate) fn operator_factory(
     }
 
     // Look for file defined macros in current working directory
-    let definition = std::fs::read_to_string(args.name.clone() + ".yml");
-    if definition.is_ok() {
-        let mut moreargs = args.spawn(&definition.unwrap());
+    if let Ok(definition) = std::fs::read_to_string(args.name.clone() + ".yml") {
+        let mut moreargs = args.spawn(&definition);
         return operator_factory(&mut moreargs, ctx, recursions + 1);
     }
 
@@ -187,14 +190,11 @@ pub(crate) fn operator_factory(
     }
 
     // Look for file defined macros in SHARE directory
-    let dld = dirs::data_local_dir();
-    if dld.is_some() {
-        let mut path = dld.unwrap();
+    if let Some(mut path) = dirs::data_local_dir() {
         path.push("geodesy");
-        path.push(args.name.clone()+".yml");
-        let definition = std::fs::read_to_string(path);
-        if definition.is_ok() {
-            let mut moreargs = args.spawn(&definition.unwrap());
+        path.push(args.name.clone() + ".yml");
+        if let Ok(definition) = std::fs::read_to_string(path) {
+            let mut moreargs = args.spawn(&definition);
             return operator_factory(&mut moreargs, ctx, recursions + 1);
         }
     }

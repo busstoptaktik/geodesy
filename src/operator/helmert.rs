@@ -21,19 +21,18 @@ impl Helmert {
         let inverted = args.flag("inv");
         let argsc = args.clone();
         Ok(Helmert {
-            dx: dx,
-            dy: dy,
-            dz: dz,
-            inverted: inverted,
+            dx,
+            dy,
+            dz,
+            inverted,
             args: argsc,
         })
     }
 
     pub(crate) fn operator(args: &mut OperatorArgs) -> Result<Operator, String> {
         let op = crate::operator::helmert::Helmert::new(args)?;
-        return Ok(Operator{0: Box::new(op)});
+        Ok(Operator { 0: Box::new(op) })
     }
-
 }
 
 impl OperatorCore for Helmert {
