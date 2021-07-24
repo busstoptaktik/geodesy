@@ -1,0 +1,98 @@
+-------------------------------------------------------------
+GAS - Geodetic grid Authoring System, sample file for testing
+-------------------------------------------------------------
+
+The GAS format aims at being a human-readable, as well as
+human-writable, widely applicable format, for geodetic grids
+in 1-4 dimensions (i.e. from static profiles to time series
+of 3D grids), and 1-8 bands, i.e. from static geoid models
+to time-varying 4D-corrections.
+
+GAS is NOT a format for final grids. It is a format for
+exploratory development of new grids - potentially written
+by hand, or in whole/part by any tool able to write a
+string of characters to a file.
+
+To facilitate experimentation and documentation, everything
+preceding the "header" line below is considered comments,
+and ignored by the grid reading software. So any thoughts,
+back-of-envelope estimates, informal documentation, etc. may
+go here.
+
+Also, all whitespace is collapsed into a single delimiter,
+and everything between a hashmark ('#') and the following
+end-of-line is ignored.
+
+All-in-all, this provides for a verbose, but highly versatile
+format trying hard not to get in the way of the geodesist
+at work.
+
+header
+
+# The bounding box is an open interval, including the outer half-cell
+bbox   54 7 58 13     # swne i.e. LL/UR
+
+rows    8   # 0.5
+cols    6   # 1.0
+bands   2   # latitude/longitude
+skip    2
+
+grid
+
+54.25  7.5  7.5  54.25
+54.25  8.5  8.5  54.25
+54.25  9.5  9.5  54.25
+54.25 10.5 10.5  54.25
+54.25 11.5 11.5  54.25
+54.25 12.5 12.5  54.25
+
+54.75  7.5  7.5  54.75
+54.75  8.5  8.5  54.75
+54.75  9.5  9.5  54.75
+54.75 10.5 10.5  54.75
+54.75 11.5 11.5  54.75
+54.75 12.5 12.5  54.75
+
+55.25  7.5  7.5  55.25
+55.25  8.5  8.5  55.25
+55.25  9.5  9.5  55.25
+55.25 10.5 10.5  55.25
+55.25 11.5 11.5  55.25
+55.25 12.5 12.5  55.25
+
+55.75  7.5  7.5  55.75
+55.75  8.5  8.5  55.75
+55.75  9.5  9.5  55.75
+55.75 10.5 10.5  55.75
+55.75 11.5 11.5  55.75
+55.75 12.5 12.5  55.75
+
+56.25  7.5  7.5  56.25
+56.25  8.5  8.5  56.25
+56.25  9.5  9.5  56.25
+56.25 10.5 10.5  56.25
+56.25 11.5 11.5  56.25
+56.25 12.5 12.5  56.25
+
+56.75  7.5  7.5  56.75
+56.75  8.5  8.5  56.75
+56.75  9.5  9.5  56.75
+56.75 10.5 10.5  56.75
+56.75 11.5 11.5  56.75
+56.75 12.5 12.5  56.75
+
+57.25  7.5  7.5  57.25
+57.25  8.5  8.5  57.25
+57.25  9.5  9.5  57.25
+57.25 10.5 10.5  57.25
+57.25 11.5 11.5  57.25
+57.25 12.5 12.5  57.25
+
+57.75  7.5  7.5  57.75
+57.75  8.5  8.5  57.75
+57.75  9.5  9.5  57.75
+57.75 10.5 10.5  57.75
+57.75 11.5 11.5  57.75
+57.75 12.5 12.5  57.75
+
+Everything following the last grid cell is ignored

@@ -214,7 +214,10 @@ mod tests {
         let mut o = Context::new();
 
         // A non-existing operator
-        let h = Operator::new("unimplemented_operator: {dx: -87, dy: -96, dz: -120}", &mut o);
+        let h = Operator::new(
+            "unimplemented_operator: {dx: -87, dy: -96, dz: -120}",
+            &mut o,
+        );
         assert!(h.is_err());
 
         // Define "hilmert" and "halmert" to circularly define each other, in order
@@ -333,7 +336,6 @@ mod tests {
         assert!((d.third() - 100.).abs() < 1.0e-8);
     }
 
-
     use super::Context;
     use super::Operator;
     use super::OperatorArgs;
@@ -348,7 +350,10 @@ mod tests {
             Ok(Nnoopp { args: args.clone() })
         }
 
-        pub(crate) fn operator(args: &mut OperatorArgs, _ctx: &mut Context) -> Result<Operator, String> {
+        pub(crate) fn operator(
+            args: &mut OperatorArgs,
+            _ctx: &mut Context,
+        ) -> Result<Operator, String> {
             let op = Nnoopp::new(args)?;
             Ok(Operator { 0: Box::new(op) })
         }
@@ -385,6 +390,5 @@ mod tests {
         let op = ctx.operator("nnoopp: {}").unwrap();
         let _aha = op.fwd(&mut ctx);
         assert_eq!(ctx.coord.0, 42.);
-
     }
 }

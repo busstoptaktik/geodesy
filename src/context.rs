@@ -69,7 +69,8 @@ impl Context {
     }
 
     pub fn register_operator(&mut self, name: &str, constructor: OperatorConstructor) {
-        self.user_defined_operators.insert(name.to_string(), constructor);
+        self.user_defined_operators
+            .insert(name.to_string(), constructor);
     }
 
     pub fn locate_operator(&mut self, name: &str) -> Option<&OperatorConstructor> {
