@@ -27,6 +27,7 @@
 
 mod context;
 mod coordinates;
+mod gas;
 mod ellipsoids;
 mod operator;
 mod operatorargs;
@@ -36,6 +37,7 @@ pub use coordinates::DMS;
 pub use ellipsoids::Ellipsoid;
 
 pub use context::Context;
+pub use gas::Gas;
 pub use operator::Operator;
 pub use operator::OperatorCore;
 pub use operatorargs::OperatorArgs;
