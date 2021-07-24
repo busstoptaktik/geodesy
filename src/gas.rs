@@ -8,10 +8,9 @@ pub struct Gas {
 
 #[derive(Debug, Default)]
 pub struct GasHeader {
-    bbox: (CoordinateTuple, CoordinateTuple),
+    bbox: [CoordinateTuple; 2],
     delta: CoordinateTuple,
-    dist: CoordinateTuple,
-    dim: (usize, usize, usize, usize, usize),
+    dim: [usize; 5],
     skip: usize,
     size: usize
 }
@@ -20,10 +19,9 @@ impl GasHeader {
     pub fn new() -> GasHeader {
         let blank = CoordinateTuple(std::f64::NAN,std::f64::NAN,std::f64::NAN,std::f64::NAN);
         GasHeader{
-            bbox: (blank, blank),
+            bbox: [blank, blank],
             delta: blank,
-            dist: blank,
-            dim: (1, 1, 1, 1, 1),
+            dim: [1, 1, 1, 1, 1],
             skip: 0,
             size: 0
         }
@@ -46,46 +44,46 @@ impl GasHeader {
         // The Bounding Box consists of 2 CoordinateTuples, lower left and upper right
         if element=="bbox" {
             if  n==4 {  // 2D
-                self.bbox = (
+                self.bbox = [
                     CoordinateTuple(b[1],b[0],b[7],b[7]),  // LL
                     CoordinateTuple(b[3],b[2],b[7],b[7])   // UR
-                );
+                ];
                 return true;
             }
             if  n==6 {  // 3D
-                self.bbox = (
+                self.bbox = [
                     CoordinateTuple(b[2],b[1],b[0],b[7]),
                     CoordinateTuple(b[5],b[4],b[3],b[7])
-                );
+                ];
                 return true;
             }
             if  n==8 { // 4D
-                self.bbox = (
+                self.bbox = [
                     CoordinateTuple(b[3],b[2],b[1],b[0]),
                     CoordinateTuple(b[3],b[2],b[1],b[0])
-                );
+                ];
                 return true;
             }
             return false
         }
 
         if element=="cols" || element=="columns" {
-            self.dim.0 = b[0] as usize;
+            self.dim[0] = b[0] as usize;
             return true;
         }
 
         if element=="rows" {
-            self.dim.1 = b[0] as usize;
+            self.dim[1] = b[0] as usize;
             return true;
         }
 
         if element=="levels" {
-            self.dim.2 = b[0] as usize;
+            self.dim[2] = b[0] as usize;
             return true;
         }
 
         if element=="steps" {
-            self.dim.3 = b[0] as usize;
+            self.dim[3] = b[0] as usize;
             return true;
         }
 
@@ -95,7 +93,7 @@ impl GasHeader {
         }
 
         if element=="bands" || element=="channels" {
-            self.dim.4 = b[0] as usize;
+            self.dim[4] = b[0] as usize;
             return true;
         }
 
@@ -103,11 +101,11 @@ impl GasHeader {
     }
 
     pub fn finalize(&mut self) -> bool {
-        self.delta.0 = (self.bbox.1.0 - self.bbox.0.0) / self.dim.0 as f64;
-        self.delta.1 = (self.bbox.1.1 - self.bbox.0.1) / self.dim.1 as f64;
-        self.delta.2 = (self.bbox.1.2 - self.bbox.0.2) / self.dim.2 as f64;
-        self.delta.3 = (self.bbox.1.3 - self.bbox.0.3) / self.dim.3 as f64;
-        self.size = self.dim.0 * self.dim.1 * self.dim.2 * self.dim.3 *self.dim.4;
+        self.delta.0 = (self.bbox[1].0 - self.bbox[0].0) / self.dim[0] as f64;
+        self.delta.1 = (self.bbox[1].1 - self.bbox[0].1) / self.dim[1] as f64;
+        self.delta.2 = (self.bbox[1].2 - self.bbox[0].2) / self.dim[2] as f64;
+        self.delta.3 = (self.bbox[1].3 - self.bbox[0].3) / self.dim[3] as f64;
+        self.size = self.dim[0]*self.dim[1]*self.dim[2]*self.dim[3]*self.dim[4];
         true
     }
 }
@@ -159,11 +157,11 @@ impl Gas {
                         GasReaderState::Grid => {
                             let mut parts: Vec<&str> = text.split_whitespace().collect();
                             let n = parts.len();
-                            if n < header.skip + header.dim.4 {
+                            if n < header.skip + header.dim[4] {
                                 return Err("Bad format: ".to_string() + text)
                             }
                             parts.drain(0..header.skip);
-                            parts.truncate(header.dim.4);
+                            parts.truncate(header.dim[4]);
                             for v in parts {
                                 grid.push(v.parse().unwrap_or(std::f64::NAN));
                             }
