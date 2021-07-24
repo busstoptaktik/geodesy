@@ -2,8 +2,8 @@ use std::collections::HashMap;
 
 use crate::CoordinateTuple;
 use crate::Operator;
+use crate::OperatorConstructor;
 use crate::OperatorCore;
-use crate::UserDefinedOperator;
 
 #[derive(Debug, Default)]
 pub struct Resource {
@@ -25,7 +25,7 @@ pub struct Context {
     pub stack: Vec<CoordinateTuple>,
     minions: Vec<Context>,
     resources: HashMap<String, Resource>,
-    user_defined_operators: HashMap<String, UserDefinedOperator>,
+    user_defined_operators: HashMap<String, OperatorConstructor>,
     user_defined_macros: HashMap<String, String>,
     pub(crate) last_failing_operation: &'static str,
     pub(crate) cause: &'static str,
@@ -68,11 +68,11 @@ impl Context {
         operator.operate(self, false)
     }
 
-    pub fn register_operator(&mut self, name: &str, constructor: UserDefinedOperator) {
+    pub fn register_operator(&mut self, name: &str, constructor: OperatorConstructor) {
         self.user_defined_operators.insert(name.to_string(), constructor);
     }
 
-    pub fn locate_operator(&mut self, name: &str) -> Option<&UserDefinedOperator> {
+    pub fn locate_operator(&mut self, name: &str) -> Option<&OperatorConstructor> {
         self.user_defined_operators.get(name)
     }
 
