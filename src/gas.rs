@@ -202,9 +202,60 @@ impl Gas {
         Ok(io::BufReader::new(file).lines())
     }
 
-    pub fn value(_at: CoordinateTuple) -> CoordinateTuple {
-        // Grid interpolation!
-        todo!()
+    pub fn value(&self, at: CoordinateTuple) -> CoordinateTuple {
+        // TODO: Generalize to 1D, 3D and 4D - currently interpolates
+        // any number of channels, but in the first plane only.
+
+        // For brevity: References to bbox, delta and dim.
+        let b = &self.header.bbox;
+        let d = &self.header.delta;
+        let dim = &self.header.dim;
+
+        // Fractional row/column numbers, i.e. the distance from the lower
+        // left grid corner, measured in units of the grid sample distance
+        let cc: f64 = (at.0 - (b[0].0 + d.0 / 2.0)) / d.0;
+        let rr: f64 = (at.1 - (b[0].1 + d.1 / 2.0)) / d.1;
+
+        // As long as we're inside of the grid coverage, (ii,jj) becomes
+        // the lower left corner of the cell containing (rr,cc). But we
+        // prepare for extrapolation by clamping the cell extent to the
+        // grid extent:
+        //
+        //     The last row of the grid is numbered nrows-1,
+        //     so the bottom of the interpolation cell cannot
+        //     go further up than nrows-2
+        //
+        // and:
+        //
+        //     The last column of the grid is numbered ncols-1,
+        //     so the left side of the interpolation cell
+        //     cannot go further right than ncols-2
+        let ii = std::cmp::min(rr.floor() as usize, dim[1].saturating_sub(2));
+        let jj = std::cmp::min(cc.floor() as usize, dim[0].saturating_sub(2));
+
+        // And how far into the cell are we?
+        // Note: dr and dc are NOT constrained to [0:1], so they
+        // invoke extrapolation when outside of the grid coverage.
+        let dr = rr - ii as f64;
+        let dc = cc - jj as f64;
+
+        // We need the starting addresses of each of the interpolation
+        // cell corners.
+        let record_size = dim[4];
+        let ll = (ii * dim[0] + jj) * record_size;
+        let ul = ((ii + 1) * dim[0] + jj) * record_size;
+        let lr = ll + record_size;
+        let ur = ul + record_size;
+
+        // Do the interpolation...
+        let mut v = [std::f64::NAN; 4];
+        #[allow(clippy::needless_range_loop)]
+        for i in 0..record_size {
+            let left = self.grid[ll + i] * (1. - dr) + self.grid[ul + i] * dr;
+            let right = self.grid[lr + i] * (1. - dr) + self.grid[ur + i] * dr;
+            v[i] = left * (1. - dc) + right * dc;
+        }
+        CoordinateTuple(v[0], v[1], v[2], v[3])
     }
 }
 
@@ -212,14 +263,74 @@ impl Gas {
 
 #[cfg(test)]
 mod tests {
+    use crate::CoordinateTuple;
+    use crate::Gas;
     #[test]
-    fn splatsplatsplat() {
-        use crate::Context;
-        let ond = Context::new();
-        assert_eq!(ond.stack.len(), 0);
-        assert_eq!(ond.coord.0, 0.);
-        assert_eq!(ond.coord.1, 0.);
-        assert_eq!(ond.coord.2, 0.);
-        assert_eq!(ond.coord.3, 0.);
+    fn gas() {
+        use std::f64::NAN;
+        let g = Gas::new("tests/geo.gas").unwrap();
+        let b = g.header.bbox[0];
+        let c = g.header.bbox[1];
+        let d = g.header.delta;
+        let dim = g.header.dim;
+
+        // Was the header read correctly?
+        assert_eq!(b.0, 7.0);
+        assert_eq!(b.1, 54.0);
+        assert_eq!(c.0, 13.0);
+        assert_eq!(c.1, 58.0);
+        assert_eq!(d.0, 1.0);
+        assert_eq!(d.1, 0.5);
+        assert_eq!(dim, [6, 8, 1, 1, 2]);
+
+        // Does the grid have the right size?
+        assert_eq!(g.grid.len(), 96);
+
+        // Does the interpolation work correctly?
+
+        // Lower left corner
+        let at = CoordinateTuple(b.0 + d.0 / 2., b.1 + d.1 / 2., NAN, NAN);
+        let v = g.value(at);
+        assert!(v.hypot2(&at) < 1.0e-10);
+
+        // Lower right corner
+        let at = CoordinateTuple(c.0 - d.0 / 2., b.1 + d.1 / 2., NAN, NAN);
+        let v = g.value(at);
+        assert!(v.hypot2(&at) < 1.0e-10);
+
+        // Upper left corner
+        let at = CoordinateTuple(b.0 + d.0 / 2., c.1 - d.1 / 2., NAN, NAN);
+        let v = g.value(at);
+        assert!(v.hypot2(&at) < 1.0e-10);
+
+        // Upper right corner
+        let at = CoordinateTuple(c.0 - d.0 / 2., c.1 - d.1 / 2., NAN, NAN);
+        let v = g.value(at);
+        assert!(v.hypot2(&at) < 1.0e-10);
+
+        // Left of lower left corner
+        let at = CoordinateTuple(b.0, b.1 + d.1 / 2., NAN, NAN);
+        let v = g.value(at);
+        assert!(v.hypot2(&at) < 1.0e-10);
+
+        // Below lower left corner
+        let at = CoordinateTuple(b.0 + d.0 / 2., b.1, NAN, NAN);
+        let v = g.value(at);
+        assert!(v.hypot2(&at) < 1.0e-10);
+
+        // MUCH below and to the left of lower left corner
+        let at = CoordinateTuple(b.0 - 4., b.1 - 3., NAN, NAN);
+        let v = g.value(at);
+        assert!(v.hypot2(&at) < 1.0e-10);
+
+        // MUCH above and to the right of upper right corner
+        let at = CoordinateTuple(c.0 + 4., c.1 + 3., NAN, NAN);
+        let v = g.value(at);
+        assert!(v.hypot2(&at) < 1.0e-10);
+
+        // A non-rational place inside the grid
+        let at = CoordinateTuple(8.77, 55.11, NAN, NAN);
+        let v = g.value(at);
+        assert!(v.hypot2(&at) < 1.0e-10);
     }
 }
