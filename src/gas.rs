@@ -13,6 +13,8 @@ pub struct GasHeader {
     dim: [usize; 5],
     skip: usize,
     size: usize,
+    scale: f64,
+    offset: f64,
 }
 
 impl GasHeader {
@@ -24,6 +26,8 @@ impl GasHeader {
             dim: [1, 1, 1, 1, 1],
             skip: 0,
             size: 0,
+            scale: 1.,
+            offset: 0.,
         }
     }
 
@@ -70,6 +74,16 @@ impl GasHeader {
                 return true;
             }
             return false;
+        }
+
+        if element == "scale" {
+            self.scale = b[0];
+            return true;
+        }
+
+        if element == "offset" {
+            self.offset = b[0];
+            return true;
         }
 
         if element == "cols" || element == "columns" {
@@ -255,7 +269,33 @@ impl Gas {
             let right = self.grid[lr + i] * (1. - dr) + self.grid[ur + i] * dr;
             v[i] = left * (1. - dc) + right * dc;
         }
-        CoordinateTuple(v[0], v[1], v[2], v[3])
+        let s = self.header.scale;
+        let o = self.header.offset;
+        CoordinateTuple(o + s * v[0], o + s * v[1], v[2], v[3])
+    }
+
+    pub fn unvalue(&self, at: CoordinateTuple) -> CoordinateTuple {
+        // Naive first guess at where we came from
+        let mut dv = self.value(at);
+        let mut v = CoordinateTuple(at.0 - dv.0, at.1 - dv.1, at.2, at.3);
+        for _i in 1..5 {
+            println!("dv: {:?}", dv);
+            println!("v:  {:?}", v);
+
+            // If that guess was correct, `vv` would match `at` exactly
+            dv = self.value(v);
+            let vv = CoordinateTuple(at.0 + dv.0, at.1 + dv.1, at.2, at.3); // Note the sign!
+            println!("dv: {:?}", dv);
+            println!("vv: {:?}", vv);
+
+            // This is the correction, giving us an exact match for `at`: vv + dv = at
+            dv = CoordinateTuple(at.0 - vv.0, at.1 - vv.1, at.2, at.3);
+            // We suppose that this correction is "almost as good" over at the other end
+            println!("DV: {:?}", dv);
+            v = CoordinateTuple(v.0 + dv.0, v.1 + dv.1, at.2, at.3);
+        }
+
+        dv
     }
 }
 
@@ -282,6 +322,8 @@ mod tests {
         assert_eq!(d.0, 1.0);
         assert_eq!(d.1, 0.5);
         assert_eq!(dim, [6, 8, 1, 1, 2]);
+        assert_eq!(g.header.scale, 1.);
+        assert_eq!(g.header.offset, 0.);
 
         // Does the grid have the right size?
         assert_eq!(g.grid.len(), 96);
@@ -332,5 +374,43 @@ mod tests {
         let at = CoordinateTuple(8.77, 55.11, NAN, NAN);
         let v = g.value(at);
         assert!(v.hypot2(&at) < 1.0e-10);
+    }
+
+    #[test]
+    fn ungas() {
+        use std::f64::NAN;
+        let g = Gas::new("tests/ungeo.gas").unwrap();
+        let b = g.header.bbox[0];
+        let c = g.header.bbox[1];
+        let d = g.header.delta;
+        let dim = g.header.dim;
+
+        // Was the header read correctly?
+        assert_eq!(b.0, 7.0);
+        assert_eq!(b.1, 54.0);
+        assert_eq!(c.0, 13.0);
+        assert_eq!(c.1, 58.0);
+        assert_eq!(d.0, 1.0);
+        assert_eq!(d.1, 0.5);
+        assert_eq!(dim, [6, 8, 1, 1, 2]);
+        assert_eq!(g.header.scale, 0.01);
+        assert_eq!(g.header.offset, 0.);
+
+        // Does the grid have the right size?
+        assert_eq!(g.grid.len(), 96);
+
+        // Does the inverse interpolation work correctly?
+
+        // A non-rational place inside the grid
+        let at = CoordinateTuple(8.77, 55.11, NAN, NAN);
+        let v = g.value(at);
+        let transformed_at = CoordinateTuple(at.0 + v.0, at.1 + v.1, NAN, NAN);
+        println!("t_at: {:?}", transformed_at);
+        let v = g.unvalue(transformed_at);
+        // yes - correct sign under the current convention
+        let backtransformed_at =
+            CoordinateTuple(transformed_at.0 + v.0, transformed_at.1 + v.1, NAN, NAN);
+        println!("b_at: {:?}", backtransformed_at);
+        assert!(at.hypot2(&backtransformed_at) < 1.0e-8);
     }
 }
