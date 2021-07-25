@@ -27,8 +27,8 @@
 
 mod context;
 mod coordinates;
-mod gas;
 mod ellipsoids;
+mod gas;
 mod operator;
 mod operatorargs;
 
@@ -41,7 +41,8 @@ pub use gas::Gas;
 pub use operator::Operator;
 pub use operator::OperatorCore;
 pub use operatorargs::OperatorArgs;
-pub type OperatorConstructor = fn(args: &mut OperatorArgs, ctx: &mut Context) -> Result<Operator, String>;
+pub type OperatorConstructor =
+    fn(args: &mut OperatorArgs, ctx: &mut Context) -> Result<Operator, String>;
 
 #[allow(non_upper_case_globals)]
 pub const fwd: bool = true;
