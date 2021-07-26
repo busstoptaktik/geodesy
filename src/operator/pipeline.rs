@@ -83,6 +83,7 @@ mod tests {
     #[test]
     fn pipeline() {
         use super::*;
+        use crate::CoordinatePrimitives;
 
         // Setup a 3 step pipeline
         let pipeline = "ed50_etrs89: {
@@ -139,24 +140,24 @@ mod tests {
         // application of the PROJ package yields:
         // 11.998815342385206861  54.999382648950991381  131.202401081100106239  0.0000
         // cct -d18 proj=pipeline step proj=cart ellps=intl step proj=helmert x=-87 y=-96 z=-120 step proj=cart inv --
-        ctx.coord.0 = ctx.coord.0.to_degrees();
-        ctx.coord.1 = ctx.coord.1.to_degrees();
-        assert!((ctx.coord.0 - 11.998815342385206861).abs() < 1e-12);
-        assert!((ctx.coord.1 - 54.999382648950991381).abs() < 1e-12);
+        ctx.coord[0] = ctx.coord[0].to_degrees();
+        ctx.coord[1] = ctx.coord[1].to_degrees();
+        assert!((ctx.coord[0] - 11.998815342385206861).abs() < 1e-12);
+        assert!((ctx.coord[1] - 54.999382648950991381).abs() < 1e-12);
         // We use an improved height expression, so this value differs slightly
         // (is better) than the one from PROJ.
-        assert!((ctx.coord.2 - 131.202401081100106239).abs() < 1e-8);
+        assert!((ctx.coord[2] - 131.202401081100106239).abs() < 1e-8);
 
         // And the other way round
-        ctx.coord.0 = ctx.coord.0.to_radians();
-        ctx.coord.1 = ctx.coord.1.to_radians();
+        ctx.coord[0] = ctx.coord[0].to_radians();
+        ctx.coord[1] = ctx.coord[1].to_radians();
         /* DRUM ROLL... */
         op.operate(&mut ctx, false); // TA-DAA!
-        ctx.coord.0 = ctx.coord.0.to_degrees();
-        ctx.coord.1 = ctx.coord.1.to_degrees();
-        assert!((ctx.coord.0 - 12.).abs() < 1e-14);
-        assert!((ctx.coord.1 - 55.).abs() < 1e-14);
-        assert!((ctx.coord.2 - 100.).abs() < 1e-8);
+        ctx.coord[0] = ctx.coord[0].to_degrees();
+        ctx.coord[1] = ctx.coord[1].to_degrees();
+        assert!((ctx.coord[0] - 12.).abs() < 1e-14);
+        assert!((ctx.coord[1] - 55.).abs() < 1e-14);
+        assert!((ctx.coord[2] - 100.).abs() < 1e-8);
 
         // -------------------------------------------------------------------------
     }

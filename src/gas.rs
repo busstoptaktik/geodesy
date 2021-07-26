@@ -1,3 +1,4 @@
+use crate::CoordinatePrimitives;
 use crate::CoordinateTuple;
 
 #[derive(Debug, Default)]
@@ -19,7 +20,7 @@ pub struct GasHeader {
 
 impl GasHeader {
     pub fn new() -> GasHeader {
-        let blank = CoordinateTuple(std::f64::NAN, std::f64::NAN, std::f64::NAN, std::f64::NAN);
+        let blank = CoordinateTuple::new(std::f64::NAN, std::f64::NAN, std::f64::NAN, std::f64::NAN);
         GasHeader {
             bbox: [blank, blank],
             delta: blank,
@@ -52,24 +53,24 @@ impl GasHeader {
             if n == 4 {
                 // 2D
                 self.bbox = [
-                    CoordinateTuple(b[1], b[0], b[7], b[7]), // LL
-                    CoordinateTuple(b[3], b[2], b[7], b[7]), // UR
+                    CoordinateTuple::new(b[1], b[0], b[7], b[7]), // LL
+                    CoordinateTuple::new(b[3], b[2], b[7], b[7]), // UR
                 ];
                 return true;
             }
             if n == 6 {
                 // 3D
                 self.bbox = [
-                    CoordinateTuple(b[2], b[1], b[0], b[7]),
-                    CoordinateTuple(b[5], b[4], b[3], b[7]),
+                    CoordinateTuple::new(b[2], b[1], b[0], b[7]),
+                    CoordinateTuple::new(b[5], b[4], b[3], b[7]),
                 ];
                 return true;
             }
             if n == 8 {
                 // 4D
                 self.bbox = [
-                    CoordinateTuple(b[3], b[2], b[1], b[0]),
-                    CoordinateTuple(b[3], b[2], b[1], b[0]),
+                    CoordinateTuple::new(b[3], b[2], b[1], b[0]),
+                    CoordinateTuple::new(b[3], b[2], b[1], b[0]),
                 ];
                 return true;
             }
@@ -120,10 +121,10 @@ impl GasHeader {
     }
 
     pub fn finalize(&mut self) -> bool {
-        self.delta.0 = (self.bbox[1].0 - self.bbox[0].0) / self.dim[0] as f64;
-        self.delta.1 = (self.bbox[1].1 - self.bbox[0].1) / self.dim[1] as f64;
-        self.delta.2 = (self.bbox[1].2 - self.bbox[0].2) / self.dim[2] as f64;
-        self.delta.3 = (self.bbox[1].3 - self.bbox[0].3) / self.dim[3] as f64;
+        self.delta[0] = (self.bbox[1][0] - self.bbox[0][0]) / self.dim[0] as f64;
+        self.delta[1] = (self.bbox[1][1] - self.bbox[0][1]) / self.dim[1] as f64;
+        self.delta[2] = (self.bbox[1][2] - self.bbox[0][2]) / self.dim[2] as f64;
+        self.delta[3] = (self.bbox[1][3] - self.bbox[0][3]) / self.dim[3] as f64;
         self.size = self.dim.iter().product();
         true
     }
@@ -225,8 +226,8 @@ impl Gas {
         // Fractional row/column numbers, i.e. the distance from the lower
         // left grid corner, measured in units of the grid sample distance
         // (note: grid corner - not coverage corner)
-        let cc: f64 = (at.0 - (b[0].0 + d.0 / 2.0)) / d.0;
-        let rr: f64 = (at.1 - (b[0].1 + d.1 / 2.0)) / d.1;
+        let cc: f64 = (at[0] - (b[0][0] + d[0] / 2.0)) / d[0];
+        let rr: f64 = (at[1] - (b[0][1] + d[1] / 2.0)) / d[1];
 
         // As long as we're inside of the grid coverage, (ii,jj) becomes
         // the lower left corner of the cell containing (rr,cc). But we
@@ -269,29 +270,29 @@ impl Gas {
         }
         let s = self.header.scale;
         let o = self.header.offset;
-        CoordinateTuple(o + s * v[0], o + s * v[1], v[2], v[3])
+        CoordinateTuple::new(o + s * v[0], o + s * v[1], v[2], v[3])
     }
 
     pub fn fwd(&self, at: CoordinateTuple) -> CoordinateTuple {
         let dv = self.value(at);
-        CoordinateTuple(at.0 + dv.0, at.1 + dv.1, at.2, at.3)
+        CoordinateTuple::new(at[0] + dv[0], at[1] + dv[1], at[2], at[3])
     }
 
     pub fn inv(&self, at: CoordinateTuple) -> CoordinateTuple {
         // The naive first guess at where we came from
         let mut dv = self.value(at);
-        let mut v = CoordinateTuple(at.0 - dv.0, at.1 - dv.1, at.2, at.3);
+        let mut v = CoordinateTuple::new(at[0] - dv[0], at[1] - dv[1], at[2], at[3]);
 
         for _i in 1..30 {
             // If that guess was correct, `vv` would match `at` exactly
             dv = self.value(v);
-            let vv = CoordinateTuple(v.0 + dv.0, v.1 + dv.1, at.2, at.3);
+            let vv = CoordinateTuple::new(v[0] + dv[0], v[1] + dv[1], at[2], at[3]);
 
             // This is the correction, giving us an exact match for `at`: vv + dv = at
-            dv = CoordinateTuple(at.0 - vv.0, at.1 - vv.1, at.2, at.3);
+            dv = CoordinateTuple::new(at[0] - vv[0], at[1] - vv[1], at[2], at[3]);
             // We suppose it is "almost as good" over at the other end
-            v = CoordinateTuple(v.0 + dv.0, v.1 + dv.1, at.2, at.3);
-            if dv.0.hypot(dv.1) < 1.0e-10 {
+            v = CoordinateTuple::new(v[0] + dv[0], v[1] + dv[1], at[2], at[3]);
+            if dv[0].hypot(dv[1]) < 1.0e-10 {
                 break;
             }
         }
@@ -303,8 +304,9 @@ impl Gas {
 
 #[cfg(test)]
 mod tests {
+    use crate::CoordinatePrimitives;
     use crate::CoordinateTuple;
-    use crate::Gas;
+        use crate::Gas;
     #[test]
     fn interpolation() {
         use std::f64::NAN;
@@ -315,12 +317,12 @@ mod tests {
         let dim = g.header.dim;
 
         // Was the header read correctly?
-        assert_eq!(b.0, 7.0);
-        assert_eq!(b.1, 54.0);
-        assert_eq!(c.0, 13.0);
-        assert_eq!(c.1, 58.0);
-        assert_eq!(d.0, 1.0);
-        assert_eq!(d.1, 0.5);
+        assert_eq!(b[0], 7.0);
+        assert_eq!(b[1], 54.0);
+        assert_eq!(c[0], 13.0);
+        assert_eq!(c[1], 58.0);
+        assert_eq!(d[0], 1.0);
+        assert_eq!(d[1], 0.5);
         assert_eq!(dim, [6, 8, 1, 1, 2]);
         assert_eq!(g.header.scale, 1.);
         assert_eq!(g.header.offset, 0.);
@@ -331,47 +333,47 @@ mod tests {
         // Does the interpolation work correctly?
 
         // Lower left corner
-        let at = CoordinateTuple(b.0 + d.0 / 2., b.1 + d.1 / 2., NAN, NAN);
+        let at = CoordinateTuple::new(b[0] + d[0] / 2., b[1] + d[1] / 2., NAN, NAN);
         let v = g.value(at);
         assert!(v.hypot2(&at) < 1.0e-10);
 
         // Lower right corner
-        let at = CoordinateTuple(c.0 - d.0 / 2., b.1 + d.1 / 2., NAN, NAN);
+        let at = CoordinateTuple::new(c[0] - d[0] / 2., b[1] + d[1] / 2., NAN, NAN);
         let v = g.value(at);
         assert!(v.hypot2(&at) < 1.0e-10);
 
         // Upper left corner
-        let at = CoordinateTuple(b.0 + d.0 / 2., c.1 - d.1 / 2., NAN, NAN);
+        let at = CoordinateTuple::new(b[0] + d[0] / 2., c[1] - d[1] / 2., NAN, NAN);
         let v = g.value(at);
         assert!(v.hypot2(&at) < 1.0e-10);
 
         // Upper right corner
-        let at = CoordinateTuple(c.0 - d.0 / 2., c.1 - d.1 / 2., NAN, NAN);
+        let at = CoordinateTuple::new(c[0] - d[0] / 2., c[1] - d[1] / 2., NAN, NAN);
         let v = g.value(at);
         assert!(v.hypot2(&at) < 1.0e-10);
 
         // Left of lower left corner
-        let at = CoordinateTuple(b.0, b.1 + d.1 / 2., NAN, NAN);
+        let at = CoordinateTuple::new(b[0], b[1] + d[1] / 2., NAN, NAN);
         let v = g.value(at);
         assert!(v.hypot2(&at) < 1.0e-10);
 
         // Below lower left corner
-        let at = CoordinateTuple(b.0 + d.0 / 2., b.1, NAN, NAN);
+        let at = CoordinateTuple::new(b[0] + d[0] / 2., b[1], NAN, NAN);
         let v = g.value(at);
         assert!(v.hypot2(&at) < 1.0e-10);
 
         // MUCH below and to the left of lower left corner
-        let at = CoordinateTuple(b.0 - 4., b.1 - 3., NAN, NAN);
+        let at = CoordinateTuple::new(b[0] - 4., b[1] - 3., NAN, NAN);
         let v = g.value(at);
         assert!(v.hypot2(&at) < 1.0e-10);
 
         // MUCH above and to the right of upper right corner
-        let at = CoordinateTuple(c.0 + 4., c.1 + 3., NAN, NAN);
+        let at = CoordinateTuple::new(c[0] + 4., c[1] + 3., NAN, NAN);
         let v = g.value(at);
         assert!(v.hypot2(&at) < 1.0e-10);
 
         // A non-rational place inside the grid
-        let at = CoordinateTuple(8.77, 55.11, NAN, NAN);
+        let at = CoordinateTuple::new(8.77, 55.11, NAN, NAN);
         let v = g.value(at);
         assert!(v.hypot2(&at) < 1.0e-10);
     }
@@ -386,12 +388,12 @@ mod tests {
         let dim = g.header.dim;
 
         // Was the header read correctly?
-        assert_eq!(b.0, 7.0);
-        assert_eq!(b.1, 54.0);
-        assert_eq!(c.0, 13.0);
-        assert_eq!(c.1, 58.0);
-        assert_eq!(d.0, 1.0);
-        assert_eq!(d.1, 0.5);
+        assert_eq!(b[0], 7.0);
+        assert_eq!(b[1], 54.0);
+        assert_eq!(c[0], 13.0);
+        assert_eq!(c[1], 58.0);
+        assert_eq!(d[0], 1.0);
+        assert_eq!(d[1], 0.5);
         assert_eq!(dim, [6, 8, 1, 1, 2]);
         // assert_eq!(g.header.scale, 0.001);
         assert_eq!(g.header.offset, 0.);
@@ -402,7 +404,7 @@ mod tests {
         // Does the inverse interpolation work correctly?
 
         // A non-rational place inside the grid
-        let at = CoordinateTuple(8.77, 55.11, NAN, NAN);
+        let at = CoordinateTuple::new(8.77, 55.11, NAN, NAN);
         let transformed_at = g.fwd(at);
         let backtransformed_at = g.inv(transformed_at);
         assert!(at.hypot2(&backtransformed_at) < 1.0e-10);

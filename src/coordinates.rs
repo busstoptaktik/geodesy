@@ -1,54 +1,48 @@
-#[derive(Clone, Copy, Debug, PartialEq, Default)]
-pub struct CoordinateTuple(pub f64, pub f64, pub f64, pub f64);
-impl CoordinateTuple {
-    #[must_use]
-    pub fn new(x: f64, y: f64, z: f64, t: f64) -> CoordinateTuple {
-        CoordinateTuple {
-            0: x,
-            1: y,
-            2: z,
-            3: t,
-        }
+use crate::CoordinateTuple;
+use crate::CoordinatePrimitives;
+
+impl CoordinatePrimitives for CoordinateTuple {
+    fn new(x: f64, y: f64, z: f64, t: f64) -> CoordinateTuple {
+        [x, y, z, t]
+    }
+
+    fn nan() -> CoordinateTuple {
+        [f64::NAN, f64::NAN, f64::NAN, f64::NAN]
     }
 
     #[must_use]
-    pub fn deg(x: f64, y: f64, z: f64, t: f64) -> CoordinateTuple {
-        CoordinateTuple {
-            0: x.to_radians(),
-            1: y.to_radians(),
-            2: z,
-            3: t,
-        }
+    fn deg(x: f64, y: f64, z: f64, t: f64) -> CoordinateTuple {
+        CoordinateTuple::new(x.to_radians(),  y.to_radians(), z, t)
     }
 
     #[must_use]
-    pub fn to_degrees(self) -> CoordinateTuple {
-        CoordinateTuple(self.0.to_degrees(), self.1.to_degrees(), self.2, self.3)
+    fn to_degrees(self) -> CoordinateTuple {
+        CoordinateTuple::new(self[0].to_degrees(), self[1].to_degrees(), self[2], self[3])
     }
 
     #[must_use]
-    pub fn to_radians(self) -> CoordinateTuple {
-        CoordinateTuple(self.0.to_radians(), self.1.to_radians(), self.2, self.3)
+    fn to_radians(self) -> CoordinateTuple {
+        CoordinateTuple::new(self[0].to_radians(), self[1].to_radians(), self[2], self[3])
     }
 
     #[must_use]
-    pub fn first(&self) -> f64 {
-        self.0
+    fn first(&self) -> f64 {
+        self[0]
     }
 
     #[must_use]
-    pub fn second(&self) -> f64 {
-        self.1
+    fn second(&self) -> f64 {
+        self[1]
     }
 
     #[must_use]
-    pub fn third(&self) -> f64 {
-        self.2
+    fn third(&self) -> f64 {
+        self[2]
     }
 
     #[must_use]
-    pub fn fourth(&self) -> f64 {
-        self.3
+    fn fourth(&self) -> f64 {
+        self[3]
     }
 
     /// Euclidean distance between two points in the 2D plane.
@@ -69,14 +63,15 @@ impl CoordinateTuple {
     ///
     /// ```rust
     /// use geodesy::CoordinateTuple;
+    /// use geodesy::CoordinatePrimitives;
     /// let t = 1000.;
     /// let p0 = CoordinateTuple::new(0., 0., 0., 0.);
     /// let p1 = CoordinateTuple::new(t, t, 0., 0.);
     /// assert_eq!(p0.hypot2(&p1), t.hypot(t));
     /// ```
     #[must_use]
-    pub fn hypot2(&self, other: &CoordinateTuple) -> f64 {
-        (self.0 - other.0).hypot(self.1 - other.1)
+    fn hypot2(&self, other: &CoordinateTuple) -> f64 {
+        (self[0] - other[0]).hypot(self[1] - other[1])
     }
 
     /// Euclidean distance between two points in the 3D space.
@@ -98,16 +93,15 @@ impl CoordinateTuple {
     ///
     /// ```rust
     /// use geodesy::CoordinateTuple;
+    /// use geodesy::CoordinatePrimitives;
     /// let t = 1000.;
     /// let p0 = CoordinateTuple::new(0., 0., 0., 0.);
     /// let p1 = CoordinateTuple::new(t, t, t, 0.);
     /// assert_eq!(p0.hypot3(&p1), t.hypot(t).hypot(t));
     /// ```
     #[must_use]
-    pub fn hypot3(&self, other: &CoordinateTuple) -> f64 {
-        (self.0 - other.0)
-            .hypot(self.1 - other.1)
-            .hypot(self.2 - other.2)
+    fn hypot3(&self, other: &CoordinateTuple) -> f64 {
+        (self[0] - other[0]).hypot(self[1] - other[1]).hypot(self[2] - other[2])
     }
 }
 
@@ -176,7 +170,7 @@ enum Coordinate {
 mod tests {
     use super::*;
     #[test]
-    fn test_dms() {
+    fn dms() {
         let dms = DMS::new(60, 24, 36.);
         assert_eq!(dms.d, 60);
         assert_eq!(dms.m, 24);
@@ -186,19 +180,19 @@ mod tests {
     }
 
     #[test]
-    fn test_coordinatetuple() {
+    fn coordinatetuple() {
         let c = CoordinateTuple::new(12., 55., 100., 0.).to_radians();
         let d = CoordinateTuple::deg(12., 55., 100., 0.);
         assert_eq!(c, d);
-        assert_eq!(d.0, 12f64.to_radians());
+        assert_eq!(d[0], 12f64.to_radians());
         let e = d.to_degrees();
-        assert_eq!(e.0, c.to_degrees().0);
+        assert_eq!(e[0], c.to_degrees()[0]);
     }
 
     #[test]
-    fn test_array() {
+    fn array() {
         let b = CoordinateTuple::new(7., 8., 9., 10.);
-        let c = [b.0, b.1, b.2, b.3, f64::NAN, f64::NAN];
-        assert_eq!(b.0, c[0]);
+        let c = [b[0], b[1], b[2], b[3], f64::NAN, f64::NAN];
+        assert_eq!(b[0], c[0]);
     }
 }

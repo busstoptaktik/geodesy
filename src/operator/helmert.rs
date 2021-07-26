@@ -37,16 +37,16 @@ impl Helmert {
 
 impl OperatorCore for Helmert {
     fn fwd(&self, ws: &mut Context) -> bool {
-        ws.coord.0 += self.dx;
-        ws.coord.1 += self.dy;
-        ws.coord.2 += self.dz;
+        ws.coord[0] += self.dx;
+        ws.coord[1] += self.dy;
+        ws.coord[2] += self.dz;
         true
     }
 
     fn inv(&self, ws: &mut Context) -> bool {
-        ws.coord.0 -= self.dx;
-        ws.coord.1 -= self.dy;
-        ws.coord.2 -= self.dz;
+        ws.coord[0] -= self.dx;
+        ws.coord[1] -= self.dy;
+        ws.coord[2] -= self.dz;
         true
     }
 
@@ -66,6 +66,7 @@ impl OperatorCore for Helmert {
 #[cfg(test)]
 mod tests {
     use crate::operator::operator_factory;
+    use crate::CoordinatePrimitives;
 
     #[test]
     fn helmert() {

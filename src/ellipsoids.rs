@@ -2,6 +2,7 @@
 use std::f64::consts::FRAC_PI_2;
 
 use crate::fwd;
+use crate::CoordinatePrimitives;
 use crate::CoordinateTuple;
 
 /// Representation of a (potentially triaxial) ellipsoid.
@@ -419,8 +420,8 @@ impl Ellipsoid {
         distance: f64,
     ) -> CoordinateTuple {
         // Coordinates of the point of origin, P1
-        let B1 = from.1;
-        let L1 = from.0;
+        let B1 = from[1];
+        let L1 = from[0];
 
         // The latitude of P1 projected onto the auxiliary sphere
         let U1 = self.reduced_latitude(B1, fwd);
@@ -500,11 +501,11 @@ impl Ellipsoid {
     #[must_use]
     #[allow(non_snake_case)] // allow math-like notation
     pub fn geodesic_inv(&self, from: &CoordinateTuple, to: &CoordinateTuple) -> CoordinateTuple {
-        let B1 = from.1;
-        let B2 = to.1;
+        let B1 = from[1];
+        let B2 = to[1];
 
-        let L1 = from.0;
-        let L2 = to.0;
+        let L1 = from[0];
+        let L2 = to[0];
         let L = L2 - L1;
 
         let U1 = self.reduced_latitude(B1, fwd);
@@ -580,8 +581,8 @@ impl Ellipsoid {
         CoordinateTuple::new(a1, a2, s, f64::from(i))
     }
 
-    /// Geodesic distance between two points. Assumes first coordinate is longitude,
-    /// second is latitude.
+    /// Geodesic distance between two points. Assumes the first coordinate
+    /// is longitude, second is latitude.
     ///
     /// # See also:
     ///
@@ -594,6 +595,7 @@ impl Ellipsoid {
     /// // Compute the distance between Copenhagen and Paris
     /// use geodesy::Ellipsoid;
     /// use geodesy::CoordinateTuple;
+    /// use geodesy::CoordinatePrimitives;
     /// let ellps = Ellipsoid::named("GRS80");
     /// let p0 = CoordinateTuple::deg(12., 55., 0., 0.);
     /// let p1 = CoordinateTuple::deg(2., 49., 0., 0.);
@@ -602,7 +604,7 @@ impl Ellipsoid {
     /// ```
     #[must_use]
     pub fn distance(&self, from: &CoordinateTuple, to: &CoordinateTuple) -> f64 {
-        self.geodesic_inv(from, to).2
+        self.geodesic_inv(from, to)[2]
     }
 
     // ----- Cartesian <--> Geographic conversion ----------------------------------
@@ -781,10 +783,10 @@ mod tests {
         let geo = CoordinateTuple::deg(12., 55., 100., 0.);
         let cart = ellps.cartesian(&geo);
         let geo2 = ellps.geographic(&cart);
-        assert_eq!(geo.0, geo2.0);
-        assert!((geo.0 - geo2.0).abs() < 1.0e-12);
-        assert!((geo.1 - geo2.1).abs() < 1.0e-12);
-        assert!((geo.2 - geo2.2).abs() < 1.0e-9);
+        assert_eq!(geo[0], geo2[0]);
+        assert!((geo[0] - geo2[0]).abs() < 1.0e-12);
+        assert!((geo[1] - geo2[1]).abs() < 1.0e-12);
+        assert!((geo[2] - geo2[2]).abs() < 1.0e-9);
     }
 
     #[test]
@@ -899,27 +901,27 @@ mod tests {
         let p2 = CoordinateTuple::deg(2., 49., 0., 0.);
 
         let d = ellps.geodesic_inv(&p1, &p2);
-        assert!((d.0.to_degrees() - (-130.15406042072)).abs() < 1e-9);
-        assert!((d.1.to_degrees() - (-138.05257941874)).abs() < 1e-9);
-        assert!((d.2 - 956066.231959).abs() < 1e-5);
+        assert!((d[0].to_degrees() - (-130.15406042072)).abs() < 1e-9);
+        assert!((d[1].to_degrees() - (-138.05257941874)).abs() < 1e-9);
+        assert!((d[2] - 956066.231959).abs() < 1e-5);
 
         // And the other way round...
-        let b = ellps.geodesic_fwd(&p1, d.0, d.2);
-        assert!((b.0.to_degrees() - 2.).abs() < 1e-9);
-        assert!((b.1.to_degrees() - 49.).abs() < 1e-9);
+        let b = ellps.geodesic_fwd(&p1, d[0],d[2]);
+        assert!((b[0].to_degrees() - 2.).abs() < 1e-9);
+        assert!((b[1].to_degrees() - 49.).abs() < 1e-9);
 
         // Copenhagen (Denmark)--Rabat (Morocco)
         // Expect distance good to 0.1 mm, azimuths to a nanodegree
         let p2 = CoordinateTuple::deg(7., 34., 0., 0.);
 
         let d = ellps.geodesic_inv(&p1, &p2);
-        assert!((d.0.to_degrees() - (-168.48914418666)).abs() < 1e-9);
-        assert!((d.1.to_degrees() - (-172.05461964948)).abs() < 1e-9);
-        assert!((d.2 - 2365723.367715).abs() < 1e-4);
+        assert!((d[0].to_degrees() - (-168.48914418666)).abs() < 1e-9);
+        assert!((d[1].to_degrees() - (-172.05461964948)).abs() < 1e-9);
+        assert!((d[2] - 2365723.367715).abs() < 1e-4);
 
         // And the other way round...
-        let b = ellps.geodesic_fwd(&p1, d.0, d.2).to_degrees();
-        assert!((b.0 - p2.0.to_degrees()).abs() < 1e-9);
-        assert!((b.1 - p2.1.to_degrees()).abs() < 1e-9);
+        let b = ellps.geodesic_fwd(&p1, d[0], d[2]).to_degrees();
+        assert!((b[0] - p2[0].to_degrees()).abs() < 1e-9);
+        assert!((b[1] - p2[1].to_degrees()).abs() < 1e-9);
     }
 }

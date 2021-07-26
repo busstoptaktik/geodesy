@@ -207,6 +207,7 @@ pub(crate) fn operator_factory(
 #[cfg(test)]
 mod tests {
     use crate::CoordinateTuple;
+    use crate::CoordinatePrimitives;
 
     #[test]
     fn operator() {
@@ -281,7 +282,7 @@ mod tests {
         o.coord = CoordinateTuple::deg(12., 55., 100., 0.);
         h.forward(&mut o);
         let d = o.coord.to_degrees();
-        let r = CoordinateTuple(
+        let r = CoordinateTuple::new(
             11.998815342385209,
             54.99938264895106,
             131.20240108577374,
@@ -361,7 +362,7 @@ mod tests {
 
     impl OperatorCore for Nnoopp {
         fn fwd(&self, ctx: &mut Context) -> bool {
-            ctx.coord.0 = 42.;
+            ctx.coord[0] = 42.;
             true
         }
 
@@ -389,6 +390,6 @@ mod tests {
 
         let op = ctx.operator("nnoopp: {}").unwrap();
         let _aha = op.fwd(&mut ctx);
-        assert_eq!(ctx.coord.0, 42.);
+        assert_eq!(ctx.coord[0], 42.);
     }
 }

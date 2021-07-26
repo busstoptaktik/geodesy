@@ -32,7 +32,25 @@ mod gas;
 mod operator;
 mod operatorargs;
 
-pub use coordinates::CoordinateTuple;
+pub type CoordinateTuple = [f64; 4];
+pub trait CoordinatePrimitives {
+    fn new(x: f64, y: f64, z: f64, t: f64) -> CoordinateTuple;
+    fn nan() -> CoordinateTuple;
+    fn deg(x: f64, y: f64, z: f64, t: f64) -> CoordinateTuple;
+    fn to_degrees(self) -> CoordinateTuple;
+    fn to_radians(self) -> CoordinateTuple;
+    fn first(&self) -> f64;
+    fn second(&self) -> f64;
+    fn third(&self) -> f64;
+    fn fourth(&self) -> f64;
+    fn hypot2(&self, other: &CoordinateTuple) -> f64;
+    fn hypot3(&self, other: &CoordinateTuple) -> f64;
+}
+// #[allow(non_snake_case)]
+// pub fn CoordinateTuple(x: f64, y: f64, z: f64, t: f64) -> CoordinateTuple {
+//     [x, y, z, t]
+// }
+
 pub use coordinates::DMS;
 pub use ellipsoids::Ellipsoid;
 

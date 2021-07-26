@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use crate::CoordinateTuple;
+use crate::CoordinatePrimitives;
 use crate::Operator;
 use crate::OperatorConstructor;
 use crate::OperatorCore;
@@ -14,7 +15,7 @@ impl Resource {
     #[must_use]
     pub fn _new() -> Resource {
         Resource {
-            bbox: CoordinateTuple(0., 0., 0., 0.),
+            bbox: CoordinateTuple::new(0., 0., 0., 0.),
         }
     }
 }
@@ -42,7 +43,7 @@ impl Context {
 
     fn _new() -> Context {
         Context {
-            coord: CoordinateTuple(0., 0., 0., 0.),
+            coord: CoordinateTuple::new(0., 0., 0., 0.),
             stack: vec![],
             minions: vec![],
             resources: HashMap::new(),
@@ -104,16 +105,17 @@ mod tests {
         use crate::Context;
         let ond = Context::new();
         assert_eq!(ond.stack.len(), 0);
-        assert_eq!(ond.coord.0, 0.);
-        assert_eq!(ond.coord.1, 0.);
-        assert_eq!(ond.coord.2, 0.);
-        assert_eq!(ond.coord.3, 0.);
+        assert_eq!(ond.coord[0], 0.);
+        assert_eq!(ond.coord[1], 0.);
+        assert_eq!(ond.coord[2], 0.);
+        assert_eq!(ond.coord[3], 0.);
     }
 
     #[test]
     fn operate() {
         use crate::Context;
         use crate::Operator;
+        use crate::CoordinatePrimitives;
         use crate::{fwd, inv};
         let pipeline = "ed50_etrs89: {
             steps: [
@@ -127,11 +129,11 @@ mod tests {
         ond.coord = crate::CoordinateTuple::deg(12., 55., 100., 0.);
 
         ond.operate(&op, fwd);
-        assert!((ond.coord.to_degrees().0 - 11.998815342385206861).abs() < 1e-12);
-        assert!((ond.coord.to_degrees().1 - 54.999382648950991381).abs() < 1e-12);
+        assert!((ond.coord.to_degrees()[0] - 11.998815342385206861).abs() < 1e-12);
+        assert!((ond.coord.to_degrees()[1] - 54.999382648950991381).abs() < 1e-12);
 
         ond.operate(&op, inv);
-        assert!((ond.coord.to_degrees().0 - 12.).abs() < 1e-12);
-        assert!((ond.coord.to_degrees().1 - 55.).abs() < 1e-12);
+        assert!((ond.coord.to_degrees()[0] - 12.).abs() < 1e-12);
+        assert!((ond.coord.to_degrees()[1] - 55.).abs() < 1e-12);
     }
 }
