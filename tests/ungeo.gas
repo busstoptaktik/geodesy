@@ -36,7 +36,7 @@ rows    8   # 0.5
 cols    6   # 1.0
 bands   2   # latitude/longitude
 skip    2
-scale   0.01
+scale   0.25
 
 grid
 

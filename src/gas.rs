@@ -205,17 +205,14 @@ impl Gas {
         Ok(Gas { header, grid })
     }
 
-    // Returns an Iterator to the Reader of the lines of the file.
-    // The output is wrapped in a Result to allow matching on errors.
-    // Following https://doc.rust-lang.org/rust-by-example/std_misc/file/read_lines.html
-    fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
-    where
-        P: AsRef<Path>,
-    {
+    // Iterator to the Reader of the lines of the file. Following the example
+    // https://doc.rust-lang.org/rust-by-example/std_misc/file/read_lines.html
+    fn read_lines<P: AsRef<Path>>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>> {
         let file = File::open(filename)?;
         Ok(io::BufReader::new(file).lines())
     }
 
+    #[allow(clippy::many_single_char_names)]
     pub fn value(&self, at: CoordinateTuple) -> CoordinateTuple {
         // TODO: Generalize to 1D, 3D and 4D - currently interpolates
         // any number of channels, but in the first plane only.
@@ -227,6 +224,7 @@ impl Gas {
 
         // Fractional row/column numbers, i.e. the distance from the lower
         // left grid corner, measured in units of the grid sample distance
+        // (note: grid corner - not coverage corner)
         let cc: f64 = (at.0 - (b[0].0 + d.0 / 2.0)) / d.0;
         let rr: f64 = (at.1 - (b[0].1 + d.1 / 2.0)) / d.1;
 
@@ -274,28 +272,30 @@ impl Gas {
         CoordinateTuple(o + s * v[0], o + s * v[1], v[2], v[3])
     }
 
-    pub fn unvalue(&self, at: CoordinateTuple) -> CoordinateTuple {
-        // Naive first guess at where we came from
+    pub fn fwd(&self, at: CoordinateTuple) -> CoordinateTuple {
+        let dv = self.value(at);
+        CoordinateTuple(at.0 + dv.0, at.1 + dv.1, at.2, at.3)
+    }
+
+    pub fn inv(&self, at: CoordinateTuple) -> CoordinateTuple {
+        // The naive first guess at where we came from
         let mut dv = self.value(at);
         let mut v = CoordinateTuple(at.0 - dv.0, at.1 - dv.1, at.2, at.3);
-        for _i in 1..5 {
-            println!("dv: {:?}", dv);
-            println!("v:  {:?}", v);
 
+        for _i in 1..30 {
             // If that guess was correct, `vv` would match `at` exactly
             dv = self.value(v);
-            let vv = CoordinateTuple(at.0 + dv.0, at.1 + dv.1, at.2, at.3); // Note the sign!
-            println!("dv: {:?}", dv);
-            println!("vv: {:?}", vv);
+            let vv = CoordinateTuple(v.0 + dv.0, v.1 + dv.1, at.2, at.3);
 
             // This is the correction, giving us an exact match for `at`: vv + dv = at
             dv = CoordinateTuple(at.0 - vv.0, at.1 - vv.1, at.2, at.3);
-            // We suppose that this correction is "almost as good" over at the other end
-            println!("DV: {:?}", dv);
+            // We suppose it is "almost as good" over at the other end
             v = CoordinateTuple(v.0 + dv.0, v.1 + dv.1, at.2, at.3);
+            if dv.0.hypot(dv.1) < 1.0e-10 {
+                break;
+            }
         }
-
-        dv
+        v
     }
 }
 
@@ -306,7 +306,7 @@ mod tests {
     use crate::CoordinateTuple;
     use crate::Gas;
     #[test]
-    fn gas() {
+    fn interpolation() {
         use std::f64::NAN;
         let g = Gas::new("tests/geo.gas").unwrap();
         let b = g.header.bbox[0];
@@ -377,7 +377,7 @@ mod tests {
     }
 
     #[test]
-    fn ungas() {
+    fn transformation() {
         use std::f64::NAN;
         let g = Gas::new("tests/ungeo.gas").unwrap();
         let b = g.header.bbox[0];
@@ -393,7 +393,7 @@ mod tests {
         assert_eq!(d.0, 1.0);
         assert_eq!(d.1, 0.5);
         assert_eq!(dim, [6, 8, 1, 1, 2]);
-        assert_eq!(g.header.scale, 0.01);
+        // assert_eq!(g.header.scale, 0.001);
         assert_eq!(g.header.offset, 0.);
 
         // Does the grid have the right size?
@@ -403,14 +403,8 @@ mod tests {
 
         // A non-rational place inside the grid
         let at = CoordinateTuple(8.77, 55.11, NAN, NAN);
-        let v = g.value(at);
-        let transformed_at = CoordinateTuple(at.0 + v.0, at.1 + v.1, NAN, NAN);
-        println!("t_at: {:?}", transformed_at);
-        let v = g.unvalue(transformed_at);
-        // yes - correct sign under the current convention
-        let backtransformed_at =
-            CoordinateTuple(transformed_at.0 + v.0, transformed_at.1 + v.1, NAN, NAN);
-        println!("b_at: {:?}", backtransformed_at);
-        assert!(at.hypot2(&backtransformed_at) < 1.0e-8);
+        let transformed_at = g.fwd(at);
+        let backtransformed_at = g.inv(transformed_at);
+        assert!(at.hypot2(&backtransformed_at) < 1.0e-10);
     }
 }
