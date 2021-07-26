@@ -2,6 +2,7 @@ use super::OperatorArgs;
 use super::OperatorCore;
 use crate::Context;
 use crate::CoordinateTuple;
+use crate::CoordinatePrimitives;
 use crate::Ellipsoid;
 
 pub struct Cart {
@@ -141,9 +142,9 @@ mod tests {
         // First check that (0,0,0) takes us to (a,0,0)
         c.fwd(&mut o);
         let a = Ellipsoid::named("intl").semimajor_axis();
-        assert_eq!(o.coord.0, a);
-        assert_eq!(o.coord.1, 0.0);
-        assert_eq!(o.coord.1, 0.0);
+        assert_eq!(o.coord[0], a);
+        assert_eq!(o.coord[1], 0.0);
+        assert_eq!(o.coord[1], 0.0);
 
         // Some arbitrary spot - southwest of Copenhagen
         o.coord = CoordinateTuple::deg(12., 55., 100., 0.);
@@ -154,8 +155,8 @@ mod tests {
         let result = o.coord.to_degrees();
 
         // And check that we're back
-        assert!((result.0 - 12.).abs() < 1.0e-10);
-        assert!((result.1 - 55.).abs() < 1.0e-10);
-        assert!((result.2 - 100.).abs() < 1.0e-8);
+        assert!((result[0] - 12.).abs() < 1.0e-10);
+        assert!((result[1] - 55.).abs() < 1.0e-10);
+        assert!((result[2] - 100.).abs() < 1.0e-8);
     }
 }
