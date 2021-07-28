@@ -1,23 +1,28 @@
 use crate::Context;
+use crate::CoordinateTuple;
 use crate::OperatorArgs;
 
 // Operator used to be a `pub type Operator = Box<dyn OperatorCore>`, but now it's
 // a newtype around a Boxed OperatorCore, in order to be able to define methods on
 // it. There's a good description of the crux here:
 // https://stackoverflow.com/questions/35568871/is-it-possible-to-implement-methods-on-type-aliases
-pub struct Operator(Box<dyn OperatorCore>);
+pub struct Operator(pub Box<dyn OperatorCore>);
 impl Operator {
     /// The equivalent of the PROJ `proj_create()` function: Create an operator object
     /// from a text string.
     ///
     /// Example:
     /// ```rust
-    /// // EPSG:1134 - 3 parameter, ED50/WGS84
+    /// // EPSG:1134 - 3 parameter Helmert, ED50/WGS84
+    /// use geodesy::operand::*;
     /// let mut ctx = geodesy::Context::new();
     /// let op = ctx.operator("helmert: {dx: -87, dy: -96, dz: -120}");
     /// assert!(op.is_ok());
     /// let op = op.unwrap();
-    /// ctx.operate(&op, geodesy::fwd);
+    /// let mut operands = [geodesy::CoordinateTuple::deg(12.,55.,0.,0.)];
+    /// ctx.fwd(op, &mut operands);
+    /// ctx.inv(op, &mut operands);
+    /// assert!((operands[0][0].to_degrees() - 12.).abs() < 1.0e-10);
     /// ```
     pub fn new(definition: &str, ctx: &mut Context) -> Result<Operator, String> {
         let mut oa = OperatorArgs::new();
@@ -25,12 +30,12 @@ impl Operator {
         operator_factory(&mut oa, ctx, 0)
     }
 
-    pub fn forward(&self, ws: &mut Context) -> bool {
-        self.0.fwd(ws)
+    pub fn forward(&self, ws: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
+        self.0.fwd(ws, operands)
     }
 
-    pub fn inverse(&self, ws: &mut Context) -> bool {
-        self.0.inv(ws)
+    pub fn inverse(&self, ws: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
+        self.0.inv(ws, operands)
     }
 }
 
@@ -38,16 +43,21 @@ impl Operator {
 // Perhaps not necessary: We could deem Core low level and
 // build a high level interface on top of Core (cf forward above).
 impl OperatorCore for Operator {
-    fn fwd(&self, ws: &mut Context) -> bool {
-        self.0.fwd(ws)
+    fn fwd(&self, ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
+        self.0.fwd(ctx, operands)
     }
 
-    fn inv(&self, ws: &mut Context) -> bool {
-        self.0.inv(ws)
+    fn inv(&self, ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
+        self.0.inv(ctx, operands)
     }
 
-    fn operate(&self, operand: &mut Context, forward: bool) -> bool {
-        self.0.operate(operand, forward)
+    fn operate(
+        &self,
+        operand: &mut Context,
+        operands: &mut [CoordinateTuple],
+        forward: bool,
+    ) -> bool {
+        self.0.operate(operand, operands, forward)
     }
 
     fn invertible(&self) -> bool {
@@ -77,10 +87,11 @@ impl OperatorCore for Operator {
 /// which builds on this `trait` (which only holds `pub`ness in order to support
 /// construction of user-defined operators).
 pub trait OperatorCore {
-    fn fwd(&self, ctx: &mut Context) -> bool;
+    fn fwd(&self, ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool;
 
     // implementations must override at least one of {inv, invertible}
-    fn inv(&self, ctx: &mut Context) -> bool {
+    #[allow(unused_variables)]
+    fn inv(&self, ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
         ctx.last_failing_operation = self.name();
         ctx.cause = "Operator not invertible";
         false
@@ -91,14 +102,14 @@ pub trait OperatorCore {
     }
 
     // operate fwd/inv, taking operator inversion into account.
-    fn operate(&self, ctx: &mut Context, forward: bool) -> bool {
+    fn operate(&self, ctx: &mut Context, operands: &mut [CoordinateTuple], forward: bool) -> bool {
         // Short form of (inverted && !forward) || (forward && !inverted)
         if self.is_inverted() != forward {
-            return self.fwd(ctx);
+            return self.fwd(ctx, operands);
         }
         // We do not need to check for self.invertible() here, since non-invertible
         // operators will return false as per the default-defined fn inv() above.
-        self.inv(ctx)
+        self.inv(ctx, operands)
     }
 
     fn name(&self) -> &'static str {
@@ -206,8 +217,7 @@ pub(crate) fn operator_factory(
 
 #[cfg(test)]
 mod tests {
-    use crate::CoordinateTuple;
-    use crate::CoordinatePrimitives;
+    use crate::operand::*;
 
     #[test]
     fn operator() {
@@ -223,8 +233,8 @@ mod tests {
 
         // Define "hilmert" and "halmert" to circularly define each other, in order
         // to test the operator_factory recursion breaker
-        o.register_macro("halmert", "hilmert: {}");
-        o.register_macro("hilmert", "halmert: {}");
+        assert!(o.register_macro("halmert", "hilmert: {}"));
+        assert!(o.register_macro("hilmert", "halmert: {}"));
         if let Err(e) = Operator::new("halmert: {dx: -87, dy: -96, dz: -120}", &mut o) {
             assert!(e.ends_with("too deeply nested"));
         } else {
@@ -232,7 +242,7 @@ mod tests {
         }
 
         // Define "hulmert" as a macro forwarding its args to the "helmert" builtin
-        o.register_macro("hulmert", "helmert: {dx: ^dx, dy: ^dy, dz: ^dz}");
+        assert!(o.register_macro("hulmert", "helmert: {dx: ^dx, dy: ^dy, dz: ^dz}"));
 
         // A plain operator: Helmert, EPSG:1134 - 3 parameter, ED50/WGS84
         let hh = Operator::new("helmert: {dx: -87, dy: -96, dz: -120}", &mut o);
@@ -247,25 +257,27 @@ mod tests {
         assert_eq!(hh.args(0).name, h.args(0).name);
         assert_eq!(hh.args(0).used, h.args(0).used);
 
-        h.operate(&mut o, fwd);
-        assert_eq!(o.coord.first(), -87.);
-        assert_eq!(o.coord.second(), -96.);
-        assert_eq!(o.coord.third(), -120.);
+        let mut operands = [CoordinateTuple::new(0., 0., 0., 0.)];
 
-        h.operate(&mut o, inv);
-        assert_eq!(o.coord.first(), 0.);
-        assert_eq!(o.coord.second(), 0.);
-        assert_eq!(o.coord.third(), 0.);
+        h.operate(&mut o, operands.as_mut(), fwd);
+        assert_eq!(operands[0].first(), -87.);
+        assert_eq!(operands[0].second(), -96.);
+        assert_eq!(operands[0].third(), -120.);
 
-        h.forward(&mut o);
-        assert_eq!(o.coord.first(), -87.);
-        assert_eq!(o.coord.second(), -96.);
-        assert_eq!(o.coord.third(), -120.);
+        h.operate(&mut o, operands.as_mut(), inv);
+        assert_eq!(operands[0].first(), 0.);
+        assert_eq!(operands[0].second(), 0.);
+        assert_eq!(operands[0].third(), 0.);
 
-        h.inverse(&mut o);
-        assert_eq!(o.coord.first(), 0.);
-        assert_eq!(o.coord.second(), 0.);
-        assert_eq!(o.coord.third(), 0.);
+        h.forward(&mut o, operands.as_mut());
+        assert_eq!(operands[0].first(), -87.);
+        assert_eq!(operands[0].second(), -96.);
+        assert_eq!(operands[0].third(), -120.);
+
+        h.inverse(&mut o, operands.as_mut());
+        assert_eq!(operands[0].first(), 0.);
+        assert_eq!(operands[0].second(), 0.);
+        assert_eq!(operands[0].third(), 0.);
 
         // A pipeline
         let pipeline = "ed50_etrs89: {
@@ -279,9 +291,9 @@ mod tests {
         assert!(h.is_ok());
         let h = h.unwrap();
 
-        o.coord = CoordinateTuple::deg(12., 55., 100., 0.);
-        h.forward(&mut o);
-        let d = o.coord.to_degrees();
+        let mut operands = [CoordinateTuple::deg(12., 55., 100., 0.)];
+        h.forward(&mut o, operands.as_mut());
+        let d = operands[0].to_degrees();
         let r = CoordinateTuple::new(
             11.998815342385209,
             54.99938264895106,
@@ -297,7 +309,7 @@ mod tests {
         let h = Operator::new("tests/ed50_etrs89: {}", &mut o);
         assert!(h.is_ok());
 
-        // Try to access is from local/share: "C:\\Users\\Username\\AppData\\Local\\geodesy\\ed50_etrs89.yml"
+        // Try to access it from local/share: "C:\\Users\\Username\\AppData\\Local\\geodesy\\ed50_etrs89.yml"
         let h = Operator::new("ed50_etrs89: {}", &mut o);
         assert!(h.is_err());
 
@@ -313,24 +325,24 @@ mod tests {
             ]
         }";
 
-        o.register_macro("geohelmert", pipeline_as_macro);
+        assert!(o.register_macro("geohelmert", pipeline_as_macro));
         let ed50_etrs89 = Operator::new(
             "geohelmert: {left: intl, right: GRS80, dx: -87, dy: -96, dz: -120}",
             &mut o,
         );
         assert!(ed50_etrs89.is_ok());
         let ed50_etrs89 = ed50_etrs89.unwrap();
-        o.coord = CoordinateTuple::deg(12., 55., 100., 0.);
+        let mut operands = [CoordinateTuple::deg(12., 55., 100., 0.)];
 
-        ed50_etrs89.forward(&mut o);
-        let d = o.coord.to_degrees();
+        ed50_etrs89.forward(&mut o, operands.as_mut());
+        let d = operands[0].to_degrees();
 
         assert!((d.first() - r.first()).abs() < 1.0e-10);
         assert!((d.second() - r.second()).abs() < 1.0e-10);
         assert!((d.third() - r.third()).abs() < 1.0e-8);
 
-        ed50_etrs89.inverse(&mut o);
-        let d = o.coord.to_degrees();
+        ed50_etrs89.inverse(&mut o, operands.as_mut());
+        let d = operands[0].to_degrees();
 
         assert!((d.first() - 12.).abs() < 1.0e-10);
         assert!((d.second() - 55.).abs() < 1.0e-10);
@@ -361,12 +373,17 @@ mod tests {
     }
 
     impl OperatorCore for Nnoopp {
-        fn fwd(&self, ctx: &mut Context) -> bool {
-            ctx.coord[0] = 42.;
+        fn fwd(&self, _ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
+            for coord in operands {
+                coord[0] = 42.;
+            }
             true
         }
 
-        fn inv(&self, _ws: &mut Context) -> bool {
+        fn inv(&self, _ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
+            for coord in operands {
+                coord[0] = 24.;
+            }
             true
         }
 
@@ -389,7 +406,8 @@ mod tests {
         ctx.register_operator("nnoopp", Nnoopp::operator);
 
         let op = ctx.operator("nnoopp: {}").unwrap();
-        let _aha = op.fwd(&mut ctx);
-        assert_eq!(ctx.coord[0], 42.);
+        let mut operands = [CoordinateTuple::new(12., 55., 100., 0.)];
+        let _aha = ctx.fwd(op, operands.as_mut());
+        assert_eq!(operands[0][0], 42.);
     }
 }

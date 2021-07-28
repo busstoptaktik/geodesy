@@ -1,69 +1,97 @@
-use slice_of_array::prelude::*;
-
-use geodesy::CoordinateTuple;
-use geodesy::CoordinatePrimitives;
-
-fn forty_two(cc: &mut CoordinateTuple) {
-    cc[1] = 42.;
-}
-
-// fn pille(cc: &mut [f64]) {
-//     for c in cc {
-//         *c += 3.;
-//     }
-// }
-
-
-pub struct FlatIndexer {
-    offset: [usize; 4],
-    stride: [usize; 4],
-    channels: usize,
-}
-
-impl FlatIndexer {
-    pub fn new(offset: [usize; 4], stride: [usize; 4], channels: usize) -> FlatIndexer {
-        FlatIndexer{offset, stride, channels}
-    }
-
-    pub fn get(&self, index: usize, data: &mut [f64]) -> CoordinateTuple {
-        let mut element = CoordinateTuple::nan();
-        for i in 0..self.channels {
-            element[i] = data[self.offset[i] + index*self.stride[i]];
-        }
-        element
-    }
-
-    pub fn set(&self, index: usize, data: &mut [f64], result: CoordinateTuple) {
-        for i in 0..self.channels {
-            data[self.offset[i] + index*self.stride[i]] = result[i];
-        }
-    }
-}
-
-
-
+/// Koordinatprocessering
 fn main() {
-    let y = CoordinateTuple::new(1., 2., 3., 4.);
-    let x = CoordinateTuple::new(1., 2., 3., 4.);
-    assert_eq!(x[1], 2.);
-    assert_eq!(x, y);
+    let mut ctx = geodesy::Context::new();
 
-    // `FlatIndexer` for a slice of `CoordinateTuple`s
-    let f = FlatIndexer::new([0,1,2,3], [4,4,4,4], 4);
-    let z = CoordinateTuple::new(0.,0.,0.,0.);
-    let mut data = [z,z,z,z,z,z];
-    let n_data = data.len();
-    let flat = data.flat_mut();
-    println!("n_data: {}, n_flat: {}", n_data, flat.len());
+    // Some Nordic/Baltic capitals
+    let nuk = ctx.coordeg(-52., 64., 0., 0.); // Nuuk
+    let tor = ctx.coordeg(-7., 62., 0., 0.); // Tórshavn
+    let cph = ctx.coordeg(12., 55., 0., 0.); // Copenhagen
+    let osl = ctx.coordeg(10., 60., 0., 0.); // Oslo
+    let sth = ctx.coordeg(18., 59., 0., 0.); // Stockholm
+    let mar = ctx.coordeg(20., 60., 0., 0.); // Mariehamn
+    let hel = ctx.coordeg(25., 60., 0., 0.); // Helsinki
+    let tal = ctx.coordeg(25., 59., 0., 0.); // Tallinn
+    let rga = ctx.coordeg(24., 57., 0., 0.); // Riga
+    let vil = ctx.coordeg(25., 55., 0., 0.); // Vilnius
 
-    for i in 0..n_data {
-        let mut e = f.get(i, flat);
-        e[0] = i as f64;
-        forty_two(&mut e);
-        f.set(i, flat, e);
+    // Gothenburg is not a capital, but it is strategically placed
+    // approximately equidistant from OSL, CPH and STH, so it
+    // deserves special treatment by getting its coordinate
+    // from direct inline construction, which is perfectly
+    // possible: A coordinate is just an array of four double
+    // precision floats
+    let got = [12.0, 58., 0., 0.0];
+
+    let mut data_all = [nuk, tor, osl, cph, sth, mar, hel, tal, rga, vil];
+    let mut data_utm32 = [osl, cph, got];
+
+    // We loop over the full dataset, and add some arbitrary time information
+    for (i, dimser) in data_all.iter_mut().enumerate() {
+        dimser[3] = i as f64;
     }
 
-    for i in 0..data.len() {
-        println!("woohoo: {:?}", data[i]);
+    let utm32 = match ctx.operator("utm: {zone: 32}") {
+        Err(e) => return println!("Awful error: {}", e),
+        Ok(op) => op,
+    };
+
+    ctx.fwd(utm32, &mut data_utm32);
+    println!("utm32:");
+    for coord in data_utm32 {
+        println!("    {:?}", coord);
+    }
+
+    let pipeline = "ed50_etrs89: {
+        steps: [
+            cart: {ellps: intl},
+            helmert: {dx: -87, dy: -96, dz: -120},
+            cart: {inv: true, ellps: GRS80}
+        ]
+    }";
+
+    let ed50_etrs89 = match ctx.operator(pipeline) {
+        Err(e) => return println!("Awful error: {}", e),
+        Ok(op) => op,
+    };
+
+    ctx.fwd(ed50_etrs89, &mut data_all);
+    ctx.to_degrees(&mut data_all);
+    println!("etrs89:");
+    for coord in data_all {
+        println!("    {:?}", coord);
     }
 }
+
+/*
+ Documenting dirs v3.0.2
+ Documenting geodesy v0.1.0 (C:\Users\B004330\Documents\2021\Projects\geodesy)
+warning: unresolved link to `self::coordinates::CoordinateTuple::hypot2`
+   --> src\ellipsoids.rs:588:20
+    |
+588 |     /// [`hypot2`](crate::coordinates::CoordinateTuple::hypot2),
+    |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no item named `CoordinateTuple` in module `coordinates`
+    |
+    = note: `#[warn(rustdoc::broken_intra_doc_links)]` on by default
+
+warning: unresolved link to `self::coordinates::CoordinateTuple::hypot3`
+   --> src\ellipsoids.rs:589:20
+    |
+589 |     /// [`hypot3`](crate::coordinates::CoordinateTuple::hypot3)
+    |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no item named `CoordinateTuple` in module `coordinates`
+
+warning: unresolved link to `self::coordinates::CoordinateTuple::hypot3`
+  --> src\coordinates.rs:58:20
+   |
+58 |     /// [`hypot3`](crate::coordinates::CoordinateTuple::hypot3),
+   |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no item named `CoordinateTuple` in module `coordinates`
+
+warning: unresolved link to `self::coordinates::CoordinateTuple::hypot2`
+  --> src\coordinates.rs:87:20
+   |
+87 |     /// [`hypot2`](crate::coordinates::CoordinateTuple::hypot2),
+   |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no item named `CoordinateTuple` in module `coordinates`
+
+warning: 4 warnings emitted
+
+
+*/

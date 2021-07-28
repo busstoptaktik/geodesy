@@ -2,8 +2,7 @@
 use std::f64::consts::FRAC_PI_2;
 
 use crate::fwd;
-use crate::CoordinatePrimitives;
-use crate::CoordinateTuple;
+use crate::operand::*;
 
 /// Representation of a (potentially triaxial) ellipsoid.
 #[derive(Clone, Copy, Debug)]
@@ -189,6 +188,17 @@ impl Ellipsoid {
     }
 
     // ----- Eccentricities --------------------------------------------------------
+
+    /// The linear eccentricity *E* = sqrt(a² - b²). Negative if b > a.
+    #[must_use]
+    pub fn linear_eccentricity(&self) -> f64 {
+        let b = self.semiminor_axis();
+        let le = self.a * self.a - b * b;
+        if self.a > b {
+            return le.sqrt();
+        }
+        -(-le).sqrt()
+    }
 
     /// The squared eccentricity *e² = (a² - b²) / a²*.
     #[must_use]
@@ -594,8 +604,7 @@ impl Ellipsoid {
     /// ```rust
     /// // Compute the distance between Copenhagen and Paris
     /// use geodesy::Ellipsoid;
-    /// use geodesy::CoordinateTuple;
-    /// use geodesy::CoordinatePrimitives;
+    /// use geodesy::operand::*;
     /// let ellps = Ellipsoid::named("GRS80");
     /// let p0 = CoordinateTuple::deg(12., 55., 0., 0.);
     /// let p1 = CoordinateTuple::deg(2., 49., 0., 0.);
@@ -906,7 +915,7 @@ mod tests {
         assert!((d[2] - 956066.231959).abs() < 1e-5);
 
         // And the other way round...
-        let b = ellps.geodesic_fwd(&p1, d[0],d[2]);
+        let b = ellps.geodesic_fwd(&p1, d[0], d[2]);
         assert!((b[0].to_degrees() - 2.).abs() < 1e-9);
         assert!((b[1].to_degrees() - 49.).abs() < 1e-9);
 

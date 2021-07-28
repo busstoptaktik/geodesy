@@ -1,5 +1,4 @@
-use crate::CoordinatePrimitives;
-use crate::CoordinateTuple;
+use crate::operand::*;
 
 #[derive(Debug, Default)]
 pub struct Gas {
@@ -20,7 +19,8 @@ pub struct GasHeader {
 
 impl GasHeader {
     pub fn new() -> GasHeader {
-        let blank = CoordinateTuple::new(std::f64::NAN, std::f64::NAN, std::f64::NAN, std::f64::NAN);
+        let blank =
+            CoordinateTuple::new(std::f64::NAN, std::f64::NAN, std::f64::NAN, std::f64::NAN);
         GasHeader {
             bbox: [blank, blank],
             delta: blank,
@@ -304,9 +304,8 @@ impl Gas {
 
 #[cfg(test)]
 mod tests {
-    use crate::CoordinatePrimitives;
-    use crate::CoordinateTuple;
-        use crate::Gas;
+    use crate::operand::*;
+    use crate::Gas;
     #[test]
     fn interpolation() {
         use std::f64::NAN;

@@ -1,6 +1,7 @@
 use super::Context;
 use super::OperatorArgs;
 use super::OperatorCore;
+use crate::CoordinateTuple;
 
 pub struct Noop {
     args: OperatorArgs,
@@ -13,11 +14,11 @@ impl Noop {
 }
 
 impl OperatorCore for Noop {
-    fn fwd(&self, _ws: &mut Context) -> bool {
+    fn fwd(&self, _ctx: &mut Context, _operands: &mut [CoordinateTuple]) -> bool {
         true
     }
 
-    fn inv(&self, _ws: &mut Context) -> bool {
+    fn inv(&self, _ctx: &mut Context, _operands: &mut [CoordinateTuple]) -> bool {
         true
     }
 
@@ -38,19 +39,26 @@ impl OperatorCore for Noop {
 mod tests {
     #[test]
     fn noop() {
-        use crate::*;
+        use crate::operand::*;
+        use crate::operator::OperatorCore;
+        use crate::Context;
+        use crate::Operator;
         let mut o = Context::new();
         let c = Operator::new("noop: {}", &mut o).unwrap();
 
+        let mut operands = [CoordinateTuple::new(0., 0., 0., 0.)];
+
         // Make sure we do not do anything
-        c.fwd(&mut o);
-        assert_eq!(o.coord[0], 0.0);
-        assert_eq!(o.coord[1], 0.0);
-        assert_eq!(o.coord[2], 0.0);
-        c.inv(&mut o);
-        assert_eq!(o.coord[0], 0.0);
-        assert_eq!(o.coord[1], 0.0);
-        assert_eq!(o.coord[2], 0.0);
+        c.fwd(&mut o, operands.as_mut());
+        assert_eq!(operands[0][0], 0.0);
+        assert_eq!(operands[0][1], 0.0);
+        assert_eq!(operands[0][2], 0.0);
+        assert_eq!(operands[0][3], 0.0);
+        c.inv(&mut o, operands.as_mut());
+        assert_eq!(operands[0][0], 0.0);
+        assert_eq!(operands[0][1], 0.0);
+        assert_eq!(operands[0][2], 0.0);
+        assert_eq!(operands[0][3], 0.0);
 
         // Make sure we say what we are
         assert!(c.name() == "noop");

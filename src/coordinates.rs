@@ -1,5 +1,4 @@
-use crate::CoordinateTuple;
-use crate::CoordinatePrimitives;
+use crate::operand::*;
 
 impl CoordinatePrimitives for CoordinateTuple {
     fn new(x: f64, y: f64, z: f64, t: f64) -> CoordinateTuple {
@@ -12,7 +11,7 @@ impl CoordinatePrimitives for CoordinateTuple {
 
     #[must_use]
     fn deg(x: f64, y: f64, z: f64, t: f64) -> CoordinateTuple {
-        CoordinateTuple::new(x.to_radians(),  y.to_radians(), z, t)
+        CoordinateTuple::new(x.to_radians(), y.to_radians(), z, t)
     }
 
     #[must_use]
@@ -62,8 +61,7 @@ impl CoordinatePrimitives for CoordinateTuple {
     /// # Examples
     ///
     /// ```rust
-    /// use geodesy::CoordinateTuple;
-    /// use geodesy::CoordinatePrimitives;
+    /// use geodesy::operand::*;
     /// let t = 1000.;
     /// let p0 = CoordinateTuple::new(0., 0., 0., 0.);
     /// let p1 = CoordinateTuple::new(t, t, 0., 0.);
@@ -92,8 +90,7 @@ impl CoordinatePrimitives for CoordinateTuple {
     /// # Examples
     ///
     /// ```rust
-    /// use geodesy::CoordinateTuple;
-    /// use geodesy::CoordinatePrimitives;
+    /// use geodesy::operand::*;
     /// let t = 1000.;
     /// let p0 = CoordinateTuple::new(0., 0., 0., 0.);
     /// let p1 = CoordinateTuple::new(t, t, t, 0.);
@@ -101,7 +98,9 @@ impl CoordinatePrimitives for CoordinateTuple {
     /// ```
     #[must_use]
     fn hypot3(&self, other: &CoordinateTuple) -> f64 {
-        (self[0] - other[0]).hypot(self[1] - other[1]).hypot(self[2] - other[2])
+        (self[0] - other[0])
+            .hypot(self[1] - other[1])
+            .hypot(self[2] - other[2])
     }
 }
 
