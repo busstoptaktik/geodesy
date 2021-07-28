@@ -26,30 +26,51 @@
 // "###]
 
 mod context;
-mod coordinates;
+pub mod coordinates;
 mod ellipsoids;
 mod gas;
 mod operator;
 mod operatorargs;
 
-pub type CoordinateTuple = [f64; 4];
-pub trait CoordinatePrimitives {
-    fn new(x: f64, y: f64, z: f64, t: f64) -> CoordinateTuple;
-    fn nan() -> CoordinateTuple;
-    fn deg(x: f64, y: f64, z: f64, t: f64) -> CoordinateTuple;
-    fn to_degrees(self) -> CoordinateTuple;
-    fn to_radians(self) -> CoordinateTuple;
-    fn first(&self) -> f64;
-    fn second(&self) -> f64;
-    fn third(&self) -> f64;
-    fn fourth(&self) -> f64;
-    fn hypot2(&self, other: &CoordinateTuple) -> f64;
-    fn hypot3(&self, other: &CoordinateTuple) -> f64;
+/*
+mod preamble {
+    pub use crate::coordinates;
+    pub type CoordinateTuple = [f64; 4];
+    pub trait CoordinatePrimitives {
+        fn new(x: f64, y: f64, z: f64, t: f64) -> CoordinateTuple;
+        fn nan() -> CoordinateTuple;
+        fn deg(x: f64, y: f64, z: f64, t: f64) -> CoordinateTuple;
+        fn to_degrees(self) -> CoordinateTuple;
+        fn to_radians(self) -> CoordinateTuple;
+        fn first(&self) -> f64;
+        fn second(&self) -> f64;
+        fn third(&self) -> f64;
+        fn fourth(&self) -> f64;
+        fn hypot2(&self, other: &CoordinateTuple) -> f64;
+        fn hypot3(&self, other: &CoordinateTuple) -> f64;
+    }
+
 }
-// #[allow(non_snake_case)]
-// pub fn CoordinateTuple(x: f64, y: f64, z: f64, t: f64) -> CoordinateTuple {
-//     [x, y, z, t]
-// }
+*/
+
+pub type CoordinateTuple = [f64; 4];
+
+pub mod operand {
+    pub type CoordinateTuple = [f64; 4];
+    pub trait CoordinatePrimitives {
+        fn new(x: f64, y: f64, z: f64, t: f64) -> Self;
+        fn nan() -> CoordinateTuple;
+        fn deg(x: f64, y: f64, z: f64, t: f64) -> Self;
+        fn to_degrees(self) -> Self;
+        fn to_radians(self) -> Self;
+        fn first(&self) -> f64;
+        fn second(&self) -> f64;
+        fn third(&self) -> f64;
+        fn fourth(&self) -> f64;
+        fn hypot2(&self, other: &Self) -> f64;
+        fn hypot3(&self, other: &Self) -> f64;
+    }
+}
 
 pub use coordinates::DMS;
 pub use ellipsoids::Ellipsoid;

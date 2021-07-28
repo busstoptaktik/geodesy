@@ -3,6 +3,7 @@
 use super::Context;
 use super::OperatorArgs;
 use super::OperatorCore;
+use crate::CoordinateTuple;
 use crate::Operator;
 
 pub struct Helmert {
@@ -36,17 +37,21 @@ impl Helmert {
 }
 
 impl OperatorCore for Helmert {
-    fn fwd(&self, ws: &mut Context) -> bool {
-        ws.coord[0] += self.dx;
-        ws.coord[1] += self.dy;
-        ws.coord[2] += self.dz;
+    fn fwd(&self, _ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
+        for coord in operands {
+            coord[0] += self.dx;
+            coord[1] += self.dy;
+            coord[2] += self.dz;
+        }
         true
     }
 
-    fn inv(&self, ws: &mut Context) -> bool {
-        ws.coord[0] -= self.dx;
-        ws.coord[1] -= self.dy;
-        ws.coord[2] -= self.dz;
+    fn inv(&self, _ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
+        for coord in operands {
+            coord[0] -= self.dx;
+            coord[1] -= self.dy;
+            coord[2] -= self.dz;
+        }
         true
     }
 
@@ -65,13 +70,13 @@ impl OperatorCore for Helmert {
 
 #[cfg(test)]
 mod tests {
+    use crate::operand::*;
     use crate::operator::operator_factory;
-    use crate::CoordinatePrimitives;
 
     #[test]
     fn helmert() {
         use super::*;
-        let mut o = Context::new();
+        let mut ctx = Context::new();
         let mut args = OperatorArgs::new();
 
         // Check that non-numeric value, for key expecting numeric, errs properly.
@@ -80,7 +85,7 @@ mod tests {
         args.insert("dy", "-96");
         args.insert("dz", "-120");
 
-        let h = operator_factory(&mut args, &mut o, 0);
+        let h = operator_factory(&mut args, &mut ctx, 0);
         assert!(h.is_err());
 
         // EPSG:1134 - 3 parameter, ED50/WGS84, s = sqrt(27) m
@@ -89,16 +94,17 @@ mod tests {
         assert_eq!(args.value("dy", ""), "-96");
         assert_eq!(args.value("dz", ""), "-120");
 
-        let h = operator_factory(&mut args, &mut o, 0).unwrap();
+        let h = operator_factory(&mut args, &mut ctx, 0).unwrap();
 
-        h.fwd(&mut o);
-        assert_eq!(o.coord.first(), -87.);
-        assert_eq!(o.coord.second(), -96.);
-        assert_eq!(o.coord.third(), -120.);
+        let mut operands = [CoordinateTuple::new(0., 0., 0., 0.)];
+        h.fwd(&mut ctx, operands.as_mut());
+        assert_eq!(operands[0].first(), -87.);
+        assert_eq!(operands[0].second(), -96.);
+        assert_eq!(operands[0].third(), -120.);
 
-        h.inv(&mut o);
-        assert_eq!(o.coord.first(), 0.);
-        assert_eq!(o.coord.second(), 0.);
-        assert_eq!(o.coord.third(), 0.);
+        h.inv(&mut ctx, operands.as_mut());
+        assert_eq!(operands[0].first(), 0.);
+        assert_eq!(operands[0].second(), 0.);
+        assert_eq!(operands[0].third(), 0.);
     }
 }

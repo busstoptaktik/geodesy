@@ -6,6 +6,7 @@
 use super::OperatorArgs;
 use super::OperatorCore;
 use crate::Context;
+use crate::CoordinateTuple;
 use crate::Ellipsoid;
 
 #[derive(Debug)]
@@ -74,62 +75,65 @@ impl Tmerc {
 #[allow(non_snake_case)]
 impl OperatorCore for Tmerc {
     // Forward transverse mercator, following Bowring
-    fn fwd(&self, ctx: &mut Context) -> bool {
-        let lat = ctx.coord[1];
-        let c = lat.cos();
-        let s = lat.sin();
-        let cc = c * c;
-        let ss = s * s;
+    fn fwd(&self, _ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
+        for coord in operands {
+            let lat = coord[1];
+            let c = lat.cos();
+            let s = lat.sin();
+            let cc = c * c;
+            let ss = s * s;
 
-        let dlon = ctx.coord[0] - self.lon_0;
-        let oo = dlon * dlon;
+            let dlon = coord[0] - self.lon_0;
+            let oo = dlon * dlon;
 
-        let N = self.ellps.prime_vertical_radius_of_curvature(lat);
-        let z = self.eps * dlon.powi(3) * c.powi(5) / 6.;
-        let sd2 = (dlon / 2.).sin();
+            let N = self.ellps.prime_vertical_radius_of_curvature(lat);
+            let z = self.eps * dlon.powi(3) * c.powi(5) / 6.;
+            let sd2 = (dlon / 2.).sin();
 
-        let theta_2 = (2. * s * c * sd2 * sd2).atan2(ss + cc * dlon.cos());
+            let theta_2 = (2. * s * c * sd2 * sd2).atan2(ss + cc * dlon.cos());
 
-        // Easting
-        let sd = dlon.sin();
-        ctx.coord[0] =
-            self.x_0 + self.k_0 * N * ((c * sd).atanh() + z * (1. + oo * (36. * cc - 29.) / 10.));
+            // Easting
+            let sd = dlon.sin();
+            coord[0] = self.x_0
+                + self.k_0 * N * ((c * sd).atanh() + z * (1. + oo * (36. * cc - 29.) / 10.));
 
-        // Northing
-        let m = self.ellps.meridional_distance(lat, true);
-        let znos4 = z * N * dlon * s / 4.;
-        let ecc = 4. * self.eps * cc;
-        ctx.coord[1] =
-            self.y_0 + self.k_0 * (m + N * theta_2 + znos4 * (9. + ecc + oo * (20. * cc - 11.)));
-
+            // Northing
+            let m = self.ellps.meridional_distance(lat, true);
+            let znos4 = z * N * dlon * s / 4.;
+            let ecc = 4. * self.eps * cc;
+            coord[1] = self.y_0
+                + self.k_0 * (m + N * theta_2 + znos4 * (9. + ecc + oo * (20. * cc - 11.)));
+        }
         true
     }
 
     // Forward transverse mercator, following Bowring (1989)
-    fn inv(&self, ctx: &mut Context) -> bool {
+    fn inv(&self, _ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
         // Footpoint latitude, i.e. the latitude of a point on the central meridian
         // having the same northing as the point of interest
-        let lat = self
-            .ellps
-            .meridional_distance((ctx.coord[1] - self.y_0) / self.k_0, false);
-        let t = lat.tan();
-        let c = lat.cos();
-        let cc = c * c;
-        let N = self.ellps.prime_vertical_radius_of_curvature(lat);
-        let x = (ctx.coord[0] - self.x_0) / (self.k_0 * N);
-        let xx = x * x;
-        let theta_4 = x.sinh().atan2(c);
-        let theta_5 = (t * theta_4.cos()).atan();
+        for coord in operands {
+            let lat = self
+                .ellps
+                .meridional_distance((coord[1] - self.y_0) / self.k_0, false);
+            let t = lat.tan();
+            let c = lat.cos();
+            let cc = c * c;
+            let N = self.ellps.prime_vertical_radius_of_curvature(lat);
+            let x = (coord[0] - self.x_0) / (self.k_0 * N);
+            let xx = x * x;
+            let theta_4 = x.sinh().atan2(c);
+            let theta_5 = (t * theta_4.cos()).atan();
 
-        // Latitude
-        let xet = xx * xx * self.eps * t / 24.;
-        ctx.coord[1] = self.lat_0 + (1. + cc * self.eps) * (theta_5 - xet * (9. - 10. * cc))
-            - self.eps * cc * lat;
+            // Latitude
+            let xet = xx * xx * self.eps * t / 24.;
+            coord[1] = self.lat_0 + (1. + cc * self.eps) * (theta_5 - xet * (9. - 10. * cc))
+                - self.eps * cc * lat;
 
-        // Longitude
-        let approx = self.lon_0 + theta_4;
-        let coef = self.eps / 60. * xx * x * c;
-        ctx.coord[0] = approx - coef * (10. - 4. * xx / cc + xx * cc);
+            // Longitude
+            let approx = self.lon_0 + theta_4;
+            let coef = self.eps / 60. * xx * x * c;
+            coord[0] = approx - coef * (10. - 4. * xx / cc + xx * cc);
+        }
         true
     }
 
@@ -148,7 +152,7 @@ impl OperatorCore for Tmerc {
 
 #[cfg(test)]
 mod tests {
-    use crate::CoordinatePrimitives;
+    use crate::operand::*;
 
     #[test]
     fn utm() {
@@ -160,39 +164,39 @@ mod tests {
         let op = Operator::new("utm: {zone: 32}", &mut ctx).unwrap();
 
         let geo = CoordinateTuple::deg(12., 55., 100., 0.);
-        ctx.coord = geo;
+        let mut operands = [geo];
 
         // Validation value from PROJ:
         // echo 12 55 0 0 | cct -d18 +proj=utm +zone=32
         let utm_proj = CoordinateTuple::new(691_875.632_139_661, 6_098_907.825_005_012, 100., 0.);
-        assert!(op.fwd(&mut ctx));
-        assert!(ctx.coord.hypot2(&utm_proj) < 1e-5);
+        assert!(op.fwd(&mut ctx, operands.as_mut()));
+        assert!(operands[0].hypot2(&utm_proj) < 1e-5);
 
         // Roundtrip...
-        assert!(op.inv(&mut ctx));
+        assert!(op.inv(&mut ctx, operands.as_mut()));
 
         // The latitude roundtrips beautifully, at better than 0.1 mm
-        assert!((ctx.coord[1].to_degrees() - 55.0).abs() * 111_000_000. < 0.05);
+        assert!((operands[0][1].to_degrees() - 55.0).abs() * 111_000_000. < 0.05);
         // And the longitude even trumps that by a factor of 10.
-        assert!((ctx.coord[0].to_degrees() - 12.0).abs() * 56_000_000. < 0.005);
+        assert!((operands[0][0].to_degrees() - 12.0).abs() * 56_000_000. < 0.005);
 
         // So also the geodesic distance is smaller than 0.1 mm
         let ellps = Ellipsoid::default();
-        assert!(ellps.distance(&ctx.coord, &geo) < 1e-4);
+        assert!(ellps.distance(&operands[0], &geo) < 1e-4);
 
         // Test a Greenland extreme value (a zone 19 point projected in zone 24)
         let op = Operator::new("utm: {zone: 24}", &mut ctx).unwrap();
         let geo = CoordinateTuple::deg(-72., 80., 100., 0.);
-        ctx.coord = geo;
-        // Roundtrip...
-        op.fwd(&mut ctx);
-        op.inv(&mut ctx);
-        assert!(ellps.distance(&ctx.coord, &geo) < 1.05);
+        let mut operands = [geo];
 
-        ctx.coord[1] = ctx.coord[1].to_degrees();
-        ctx.coord[0] = ctx.coord[0].to_degrees();
-        assert!((ctx.coord[1] - 80.0).abs() * 111_000. < 1.02);
-        assert!((ctx.coord[0] + 72.0).abs() * 20_000. < 0.04);
+        // Roundtrip...
+        op.fwd(&mut ctx, operands.as_mut());
+        op.inv(&mut ctx, operands.as_mut());
+        assert!(ellps.distance(&operands[0], &geo) < 1.05);
+
+        let result = operands[0].to_degrees();
+        assert!((result[1] - 80.0).abs() * 111_000. < 1.02);
+        assert!((result[0] + 72.0).abs() * 20_000. < 0.04);
 
         // i.e. Bowring's verion is much better than Snyder's:
         // echo -72 80 0 0 | cct +proj=utm +approx +zone=24 +ellps=GRS80 | cct -I +proj=utm +approx +zone=24 +ellps=GRS80
@@ -211,12 +215,12 @@ mod tests {
         // Test the plain tmerc, by reimplementing the UTM above manually
         let op = Operator::new("tmerc: {k_0: 0.9996, lon_0: 9, x_0: 500000}", &mut ctx).unwrap();
 
-        ctx.coord = crate::CoordinateTuple::deg(12., 55., 100., 0.);
-        assert!(op.fwd(&mut ctx));
+        let mut operands = [CoordinateTuple::deg(12., 55., 100., 0.)];
+        assert!(op.fwd(&mut ctx, operands.as_mut()));
 
         // Validation value from PROJ:
         // echo 12 55 0 0 | cct -d18 +proj=utm +zone=32
         let utm_proj = CoordinateTuple::new(691_875.632_139_661, 6_098_907.825_005_012, 100., 0.);
-        assert!(ctx.coord.hypot2(&utm_proj) < 1e-5);
+        assert!(operands[0].hypot2(&utm_proj) < 1e-5);
     }
 }
