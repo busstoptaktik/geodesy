@@ -5,13 +5,14 @@ authors = ["Thomas Knudsen <knudsen.thomas@gmail.com>"]
 edition = "2018"
 default-run = "kp"
 readme = "README.md"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/busstoptaktik/geodesy/"
+keywords = ["geodesy", "cartography", "transformations", "geography"]
+categories = ["science"]
+description = "A platform for experiments with geodetic transformations and data flow"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 dirs = "3.0"
-log = "0.4"
 yaml-rust = "0.4"
-
-[dev-dependencies]
-env_logger = "0.5"
