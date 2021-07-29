@@ -1,10 +1,10 @@
 use crate::Context;
 use crate::CoordinateTuple;
-use crate::OperatorArgs;
+use crate::operator_construction::OperatorArgs;
 
-// Operator used to be a `pub type Operator = Box<dyn OperatorCore>`, but now it's
-// a newtype around a Boxed OperatorCore, in order to be able to define methods on
-// it. There's a good description of the crux here:
+// Operator is a newtype around a Boxed OperatorCore,
+// in order to be able to define methods on it.
+// There's a good description of the crux here:
 // https://stackoverflow.com/questions/35568871/is-it-possible-to-implement-methods-on-type-aliases
 pub struct Operator(pub Box<dyn OperatorCore>);
 impl Operator {
@@ -220,7 +220,8 @@ mod tests {
 
     #[test]
     fn operator() {
-        use crate::{fwd, inv, Context, Operator, OperatorCore};
+        use crate::{fwd, inv, Context};
+        use crate::operator_construction::*;
         let mut o = Context::new();
 
         // A non-existing operator

@@ -7,8 +7,11 @@
 // In this example we implement a user defined operator. To that end
 // we need to access some of the lower level features of the Rust
 // Geodesy library: The Operator type, its definition argument type,
-// OperatorArgs, and its core trait, OperatorCore.
-use geodesy::{Context, CoordinateTuple, Operator, OperatorArgs, OperatorCore};
+// OperatorArgs, and its core trait, OperatorCore. Since they are
+// mostly for library-internal use, they are wrapped up in the dedicated
+// module `operator_construction`.
+use geodesy::operator_construction::*;
+use geodesy::{Context, CoordinateTuple};
 
 // The functionality of the operator is straightforward: It simply
 // adds 42 to the first element of any coordinate tuple thrown at it.

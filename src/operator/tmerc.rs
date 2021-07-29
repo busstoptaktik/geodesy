@@ -154,7 +154,8 @@ impl OperatorCore for Tmerc {
 mod tests {
     #[test]
     fn utm() {
-        use crate::{Context, CoordinateTuple, Ellipsoid, Operator, OperatorCore};
+        use crate::{Context, CoordinateTuple, Ellipsoid};
+        use crate::operator_construction::*;
 
         let mut ctx = Context::new();
 
@@ -208,6 +209,7 @@ mod tests {
     #[test]
     fn tmerc() {
         use crate::*;
+        use crate::operator_construction::*;
         let mut ctx = Context::new();
 
         // Test the plain tmerc, by reimplementing the UTM above manually

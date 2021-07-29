@@ -39,10 +39,9 @@ impl OperatorCore for Noop {
 mod tests {
     #[test]
     fn noop() {
-        use crate::operator::OperatorCore;
         use crate::Context;
         use crate::CoordinateTuple;
-        use crate::Operator;
+        use crate::operator_construction::*;
         let mut o = Context::new();
         let c = Operator::new("noop: {}", &mut o).unwrap();
 
