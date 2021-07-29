@@ -1,4 +1,3 @@
-
 /// Some literature, that has been useful in designing and implementing this library.
 pub enum Bibliography {
     /// B.R. Bowring (1976): *Transformation from spatial to geographical coordinates*.

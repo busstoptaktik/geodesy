@@ -1,7 +1,7 @@
 //! For now, Helmert only supports the basic 3-parameter version
+use crate::operator_construction::*;
 use crate::Context;
 use crate::CoordinateTuple;
-use crate::operator_construction::*;
 
 pub struct Helmert {
     dx: f64,
