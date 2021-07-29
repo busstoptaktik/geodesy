@@ -1,6 +1,6 @@
+use crate::operator_construction::OperatorArgs;
 use crate::Context;
 use crate::CoordinateTuple;
-use crate::operator_construction::OperatorArgs;
 
 // Operator is a newtype around a Boxed OperatorCore,
 // in order to be able to define methods on it.
@@ -220,8 +220,8 @@ mod tests {
 
     #[test]
     fn operator() {
-        use crate::{fwd, inv, Context};
         use crate::operator_construction::*;
+        use crate::{fwd, inv, Context};
         let mut o = Context::new();
 
         // A non-existing operator
