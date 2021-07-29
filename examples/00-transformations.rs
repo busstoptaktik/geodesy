@@ -1,4 +1,4 @@
-use geodesy::CoordinateTuple;
+use geodesy::CoordinateTuple as C;
 
 // examples/00-transformations.rs
 
@@ -16,20 +16,21 @@ fn main() {
     // most transformation functionality is implemented directly as
     // methods of the context data structure.
 
-    // We need some coordinates to test the code. The convenience method
-    // `coordeg` produces a 4D coordinate tuple and automatically handles
-    // conversion of the angular parts to radians.
-    let cph = ctx.coordeg(12., 55., 0., 0.); // Copenhagen
-    let osl = ctx.coordeg(10., 60., 0., 0.); // Oslo
-    let sth = ctx.coordeg(18., 59., 0., 0.); // Stockholm
-    let hel = ctx.coordeg(25., 60., 0., 0.); // Helsinki
+    // We need some coordinates to test the code. The convenience methods
+    // `gis` an `geo` produces a 4D coordinate tuple and automatically handles
+    // conversion of the angular parts to radians, and geographical coordinates
+    // in latitude/longitude order, to the GIS convention of longitude/latitude.
+    let cph = C::gis(12., 55., 0., 0.); // Copenhagen
+    let osl = C::gis(10., 60., 0., 0.); // Oslo
+    let sth = C::geo(59., 18., 0., 0.); // Stockholm
+    let hel = C::geo(60., 25., 0., 0.); // Helsinki
 
-    // `coordeg()` has a sibling `coord()` which generates coordinate tuples
+    // `gis` and `geo` has a sibling `raw` which generates coordinate tuples
     // from raw numbers, in case your point coordinates are already given in
     // radians. But since a coordinate tuple is really just an array of 4
     // double precision numbers, you can also generate it directly using plain
     // Rust syntax:
-    let cph_raw = CoordinateTuple([12_f64.to_radians(), 55_f64.to_radians(), 0., 0.0]);
+    let cph_raw = C([12_f64.to_radians(), 55_f64.to_radians(), 0., 0.0]);
 
     // The two versions of Copenhagen coordinates should be identical.
     assert_eq!(cph, cph_raw);
@@ -68,7 +69,7 @@ fn main() {
     ctx.inv(utm32, &mut data);
 
     // The output is in radians, so we use this convenience method:
-    ctx.to_degrees(&mut data);
+    C::degrees_all(&mut data);
 
     println!("Roundtrip to geo:");
     for coord in data {
@@ -103,7 +104,7 @@ fn main() {
     // Since the forward transformation goes *from* ed50 to wgs84, we use
     // the inverse method to take us the other way, back in time to ED50
     ctx.inv(ed50_wgs84, &mut data);
-    ctx.to_degrees(&mut data);
+    C::degrees_all(&mut data);
     println!("ed50:");
     for coord in data {
         println!("    {:?}", coord);

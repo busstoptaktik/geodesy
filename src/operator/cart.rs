@@ -1,7 +1,7 @@
 use super::OperatorArgs;
 use super::OperatorCore;
-use crate::CoordinateTuple;
 use crate::Context;
+use crate::CoordinateTuple;
 use crate::Ellipsoid;
 
 pub struct Cart {
@@ -138,9 +138,9 @@ impl OperatorCore for Cart {
 mod tests {
     #[test]
     fn cart() {
-        use crate::CoordinateTuple;
         use crate::operator::OperatorCore;
         use crate::Context;
+        use crate::CoordinateTuple;
         use crate::Ellipsoid;
         use crate::Operator;
         let mut o = Context::new();

@@ -3,25 +3,25 @@ fn main() {
     use geodesy::CoordinateTuple as C;
     let mut ctx = geodesy::Context::new();
 
-    let coo = C([1.,2.,3.,4.]);
+    let coo = C([1., 2., 3., 4.]);
     println!("coo: {:?}", coo);
 
-    let geo = C::geo(55., 12.,0.,0.);
-    let gis = C::gis(12., 55.,0.,0.);
+    let geo = C::geo(55., 12., 0., 0.);
+    let gis = C::gis(12., 55., 0., 0.);
     assert_eq!(geo, gis);
     println!("geo: {:?}", geo.to_geo());
 
     // Some Nordic/Baltic capitals
-    let nuk = ctx.coordeg(-52., 64., 0., 0.); // Nuuk
-    let tor = ctx.coordeg(-7., 62., 0., 0.); // Tórshavn
-    let cph = ctx.coordeg(12., 55., 0., 0.); // Copenhagen
-    let osl = ctx.coordeg(10., 60., 0., 0.); // Oslo
-    let sth = ctx.coordeg(18., 59., 0., 0.); // Stockholm
-    let mar = ctx.coordeg(20., 60., 0., 0.); // Mariehamn
-    let hel = ctx.coordeg(25., 60., 0., 0.); // Helsinki
-    let tal = ctx.coordeg(25., 59., 0., 0.); // Tallinn
-    let rga = ctx.coordeg(24., 57., 0., 0.); // Riga
-    let vil = ctx.coordeg(25., 55., 0., 0.); // Vilnius
+    let nuk = C::gis(-52., 64., 0., 0.); // Nuuk
+    let tor = C::gis(-7., 62., 0., 0.); // Tórshavn
+    let cph = C::gis(12., 55., 0., 0.); // Copenhagen
+    let osl = C::gis(10., 60., 0., 0.); // Oslo
+    let sth = C::gis(18., 59., 0., 0.); // Stockholm
+    let mar = C::gis(20., 60., 0., 0.); // Mariehamn
+    let hel = C::gis(25., 60., 0., 0.); // Helsinki
+    let tal = C::gis(25., 59., 0., 0.); // Tallinn
+    let rga = C::gis(24., 57., 0., 0.); // Riga
+    let vil = C::gis(25., 55., 0., 0.); // Vilnius
 
     // Gothenburg is not a capital, but it is strategically placed
     // approximately equidistant from OSL, CPH and STH, so it
@@ -64,7 +64,7 @@ fn main() {
     };
 
     ctx.fwd(ed50_etrs89, &mut data_all);
-    ctx.to_degrees(&mut data_all);
+    C::degrees_all(&mut data_all);
     println!("etrs89:");
     for coord in data_all {
         println!("    {:?}", coord);

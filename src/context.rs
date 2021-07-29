@@ -124,26 +124,6 @@ impl Context {
         self.operators.push(op);
         Ok(index)
     }
-
-    pub fn coordeg(&self, x: f64, y: f64, z: f64, t: f64) -> CoordinateTuple {
-        CoordinateTuple::gis(x, y, z, t)
-    }
-
-    pub fn coord(&self, x: f64, y: f64, z: f64, t: f64) -> CoordinateTuple {
-        CoordinateTuple::raw(x, y, z, t)
-    }
-
-    pub fn to_degrees(&self, operands: &mut [CoordinateTuple]) {
-        for coord in operands {
-            *coord = coord.to_degrees();
-        }
-    }
-
-    pub fn to_radians(&self, operands: &mut [CoordinateTuple]) {
-        for coord in operands {
-            *coord = coord.to_radians();
-        }
-    }
 }
 
 //----------------------------------------------------------------------------------

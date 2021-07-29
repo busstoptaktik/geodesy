@@ -35,18 +35,36 @@ impl CoordinateTuple {
     }
 
     #[must_use]
-    pub fn to_radians(&self) -> CoordinateTuple {
+    pub fn to_radians(self) -> CoordinateTuple {
         CoordinateTuple([self[0].to_radians(), self[1].to_radians(), self[2], self[3]])
     }
 
     #[must_use]
-    pub fn to_degrees(&self) -> CoordinateTuple {
+    pub fn to_degrees(self) -> CoordinateTuple {
         CoordinateTuple([self[0].to_degrees(), self[1].to_degrees(), self[2], self[3]])
     }
 
     #[must_use]
-    pub fn to_geo(&self) -> CoordinateTuple {
+    pub fn to_geo(self) -> CoordinateTuple {
         CoordinateTuple([self[1].to_degrees(), self[0].to_degrees(), self[2], self[3]])
+    }
+
+    pub fn geo_all(operands: &mut [CoordinateTuple]) {
+        for coord in operands {
+            *coord = coord.to_geo();
+        }
+    }
+
+    pub fn degrees_all(operands: &mut [CoordinateTuple]) {
+        for coord in operands {
+            *coord = coord.to_degrees();
+        }
+    }
+
+    pub fn radians_all(operands: &mut [CoordinateTuple]) {
+        for coord in operands {
+            *coord = coord.to_radians();
+        }
     }
 
     #[must_use]
@@ -141,7 +159,6 @@ impl IndexMut<usize> for CoordinateTuple {
         &mut self.0[i]
     }
 }
-
 
 /*
 #[derive(Clone, Copy, Debug)]

@@ -19,8 +19,7 @@ pub struct GasHeader {
 
 impl GasHeader {
     pub fn new() -> GasHeader {
-        let blank =
-            CoordinateTuple::nan();
+        let blank = CoordinateTuple::nan();
         GasHeader {
             bbox: [blank, blank],
             delta: blank,

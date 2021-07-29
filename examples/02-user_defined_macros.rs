@@ -5,13 +5,14 @@
 // cargo run --example 02-user_defined_macros
 
 fn main() {
+    use geodesy::CoordinateTuple as C;
     let mut ctx = geodesy::Context::new();
 
     // Same test coordinates as in example 00.
-    let cph = ctx.coordeg(12., 55., 0., 0.); // Copenhagen
-    let osl = ctx.coordeg(10., 60., 0., 0.); // Oslo
-    let sth = ctx.coordeg(18., 59., 0., 0.); // Stockholm
-    let hel = ctx.coordeg(25., 60., 0., 0.); // Helsinki
+    let cph = C::gis(12., 55., 0., 0.); // Copenhagen
+    let osl = C::gis(10., 60., 0., 0.); // Oslo
+    let sth = C::geo(59., 18., 0., 0.); // Stockholm
+    let hel = C::geo(60., 25., 0., 0.); // Helsinki
 
     let mut data = [osl, cph, sth, hel];
 
@@ -50,7 +51,7 @@ fn main() {
 
     // Now do the same transformation as in example 00
     ctx.inv(ed50_wgs84, &mut data);
-    ctx.to_degrees(&mut data);
+    C::geo_all(&mut data);
     println!("ed50:");
     for coord in data {
         println!("    {:?}", coord);

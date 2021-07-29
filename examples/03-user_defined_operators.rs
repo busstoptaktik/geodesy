@@ -8,7 +8,7 @@
 // we need to access some of the lower level features of the Rust
 // Geodesy library: The Operator type, its definition argument type,
 // OperatorArgs, and its core trait, OperatorCore.
-use geodesy::{CoordinateTuple, Context, Operator, OperatorArgs, OperatorCore};
+use geodesy::{Context, CoordinateTuple, Operator, OperatorArgs, OperatorCore};
 
 // The functionality of the operator is straightforward: It simply
 // adds 42 to the first element of any coordinate tuple thrown at it.
@@ -73,13 +73,17 @@ fn main() {
         Ok(op) => op,
     };
 
-    // Same test coordinates as in example 00, but not conversion to radians.
-    let cph = ctx.coord(12., 55., 0., 0.); // Copenhagen
-    let osl = ctx.coord(10., 60., 0., 0.); // Oslo
-    let sth = ctx.coord(18., 59., 0., 0.); // Stockholm
-    let hel = ctx.coord(25., 60., 0., 0.); // Helsinki
+    // Same test coordinates as in example 00, but no conversion to radians.
+    let cph = CoordinateTuple::raw(12., 55., 0., 0.); // Copenhagen
+    let osl = CoordinateTuple::raw(10., 60., 0., 0.); // Oslo
+    let sth = CoordinateTuple::raw(59., 18., 0., 0.); // Stockholm
+    let hel = CoordinateTuple::raw(60., 25., 0., 0.); // Helsinki
 
     let mut data = [osl, cph, sth, hel];
+
+    for coord in data {
+        println!("    {:?}", coord);
+    }
 
     // Now do the transformation
     ctx.fwd(add42, &mut data);

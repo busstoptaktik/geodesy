@@ -18,15 +18,15 @@
 //!
 
 mod context;
+mod coordinates;
 mod ellipsoids;
 mod gas;
 mod operator;
 mod operatorargs;
-mod coordinates;
 
-pub use ellipsoids::Ellipsoid;
-pub use coordinates::CoordinateTuple;
 pub use context::Context;
+pub use coordinates::CoordinateTuple;
+pub use ellipsoids::Ellipsoid;
 pub use gas::Gas;
 pub use operator::Operator;
 pub use operator::OperatorCore;
@@ -38,7 +38,6 @@ pub type OperatorConstructor =
 pub const fwd: bool = true;
 #[allow(non_upper_case_globals)]
 pub const inv: bool = false;
-
 
 /// Literature, that has been useful in designing and implementing this library.
 pub enum Bibliography {
