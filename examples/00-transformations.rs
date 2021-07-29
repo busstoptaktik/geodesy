@@ -1,3 +1,5 @@
+use geodesy::CoordinateTuple;
+
 // examples/00-transformations.rs
 
 // Using Rust Geodesy to transform geodata.
@@ -27,7 +29,7 @@ fn main() {
     // radians. But since a coordinate tuple is really just an array of 4
     // double precision numbers, you can also generate it directly using plain
     // Rust syntax:
-    let cph_raw = [12_f64.to_radians(), 55_f64.to_radians(), 0., 0.0];
+    let cph_raw = CoordinateTuple([12_f64.to_radians(), 55_f64.to_radians(), 0., 0.0]);
 
     // The two versions of Copenhagen coordinates should be identical.
     assert_eq!(cph, cph_raw);

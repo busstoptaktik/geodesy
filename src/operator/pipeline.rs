@@ -84,7 +84,6 @@ mod tests {
     #[test]
     fn pipeline() {
         use super::*;
-        use crate::operand::*;
 
         // Setup a 3 step pipeline
         let pipeline = "ed50_etrs89: {
@@ -132,7 +131,7 @@ mod tests {
         // -------------------------------------------------------------------------
         // This is the first example of a running pipeline in Rust Geodesy. Awesome!
         // -------------------------------------------------------------------------
-        let mut operands = [crate::CoordinateTuple::deg(12., 55., 100., 0.)];
+        let mut operands = [crate::CoordinateTuple::gis(12., 55., 100., 0.)];
 
         /* DRUM ROLL... */
         op.operate(&mut ctx, operands.as_mut(), fwd); // TA-DAA!

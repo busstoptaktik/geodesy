@@ -14,12 +14,11 @@ impl Operator {
     /// Example:
     /// ```rust
     /// // EPSG:1134 - 3 parameter Helmert, ED50/WGS84
-    /// use geodesy::operand::*;
     /// let mut ctx = geodesy::Context::new();
     /// let op = ctx.operator("helmert: {dx: -87, dy: -96, dz: -120}");
     /// assert!(op.is_ok());
     /// let op = op.unwrap();
-    /// let mut operands = [geodesy::CoordinateTuple::deg(12.,55.,0.,0.)];
+    /// let mut operands = [geodesy::CoordinateTuple::geo(55., 12.,0.,0.)];
     /// ctx.fwd(op, &mut operands);
     /// ctx.inv(op, &mut operands);
     /// assert!((operands[0][0].to_degrees() - 12.).abs() < 1.0e-10);
@@ -217,7 +216,7 @@ pub(crate) fn operator_factory(
 
 #[cfg(test)]
 mod tests {
-    use crate::operand::*;
+    use crate::CoordinateTuple;
 
     #[test]
     fn operator() {
@@ -257,7 +256,7 @@ mod tests {
         assert_eq!(hh.args(0).name, h.args(0).name);
         assert_eq!(hh.args(0).used, h.args(0).used);
 
-        let mut operands = [CoordinateTuple::new(0., 0., 0., 0.)];
+        let mut operands = [CoordinateTuple::raw(0., 0., 0., 0.)];
 
         h.operate(&mut o, operands.as_mut(), fwd);
         assert_eq!(operands[0].first(), -87.);
@@ -291,10 +290,10 @@ mod tests {
         assert!(h.is_ok());
         let h = h.unwrap();
 
-        let mut operands = [CoordinateTuple::deg(12., 55., 100., 0.)];
+        let mut operands = [CoordinateTuple::gis(12., 55., 100., 0.)];
         h.forward(&mut o, operands.as_mut());
         let d = operands[0].to_degrees();
-        let r = CoordinateTuple::new(
+        let r = CoordinateTuple::raw(
             11.998815342385209,
             54.99938264895106,
             131.20240108577374,
@@ -332,7 +331,7 @@ mod tests {
         );
         assert!(ed50_etrs89.is_ok());
         let ed50_etrs89 = ed50_etrs89.unwrap();
-        let mut operands = [CoordinateTuple::deg(12., 55., 100., 0.)];
+        let mut operands = [CoordinateTuple::gis(12., 55., 100., 0.)];
 
         ed50_etrs89.forward(&mut o, operands.as_mut());
         let d = operands[0].to_degrees();
@@ -406,7 +405,7 @@ mod tests {
         ctx.register_operator("nnoopp", Nnoopp::operator);
 
         let op = ctx.operator("nnoopp: {}").unwrap();
-        let mut operands = [CoordinateTuple::new(12., 55., 100., 0.)];
+        let mut operands = [CoordinateTuple::raw(12., 55., 100., 0.)];
         let _aha = ctx.fwd(op, operands.as_mut());
         assert_eq!(operands[0][0], 42.);
     }

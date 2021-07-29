@@ -1,6 +1,15 @@
 /// Koordinatprocessering
 fn main() {
+    use geodesy::CoordinateTuple as C;
     let mut ctx = geodesy::Context::new();
+
+    let coo = C([1.,2.,3.,4.]);
+    println!("coo: {:?}", coo);
+
+    let geo = C::geo(55., 12.,0.,0.);
+    let gis = C::gis(12., 55.,0.,0.);
+    assert_eq!(geo, gis);
+    println!("geo: {:?}", geo.to_geo());
 
     // Some Nordic/Baltic capitals
     let nuk = ctx.coordeg(-52., 64., 0., 0.); // Nuuk
@@ -20,7 +29,7 @@ fn main() {
     // from direct inline construction, which is perfectly
     // possible: A coordinate is just an array of four double
     // precision floats
-    let got = [12.0, 58., 0., 0.0];
+    let got = C::geo(58., 12., 0., 0.0);
 
     let mut data_all = [nuk, tor, osl, cph, sth, mar, hel, tal, rga, vil];
     let mut data_utm32 = [osl, cph, got];

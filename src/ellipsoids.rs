@@ -2,7 +2,7 @@
 use std::f64::consts::FRAC_PI_2;
 
 use crate::fwd;
-use crate::operand::*;
+use crate::CoordinateTuple;
 
 /// Representation of a (potentially triaxial) ellipsoid.
 #[derive(Clone, Copy, Debug)]
@@ -504,7 +504,7 @@ impl Ellipsoid {
         // Return azimuth
         let aa2 = aasin.atan2(U1cos * sscos * azicos - U1sin * sssin);
 
-        CoordinateTuple::new(L2, B2, aa2, f64::from(i))
+        CoordinateTuple::raw(L2, B2, aa2, f64::from(i))
     }
 
     /// See [`geodesic_fwd`](crate::Ellipsoid::geodesic_fwd)
@@ -588,7 +588,7 @@ impl Ellipsoid {
         let s = self.semiminor_axis() * A * (ss - dss);
         let a1 = (U2cos * llsin).atan2(U1cos * U2sin - U1sin * U2cos * llcos);
         let a2 = (U1cos * llsin).atan2(-U1sin * U2cos + U1cos * U2sin * llcos);
-        CoordinateTuple::new(a1, a2, s, f64::from(i))
+        CoordinateTuple::raw(a1, a2, s, f64::from(i))
     }
 
     /// Geodesic distance between two points. Assumes the first coordinate
@@ -604,10 +604,10 @@ impl Ellipsoid {
     /// ```rust
     /// // Compute the distance between Copenhagen and Paris
     /// use geodesy::Ellipsoid;
-    /// use geodesy::operand::*;
+    /// use geodesy::CoordinateTuple;
     /// let ellps = Ellipsoid::named("GRS80");
-    /// let p0 = CoordinateTuple::deg(12., 55., 0., 0.);
-    /// let p1 = CoordinateTuple::deg(2., 49., 0., 0.);
+    /// let p0 = CoordinateTuple::geo(55., 12., 0., 0.);
+    /// let p1 = CoordinateTuple::geo(49., 2., 0., 0.);
     /// let d = ellps.distance(&p0, &p1);
     /// assert!((d - 956_066.231_959).abs() < 1e-5);
     /// ```
@@ -642,7 +642,7 @@ impl Ellipsoid {
         let Y = (N + h) * cosphi * sinlam;
         let Z = (N * (1.0 - self.eccentricity_squared()) + h) * sinphi;
 
-        CoordinateTuple::new(X, Y, Z, t)
+        CoordinateTuple::raw(X, Y, Z, t)
     }
 
     /// Cartesian to geogaphic conversion.
@@ -677,7 +677,7 @@ impl Ellipsoid {
             let phi = FRAC_PI_2.copysign(Z);
             // We have forced phi to one of the poles, so the height is |Z| - b
             let h = Z.abs() - self.semiminor_axis();
-            return CoordinateTuple::new(lam, phi, h, t);
+            return CoordinateTuple::raw(lam, phi, h, t);
         }
 
         // HM eq. (5-36) and (5-37), with some added numerical efficiency due to
@@ -713,7 +713,7 @@ impl Ellipsoid {
         // as more accurate than the commonly used h = p / cosphi - N;
         let h = p * cosphi + Z * sinphi - self.a * self.a / N;
 
-        CoordinateTuple::new(lam, phi, h, t)
+        CoordinateTuple::raw(lam, phi, h, t)
     }
 }
 
@@ -789,7 +789,7 @@ mod tests {
     fn geo_to_cart() {
         let ellps = Ellipsoid::named("GRS80");
         // Roundtrip geographic <-> cartesian
-        let geo = CoordinateTuple::deg(12., 55., 100., 0.);
+        let geo = CoordinateTuple::geo(55., 12., 100., 0.);
         let cart = ellps.cartesian(&geo);
         let geo2 = ellps.geographic(&cart);
         assert_eq!(geo[0], geo2[0]);
@@ -906,8 +906,8 @@ mod tests {
 
         // Copenhagen (Denmark)--Paris (France)
         // Expect distance good to 0.01 mm, azimuths to a nanodegree
-        let p1 = CoordinateTuple::deg(12., 55., 0., 0.);
-        let p2 = CoordinateTuple::deg(2., 49., 0., 0.);
+        let p1 = CoordinateTuple::gis(12., 55., 0., 0.);
+        let p2 = CoordinateTuple::gis(2., 49., 0., 0.);
 
         let d = ellps.geodesic_inv(&p1, &p2);
         assert!((d[0].to_degrees() - (-130.15406042072)).abs() < 1e-9);
@@ -921,7 +921,7 @@ mod tests {
 
         // Copenhagen (Denmark)--Rabat (Morocco)
         // Expect distance good to 0.1 mm, azimuths to a nanodegree
-        let p2 = CoordinateTuple::deg(7., 34., 0., 0.);
+        let p2 = CoordinateTuple::gis(7., 34., 0., 0.);
 
         let d = ellps.geodesic_inv(&p1, &p2);
         assert!((d[0].to_degrees() - (-168.48914418666)).abs() < 1e-9);

@@ -70,7 +70,6 @@ impl OperatorCore for Helmert {
 
 #[cfg(test)]
 mod tests {
-    use crate::operand::*;
     use crate::operator::operator_factory;
 
     #[test]
@@ -96,7 +95,7 @@ mod tests {
 
         let h = operator_factory(&mut args, &mut ctx, 0).unwrap();
 
-        let mut operands = [CoordinateTuple::new(0., 0., 0., 0.)];
+        let mut operands = [CoordinateTuple::origin()];
         h.fwd(&mut ctx, operands.as_mut());
         assert_eq!(operands[0].first(), -87.);
         assert_eq!(operands[0].second(), -96.);
