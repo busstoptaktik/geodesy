@@ -152,8 +152,6 @@ impl OperatorCore for Tmerc {
 
 #[cfg(test)]
 mod tests {
-    use crate::operand::*;
-
     #[test]
     fn utm() {
         use crate::{Context, CoordinateTuple, Ellipsoid, Operator, OperatorCore};
@@ -163,12 +161,12 @@ mod tests {
         // Test the UTM implementation
         let op = Operator::new("utm: {zone: 32}", &mut ctx).unwrap();
 
-        let geo = CoordinateTuple::deg(12., 55., 100., 0.);
+        let geo = CoordinateTuple::geo(55., 12., 100., 0.);
         let mut operands = [geo];
 
         // Validation value from PROJ:
         // echo 12 55 0 0 | cct -d18 +proj=utm +zone=32
-        let utm_proj = CoordinateTuple::new(691_875.632_139_661, 6_098_907.825_005_012, 100., 0.);
+        let utm_proj = CoordinateTuple::raw(691_875.632_139_661, 6_098_907.825_005_012, 100., 0.);
         assert!(op.fwd(&mut ctx, operands.as_mut()));
         assert!(operands[0].hypot2(&utm_proj) < 1e-5);
 
@@ -186,7 +184,7 @@ mod tests {
 
         // Test a Greenland extreme value (a zone 19 point projected in zone 24)
         let op = Operator::new("utm: {zone: 24}", &mut ctx).unwrap();
-        let geo = CoordinateTuple::deg(-72., 80., 100., 0.);
+        let geo = CoordinateTuple::geo(80., -72., 100., 0.);
         let mut operands = [geo];
 
         // Roundtrip...
@@ -215,12 +213,12 @@ mod tests {
         // Test the plain tmerc, by reimplementing the UTM above manually
         let op = Operator::new("tmerc: {k_0: 0.9996, lon_0: 9, x_0: 500000}", &mut ctx).unwrap();
 
-        let mut operands = [CoordinateTuple::deg(12., 55., 100., 0.)];
+        let mut operands = [CoordinateTuple::gis(12., 55., 100., 0.)];
         assert!(op.fwd(&mut ctx, operands.as_mut()));
 
         // Validation value from PROJ:
         // echo 12 55 0 0 | cct -d18 +proj=utm +zone=32
-        let utm_proj = CoordinateTuple::new(691_875.632_139_661, 6_098_907.825_005_012, 100., 0.);
+        let utm_proj = CoordinateTuple::raw(691_875.632_139_661, 6_098_907.825_005_012, 100., 0.);
         assert!(operands[0].hypot2(&utm_proj) < 1e-5);
     }
 }

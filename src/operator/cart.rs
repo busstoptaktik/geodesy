@@ -1,6 +1,6 @@
 use super::OperatorArgs;
 use super::OperatorCore;
-use crate::operand::*;
+use crate::CoordinateTuple;
 use crate::Context;
 use crate::Ellipsoid;
 
@@ -92,7 +92,7 @@ impl OperatorCore for Cart {
             if p < self.cutoff {
                 let phi = std::f64::consts::FRAC_PI_2.copysign(Z);
                 let h = Z.abs() - b;
-                *coord = CoordinateTuple::new(lam, phi, h, t);
+                *coord = CoordinateTuple::raw(lam, phi, h, t);
                 continue;
             }
 
@@ -116,7 +116,7 @@ impl OperatorCore for Cart {
             let phi = S1.atan2(CC);
             let h = (p * CC + Z.abs() * S1 - a * CC.hypot(ar * S1)) / CC.hypot(S1);
             // Bowring's height formula works better close to the ellipsoid, but requires a (sin, cos)-pair
-            *coord = CoordinateTuple::new(lam, phi, h, t);
+            *coord = CoordinateTuple::raw(lam, phi, h, t);
         }
         true
     }
@@ -138,14 +138,14 @@ impl OperatorCore for Cart {
 mod tests {
     #[test]
     fn cart() {
-        use crate::operand::*;
+        use crate::CoordinateTuple;
         use crate::operator::OperatorCore;
         use crate::Context;
         use crate::Ellipsoid;
         use crate::Operator;
         let mut o = Context::new();
         let c = Operator::new("cart: {ellps: intl}", &mut o).unwrap();
-        let mut operands = [CoordinateTuple::new(0., 0., 0., 0.)];
+        let mut operands = [CoordinateTuple::raw(0., 0., 0., 0.)];
 
         // First check that (0,0,0) takes us to (a,0,0)
         c.fwd(&mut o, operands.as_mut());
@@ -155,7 +155,7 @@ mod tests {
         assert_eq!(operands[0][1], 0.0);
 
         // Some arbitrary spot - southwest of Copenhagen
-        let mut operands = [CoordinateTuple::deg(12., 55., 100., 0.)];
+        let mut operands = [CoordinateTuple::gis(12., 55., 100., 0.)];
 
         // Roundtrip
         c.fwd(&mut o, operands.as_mut());

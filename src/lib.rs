@@ -1,80 +1,31 @@
 //! *A playground for experimentation with alternative models for geodetic
 //! data flow and coordinate representation*.
 //!
-//! Bam bam bam
-//! ===========
+//! Geodesy
+//! =======
 //!
-//! Specifically designed to facilitate experiments toward solving
-//! identified shortcomings in the [PROJ](https://proj.org) data flow,
-//! and the [ISO-19111](https://www.iso.org/standard/74039.html) model
-//! for referencing by coordinates.
+//! A crate designed to facilitate development of new geodetic transformations,
+//! and to investigate potential solutions to identified/perceived shortcomings
+//! in the[PROJ](https://proj.org) data flow, and the
+//! [ISO-19111](https://www.iso.org/standard/74039.html)
+//! model for referencing by coordinates.
 //!
-//! Bum bum bum
-//! -----------
+//! Et cetera
+//! ---------
 //!
-//! Thomas Knudsen, thokn@sdfe.dk, 2020/2021
+//! Copyright by Thomas Knudsen, knudsen.thomas@gmail.com, 2020/2021
 //!
 //!
-
-// #![feature(external_doc)]
-// #![doc(include = "../README.md")]
-// or
-// #![doc = r###"contents
-// of
-// README.md
-// here
-// "###]
 
 mod context;
-pub mod coordinates;
 mod ellipsoids;
 mod gas;
 mod operator;
 mod operatorargs;
+mod coordinates;
 
-/*
-mod preamble {
-    pub use crate::coordinates;
-    pub type CoordinateTuple = [f64; 4];
-    pub trait CoordinatePrimitives {
-        fn new(x: f64, y: f64, z: f64, t: f64) -> CoordinateTuple;
-        fn nan() -> CoordinateTuple;
-        fn deg(x: f64, y: f64, z: f64, t: f64) -> CoordinateTuple;
-        fn to_degrees(self) -> CoordinateTuple;
-        fn to_radians(self) -> CoordinateTuple;
-        fn first(&self) -> f64;
-        fn second(&self) -> f64;
-        fn third(&self) -> f64;
-        fn fourth(&self) -> f64;
-        fn hypot2(&self, other: &CoordinateTuple) -> f64;
-        fn hypot3(&self, other: &CoordinateTuple) -> f64;
-    }
-
-}
-*/
-
-pub type CoordinateTuple = [f64; 4];
-
-pub mod operand {
-    pub type CoordinateTuple = [f64; 4];
-    pub trait CoordinatePrimitives {
-        fn new(x: f64, y: f64, z: f64, t: f64) -> Self;
-        fn nan() -> CoordinateTuple;
-        fn deg(x: f64, y: f64, z: f64, t: f64) -> Self;
-        fn to_degrees(self) -> Self;
-        fn to_radians(self) -> Self;
-        fn first(&self) -> f64;
-        fn second(&self) -> f64;
-        fn third(&self) -> f64;
-        fn fourth(&self) -> f64;
-        fn hypot2(&self, other: &Self) -> f64;
-        fn hypot3(&self, other: &Self) -> f64;
-    }
-}
-
-pub use coordinates::DMS;
 pub use ellipsoids::Ellipsoid;
-
+pub use coordinates::CoordinateTuple;
 pub use context::Context;
 pub use gas::Gas;
 pub use operator::Operator;
@@ -87,6 +38,7 @@ pub type OperatorConstructor =
 pub const fwd: bool = true;
 #[allow(non_upper_case_globals)]
 pub const inv: bool = false;
+
 
 /// Literature, that has been useful in designing and implementing this library.
 pub enum Bibliography {

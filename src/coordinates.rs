@@ -1,46 +1,71 @@
-use crate::operand::*;
+use std::ops::{Index, IndexMut};
 
-impl CoordinatePrimitives for CoordinateTuple {
-    fn new(x: f64, y: f64, z: f64, t: f64) -> CoordinateTuple {
-        [x, y, z, t]
-    }
+#[derive(Debug, Default, PartialEq, Copy, Clone)]
+pub struct CoordinateTuple(pub [f64; 4]);
 
-    fn nan() -> CoordinateTuple {
-        [f64::NAN, f64::NAN, f64::NAN, f64::NAN]
+impl CoordinateTuple {
+    #[must_use]
+    pub fn geo(latitude: f64, longitude: f64, height: f64, time: f64) -> CoordinateTuple {
+        CoordinateTuple([longitude, latitude, height, time]).to_radians()
     }
 
     #[must_use]
-    fn deg(x: f64, y: f64, z: f64, t: f64) -> CoordinateTuple {
-        CoordinateTuple::new(x.to_radians(), y.to_radians(), z, t)
+    pub fn gis(longitude: f64, latitude: f64, height: f64, time: f64) -> CoordinateTuple {
+        CoordinateTuple([longitude, latitude, height, time]).to_radians()
     }
 
     #[must_use]
-    fn to_degrees(self) -> CoordinateTuple {
-        CoordinateTuple::new(self[0].to_degrees(), self[1].to_degrees(), self[2], self[3])
+    pub fn raw(first: f64, second: f64, third: f64, fourth: f64) -> CoordinateTuple {
+        CoordinateTuple([first, second, third, fourth])
     }
 
     #[must_use]
-    fn to_radians(self) -> CoordinateTuple {
-        CoordinateTuple::new(self[0].to_radians(), self[1].to_radians(), self[2], self[3])
+    pub fn nan() -> CoordinateTuple {
+        CoordinateTuple([f64::NAN, f64::NAN, f64::NAN, f64::NAN])
     }
 
     #[must_use]
-    fn first(&self) -> f64 {
+    pub fn origin() -> CoordinateTuple {
+        CoordinateTuple([0., 0., 0., 0.])
+    }
+
+    #[must_use]
+    pub fn ones() -> CoordinateTuple {
+        CoordinateTuple([1., 1., 1., 1.])
+    }
+
+    #[must_use]
+    pub fn to_radians(&self) -> CoordinateTuple {
+        CoordinateTuple([self[0].to_radians(), self[1].to_radians(), self[2], self[3]])
+    }
+
+    #[must_use]
+    pub fn to_degrees(&self) -> CoordinateTuple {
+        CoordinateTuple([self[0].to_degrees(), self[1].to_degrees(), self[2], self[3]])
+    }
+
+    #[must_use]
+    pub fn to_geo(&self) -> CoordinateTuple {
+        CoordinateTuple([self[1].to_degrees(), self[0].to_degrees(), self[2], self[3]])
+    }
+
+    #[must_use]
+    pub fn first(&self) -> f64 {
         self[0]
     }
 
     #[must_use]
-    fn second(&self) -> f64 {
+    pub fn second(&self) -> f64 {
         self[1]
     }
 
     #[must_use]
-    fn third(&self) -> f64 {
+    pub fn third(&self) -> f64 {
         self[2]
     }
 
     #[must_use]
-    fn fourth(&self) -> f64 {
+    pub fn fourth(&self) -> f64 {
         self[3]
     }
 
@@ -61,14 +86,14 @@ impl CoordinatePrimitives for CoordinateTuple {
     /// # Examples
     ///
     /// ```rust
-    /// use geodesy::operand::*;
-    /// let t = 1000.;
-    /// let p0 = CoordinateTuple::new(0., 0., 0., 0.);
-    /// let p1 = CoordinateTuple::new(t, t, 0., 0.);
+    /// use geodesy::CoordinateTuple as Coord;
+    /// let t = 1000 as f64;
+    /// let p0 = Coord::origin();
+    /// let p1 = Coord::raw(t, t, 0., 0.);
     /// assert_eq!(p0.hypot2(&p1), t.hypot(t));
     /// ```
     #[must_use]
-    fn hypot2(&self, other: &CoordinateTuple) -> f64 {
+    pub fn hypot2(&self, other: &CoordinateTuple) -> f64 {
         (self[0] - other[0]).hypot(self[1] - other[1])
     }
 
@@ -90,20 +115,35 @@ impl CoordinatePrimitives for CoordinateTuple {
     /// # Examples
     ///
     /// ```rust
-    /// use geodesy::operand::*;
-    /// let t = 1000.;
-    /// let p0 = CoordinateTuple::new(0., 0., 0., 0.);
-    /// let p1 = CoordinateTuple::new(t, t, t, 0.);
+    /// use geodesy::CoordinateTuple as Coord;
+    /// let t = 1000 as f64;
+    /// let p0 = Coord::origin();
+    /// let p1 = Coord::raw(t, t, t, 0.);
     /// assert_eq!(p0.hypot3(&p1), t.hypot(t).hypot(t));
     /// ```
     #[must_use]
-    fn hypot3(&self, other: &CoordinateTuple) -> f64 {
+    pub fn hypot3(&self, other: &CoordinateTuple) -> f64 {
         (self[0] - other[0])
             .hypot(self[1] - other[1])
             .hypot(self[2] - other[2])
     }
 }
 
+impl Index<usize> for CoordinateTuple {
+    type Output = f64;
+    fn index(&self, i: usize) -> &Self::Output {
+        &self.0[i]
+    }
+}
+
+impl IndexMut<usize> for CoordinateTuple {
+    fn index_mut(&mut self, i: usize) -> &mut Self::Output {
+        &mut self.0[i]
+    }
+}
+
+
+/*
 #[derive(Clone, Copy, Debug)]
 pub struct CoordType {}
 
@@ -114,6 +154,7 @@ pub struct DMS {
     pub m: i8,
 }
 
+#[allow(dead_code)]
 impl DMS {
     #[must_use]
     pub fn new(d: i16, m: i8, s: f32) -> DMS {
@@ -164,10 +205,12 @@ enum Coordinate {
         y: i64,
     },
 }
+*/
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    /*
     #[test]
     fn dms() {
         let dms = DMS::new(60, 24, 36.);
@@ -177,11 +220,12 @@ mod tests {
         let d = dms.to_degrees();
         assert_eq!(d, 60.41);
     }
+    */
 
     #[test]
     fn coordinatetuple() {
-        let c = CoordinateTuple::new(12., 55., 100., 0.).to_radians();
-        let d = CoordinateTuple::deg(12., 55., 100., 0.);
+        let c = CoordinateTuple::raw(12., 55., 100., 0.).to_radians();
+        let d = CoordinateTuple::gis(12., 55., 100., 0.);
         assert_eq!(c, d);
         assert_eq!(d[0], 12f64.to_radians());
         let e = d.to_degrees();
@@ -190,7 +234,7 @@ mod tests {
 
     #[test]
     fn array() {
-        let b = CoordinateTuple::new(7., 8., 9., 10.);
+        let b = CoordinateTuple::raw(7., 8., 9., 10.);
         let c = [b[0], b[1], b[2], b[3], f64::NAN, f64::NAN];
         assert_eq!(b[0], c[0]);
     }

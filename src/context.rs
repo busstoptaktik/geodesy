@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::operand::*;
+use crate::coordinates::CoordinateTuple;
 use crate::Operator;
 use crate::OperatorConstructor;
 use crate::OperatorCore;
@@ -126,11 +126,11 @@ impl Context {
     }
 
     pub fn coordeg(&self, x: f64, y: f64, z: f64, t: f64) -> CoordinateTuple {
-        CoordinateTuple::deg(x, y, z, t)
+        CoordinateTuple::gis(x, y, z, t)
     }
 
     pub fn coord(&self, x: f64, y: f64, z: f64, t: f64) -> CoordinateTuple {
-        CoordinateTuple::new(x, y, z, t)
+        CoordinateTuple::raw(x, y, z, t)
     }
 
     pub fn to_degrees(&self, operands: &mut [CoordinateTuple]) {
@@ -159,8 +159,8 @@ mod tests {
 
     #[test]
     fn operate() {
-        use crate::operand::*;
         use crate::Context;
+        use crate::CoordinateTuple;
 
         let pipeline = "ed50_etrs89: {
             steps: [
@@ -174,7 +174,7 @@ mod tests {
         let op = ctx.operator(pipeline);
         assert!(op.is_ok());
         let op = op.unwrap();
-        let geo = CoordinateTuple::deg(12., 55., 100., 0.);
+        let geo = CoordinateTuple::gis(12., 55., 100., 0.);
         let mut operands = [geo];
 
         ctx.fwd(op, &mut operands);

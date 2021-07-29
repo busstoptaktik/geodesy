@@ -11,7 +11,7 @@
 
 // Including the `operand` namespace gives us some slightly
 // better support for `CoordinateTuple`s
-use geodesy::operand::*;
+use geodesy::CoordinateTuple;
 
 fn main() {
     // In example 00, we saw that the `Context` data structure is the
@@ -48,8 +48,8 @@ fn main() {
     // surface of the ellipsoid. Let's compute the distance and
     // azimuth between the approximate locations of the airports
     // of Copenhagen (CPH) and Paris (CDG).
-    let CPH = CoordinateTuple::deg(12., 55., 0., 0.);
-    let CDG = CoordinateTuple::deg(2., 49., 0., 0.);
+    let CPH = CoordinateTuple::geo(55., 12., 0., 0.);
+    let CDG = CoordinateTuple::geo(49., 2., 0., 0.);
 
     // By historical convention the "from A to B" situation is considered
     // the inverse sense of the geodesic problem - hence `geodesic_inv`:
