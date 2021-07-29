@@ -1,9 +1,7 @@
 use std::collections::HashMap;
 
-use crate::coordinates::CoordinateTuple;
-use crate::Operator;
-use crate::OperatorConstructor;
-use crate::OperatorCore;
+use crate::operator_construction::*;
+use crate::CoordinateTuple;
 
 /// The central administration of the transformation functionality
 #[derive(Default)]

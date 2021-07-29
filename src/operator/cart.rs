@@ -138,11 +138,10 @@ impl OperatorCore for Cart {
 mod tests {
     #[test]
     fn cart() {
-        use crate::operator::OperatorCore;
+        use crate::operator_construction::*;
         use crate::Context;
         use crate::CoordinateTuple;
         use crate::Ellipsoid;
-        use crate::Operator;
         let mut o = Context::new();
         let c = Operator::new("cart: {ellps: intl}", &mut o).unwrap();
         let mut operands = [CoordinateTuple::raw(0., 0., 0., 0.)];

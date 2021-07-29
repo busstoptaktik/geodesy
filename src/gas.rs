@@ -1,6 +1,6 @@
 use crate::CoordinateTuple;
 
-/// Handler for the *G*eodetic grid *A*uthoring *S*ystem
+/// Handler for the **G**eodetic grid **A**uthoring **S**ystem
 #[derive(Debug, Default)]
 pub struct Gas {
     header: GasHeader,
@@ -20,10 +20,9 @@ pub struct GasHeader {
 
 impl GasHeader {
     pub fn new() -> GasHeader {
-        let blank = CoordinateTuple::nan();
         GasHeader {
-            bbox: [blank, blank],
-            delta: blank,
+            bbox: [CoordinateTuple::nan(), CoordinateTuple::nan()],
+            delta: CoordinateTuple::nan(),
             dim: [1, 1, 1, 1, 1],
             skip: 0,
             size: 0,

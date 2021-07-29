@@ -60,7 +60,7 @@ impl OperatorArgs {
     /// # Examples
     ///
     /// ```rust
-    /// use geodesy::OperatorArgs;
+    /// use geodesy::operator_construction::OperatorArgs;
     ///
     /// let mut args = OperatorArgs::new();
     /// let txt = std::fs::read_to_string("tests/tests.yml").unwrap_or_default();
