@@ -104,7 +104,8 @@ fn main() {
     // Since the forward transformation goes *from* ed50 to wgs84, we use
     // the inverse method to take us the other way, back in time to ED50
     ctx.inv(ed50_wgs84, &mut data);
-    C::degrees_all(&mut data);
+    // Convert internal lon/lat-in-rad to lat/lon-in-deg.
+    C::geo_all(&mut data);
     println!("ed50:");
     for coord in data {
         println!("    {:?}", coord);

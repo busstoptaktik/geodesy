@@ -1,87 +1,104 @@
 use std::ops::{Index, IndexMut};
 
+/// Generic 4D coordinate tuple, with no fixed interpretation of the elements
 #[derive(Debug, Default, PartialEq, Copy, Clone)]
 pub struct CoordinateTuple(pub [f64; 4]);
 
 impl CoordinateTuple {
+    /// A `CoordinateTuple` from latitude/longitude/height/time, with the angular input in degrees
     #[must_use]
     pub fn geo(latitude: f64, longitude: f64, height: f64, time: f64) -> CoordinateTuple {
         CoordinateTuple([longitude, latitude, height, time]).to_radians()
     }
 
+    /// A `CoordinateTuple` from longitude/latitude/height/time, with the angular input in degrees
     #[must_use]
     pub fn gis(longitude: f64, latitude: f64, height: f64, time: f64) -> CoordinateTuple {
         CoordinateTuple([longitude, latitude, height, time]).to_radians()
     }
 
+    /// A `CoordinateTuple` from longitude/latitude/height/time, with the angular input in radians
     #[must_use]
     pub fn raw(first: f64, second: f64, third: f64, fourth: f64) -> CoordinateTuple {
         CoordinateTuple([first, second, third, fourth])
     }
 
+    /// A `CoordinateTuple` consisting of 4 `NaN`s
     #[must_use]
     pub fn nan() -> CoordinateTuple {
         CoordinateTuple([f64::NAN, f64::NAN, f64::NAN, f64::NAN])
     }
 
+    /// A `CoordinateTuple` consisting of 4 `0`s
     #[must_use]
     pub fn origin() -> CoordinateTuple {
         CoordinateTuple([0., 0., 0., 0.])
     }
 
+    /// A `CoordinateTuple` consisting of 4 `1`s
     #[must_use]
     pub fn ones() -> CoordinateTuple {
         CoordinateTuple([1., 1., 1., 1.])
     }
 
+    /// Transform the first two elements of a `CoordinateTuple` from degrees to radians
     #[must_use]
     pub fn to_radians(self) -> CoordinateTuple {
         CoordinateTuple([self[0].to_radians(), self[1].to_radians(), self[2], self[3]])
     }
 
+    /// Transform the first two elements of a `CoordinateTuple` from radians to degrees
     #[must_use]
     pub fn to_degrees(self) -> CoordinateTuple {
         CoordinateTuple([self[0].to_degrees(), self[1].to_degrees(), self[2], self[3]])
     }
 
+    /// Transform the internal lon/lat/h/t-in-radians to lat/lon/h/t-in-degrees
     #[must_use]
     pub fn to_geo(self) -> CoordinateTuple {
         CoordinateTuple([self[1].to_degrees(), self[0].to_degrees(), self[2], self[3]])
     }
 
+    /// For an entire data set: Transform the internal lon/lat/h/t-in-radians to lat/lon/h/t-in-degrees
     pub fn geo_all(operands: &mut [CoordinateTuple]) {
         for coord in operands {
             *coord = coord.to_geo();
         }
     }
 
+    /// For an entire data set: Transform the first two elements of a `CoordinateTuple` from radians to degrees
     pub fn degrees_all(operands: &mut [CoordinateTuple]) {
         for coord in operands {
             *coord = coord.to_degrees();
         }
     }
 
+    /// For an entire data set: Transform the first two elements of a `CoordinateTuple` from degrees to radians
     pub fn radians_all(operands: &mut [CoordinateTuple]) {
         for coord in operands {
             *coord = coord.to_radians();
         }
     }
 
+    /// First coordinate of the `CoordinateTuple`
     #[must_use]
     pub fn first(&self) -> f64 {
         self[0]
     }
 
+    /// Second coordinate of the `CoordinateTuple`
     #[must_use]
     pub fn second(&self) -> f64 {
         self[1]
     }
 
+    /// Third coordinate of the `CoordinateTuple`
     #[must_use]
     pub fn third(&self) -> f64 {
         self[2]
     }
 
+    /// Fourth coordinate of the `CoordinateTuple`
     #[must_use]
     pub fn fourth(&self) -> f64 {
         self[3]
@@ -98,7 +115,7 @@ impl CoordinateTuple {
     ///
     /// # See also:
     ///
-    /// [`hypot3`](crate::coordinates::CoordinateTuple::hypot3),
+    /// [`hypot3`](CoordinateTuple::hypot3),
     /// [`distance`](crate::ellipsoids::Ellipsoid::distance)
     ///
     /// # Examples
@@ -127,7 +144,7 @@ impl CoordinateTuple {
     ///
     /// # See also:
     ///
-    /// [`hypot2`](crate::coordinates::CoordinateTuple::hypot2),
+    /// [`hypot2`](CoordinateTuple::hypot2),
     /// [`distance`](crate::ellipsoids::Ellipsoid::distance)
     ///
     /// # Examples
