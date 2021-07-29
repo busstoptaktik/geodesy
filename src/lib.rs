@@ -5,8 +5,8 @@
 //! =======
 //!
 //! A crate designed to facilitate development of new geodetic transformations,
-//! and to investigate potential solutions to identified/perceived shortcomings
-//! in the[PROJ](https://proj.org) data flow, and the
+//! and to investigate potential solutions to identified/perceived/suspected
+//! shortcomings in the [PROJ](https://proj.org) data flow, and the
 //! [ISO-19111](https://www.iso.org/standard/74039.html)
 //! model for referencing by coordinates.
 //!

@@ -51,6 +51,9 @@ fn main() {
 
     // Now do the same transformation as in example 00
     ctx.inv(ed50_wgs84, &mut data);
+
+    // geo_all(data) transforms all elements in data from the internal GIS
+    // format (lon/lat in radians) to lat/lon in degrees.
     C::geo_all(&mut data);
     println!("ed50:");
     for coord in data {

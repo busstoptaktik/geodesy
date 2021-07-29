@@ -1,5 +1,6 @@
 use crate::CoordinateTuple;
 
+/// Handler for the *G*eodetic grid *A*uthoring *S*ystem
 #[derive(Debug, Default)]
 pub struct Gas {
     header: GasHeader,

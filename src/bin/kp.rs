@@ -70,37 +70,3 @@ fn main() {
         println!("    {:?}", coord);
     }
 }
-
-/*
- Documenting dirs v3.0.2
- Documenting geodesy v0.1.0 (C:\Users\B004330\Documents\2021\Projects\geodesy)
-warning: unresolved link to `self::coordinates::CoordinateTuple::hypot2`
-   --> src\ellipsoids.rs:588:20
-    |
-588 |     /// [`hypot2`](crate::coordinates::CoordinateTuple::hypot2),
-    |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no item named `CoordinateTuple` in module `coordinates`
-    |
-    = note: `#[warn(rustdoc::broken_intra_doc_links)]` on by default
-
-warning: unresolved link to `self::coordinates::CoordinateTuple::hypot3`
-   --> src\ellipsoids.rs:589:20
-    |
-589 |     /// [`hypot3`](crate::coordinates::CoordinateTuple::hypot3)
-    |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no item named `CoordinateTuple` in module `coordinates`
-
-warning: unresolved link to `self::coordinates::CoordinateTuple::hypot3`
-  --> src\coordinates.rs:58:20
-   |
-58 |     /// [`hypot3`](crate::coordinates::CoordinateTuple::hypot3),
-   |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no item named `CoordinateTuple` in module `coordinates`
-
-warning: unresolved link to `self::coordinates::CoordinateTuple::hypot2`
-  --> src\coordinates.rs:87:20
-   |
-87 |     /// [`hypot2`](crate::coordinates::CoordinateTuple::hypot2),
-   |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no item named `CoordinateTuple` in module `coordinates`
-
-warning: 4 warnings emitted
-
-
-*/

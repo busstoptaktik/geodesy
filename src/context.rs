@@ -5,6 +5,7 @@ use crate::Operator;
 use crate::OperatorConstructor;
 use crate::OperatorCore;
 
+/// The central administration of the transformation functionality
 #[derive(Default)]
 pub struct Context {
     pub stack: Vec<Vec<CoordinateTuple>>,
