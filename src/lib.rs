@@ -22,24 +22,24 @@ mod bibliography;
 mod context;
 mod coordinates;
 mod ellipsoids;
-mod gas;
 mod operator;
 
 // But we add `pub`-ness to a few important `struct`s.
 pub use context::Context;
 pub use coordinates::CoordinateTuple;
 pub use ellipsoids::Ellipsoid;
-pub use gas::Gas;
 
 // The bibliography needs `pub`-ness in order to be able to build the docs.
 pub use bibliography::Bibliography;
 
 /// The operator construction toolkit, for built-in and user defined operators.
 pub mod operator_construction {
+    mod gas;
     mod operatorargs;
     pub use crate::operator::Operator;
     pub use crate::operator::OperatorCore;
     use crate::Context;
+    pub use gas::Gas;
     pub use operatorargs::OperatorArgs;
     pub type OperatorConstructor =
         fn(args: &mut OperatorArgs, ctx: &mut Context) -> Result<Operator, String>;
