@@ -141,6 +141,8 @@ enum GasReaderState {
 }
 
 impl Gas {
+    const MAX_ITERATIONS_FOR_INVERSION: usize = 30;
+
     pub fn new(name: &str) -> Result<Gas, String> {
         let mut grid: Vec<f64> = vec![];
         let mut header = GasHeader::new();
@@ -282,7 +284,7 @@ impl Gas {
         let mut dv = self.value(at);
         let mut v = CoordinateTuple::raw(at[0] - dv[0], at[1] - dv[1], at[2], at[3]);
 
-        for _i in 1..30 {
+        for _ in 1..Self::MAX_ITERATIONS_FOR_INVERSION {
             // If that guess was correct, `vv` would match `at` exactly
             dv = self.value(v);
             let vv = CoordinateTuple::raw(v[0] + dv[0], v[1] + dv[1], at[2], at[3]);

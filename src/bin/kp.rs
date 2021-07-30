@@ -1,7 +1,10 @@
+/*! Plonketi Plonk! !*/
+
 /// Koordinatprocessering
 fn main() {
     use geodesy::CoordinateTuple as C;
     let mut ctx = geodesy::Context::new();
+    ctx.salat();
 
     let coo = C([1., 2., 3., 4.]);
     println!("coo: {:?}", coo);
