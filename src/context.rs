@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::usize;
 
 use crate::operator_construction::*;
 use crate::CoordinateTuple;
@@ -16,27 +17,35 @@ pub struct Context {
 }
 
 impl Context {
+    pub fn salat(&self) {
+        println!("--- SALAT --- {}", self.stack.len());
+    }
+}
+
+impl Context {
+    /// Number of chunks to process in (principle in) parallel.
+    const CHUNKS: usize = 3;
+
+    /// Maximum size of each chunk.
+    const CHUNK_SIZE: usize = 1000;
+
     pub fn new() -> Context {
         let mut ctx = Context::_new();
-        ctx.minions.push(Context::_new());
-        ctx.minions.push(Context::_new());
-        ctx.minions.push(Context::_new());
+        for _ in 0..Self::CHUNKS {
+            ctx.minions.push(Context::_new());
+        }
         ctx
     }
 
     fn _new() -> Context {
-        let mut thestack: Vec<Vec<CoordinateTuple>> = vec![];
-        for _i in 0..1000 {
-            thestack.push(vec![]);
-        }
         Context {
-            stack: thestack,
-            minions: vec![],
+            stack: Vec::new(),
+            minions: Vec::new(),
             last_failing_operation: "",
             cause: "",
             user_defined_operators: HashMap::new(),
             user_defined_macros: HashMap::new(),
-            operators: vec![],
+            operators: Vec::new(),
         }
     }
 
@@ -63,12 +72,13 @@ impl Context {
         }
         let mut i = 0_usize;
         let mut result = true;
-        for chunk in operands.chunks_mut(2) {
+        for chunk in operands.chunks_mut(Self::CHUNK_SIZE) {
             // Need a bit more std::thread-Rust-fu to do actual mutithreading.
             // For now, we just split the input data in chunks, process them
             // and verify that the parallel stack-functionality works.
             result &= self.minions[i]._operate(&self.operators[operator], chunk, forward);
-            i = (i + 1) % 3;
+            self.minions[i].stack.clear();
+            i = (i + 1) % Self::CHUNKS;
         }
         result
     }
@@ -133,7 +143,7 @@ mod tests {
     fn operand() {
         use crate::Context;
         let ctx = Context::new();
-        assert_eq!(ctx.stack.len(), 1000);
+        assert_eq!(ctx.stack.len(), 0);
     }
 
     #[test]

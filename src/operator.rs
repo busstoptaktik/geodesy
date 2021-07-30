@@ -7,6 +7,7 @@ use crate::CoordinateTuple;
 // There's a good description of the crux here:
 // https://stackoverflow.com/questions/35568871/is-it-possible-to-implement-methods-on-type-aliases
 pub struct Operator(pub Box<dyn OperatorCore>);
+
 impl Operator {
     /// The equivalent of the PROJ `proj_create()` function: Create an operator object
     /// from a text string.
@@ -35,6 +36,13 @@ impl Operator {
 
     pub fn inverse(&self, ws: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
         self.0.inv(ws, operands)
+    }
+}
+
+use core::fmt::Debug;
+impl Debug for Operator {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "Operator {{{}}}", self.name())
     }
 }
 
