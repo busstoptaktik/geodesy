@@ -1,6 +1,5 @@
 # Defaults to test.
-default:
-    test
+default: test
 
 # Basic test. Use target "check" for a more in depth check up.
 test:
@@ -10,9 +9,13 @@ test:
 check: test
     cargo clippy
     cargo fmt -- --check
-    cargo doc
+    cargo doc --no-deps
     cargo package --allow-dirty
     git status
+
+# Build documentation, open in browser for inspection.
+doc:
+    cargo doc --no-deps --open
 
 # Run example based on its unique prefix (e.g. 00, 01, etc.).
 run-example EXAMPLE:
@@ -26,6 +29,7 @@ run-all:
     cargo run --example 02-user_defined_macros
     cargo run --example 03-user_defined_operators
 
+# Show diff of all 'git add'-ed files
 diff:  && status
     git diff
 
