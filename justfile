@@ -10,6 +10,8 @@ test:
 check: test
     cargo clippy
     cargo fmt -- --check
+    cargo doc
+    cargo package --allow-dirty
     git status
 
 # Run example based on its unique prefix (e.g. 00, 01, etc.).
