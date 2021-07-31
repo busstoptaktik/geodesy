@@ -42,7 +42,7 @@ pub mod operator_construction {
     pub use gas::Gas;
     pub use operatorargs::OperatorArgs;
     pub type OperatorConstructor =
-        fn(args: &mut OperatorArgs, ctx: &mut Context) -> Result<Operator, String>;
+        fn(args: &mut OperatorArgs, ctx: &mut Context) -> Result<Operator, &'static str>;
 }
 
 /// Indicate that a two-way operator, function, or method, should run in the *forward* direction.

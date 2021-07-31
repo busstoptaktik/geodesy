@@ -240,10 +240,9 @@ impl OperatorArgs {
 
     pub fn numeric_value(
         &mut self,
-        operator_name: &str,
         key: &str,
         default: f64,
-    ) -> Result<f64, String> {
+    ) -> Result<f64, &'static str> {
         let arg = self.value(key, "");
 
         // key not given: return default
@@ -257,10 +256,11 @@ impl OperatorArgs {
         }
 
         // key given, but not numeric: return error string
-        Err(format!(
+        Err("Numeric value expected")
+        /*Err(format!(
             "Numeric value expected for '{}.{}' - got [{}: {}].",
             operator_name, key, key, arg
-        ))
+        ))*/
     }
 
     // If key is given, and value != false: true; else: false
@@ -298,8 +298,8 @@ mod tests {
         assert_eq!("11", args.value("dx", ""));
 
         assert_eq!("33", args.value("dz", ""));
-        assert_eq!(33.0, args.numeric_value("foo", "dz", 42.0).unwrap());
-        assert_eq!(42.0, args.numeric_value("foo", "bar", 42.0).unwrap());
+        assert_eq!(33.0, args.numeric_value("dz", 42.0).unwrap());
+        assert_eq!(42.0, args.numeric_value("bar", 42.0).unwrap());
 
         assert_eq!(args.used.len(), 3);
         assert_eq!(args.all_used.len(), 5);
@@ -311,7 +311,7 @@ mod tests {
 
         // Finally one for testing 'err' returned for non-numerics
         args.insert("ds", "foo");
-        assert!(args.numeric_value("bar", "ds", 0.0).is_err());
+        assert!(args.numeric_value("ds", 0.0).is_err());
         // if let Err(msg) = args.numeric_value("bar", "ds", 0.0) {
         //     println!("**** err: {}", msg)
         // }

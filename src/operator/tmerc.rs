@@ -5,6 +5,7 @@
 
 use super::OperatorArgs;
 use super::OperatorCore;
+use crate::operator_construction::*;
 use crate::Context;
 use crate::CoordinateTuple;
 use crate::Ellipsoid;
@@ -23,14 +24,14 @@ pub struct Tmerc {
 }
 
 impl Tmerc {
-    pub fn new(args: &mut OperatorArgs) -> Result<Tmerc, String> {
+    pub fn new(args: &mut OperatorArgs) -> Result<Tmerc, &'static str> {
         let ellps = Ellipsoid::named(&args.value("ellps", "GRS80"));
         let inverted = args.flag("inv");
-        let k_0 = args.numeric_value("Tmerc", "k_0", 1.)?;
-        let lon_0 = args.numeric_value("Tmerc", "lon_0", 0.)?.to_radians();
-        let lat_0 = args.numeric_value("Tmerc", "lat_0", 0.)?.to_radians();
-        let x_0 = args.numeric_value("Tmerc", "x_0", 0.)?;
-        let y_0 = args.numeric_value("Tmerc", "y_0", 0.)?;
+        let k_0 = args.numeric_value("k_0", 1.)?;
+        let lon_0 = args.numeric_value("lon_0", 0.)?.to_radians();
+        let lat_0 = args.numeric_value("lat_0", 0.)?.to_radians();
+        let x_0 = args.numeric_value("x_0", 0.)?;
+        let y_0 = args.numeric_value("y_0", 0.)?;
         let eps = ellps.second_eccentricity_squared();
         let args = args.clone();
         Ok(Tmerc {
@@ -46,9 +47,19 @@ impl Tmerc {
         })
     }
 
-    pub fn utm(args: &mut OperatorArgs) -> Result<Tmerc, String> {
+    pub(crate) fn operator(args: &mut OperatorArgs) -> Result<Operator, &'static str> {
+        let op = crate::operator::tmerc::Tmerc::new(args)?;
+        Ok(Operator(Box::new(op)))
+    }
+
+    pub(crate) fn utmoperator(args: &mut OperatorArgs) -> Result<Operator, &'static str> {
+        let op = crate::operator::tmerc::Tmerc::utm(args)?;
+        Ok(Operator(Box::new(op)))
+    }
+
+    pub fn utm(args: &mut OperatorArgs) -> Result<Tmerc, &'static str> {
         let ellps = Ellipsoid::named(&args.value("ellps", "GRS80"));
-        let zone = args.numeric_value("Utm", "zone", f64::NAN)?;
+        let zone = args.numeric_value("zone", f64::NAN)?;
         let inverted = args.flag("inv");
         let k_0 = 0.9996;
         let lon_0 = (-183. + 6. * zone).to_radians();
@@ -74,7 +85,7 @@ impl Tmerc {
 
 #[allow(non_snake_case)]
 impl OperatorCore for Tmerc {
-    // Forward transverse mercator, following Bowring
+    // Forward transverse mercator, following Bowring (1989)
     fn fwd(&self, _ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
         for coord in operands {
             let lat = coord[1];
@@ -107,7 +118,7 @@ impl OperatorCore for Tmerc {
         true
     }
 
-    // Forward transverse mercator, following Bowring (1989)
+    // Inverse transverse mercator, following Bowring (1989)
     fn inv(&self, _ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
         // Footpoint latitude, i.e. the latitude of a point on the central meridian
         // having the same northing as the point of interest
@@ -197,7 +208,7 @@ mod tests {
         assert!((result[1] - 80.0).abs() * 111_000. < 1.02);
         assert!((result[0] + 72.0).abs() * 20_000. < 0.04);
 
-        // i.e. Bowring's verion is much better than Snyder's:
+        // i.e. Bowring's verion is **much** better than Snyder's:
         // echo -72 80 0 0 | cct +proj=utm +approx +zone=24 +ellps=GRS80 | cct -I +proj=utm +approx +zone=24 +ellps=GRS80
         // -71.9066920547   80.0022281660        0.0000        0.0000
         //

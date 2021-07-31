@@ -43,20 +43,20 @@ fn main() {
 
     // Now let's see whether it works - instantiate the macro, using the same
     // parameters as used in example 00.
-    let ed50_wgs84 =
-        match ctx.operator("geohelmert: {left: intl, right: GRS80, dx: -87, dy: -96, dz: -120}") {
-            Err(e) => return println!("Awful error: {}", e),
-            Ok(op) => op,
-        };
+    if let Some(ed50_wgs84) =
+        ctx.operator("geohelmert: {left: intl, right: GRS80, dx: -87, dy: -96, dz: -120}")
+    {
+        // Now do the same transformation as in example 00
+        ctx.inv(ed50_wgs84, &mut data);
 
-    // Now do the same transformation as in example 00
-    ctx.inv(ed50_wgs84, &mut data);
-
-    // geo_all(data) transforms all elements in data from the internal GIS
-    // format (lon/lat in radians) to lat/lon in degrees.
-    C::geo_all(&mut data);
-    println!("ed50:");
-    for coord in data {
-        println!("    {:?}", coord);
+        // geo_all(data) transforms all elements in data from the internal GIS
+        // format (lon/lat in radians) to lat/lon in degrees.
+        C::geo_all(&mut data);
+        println!("ed50:");
+        for coord in data {
+            println!("    {:?}", coord);
+        }
+    } else {
+        println!("{}", ctx.report());
     }
 }

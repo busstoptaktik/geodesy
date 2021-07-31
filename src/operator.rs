@@ -17,14 +17,14 @@ impl Operator {
     /// // EPSG:1134 - 3 parameter Helmert, ED50/WGS84
     /// let mut ctx = geodesy::Context::new();
     /// let op = ctx.operator("helmert: {dx: -87, dy: -96, dz: -120}");
-    /// assert!(op.is_ok());
+    /// assert!(op.is_some());
     /// let op = op.unwrap();
     /// let mut operands = [geodesy::CoordinateTuple::geo(55., 12.,0.,0.)];
     /// ctx.fwd(op, &mut operands);
     /// ctx.inv(op, &mut operands);
     /// assert!((operands[0][0].to_degrees() - 12.).abs() < 1.0e-10);
     /// ```
-    pub fn new(definition: &str, ctx: &mut Context) -> Result<Operator, String> {
+    pub fn new(definition: &str, ctx: &mut Context) -> Option<Operator> {
         let mut oa = OperatorArgs::new();
         oa.populate(definition, "");
         operator_factory(&mut oa, ctx, 0)
@@ -99,8 +99,7 @@ pub trait OperatorCore {
     // implementations must override at least one of {inv, invertible}
     #[allow(unused_variables)]
     fn inv(&self, ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
-        ctx.last_failing_operation = self.name();
-        ctx.cause = "Operator not invertible";
+        ctx.error(self.name(), "Operator not invertible");
         false
     }
 
@@ -150,14 +149,12 @@ pub(crate) fn operator_factory(
     args: &mut OperatorArgs,
     ctx: &mut Context,
     recursions: usize,
-) -> Result<Operator, String> {
+) -> Option<Operator> {
     use crate::operator as co;
 
     if recursions > 100 {
-        return Err(format!(
-            "Operator definition '{}' too deeply nested",
-            args.name
-        ));
+        ctx.error("Unknown", "Operator definition too deeply nested");
+        return None;
     }
 
     // Look for runtime defined macros
@@ -166,7 +163,7 @@ pub(crate) fn operator_factory(
         return operator_factory(&mut moreargs, ctx, recursions + 1);
     }
 
-    // Look for file defined macros in current working directory
+    // Look for macros defined by files in the current working directory
     if let Ok(definition) = std::fs::read_to_string(args.name.clone() + ".yml") {
         let mut moreargs = args.spawn(&definition);
         return operator_factory(&mut moreargs, ctx, recursions + 1);
@@ -174,40 +171,55 @@ pub(crate) fn operator_factory(
 
     // Look for runtime defined operators
     if let Some(op) = ctx.locate_operator(&args.name) {
-        return op(args, ctx);
+        let op = op(args, ctx);
+        match op {
+            Err(e) => {
+                ctx.error(e, "Runtime defined operator lookup");
+                return None;
+            }
+            Ok(op) => {
+                return Some(op);
+            }
+        }
     }
 
     // Builtins
 
     // Pipelines are not characterized by the name "pipeline", but simply by containing steps.
-    if args.numeric_value("operator_factory", "_nsteps", 0.0)? > 0.0 {
-        let op = co::pipeline::Pipeline::new(args, ctx)?;
-        return Ok(Operator(Box::new(op)));
+    if let Ok(steps) = args.numeric_value("_nsteps", 0.0) {
+        if steps > 0.0 {
+            match co::pipeline::Pipeline::new(args, ctx) {
+                Err(err) => {
+                    ctx.error(err, "pipeline");
+                    return None;
+                }
+                Ok(ok) => {
+                    return Some(Operator(Box::new(ok)));
+                }
+            }
+        }
     }
 
-    if args.name == "cart" {
-        let op = co::cart::Cart::new(args)?;
-        return Ok(Operator(Box::new(op)));
-    }
+    let mut op: Result<Operator, &'static str> = Err("Operator name not found");
+    let mut opname = "operator_factory";
     if args.name == "helmert" {
-        return crate::operator::helmert::Helmert::operator(args);
-        // let op = crate::operator::helmert::Helmert::new(args)?;
-        // return Ok(Operator(Box::new(op)));
-    }
-    if args.name == "tmerc" {
-        let op = co::tmerc::Tmerc::new(args)?;
-        return Ok(Operator(Box::new(op)));
-    }
-    if args.name == "utm" {
-        let op = co::tmerc::Tmerc::utm(args)?;
-        return Ok(Operator(Box::new(op)));
-    }
-    if args.name == "noop" {
-        let op = co::noop::Noop::new(args)?;
-        return Ok(Operator(Box::new(op)));
+        op = crate::operator::helmert::Helmert::operator(args);
+        opname = "helmert";
+    } else if args.name == "cart" {
+        op = crate::operator::cart::Cart::operator(args);
+        opname = "cart";
+    } else if args.name == "tmerc" {
+        op = co::tmerc::Tmerc::operator(args);
+        opname = "tmerc";
+    } else if args.name == "utm" {
+        op = co::tmerc::Tmerc::utmoperator(args);
+        opname = "utm";
+    } else if args.name == "noop" {
+        op = co::noop::Noop::operator(args);
+        opname = "noop";
     }
 
-    // Look for file defined macros in SHARE directory
+    // Look for macros defined externally in the SHARE/geodesy directory
     if let Some(mut path) = dirs::data_local_dir() {
         path.push("geodesy");
         path.push(args.name.clone() + ".yml");
@@ -217,7 +229,14 @@ pub(crate) fn operator_factory(
         }
     }
 
-    Err(format!("Unknown operator '{}'", args.name))
+    // Done - translate Result<Operator, str> to Option<Operator>...
+    match op {
+        Err(err) => {
+            ctx.error(opname, err);
+            None
+        }
+        Ok(ok) => Some(ok),
+    }
 }
 
 // --------------------------------------------------------------------------------------
@@ -237,14 +256,14 @@ mod tests {
             "unimplemented_operator: {dx: -87, dy: -96, dz: -120}",
             &mut o,
         );
-        assert!(h.is_err());
+        assert!(h.is_none());
 
         // Define "hilmert" and "halmert" to circularly define each other, in order
         // to test the operator_factory recursion breaker
         assert!(o.register_macro("halmert", "hilmert: {}"));
         assert!(o.register_macro("hilmert", "halmert: {}"));
-        if let Err(e) = Operator::new("halmert: {dx: -87, dy: -96, dz: -120}", &mut o) {
-            assert!(e.ends_with("too deeply nested"));
+        if let None = Operator::new("halmert: {dx: -87, dy: -96, dz: -120}", &mut o) {
+            assert!(o.report().contains("too deeply nested"));
         } else {
             panic!();
         }
@@ -254,12 +273,12 @@ mod tests {
 
         // A plain operator: Helmert, EPSG:1134 - 3 parameter, ED50/WGS84
         let hh = Operator::new("helmert: {dx: -87, dy: -96, dz: -120}", &mut o);
-        assert!(hh.is_ok());
+        assert!(hh.is_some());
         let hh = hh.unwrap();
 
         // Same operator, defined through the "hulmert" macro
         let h = Operator::new("hulmert: {dx: -87, dy: -96, dz: -120}", &mut o);
-        assert!(h.is_ok());
+        assert!(h.is_some());
         let h = h.unwrap();
 
         assert_eq!(hh.args(0).name, h.args(0).name);
@@ -296,7 +315,7 @@ mod tests {
             ]
         }";
         let h = Operator::new(pipeline, &mut o);
-        assert!(h.is_ok());
+        assert!(h.is_some());
         let h = h.unwrap();
 
         let mut operands = [CoordinateTuple::gis(12., 55., 100., 0.)];
@@ -315,11 +334,11 @@ mod tests {
 
         // An externally defined version
         let h = Operator::new("tests/ed50_etrs89: {}", &mut o);
-        assert!(h.is_ok());
+        assert!(h.is_some());
 
         // Try to access it from local/share: "C:\\Users\\Username\\AppData\\Local\\geodesy\\ed50_etrs89.yml"
         let h = Operator::new("ed50_etrs89: {}", &mut o);
-        assert!(h.is_err());
+        assert!(h.is_none());
 
         // A parameterized macro pipeline version
         let pipeline_as_macro = "pipeline: {
@@ -338,7 +357,7 @@ mod tests {
             "geohelmert: {left: intl, right: GRS80, dx: -87, dy: -96, dz: -120}",
             &mut o,
         );
-        assert!(ed50_etrs89.is_ok());
+        assert!(ed50_etrs89.is_some());
         let ed50_etrs89 = ed50_etrs89.unwrap();
         let mut operands = [CoordinateTuple::gis(12., 55., 100., 0.)];
 
@@ -367,14 +386,14 @@ mod tests {
     }
 
     impl Nnoopp {
-        fn new(args: &mut OperatorArgs) -> Result<Nnoopp, String> {
+        fn new(args: &mut OperatorArgs) -> Result<Nnoopp, &'static str> {
             Ok(Nnoopp { args: args.clone() })
         }
 
         pub(crate) fn operator(
             args: &mut OperatorArgs,
             _ctx: &mut Context,
-        ) -> Result<Operator, String> {
+        ) -> Result<Operator, &'static str> {
             let op = Nnoopp::new(args)?;
             Ok(Operator { 0: Box::new(op) })
         }
