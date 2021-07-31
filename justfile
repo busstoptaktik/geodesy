@@ -1,3 +1,8 @@
+# Justfile for the Rust Geodesy project.
+
+alias t := test
+alias c := check
+
 # Defaults to test.
 default: test
 
@@ -49,6 +54,9 @@ commit-fast MESSAGE: check  &&  status
 status:
     git status
 
+# Compact format log for changelog report
+changes:
+    git log --pretty=format:%s
 
 # Some invisible oddities for general amusement
 
