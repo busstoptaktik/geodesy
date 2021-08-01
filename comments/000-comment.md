@@ -8,31 +8,93 @@ Thomas Knudsen <knudsen.thomas@gmail.com>
 
 ---
 
-Let's start with a brief example, demonstrating the Rust Geodesy idiom for converting geographical coordinates to UTM zone 32 coordinates.
+### Prologue
+
+Rust Geodesy, RG, is a geodetic software system, not entirely unlike [PROJ](https://proj.org), but with much more limited transformation functionality. And while PROJ is mature, well supported, well tested, and production ready, RG is neither of these. Partially due to RG being a new born baby, partially due to its aiming at a (much) different set of use cases.
+
+So when I liberally insert comparisons with PROJ in the following, it is for elucidation, not for mocking, neither of PROJ, nor of RG: I have spent much pleasant and instructive time with PROJ, both as a PROJ core developer and as a PROJ user (more about that in an upcomming *Comment on RG*). But I have also spent much pleasant time learning Rust and developing RG, so I feel deeply connected to both PROJ and RG.
+
+PROJ and RG do, however, belong in two different niches of the geodetic software ecosystem: Where PROJ is the production work horse, with the broad community of end users and developers, RG aims at a much more narrow community of geodesists, for geodetic development work - e.g. for development of transformations that may eventually end up in PROJ.
+
+### Getting beefy
+
+Talking architecture and design philosophy out of thin air is at best counterproductive, so let's start with a brief example, demonstrating the Rust Geodesy idiom for converting geographical coordinates to UTM zone 32 coordinates.
 
 ```rust
-use geodesy::CoordinateTuple as Coord;
 fn main() {
-    // [0] Build some context
+    // [0] Use a brief name for some much used functionality
+    use geodesy::CoordinateTuple as Coord;
+
+    // [1] Build some context
     let mut ctx = geodesy::Context::new();
 
-    // [1] Obtain a handle to the utm-operator
+    // [2] Obtain a handle to the utm-operator
     let utm32 = ctx.operator("utm: {zone: 32}").unwrap();
 
-    // [2] Coordinates of some Scandinavian capitals
+    // [3] Coordinates of some Scandinavian capitals
     let copenhagen = Coord::geo(55., 12., 0., 0.);
     let stockholm  = Coord::geo(59., 18., 0., 0.);
 
-    // [3] We put the coordinates into an array
+    // [4] We put the coordinates into an array
     let mut data = [copenhagen, stockholm];
 
-    // [4] Then do the forward conversion, i.e. geo -> utm
+    // [5] Then do the forward conversion, i.e. geo -> utm
     ctx.fwd(utm32, data);
 
-    // [5] ...and show the results
+    // [6] ...and show the results
     println!({:?}, data);
 }
 ```
+
+At comment `[0]`, we start by renaming the library functionality for coordinate handling, from `geodesy::CoordinateTuple` to `Coord`. Since coordinates are at the heart of what we're doing, it should have a brief and clear name. Then why giving it such a long name by design, you may wonder - well, `CoordinateTuple` is the ISO-19111 standard designation of what we colloquially would call *the coordinates*.
+
+```rust
+// [1] Build some context
+let mut ctx = geodesy::Context::new();
+```
+
+At comment `[1]` we instantiate a `Context`, which should not come as a surprise if you have been using [PROJ](https:://proj.org) recently. The `Context` provides the interface to the messy world external to RG (files, threads, communication), and in general centralizes all the *mutable state* of the system.
+
+Also, the `Context` is the sole interface between the `RG` library functionality and the application program: You may instantiate a transformation object, but the `Context` handles it for you. While you need a separate `Context` for each thread of your program, the `Context` itself is actually designed to eventually do its work in parallel, using several threads.
+
+```rust
+// [2] Obtain a handle to the utm-operator
+let utm32 = ctx.operator("utm: {zone: 32}").unwrap();
+```
+
+At comment `[2]`, we use the `operator` method of the `Context` to instantiate an `Operator`. The parametrisation of the operator, i.e. the text `utm: {zone: 32}` is expressed in [YAML](https://en.wikipedia.org/wiki/YAML) using element naming conventions close to those used in PROJ, where the same operator would be described as `proj=utm zone=32`.
+
+So essentially, PROJ and RG uses identical operator parametrisations, but RG, being 40 years younger than PROJ, is able to leverage YAML, an already 20 years old generic data representation format, while PROJ was born 20 years prior to YAML, and had to implement its own domain specific format.
+
+Note, however, that contrary to PROJ, when we instantiate an operator in RG, we do not actually get an `Operator` object back, but just a handle to an `Operator`, living its entire life embedded inside the `Context`.
+And while the `Context` is mutable, the `Operator`, once created, is *immutable*. This makes `Operator`s thread-sharable, so the `Context` will eventually (although not yet fully implemented), be able to automatically parallelize large transformation jobs, eliminating much of the need for separate thread handling at the application program level.
+
+```rust
+// [3] Coordinates of some Scandinavian capitals
+let copenhagen = Coord::geo(55., 12., 0., 0.);
+let stockholm  = Coord::geo(59., 18., 0., 0.);
+
+// [4] We put the coordinates into an array
+let mut data = [copenhagen, stockholm];
+```
+
+At comments `[3]` and `[4]` we produce the input data we want to transform. Internally, RG represents angles in radians, and follows the traditional GIS coordinate order of *longitide before latitude*. Externally, however, you may pick-and-choose. In this case, we choose human readable angles in degrees, and the traditional coordinate order used in geodesy and navigation *latitude before longitude*. The `Coord::geo(...)` function translates that into the internal representation. It has siblings `Coord::gis(...)` and `Coord::raw(...)` which handles GIS coordinate order and raw numbers, respectively.
+
+RG operators take *arrays of `CoordinateTuples`* as input, rather than individual elements, so at comment `[4]` we put the elements into an array
+
+### Going abstract
+
+
+### Conclusion
+
+
+### References
+
+
+### Notes
+
+In both cases, the use of the GRS80 ellipsoid is implied, but may be expressly stated as  `utm: {zone: 32, ellps: GRS80}` resp. `proj=utm zone=32 ellps=GRS80`
+
 
 *Rust Geodesy* (RG), is a platform for experiments with geodetic software, transformations, and standards. *RG* vaguely resembles the [PROJ](https://proj.org) transformation system, and was built in part to facilitate experiments with alternative data flow models for PROJ. So in order to focus on the data flow, the transformation functionality of *RG* is reduced to the bare minimum.
 

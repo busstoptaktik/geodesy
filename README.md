@@ -1,8 +1,14 @@
 # Geodesy
 
-*Rust Geodesy* (RG), is a platform for experiments with geodetic software, transformations, and standards. *RG* vaguely resembles the [PROJ](https://proj.org) transformation system, and was built in part on the basis of experiments with alternative data flow models for PROJ. The actual transformation functionality of *RG* is, however, minimal.
+*Rust Geodesy* (RG), is a platform for experiments with geodetic software, transformations, and standards. *RG* vaguely resembles the [PROJ](https://proj.org) transformation system, and was built in part on the basis of experiments with alternative data flow models for PROJ. The actual transformation functionality of *RG* is, however, minimal: At time of writing, it includes just 3 low level operations:
 
-Hence, viewing *RG* as *another PROJ*, or *PROJ [RIIR](https://github.com/ansuz/RIIR)*, will lead to bad disappointment. At best, you may catch a weak mirage of a *potential* [shape of jazz to come](https://en.wikipedia.org/wiki/The_Shape_of_Jazz_to_Come) for the PROJ internal dataflow.
+1. The three-parameter *Helmert transformation*
+2. Helmert's companion, the *cartesian/geographic* coordinate conversion
+3. The *transverse mercator* projection
+
+While this is just enough to test the architecture, it is very far from enough to get through a geodesist's daily work.
+
+Hence, viewing *RG* as *another PROJ*, or *PROJ [RiiR](https://acronyms.thefreedictionary.com/RIIR)*, will lead to bad disappointment. At best, you may catch a weak mirage of a *potential* [shape of jazz to come](https://en.wikipedia.org/wiki/The_Shape_of_Jazz_to_Come) for the PROJ internal dataflow.
 
 But dataflow experimentation is just one aspect of *RG*. Overall, the aims are fourfold:
 
