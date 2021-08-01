@@ -78,9 +78,9 @@ Also, the `Context` is the sole interface between the `RG` transformation functi
 let utm32 = ctx.operator("utm: {zone: 32}").unwrap();
 ```
 
-(See also `[ellps implied]` in the Notes section)
 
-At comment `[2]`, we use the `operator` method of the `Context` to instantiate an `Operator`. The parametrisation of the operator, i.e. the text `utm: {zone: 32}` is expressed in [YAML](https://en.wikipedia.org/wiki/YAML) using parameter naming conventions close to those used in PROJ, where the same operator would be described as `proj=utm zone=32`.
+At comment `[2]`, we use the `operator` method of the `Context` to instantiate an `Operator`. The parametrisation of the operator, i.e. the text `utm: {zone: 32}` is expressed in [YAML](https://en.wikipedia.org/wiki/YAML) using parameter naming conventions close to those used in PROJ, where the same operator would be described as `proj=utm zone=32`
+(see also `[ellps implied]` in the Notes section).
 
 So essentially, PROJ and RG uses identical operator parametrisations, but RG, being 40 years younger than PROJ, is able to leverage YAML, an already 20 years old, JSON compatible, generic data representation format. PROJ, on the other hand, was born 20 years prior to YAML, and had to implement its own domain specific format.
 
@@ -108,7 +108,7 @@ In this case, we choose human readable angles in degrees, and the traditional co
 let mumble = Coord([1., 42., 3., 4.]);
 ```
 
-The `CoordinateTuple` data type does not enforce any special interpretation of what kind of coordinate it stores: That is entirely up to the `Operation` to interpret. A `CoordinateTuple` simply consists of 4 numbers with no other implied interpretation than their relative order, given by the names *first, second, third, and fourth* coordinate, respectively.
+The `CoordinateTuple` data type does not enforce any special interpretation of what kind of coordinate it stores: That is entirely up to the `Operation` to interpret. A `CoordinateTuple` simply consists of 4 numbers with no other implied interpretation than their relative order, given by the names *first, second, third, and fourth*, respectively.
 
 RG operators take *arrays of `CoordinateTuples`* as input, rather than individual elements, so at comment `[4]` we put the elements into an array
 
@@ -124,7 +124,11 @@ At comment `[5]`, we do the actual forward conversion (hence `ctx.fwd(...)`) to 
 
 As the action goes on *in place*, we allow `fwd(..)` to mutate the input data, by using the `&mut`-operator in the method call.
 
-The printout will show the projected data in (easting, northing)-coordinate order.
+The printout will show the projected data in (easting, northing)-coordinate order:
+
+```
+CoordinateTuple([ 691875.6321403517, 6098907.825001632, 0.0, 0.0]) CoordinateTuple([1016066.6135867655, 6574904.395327058, 0.0, 0.0])
+```
 
 ---
 
@@ -143,7 +147,7 @@ Being intended for authoring of geodetic functionality, customization is very im
 
 ### Going ellipsoidal
 
-Much functionality related to geometrical geodesy can be associated with the ellipsoid model in use, and hence, in a software context, be modelled as methods on the ellipsoid object in use.
+Much functionality related to geometrical geodesy can be associated with the ellipsoid model in use, and hence, in a software context, be modelled as methods on the ellipsoid object.
 
 In RG, the ellipsoid is represented by the `Ellipsoid` data type:
 
@@ -209,13 +213,19 @@ b
 
 ### References
 
-`[Knudsen et al 2019]` Thomas Knudsen, Kristian Evers, Geir Arne Hjelle, Guðmundur Valsson, Martin Lidberg and Pasi Häkli: *The Bricks and Mortar for Contemporary Reimplementation of Legacy Nordic Transformations*. Geophysica (2019), 54(1), 107–116.
+`[Knudsen et al 2019]`
+
+Thomas Knudsen, Kristian Evers, Geir Arne Hjelle, Guðmundur Valsson, Martin Lidberg and Pasi Häkli: *The Bricks and Mortar for Contemporary Reimplementation of Legacy Nordic Transformations*. Geophysica (2019), 54(1), 107–116.
 
 ### Notes
 
-`[ellps implied]` In both cases, the use of the GRS80 ellipsoid is implied, but may be expressly stated as  `utm: {zone: 32, ellps: GRS80}` resp. `proj=utm zone=32 ellps=GRS80`
+`[ellps implied]`
 
-`[idiomatic Rust]` In production, we would check the return of `ctx.operator(...)`, rather than just `unwrap()`ping:
+In both cases, the use of the GRS80 ellipsoid is implied, but may be expressly stated as  `utm: {zone: 32, ellps: GRS80}` resp. `proj=utm zone=32 ellps=GRS80`
+
+`[idiomatic Rust]`
+
+In production, we would check the return of `ctx.operator(...)`, rather than just `unwrap()`ping:
 
 ```rust
 if let Some(utm32) = ctx.operator("utm: {zone: 32}") {
