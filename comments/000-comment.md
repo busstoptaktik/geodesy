@@ -127,7 +127,8 @@ As the action goes on *in place*, we allow `fwd(..)` to mutate the input data, b
 The printout will show the projected data in (easting, northing)-coordinate order:
 
 ```
-CoordinateTuple([ 691875.6321403517, 6098907.825001632, 0.0, 0.0]) CoordinateTuple([1016066.6135867655, 6574904.395327058, 0.0, 0.0])
+CoordinateTuple([ 691875.6321403517, 6098907.825001632, 0.0, 0.0])
+CoordinateTuple([1016066.6135867655, 6574904.395327058, 0.0, 0.0])
 ```
 
 ---
@@ -213,17 +214,17 @@ b
 
 ### References
 
-`[Knudsen et al 2019]`
+**Reference:** `[Knudsen et al 2019]`
 
 Thomas Knudsen, Kristian Evers, Geir Arne Hjelle, Guðmundur Valsson, Martin Lidberg and Pasi Häkli: *The Bricks and Mortar for Contemporary Reimplementation of Legacy Nordic Transformations*. Geophysica (2019), 54(1), 107–116.
 
 ### Notes
 
-`[ellps implied]`
+**Note:** `[ellps implied]`
 
 In both cases, the use of the GRS80 ellipsoid is implied, but may be expressly stated as  `utm: {zone: 32, ellps: GRS80}` resp. `proj=utm zone=32 ellps=GRS80`
 
-`[idiomatic Rust]`
+**Note:** `[idiomatic Rust]`
 
 In production, we would check the return of `ctx.operator(...)`, rather than just `unwrap()`ping:
 
