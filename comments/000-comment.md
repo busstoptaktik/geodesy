@@ -56,6 +56,8 @@ fn main() {
 }
 ```
 
+(See also `[idiomatic Rust]` in the Notes section)
+
 At comment `[0]`, we start by renaming the library functionality for coordinate handling, from `geodesy::CoordinateTuple` to `Coord`. Since coordinates are at the heart of what we're doing, it should have a brief and clear name. Then why giving it such a long name by design, you may wonder - well, `CoordinateTuple` is the ISO-19111 standard designation of what we colloquially would call *the coordinates*.
 
 ---
@@ -76,7 +78,9 @@ Also, the `Context` is the sole interface between the `RG` transformation functi
 let utm32 = ctx.operator("utm: {zone: 32}").unwrap();
 ```
 
-At comment `[2]`, we use the `operator` method of the `Context` to instantiate an `Operator`. The parametrisation of the operator, i.e. the text `utm: {zone: 32}` is expressed in [YAML](https://en.wikipedia.org/wiki/YAML) using element naming conventions close to those used in PROJ, where the same operator would be described as `proj=utm zone=32`.
+(See also `[ellps implied]` in the Notes section)
+
+At comment `[2]`, we use the `operator` method of the `Context` to instantiate an `Operator`. The parametrisation of the operator, i.e. the text `utm: {zone: 32}` is expressed in [YAML](https://en.wikipedia.org/wiki/YAML) using parameter naming conventions close to those used in PROJ, where the same operator would be described as `proj=utm zone=32`.
 
 So essentially, PROJ and RG uses identical operator parametrisations, but RG, being 40 years younger than PROJ, is able to leverage YAML, an already 20 years old, JSON compatible, generic data representation format. PROJ, on the other hand, was born 20 years prior to YAML, and had to implement its own domain specific format.
 
@@ -133,36 +137,116 @@ println!({:?}, data);
 
 At comment `[6]`, we roundtrip back to geographical coordinates. Prior to print out, we let `Coord::geo_all(...)` convert from the internal coordinate representation, to the geodetic convention of "latitude before longitude, and angles in degrees".
 
-### Defining your own world
+### Redefining the world
 
 Being intended for authoring of geodetic functionality, customization is very important. RG allows temporal overshadowing of built in functionality by registering user defined macros and operators. This is treated in examples [02 (macros)](../examples/02-02-user_defined_macros.rs) and [03 (operators)](03-user_defined_operators.rs)
 
 ### Going ellipsoidal
 
+Much functionality related to geometrical geodesy can be associated with the ellipsoid model in use, and hence, in a software context, be modelled as methods on the ellipsoid object in use.
+
+In RG, the ellipsoid is represented by the `Ellipsoid` data type:
+
+```rust
+pub struct Ellipsoid {
+    a: f64,
+    ay: f64,
+    f: f64,
+}
+```
+In most cases, the ellipsoid in use will be rotationally symmetrical, but RG anticipates the use of triaxial ellipsoids. As can be seen, the `Ellipsoid` data type is highly restricted, containing only the bare essentials for defining the ellipsoidal size and shape. All other items are implemented as methods:
+
+```rust
+let GRS80 = geodesy::Ellipsoid::named("GRS80");
+
+let E = GRS80.linear_eccentricity();
+let b = GRS80.semiminor_axis();
+let c = GRS80.polar_radius_of_curvature();
+let n = GRS80.third_flattening();
+let es = GRS80.eccentricity_squared();
+```
+
+The functionality also includes ancillary latitudes, and computation of geodesics on the ellipsoid - see [example 01](../examples/01-geometrical-geodesy.rs) for details.
+
+
 ### Comming attractions
 
-#### Extensions
+RG is in early-stage development, so a number of additions are planned.
 
-In [^Knu19] we identified a...
+#### Geometric geodesy
 
-#### Getting physical
+In `[Knudsen et al 2019]` we identified a small number of operations collectively considered the "bare minimum requirements for a geodetic transformation system":
+
+1. Geodetic-to-Cartesian coordinate conversion, and its inverse.
+2. Helmert transformations of various kinds (2D, 3D, 4D or, equivalently: 4 parameter, 3/7 parameter and 14/15 parameter).
+3. The Molodensky transformation.
+4. Horizontal grid shift (“NADCON-transformation”).
+5. Vertical grid shift (ellipsoidal-to-orthometric height transformation).
+
+Of these only the first is fully implemented in RG. The Molodensky transformation has not even been started at, while the remaining parts are in various stages of completion. These are **need to do** elements for near future work.
+
+Also, a number of additional projections are in the pipeline: first and foremost the Mercator projection (used in nautical charts), and the Lambert conformal conic projection (used in aeronautical charts).
+
+#### Physical geodesy
+
+Plans for capturing the domain of physical geodesy are limited, although the `Ellipsoid` data type will probably very soon be extended with entries for the *International Gravity Formula, 1930* and *The GRS80 gravity formula*.
+
+#### Coordinate descriptors
+
+Combining the generic `CoordinateTuple`s with `CoordinateDescriptor`s will make it possible to sanity check pipelines, and automate coordinate order and unit conversions.
 
 #### Logging
 
+The Rust ecosystem includes excellent logging facilities, just waiting to be implemented in RG.
 
 ### Discussion
 
+b
 
 ### Conclusion
 
+b
 
 ### References
 
-[^Knu19]: Thomas, Kristian og mange andre om PROJ pipelines og nordiske transformationer.
+`[Knudsen et al 2019]` Thomas Knudsen, Kristian Evers, Geir Arne Hjelle, Guðmundur Valsson, Martin Lidberg and Pasi Häkli: *The Bricks and Mortar for Contemporary Reimplementation of Legacy Nordic Transformations*. Geophysica (2019), 54(1), 107–116.
 
 ### Notes
 
-In both cases, the use of the GRS80 ellipsoid is implied, but may be expressly stated as  `utm: {zone: 32, ellps: GRS80}` resp. `proj=utm zone=32 ellps=GRS80`
+`[ellps implied]` In both cases, the use of the GRS80 ellipsoid is implied, but may be expressly stated as  `utm: {zone: 32, ellps: GRS80}` resp. `proj=utm zone=32 ellps=GRS80`
+
+`[idiomatic Rust]` In production, we would check the return of `ctx.operator(...)`, rather than just `unwrap()`ping:
+
+```rust
+if let Some(utm32) = ctx.operator("utm: {zone: 32}") {
+    let copenhagen = C::geo(55., 12., 0., 0.);
+    let stockholm = C::geo(59., 18., 0., 0.);
+    ...
+}
+```
+In C, using PROJ, the demo program would resemble this:
+
+```C
+#include <proj.h>
+
+#int main() {
+    PJ_CONTEXT *C = proj_context_create();
+    PJ *P = proj_create(C, "proj=utm zone=32");
+    PJ_COORD copenhagen, stockholm;
+
+    copenhagen = proj_coord(12, 55, 0, 0);
+    stockholm = proj_coord(18, 59, 0, 0);
+
+    copenhagen = proj_trans(P, PJ_FWD, copenhagen);
+    stockholm = proj_trans(P, PJ_FWD, stockholm);
+
+    copenhagen = proj_trans(P, PJ_INV, copenhagen);
+    stockholm = proj_trans(P, PJ_INV, stockholm);
+
+    proj_destroy(P);
+    proj_context_destroy(C);
+}
+```
 
 
 ###
