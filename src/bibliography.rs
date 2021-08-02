@@ -11,7 +11,7 @@ pub enum Bibliography {
 
     /// B.R. Bowring (1985): *The accuracy of geodetic latitude and height equations*.
     /// Survey Review, 28(218), pp.202-206,
-    /// [DOI](https://doi.org/10.1179/sre.1985.28.218.202)
+    /// [DOI](https://doi.org/10.1179/sre.1985.28.218.202).
     Bow85,
 
     /// B.R. Bowring (1989): *Transverse mercator equations obtained from a spherical basis*.
@@ -24,6 +24,14 @@ pub enum Bibliography {
     /// Computers and Geosciences, Vol. 133, article 104307
     /// [DOI](https://doi.org/10.1016/j.cageo.2019.104307)
     Cla19,
+
+    /// R.E. Deakin, M.N. Hunter and C.F.F. Karney (2012):
+    /// *A fresh look at the UTM projection:
+    /// Karney-Krueger equations*.
+    /// Surveying and Spatial Sciences Institute (SSSI)
+    /// Land Surveying Commission National Conference,
+    /// Melbourne, 18-21 April, 2012.
+    Dea12,
 
     /// Toshio Fukushima (1999): *Fast transform from geocentric to geodetic coordinates*.
     /// Journal of Geodesy, 73(11), pp.603–610
@@ -52,13 +60,12 @@ pub enum Bibliography {
     /// [DOI](https://doi.org/10.1007/s00190-012-0578-z)
     Kar13,
 
-    /// R.E. Deakin, M.N. Hunter and C.F.F. Karney (2012):
-    /// *A fresh look at the UTM projection:
-    /// Karney-Krueger equations*.
-    /// Surveying and Spatial Sciences Institute (SSSI)
-    /// Land Surveying Commission National Conference,
-    /// Melbourne, 18-21 April, 2012.
-    Dea12,
+    /// Thomas Knudsen, Kristian Evers, Geir Arne Hjelle,
+    /// Guðmundur Valsson, Martin Lidberg and Pasi Häkli (2019):
+    /// *The Bricks and Mortar for Contemporary Reimplementation
+    /// of Legacy Nordic Transformations*.
+    /// Geophysica, 54(1), pp. 107–116.
+    Knu19,
 
     /// L. Krüger (1912). *Konforme Abbildung des Erdellipsoids in der Ebene*.
     /// Royal Prussian Geodetic Institute, New Series 52.

@@ -1,5 +1,6 @@
 use super::OperatorArgs;
 use super::OperatorCore;
+use crate::operator_construction::*;
 use crate::Context;
 use crate::CoordinateTuple;
 use crate::Ellipsoid;
@@ -22,7 +23,7 @@ pub struct Cart {
 }
 
 impl Cart {
-    pub fn new(args: &mut OperatorArgs) -> Result<Cart, String> {
+    pub fn new(args: &mut OperatorArgs) -> Result<Cart, &'static str> {
         let ellps = Ellipsoid::named(&args.value("ellps", "GRS80"));
 
         let es = ellps.eccentricity_squared();
@@ -48,6 +49,11 @@ impl Cart {
             ce4,
             cutoff,
         })
+    }
+
+    pub(crate) fn operator(args: &mut OperatorArgs) -> Result<Operator, &'static str> {
+        let op = crate::operator::cart::Cart::new(args)?;
+        Ok(Operator(Box::new(op)))
     }
 }
 

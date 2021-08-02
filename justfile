@@ -1,7 +1,8 @@
 # Justfile for the Rust Geodesy project.
 
-alias t := test
 alias c := check
+alias r := run
+alias t := test
 
 # Defaults to test.
 default: test
@@ -22,6 +23,10 @@ check: test
 doc:
     cargo doc --no-deps --open
 
+# Run default application.
+run:
+    cargo run
+
 # Run example based on its unique prefix (e.g. 00, 01, etc.).
 run-example EXAMPLE:
     cargo run --example `basename examples/"{{EXAMPLE}}"* .rs`
@@ -35,23 +40,23 @@ run-all:
     cargo run --example 03-user_defined_operators
 
 # Show diff of all 'git add'-ed files
-diff:  && status
+diff:  && stat
     git diff
 
 # Given check passes, commit what has been "git add"-ed
-commit: check  &&  status
+commit: check  &&  stat
     git commit
 
 # Given check passes, add everything and commit all changes
-commit-all: check  &&  status
+commit-all: check  &&  stat
     git commit -a
 
 # As commit-all but use MESSAGE as commit-message
-commit-fast MESSAGE: check  &&  status
+commit-fast MESSAGE: check  &&  stat
     git commit -a -m "{{MESSAGE}}"
 
 # Git status
-status:
+stat:
     git status
 
 # Compact format log for changelog report

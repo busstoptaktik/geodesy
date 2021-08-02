@@ -4,7 +4,15 @@
 fn main() {
     use geodesy::CoordinateTuple as C;
     let mut ctx = geodesy::Context::new();
-    ctx.salat();
+
+    if let Some(utm32) = ctx.operator("utm: {zone: 32}") {
+        let copenhagen = C::geo(55., 12., 0., 0.);
+        let stockholm = C::geo(59., 18., 0., 0.);
+        let mut data = [copenhagen, stockholm];
+
+        ctx.fwd(utm32, &mut data);
+        println!("{:?}", data);
+    }
 
     let coo = C([1., 2., 3., 4.]);
     println!("coo: {:?}", coo);
@@ -43,8 +51,8 @@ fn main() {
     }
 
     let utm32 = match ctx.operator("utm: {zone: 32}") {
-        Err(e) => return println!("Awful error: {}", e),
-        Ok(op) => op,
+        None => return println!("Awful error"),
+        Some(op) => op,
     };
 
     ctx.fwd(utm32, &mut data_utm32);
@@ -62,8 +70,8 @@ fn main() {
     }";
 
     let ed50_etrs89 = match ctx.operator(pipeline) {
-        Err(e) => return println!("Awful error: {}", e),
-        Ok(op) => op,
+        None => return println!("Awful error"),
+        Some(op) => op,
     };
 
     ctx.fwd(ed50_etrs89, &mut data_all);

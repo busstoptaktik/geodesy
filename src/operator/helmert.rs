@@ -12,10 +12,10 @@ pub struct Helmert {
 }
 
 impl Helmert {
-    fn new(args: &mut OperatorArgs) -> Result<Helmert, String> {
-        let dx = args.numeric_value("Helmert", "dx", 0.0)?;
-        let dy = args.numeric_value("Helmert", "dy", 0.0)?;
-        let dz = args.numeric_value("Helmert", "dz", 0.0)?;
+    fn new(args: &mut OperatorArgs) -> Result<Helmert, &'static str> {
+        let dx = args.numeric_value("dx", 0.0)?;
+        let dy = args.numeric_value("dy", 0.0)?;
+        let dz = args.numeric_value("dz", 0.0)?;
         let inverted = args.flag("inv");
         let argsc = args.clone();
         Ok(Helmert {
@@ -27,9 +27,9 @@ impl Helmert {
         })
     }
 
-    pub(crate) fn operator(args: &mut OperatorArgs) -> Result<Operator, String> {
+    pub(crate) fn operator(args: &mut OperatorArgs) -> Result<Operator, &'static str> {
         let op = crate::operator::helmert::Helmert::new(args)?;
-        Ok(Operator { 0: Box::new(op) })
+        Ok(Operator(Box::new(op)))
     }
 }
 
@@ -82,7 +82,7 @@ mod tests {
         args.insert("dz", "-120");
 
         let h = operator_factory(&mut args, &mut ctx, 0);
-        assert!(h.is_err());
+        assert!(h.is_none());
 
         // EPSG:1134 - 3 parameter, ED50/WGS84, s = sqrt(27) m
         args.insert("dx", "-87");

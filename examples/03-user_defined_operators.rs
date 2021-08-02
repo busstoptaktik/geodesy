@@ -23,7 +23,7 @@ pub struct Add42 {
 }
 
 impl Add42 {
-    fn new(args: &mut OperatorArgs) -> Result<Add42, String> {
+    fn new(args: &mut OperatorArgs) -> Result<Add42, &'static str> {
         let inverted = args.flag("inv");
         Ok(Add42 {
             args: args.clone(),
@@ -33,7 +33,7 @@ impl Add42 {
 
     // This is the interface to the Rust Geodesy library: Construct an Add42
     // element, and wrap it properly for consumption. It is 100% boilerplate.
-    pub fn operator(args: &mut OperatorArgs, _ctx: &mut Context) -> Result<Operator, String> {
+    pub fn operator(args: &mut OperatorArgs, _ctx: &mut Context) -> Result<Operator, &'static str> {
         let op = Add42::new(args)?;
         Ok(Operator(Box::new(op)))
     }
@@ -72,8 +72,11 @@ fn main() {
     ctx.register_operator("add42", Add42::operator);
 
     let add42 = match ctx.operator("add42: {}") {
-        Err(e) => return println!("Awful error: {}", e),
-        Ok(op) => op,
+        Some(value) => value,
+        None => {
+            println!("Awful!");
+            return;
+        }
     };
 
     // Same test coordinates as in example 00, but no conversion to radians.
@@ -90,14 +93,14 @@ fn main() {
 
     // Now do the transformation
     ctx.fwd(add42, &mut data);
-    println!("add42:");
+    println!("add42 (fwd):");
     for coord in data {
         println!("    {:?}", coord);
     }
 
     // And go back...
     ctx.inv(add42, &mut data);
-    println!("add42:");
+    println!("add42 (inv):");
     for coord in data {
         println!("    {:?}", coord);
     }
