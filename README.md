@@ -21,13 +21,13 @@ All four aims are guided by a wish to amend explicitly identified shortcomings i
 
 ## Documentation
 
-The documentation is currently very limited, but take a look at the [examples](examples), and the tests embedded in the source code.
+The documentation is currently very limited, but take a look at the [examples](examples), at the tests embedded in the source code, and at this blog style [comment](/comments/000-comment.md), outlining the overall philosophy and architecture of *Rust Geodesy*.
 
 ## License
 
-*Rust Geodesy* is Copyright 2020, 2021 by Thomas Knudsen <knudsen.thomas@gmail.com>
+*Rust Geodesy*: Copyright 2020, 2021 by Thomas Knudsen <knudsen.thomas@gmail.com>.
 
-it is licensed under either of
+Licensed under either of
 
 * Apache License, Version 2.0
   ([LICENSE-APACHE](LICENSE-APACHE) or [here](http://www.apache.org/licenses/LICENSE-2.0))
