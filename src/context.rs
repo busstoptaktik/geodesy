@@ -12,14 +12,9 @@ pub struct Context {
     user_defined_operators: HashMap<String, OperatorConstructor>,
     user_defined_macros: HashMap<String, String>,
     operators: Vec<Operator>,
-    pub(crate) last_failing_operation: &'static str,
-    pub(crate) cause: &'static str,
-}
-
-impl Context {
-    pub fn salat(&self) {
-        println!("--- SALAT --- {}", self.stack.len());
-    }
+    last_failing_operation_definition: String,
+    last_failing_operation: &'static str,
+    cause: &'static str,
 }
 
 impl Context {
@@ -41,6 +36,7 @@ impl Context {
         Context {
             stack: Vec::new(),
             minions: Vec::new(),
+            last_failing_operation_definition: String::new(),
             last_failing_operation: "",
             cause: "",
             user_defined_operators: HashMap::new(),
@@ -123,15 +119,26 @@ impl Context {
         self.user_defined_macros.get(name)
     }
 
-    pub fn operator(&mut self, definition: &str) -> Result<usize, String> {
-        let op = match Operator::new(definition, self) {
-            Err(err) => return Err(err),
-            Ok(ok) => ok,
-        };
-
+    pub fn operator(&mut self, definition: &str) -> Option<usize> {
+        self.last_failing_operation_definition = definition.to_string();
+        self.last_failing_operation = "";
+        self.cause = "";
+        let op = Operator::new(definition, self)?;
         let index = self.operators.len();
         self.operators.push(op);
-        Ok(index)
+        Some(index)
+    }
+
+    pub fn error(&mut self, which: &'static str, why: &'static str) {
+        self.last_failing_operation = which;
+        self.cause = why;
+    }
+
+    pub fn report(&mut self) -> String {
+        format!(
+            "Last failure in {}: {}\n{}",
+            self.last_failing_operation, self.cause, self.last_failing_operation_definition
+        )
     }
 }
 
@@ -161,7 +168,7 @@ mod tests {
 
         let mut ctx = Context::new();
         let op = ctx.operator(pipeline);
-        assert!(op.is_ok());
+        assert!(op.is_some());
         let op = op.unwrap();
         let geo = CoordinateTuple::gis(12., 55., 100., 0.);
         let mut operands = [geo];

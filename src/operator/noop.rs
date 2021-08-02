@@ -1,6 +1,7 @@
 use super::Context;
 use super::OperatorArgs;
 use super::OperatorCore;
+use crate::operator_construction::*;
 use crate::CoordinateTuple;
 
 pub struct Noop {
@@ -8,8 +9,13 @@ pub struct Noop {
 }
 
 impl Noop {
-    pub fn new(args: &mut OperatorArgs) -> Result<Noop, String> {
+    pub fn new(args: &mut OperatorArgs) -> Result<Noop, &'static str> {
         Ok(Noop { args: args.clone() })
+    }
+
+    pub(crate) fn operator(args: &mut OperatorArgs) -> Result<Operator, &'static str> {
+        let op = crate::operator::noop::Noop::new(args)?;
+        Ok(Operator(Box::new(op)))
     }
 }
 

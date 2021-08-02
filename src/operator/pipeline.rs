@@ -13,10 +13,10 @@ pub struct Pipeline {
 }
 
 impl Pipeline {
-    pub fn new(args: &mut OperatorArgs, ctx: &mut Context) -> Result<Pipeline, String> {
+    pub fn new(args: &mut OperatorArgs, ctx: &mut Context) -> Result<Pipeline, &'static str> {
         let inverted = args.flag("inv");
         let mut steps = Vec::new();
-        let n = args.numeric_value("Pipeline", "_nsteps", 0.0)? as usize;
+        let n = args.numeric_value("_nsteps", 0.0)? as usize;
 
         for i in 0..n {
             // Each step is represented as args[_step_0] = YAML step definition.
@@ -26,8 +26,11 @@ impl Pipeline {
 
             // We need a recursive copy of "all globals so far"
             let mut oa = args.spawn(step_args);
-            let op = operator_factory(&mut oa, ctx, 0)?;
-            steps.push(op);
+            if let Some(op) = operator_factory(&mut oa, ctx, 0) {
+                steps.push(op);
+            } else {
+                return Err("Bad step");
+            }
         }
 
         let args = args.clone();
