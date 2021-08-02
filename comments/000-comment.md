@@ -234,7 +234,7 @@ RG is in early-stage development, so a number of additions are planned.
 
 #### Geometric geodesy
 
-In `[Knudsen et al 2019]` we identified a small number of operations collectively considered the "bare minimum requirements for a geodetic transformation system":
+In `[Knudsen et al, 2019]` we identified a small number of operations collectively considered the "bare minimum requirements for a geodetic transformation system":
 
 1. Geodetic-to-Cartesian coordinate conversion, and its inverse.
 2. Helmert transformations of various kinds (2D, 3D, 4D or, equivalently: 4 parameter, 3/7 parameter and 14/15 parameter).
@@ -272,7 +272,7 @@ From the detailed walkthrough of the example above, we can summarize "the philos
 
 * **Operator pipelines are awesome:** Perhaps not a surprising stance, since I invented the concept and implemented it in PROJ five years ago, through the [Plumbing for Pipelines](https://github.com/OSGeo/PROJ/pull/453) pull request.
 
-While operator pipelines superficically look like the ISO-19100 series concept of *concatenated operations*, they are more general and as we pointed out in [Knudsen et al, 2019], also very powerful as a system of bricks and mortar for the construction of new conceptual buildings. Use more pipelines!
+While operator pipelines superficically look like the ISO-19100 series concept of *concatenated operations*, they are more general and as we pointed out in `[Knudsen et al, 2019]`, also very powerful as a system of bricks and mortar for the construction of new conceptual buildings. Use more pipelines!
 
 ### Conclusion
 
@@ -280,7 +280,7 @@ Rust Geodesy is a new, still functionally limited, system for experimentation wi
 
 ### References
 
-**Reference:** `[Knudsen et al 2019]`
+**Reference:** `[Knudsen et al, 2019]`
 
 Thomas Knudsen, Kristian Evers, Geir Arne Hjelle, Guðmundur Valsson, Martin Lidberg and Pasi Häkli: *The Bricks and Mortar for Contemporary Reimplementation of Legacy Nordic Transformations*. Geophysica (2019), 54(1), 107–116.
 
