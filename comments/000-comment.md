@@ -1,6 +1,6 @@
 # Comments on Rust Geodesy
 
-## Issue 000: Overall architecture and philosophy
+## Comment 000: Overall architecture and philosophy
 
 Thomas Knudsen <knudsen.thomas@gmail.com>
 
@@ -14,7 +14,7 @@ Rust Geodesy, RG, is a geodetic software system, not entirely unlike [PROJ](http
 
 So when I liberally insert comparisons with PROJ in the following, it is for elucidation, not for mocking, neither of PROJ, nor of RG: I have spent much pleasant and instructive time with PROJ, both as a PROJ core developer and as a PROJ user (more about that in an upcomming *Comment on RG*). But I have also spent much pleasant time learning Rust and developing RG, so I feel deeply connected to both PROJ and RG.
 
-PROJ and RG do, however, belong in two different niches of the geodetic software ecosystem: Where PROJ is the production work horse, with the broad community of end users and developers, RG aims at a much more narrow community of geodesists, for geodetic development work - e.g. for development of transformations that may eventually end up in PROJ. As stated in the [README](../README.md)-file, RG aims to:
+PROJ and RG do, however, belong in two different niches of the geodetic software ecosystem: Where PROJ is the production work horse, with the broad community of end users and developers, RG aims at a much more narrow community of geodesists, for geodetic development work - e.g. for development of transformations that may eventually end up in PROJ. As stated in the [README](/README.md)-file, RG aims to:
 
 1. Support experiments for evolution of geodetic standards.
 2. Support development of geodetic transformations.
@@ -69,7 +69,7 @@ let mut ctx = geodesy::Context::new();
 
 At comment `[1]` we instantiate a `Context`, which should not come as a surprise if you have been using [PROJ](https:://proj.org) recently. The `Context` provides the interface to the messy world external to RG (files, threads, communication), and in general centralizes all the *mutable state* of the system.
 
-Also, the `Context` is the sole interface between the `RG` transformation functionality and the application program: You may instantiate a transformation object, but the `Context` handles it for you. While you need a separate `Context` for each thread of your program, the `Context` itself is actually designed to eventually do its work in parallel, using several threads.
+Also, the `Context` is the sole interface between the `RG` transformation functionality and the application program: You may instantiate a transformation object, but the `Context` handles it for you. While you need a separate `Context` for each thread of your program, the `Context` itself is designed to eventually do its work in parallel, using several threads.
 
 ---
 
@@ -79,7 +79,7 @@ let utm32 = ctx.operator("utm: {zone: 32}").unwrap();
 ```
 
 
-At comment `[2]`, we use the `operator` method of the `Context` to instantiate an `Operator`. The parametrisation of the operator, i.e. the text `utm: {zone: 32}` is expressed in [YAML](https://en.wikipedia.org/wiki/YAML) using parameter naming conventions close to those used in PROJ, where the same operator would be described as `proj=utm zone=32`
+At comment `[2]`, we use the `operator` method of the `Context` to instantiate an `Operator` (closely corresponding to the `PJ` object in PROJ). The parametrisation of the operator, i.e. the text `utm: {zone: 32}` is expressed in [YAML](https://en.wikipedia.org/wiki/YAML) using parameter naming conventions close to those used in PROJ, where the same operator would be described as `proj=utm zone=32`
 (see also `[ellps implied]` in the Notes section).
 
 So essentially, PROJ and RG uses identical operator parametrisations, but RG, being 40 years younger than PROJ, is able to leverage YAML, an already 20 years old, JSON compatible, generic data representation format. PROJ, on the other hand, was born 20 years prior to YAML, and had to implement its own domain specific format.
@@ -87,7 +87,7 @@ So essentially, PROJ and RG uses identical operator parametrisations, but RG, be
 Note, however, that contrary to PROJ, when we instantiate an operator in RG, we do not actually get an `Operator` object back, but just a handle to an `Operator`, living its entire life embedded inside the `Context`.
 And while the `Context` is mutable, the `Operator`, once created, is *immutable*.
 
-This makes `Operator`s thread-sharable, so the `Context` will eventually (although not yet fully implemented), be able to automatically parallelize large transformation jobs, eliminating much of the need for separate thread handling at the application program level.
+This makes `Operator`s thread-sharable, so the `Context` will eventually (although not yet fully implemented), be able to automatically parallelize large transformation jobs, eliminating some of the need for separate thread handling at the application program level.
 
 ---
 
@@ -102,15 +102,15 @@ let mut data = [copenhagen, stockholm];
 
 At comments `[3]` and `[4]` we produce the input data we want to transform. Internally, RG represents angles in radians, and follows the traditional GIS coordinate order of *longitide before latitude*. Externally, however, you may pick-and-choose.
 
-In this case, we choose human readable angles in degrees, and the traditional coordinate order used in geodesy and navigation *latitude before longitude*. The `Coord::geo(...)` function translates that into the internal representation. It has siblings `Coord::gis(...)` and `Coord::raw(...)` which handles GIS coordinate order and raw numbers, respectively. The latter is useful for projected coordinates, cartesian coordinates, and for coordinates with angles in radians. We may also simply give a `CoordinateTuple` as a naked array of four double precision floating point numbers:
+In this case, we choose human readable angles in degrees, and the traditional coordinate order used in geodesy and navigation: *latitude before longitude*. The `Coord::geo(...)` function translates that into the internal representation. It has siblings `Coord::gis(...)` and `Coord::raw(...)` which handles GIS coordinate order and raw numbers, respectively. The latter is useful for projected coordinates, cartesian coordinates, and for coordinates with angles in radians. We may also simply give a `CoordinateTuple` as a naked array of four double precision floating point numbers:
 
 ```rust
-let mumble = Coord([1., 42., 3., 4.]);
+let somewhere = Coord([1., 42., 3., 4.]);
 ```
 
 The `CoordinateTuple` data type does not enforce any special interpretation of what kind of coordinate it stores: That is entirely up to the `Operation` to interpret. A `CoordinateTuple` simply consists of 4 numbers with no other implied interpretation than their relative order, given by the names *first, second, third, and fourth*, respectively.
 
-RG operators take *arrays of `CoordinateTuples`* as input, rather than individual elements, so at comment `[4]` we put the elements into an array
+RG operators take *arrays of `CoordinateTuples`* as input, rather than individual elements, so at comment `[4]` we put the elements into an array.
 
 ---
 
@@ -144,7 +144,60 @@ At comment `[6]`, we roundtrip back to geographical coordinates. Prior to print 
 
 ### Redefining the world
 
-Being intended for authoring of geodetic functionality, customization is very important. RG allows temporal overshadowing of built in functionality by registering user defined macros and operators. This is treated in examples [02 (macros)](../examples/02-02-user_defined_macros.rs) and [03 (operators)](03-user_defined_operators.rs)
+Being intended for authoring of geodetic functionality, customization is very important. RG allows temporal overshadowing of built in functionality by registering user defined macros and operators. This is treated in detail in examples [02 (macros)](../examples/02-02-user_defined_macros.rs) and [03 (operators)](/examples/03-user_defined_operators.rs). Here, let just take a minimal look at the workflow, which can be described briefly as *define, register, instantiate, and use:*
+
+First the macro case:
+
+```rust
+// Define a macro, using hat notation (^) for the macro parameters
+let macro_text = "pipeline: {
+        steps: [
+            cart: {ellps: ^left},
+            helmert: {dx: ^dx, dy: ^dy, dz: ^dz},
+            cart: {inv: true, ellps: ^right}
+        ]
+    }";
+
+// Register the macro, under the name "geohelmert"
+ctx.register_macro("geohelmert", macro_text);
+
+// Instantiate the geohelmert macro with replacement values
+// for the parameters left, right, dx, dy, dz
+ed50_wgs84 = ctx.operator("geohelmert: {
+    left: intl,
+    right: GRS80,
+    dx: -87, dy: -96, dz: -120
+}").unwrap();
+
+// ... and use:
+ctx.fwd(ed50_wgs84, data);
+```
+
+And then a user defined operator:
+
+```rust
+use geodesy::operator_construction::*;
+
+// See examples/03-user-defined-operators.rs for implementation details
+pub struct MyNewOperator {
+    args: OperatorArgs,
+    foo: f64,
+    ...
+}
+
+// Register
+ctx.register_operator("my_new_operator", MyNewOperator::operator);
+
+// Instantiate
+let my_new_operator_with_foo_as_42 = ctx.operator(
+    "my_new_operator: {foo: 42}"
+).unwrap();
+
+// ... and use:
+ctx.fwd(my_new_operator_with_foo_as_42, data);
+```
+
+Essentially, once they are registered, macros and user defined operators work exactly as the builtins. Also, they overshadow the builtin names, so testing alternative implementations of built in operators is as easy as registering a new operator with the same name as a builtin.
 
 ### Going ellipsoidal
 
@@ -159,6 +212,7 @@ pub struct Ellipsoid {
     f: f64,
 }
 ```
+
 In most cases, the ellipsoid in use will be rotationally symmetrical, but RG anticipates the use of triaxial ellipsoids. As can be seen, the `Ellipsoid` data type is highly restricted, containing only the bare essentials for defining the ellipsoidal size and shape. All other items are implemented as methods:
 
 ```rust
@@ -194,7 +248,7 @@ Also, a number of additional projections are in the pipeline: first and foremost
 
 #### Physical geodesy
 
-Plans for capturing the domain of physical geodesy are limited, although the `Ellipsoid` data type will probably very soon be extended with entries for the *International Gravity Formula, 1930* and *The GRS80 gravity formula*.
+Plans for invading the domain of physical geodesy are limited, although the `Ellipsoid` data type will probably very soon be extended with entries for the *International Gravity Formula, 1930* and *The GRS80 gravity formula*.
 
 #### Coordinate descriptors
 
@@ -203,6 +257,9 @@ Combining the generic `CoordinateTuple`s with `CoordinateDescriptor`s will make 
 #### Logging
 
 The Rust ecosystem includes excellent logging facilities, just waiting to be implemented in RG.
+
+### Philosophy
+
 
 ### Discussion
 
@@ -235,7 +292,7 @@ if let Some(utm32) = ctx.operator("utm: {zone: 32}") {
     ...
 }
 ```
-In C, using PROJ, the demo program would resemble this:
+In C, using PROJ, the demo program would resemble this untested snippet:
 
 ```C
 #include <proj.h>
@@ -243,14 +300,15 @@ In C, using PROJ, the demo program would resemble this:
 #int main() {
     PJ_CONTEXT *C = proj_context_create();
     PJ *P = proj_create(C, "proj=utm zone=32");
-    PJ_COORD copenhagen, stockholm;
 
-    copenhagen = proj_coord(12, 55, 0, 0);
-    stockholm = proj_coord(18, 59, 0, 0);
+    PJ_COORD copenhagen = proj_coord(12, 55, 0, 0);
+    PJ_COORD stockholm = proj_coord(18, 59, 0, 0);
 
+    /* Forward */
     copenhagen = proj_trans(P, PJ_FWD, copenhagen);
     stockholm = proj_trans(P, PJ_FWD, stockholm);
 
+    /* ... and back */
     copenhagen = proj_trans(P, PJ_INV, copenhagen);
     stockholm = proj_trans(P, PJ_INV, stockholm);
 
