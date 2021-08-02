@@ -87,7 +87,7 @@ So essentially, PROJ and RG uses identical operator parametrisations, but RG, be
 Note, however, that contrary to PROJ, when we instantiate an operator in RG, we do not actually get an `Operator` object back, but just a handle to an `Operator`, living its entire life embedded inside the `Context`.
 And while the `Context` is mutable, the `Operator`, once created, is *immutable*.
 
-This makes `Operator`s thread-sharable, so the `Context` will eventually (although not yet fully implemented), be able to automatically parallelize large transformation jobs, eliminating some of the need for separate thread handling at the application program level.
+This makes `Operator`s thread-sharable, so the `Context` will eventually (although still not implemented), be able to automatically parallelize large transformation jobs, eliminating some of the need for separate thread handling at the application program level.
 
 ---
 
@@ -110,7 +110,7 @@ let somewhere = Coord([1., 42., 3., 4.]);
 
 The `CoordinateTuple` data type does not enforce any special interpretation of what kind of coordinate it stores: That is entirely up to the `Operation` to interpret. A `CoordinateTuple` simply consists of 4 numbers with no other implied interpretation than their relative order, given by the names *first, second, third, and fourth*, respectively.
 
-RG operators take *arrays of `CoordinateTuples`* as input, rather than individual elements, so at comment `[4]` we put the elements into an array.
+RG operators take *arrays of `CoordinateTuples`* as input, rather than individual elements, so at comment `[4]` we collect the elements into an array.
 
 ---
 
@@ -144,9 +144,9 @@ At comment `[6]`, we roundtrip back to geographical coordinates. Prior to print 
 
 ### Redefining the world
 
-Being intended for authoring of geodetic functionality, customization is very important. RG allows temporal overshadowing of built in functionality by registering user defined macros and operators. This is treated in detail in examples [02 (macros)](../examples/02-02-user_defined_macros.rs) and [03 (operators)](/examples/03-user_defined_operators.rs). Here, let just take a minimal look at the workflow, which can be described briefly as *define, register, instantiate, and use:*
+Being intended for authoring of geodetic functionality, customization is very important. RG allows temporal overshadowing of built in functionality by registering user defined macros and operators. This is treated in detail in examples [02 (macros)](/examples/02-user_defined_macros.rs) and [03 (operators)](/examples/03-user_defined_operators.rs). Here, let just take a minimal look at the workflow, which can be described briefly as *define, register, instantiate, and use:*
 
-First the macro case:
+First a macro:
 
 ```rust
 // Define a macro, using hat notation (^) for the macro parameters
@@ -173,7 +173,7 @@ ed50_wgs84 = ctx.operator("geohelmert: {
 ctx.fwd(ed50_wgs84, data);
 ```
 
-And then a user defined operator:
+Then a user defined operator:
 
 ```rust
 use geodesy::operator_construction::*;
@@ -258,16 +258,24 @@ Combining the generic `CoordinateTuple`s with `CoordinateDescriptor`s will make 
 
 The Rust ecosystem includes excellent logging facilities, just waiting to be implemented in RG.
 
-### Philosophy
-
-
 ### Discussion
 
-b
+From the detailed walkthrough of the example above, we can summarize "the philosophy of RG" as:
+
+* **Be flexible:** User defined macros and operators are first class citizens in the RG ecosystem - they are treated exactly as the builtins, and hence, can be used as vehicles for implementation of new built in functionality.
+* **Don't overspecify:** For example, the `CoordinateTuple` object is just an ordered set of four numbers, with no specific interpretation implied. It works as a shuttle, ferrying the operand between the steps of a pipeline of `Operator`s, and the meaning is entirely up to the `Operator`.
+* **Transformations are important. Systems not so much:** RG does not anywhere refer explicitly to input or output system names. Although it can be used to construct transformations between specific reference frames (as in the "ED50 to WGS84" case, in the *user defined macro* example), it doesn't really attribute any meaning to these internally.
+* **Draw inspiration from good role models, but not zealously:** PROJ and the ISO-19100 series of geospatial standards are important models for the design of RG, but on the other hand, RG is also built to address and investigate some perceived shortcomings in the role models.
+
+... and, although only sparsely touched upon above:
+
+* **Operator pipelines are awesome:** Perhaps not a surprising stance, since I invented the concept and implemented it in PROJ five years ago, through the [Plumbing for Pipelines](https://github.com/OSGeo/PROJ/pull/453) pull request.
+
+While operator pipelines superficically look like the ISO-19100 series concept of *concatenated operations*, they are more general and as we pointed out in [Knudsen et al, 2019], also very powerful as a system of bricks and mortar for the construction of new conceptual buildings. Use more pipelines!
 
 ### Conclusion
 
-b
+Rust Geodesy is a new, still functionally limited, system for experimentation with, and authoring of, new geodetic transformations, concepts, algorithms and standards. Go get it while it's hot!
 
 ### References
 
@@ -292,7 +300,7 @@ if let Some(utm32) = ctx.operator("utm: {zone: 32}") {
     ...
 }
 ```
-In C, using PROJ, the demo program would resemble this untested snippet:
+In C, using PROJ, the demo program would resemble this (untested) snippet:
 
 ```C
 #include <proj.h>
