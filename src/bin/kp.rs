@@ -5,6 +5,10 @@ fn main() {
     use geodesy::CoordinateTuple as C;
     let mut ctx = geodesy::Context::new();
 
+    if let Some(dir) = dirs::data_local_dir() {
+        println!("data_local_dir: {}", dir.to_str().unwrap_or_default());
+    }
+
     if let Some(utm32) = ctx.operator("utm: {zone: 32}") {
         let copenhagen = C::geo(55., 12., 0., 0.);
         let stockholm = C::geo(59., 18., 0., 0.);
@@ -61,6 +65,17 @@ fn main() {
         println!("    {:?}", coord);
     }
 
+    // Try to read predefined transformation from zip archive
+    let pladder = match ctx.operator("ed50_etrs89") {
+        None => return println!("Awful error"),
+        Some(op) => op,
+    };
+    ctx.fwd(pladder, &mut data_all);
+    println!("etrs89:");
+    for coord in data_all {
+        println!("    {:?}", coord.to_geo());
+    }
+
     let pipeline = "ed50_etrs89: {
         steps: [
             cart: {ellps: intl},
@@ -74,10 +89,9 @@ fn main() {
         Some(op) => op,
     };
 
-    ctx.fwd(ed50_etrs89, &mut data_all);
-    C::degrees_all(&mut data_all);
+    ctx.inv(ed50_etrs89, &mut data_all);
     println!("etrs89:");
     for coord in data_all {
-        println!("    {:?}", coord);
+        println!("    {:?}", coord.to_geo());
     }
 }
