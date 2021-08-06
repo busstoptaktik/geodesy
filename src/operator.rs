@@ -365,15 +365,21 @@ mod tests {
         let h = Operator::new("tests/ed50_etrs89", &mut o);
         assert!(h.is_some());
 
-        // Try to access it from local/share: "C:\\Users\\Username\\AppData\\Local\\geodesy\\ed50_etrs89.yml"
+        // Try to access it from data_local_dir (i.e. $HOME/share or somesuch)
         let h = Operator::new("ed50_etrs89", &mut o);
         // If we have access to "transformations.zip" we expect to succeed
-        if let Some(mut dir) = dirs::data_local_dir() {
-            dir.push("geodesy");
-            dir.push("transformations.zip");
-            // Open the physical zip file
-            if let Ok(_zipfile) = std::fs::File::open(dir) {
+        if let Some(mut cookbook) = dirs::data_local_dir() {
+            cookbook.push("geodesy");
+            cookbook.push("transformations.zip");
+            if cookbook.exists() {
                 assert!(h.is_some());
+                let mut operands = [CoordinateTuple::gis(12., 55., 100., 0.)];
+                h.unwrap().forward(&mut o, operands.as_mut());
+                let d = operands[0].to_degrees();
+
+                assert!((d.first() - r.first()).abs() < 1.0e-10);
+                assert!((d.second() - r.second()).abs() < 1.0e-10);
+                assert!((d.third() - r.third()).abs() < 1.0e-8);
             } else {
                 assert!(h.is_none());
             }
