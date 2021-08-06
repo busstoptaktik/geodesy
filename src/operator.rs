@@ -25,8 +25,15 @@ impl Operator {
     /// assert!((operands[0][0].to_degrees() - 12.).abs() < 1.0e-10);
     /// ```
     pub fn new(definition: &str, ctx: &mut Context) -> Option<Operator> {
+        // If it is a macro without arguments, we append an empty argument list
+        let mut definition = definition.trim().to_string();
+        let first_word: String = definition.split(':').take(1).collect();
+        if definition.len() == first_word.len() {
+            definition += ": {}";
+        }
+
         let mut oa = OperatorArgs::new();
-        oa.populate(definition, "");
+        oa.populate(&definition, "");
         operator_factory(&mut oa, ctx, 0)
     }
 
@@ -219,13 +226,35 @@ pub(crate) fn operator_factory(
         opname = "noop";
     }
 
-    // Look for macros defined externally in the SHARE/geodesy directory
-    if let Some(mut path) = dirs::data_local_dir() {
-        path.push("geodesy");
-        path.push(args.name.clone() + ".yml");
-        if let Ok(definition) = std::fs::read_to_string(path) {
+    // Look in the shared assets directory ($HOME/share/geodesy or somesuch)
+    if let Some(mut dir) = dirs::data_local_dir() {
+        dir.push("geodesy");
+        let filename = args.name.clone() + ".yml";
+        let mut fullpath = dir.clone();
+        fullpath.push("transformations");
+        fullpath.push(filename.clone());
+        if let Ok(definition) = std::fs::read_to_string(fullpath) {
             let mut moreargs = args.spawn(&definition);
             return operator_factory(&mut moreargs, ctx, recursions + 1);
+        }
+
+        // If not found as freestanding file, try transformations.zip
+        use std::io::prelude::*;
+        dir.push("transformations.zip");
+        // Open the physical zip file
+        if let Ok(zipfile) = std::fs::File::open(dir) {
+            // Hand it over to the zip archive reader
+            if let Ok(mut archive) = zip::ZipArchive::new(zipfile) {
+                // Is there a file with the name we're looking for in the zip archive?
+                if let Ok(mut file) = archive.by_name(&filename) {
+                    let mut definition = String::new();
+                    if file.read_to_string(&mut definition).is_ok() {
+                        // Fine! Treat it just like any other macro!
+                        let mut moreargs = args.spawn(&definition);
+                        return operator_factory(&mut moreargs, ctx, recursions + 1);
+                    }
+                }
+            }
         }
     }
 
@@ -333,12 +362,22 @@ mod tests {
         assert!((d.third() - r.third()).abs() < 1.0e-8);
 
         // An externally defined version
-        let h = Operator::new("tests/ed50_etrs89: {}", &mut o);
+        let h = Operator::new("tests/ed50_etrs89", &mut o);
         assert!(h.is_some());
 
         // Try to access it from local/share: "C:\\Users\\Username\\AppData\\Local\\geodesy\\ed50_etrs89.yml"
-        let h = Operator::new("ed50_etrs89: {}", &mut o);
-        assert!(h.is_none());
+        let h = Operator::new("ed50_etrs89", &mut o);
+        // If we have access to "transformations.zip" we expect to succeed
+        if let Some(mut dir) = dirs::data_local_dir() {
+            dir.push("geodesy");
+            dir.push("transformations.zip");
+            // Open the physical zip file
+            if let Ok(_zipfile) = std::fs::File::open(dir) {
+                assert!(h.is_some());
+            } else {
+                assert!(h.is_none());
+            }
+        }
 
         // A parameterized macro pipeline version
         let pipeline_as_macro = "pipeline: {

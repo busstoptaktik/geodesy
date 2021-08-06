@@ -16,3 +16,4 @@ description = "A platform for experiments with geodetic transformations and data
 [dependencies]
 dirs = "3.0"
 yaml-rust = "0.4"
+zip = "0.5"
