@@ -305,8 +305,8 @@ impl Gas {
 
 #[cfg(test)]
 mod tests {
-    use crate::CoordinateTuple;
     use crate::operator_construction::Gas;
+    use crate::CoordinateTuple;
     #[test]
     fn interpolation() {
         use std::f64::NAN;

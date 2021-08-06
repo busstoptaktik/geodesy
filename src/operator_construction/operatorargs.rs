@@ -219,7 +219,7 @@ impl OperatorArgs {
         // all_used includes intermediate steps in indirect definitions
         self.all_used.insert(key.to_string(), arg.to_string());
 
-        if let Some(arg) = arg.strip_prefix("^") {
+        if let Some(arg) = arg.strip_prefix('^') {
             // Default if looking for an out-of-scope arg.
             if self.args.get(arg).is_none() {
                 return default.to_string();
@@ -238,11 +238,7 @@ impl OperatorArgs {
         arg
     }
 
-    pub fn numeric_value(
-        &mut self,
-        key: &str,
-        default: f64,
-    ) -> Result<f64, &'static str> {
+    pub fn numeric_value(&mut self, key: &str, default: f64) -> Result<f64, &'static str> {
         let arg = self.value(key, "");
 
         // key not given: return default
