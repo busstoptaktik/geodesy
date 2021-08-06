@@ -144,7 +144,7 @@ At comment `[6]`, we roundtrip back to geographical coordinates. Prior to print 
 
 ### Redefining the world
 
-Being intended for authoring of geodetic functionality, customization is very important. RG allows temporal overshadowing of built in functionality by registering user defined macros and operators. This is treated in detail in examples [02 (macros)](/examples/02-user_defined_macros.rs) and [03 (operators)](/examples/03-user_defined_operators.rs). Here, let just take a minimal look at the workflow, which can be described briefly as *define, register, instantiate, and use:*
+Being intended for authoring of geodetic functionality, customization is a very important aspect of the RG design. Hence, RG allows temporal overshadowing of built in functionality by registering user defined macros and operators. This is treated in detail in examples [02 (macros)](/examples/02-user_defined_macros.rs) and [03 (operators)](/examples/03-user_defined_operators.rs). Here, let's just take a minimal look at the workflow, which can be described briefly as *define, register, instantiate, and use:*
 
 First a macro:
 
