@@ -196,8 +196,8 @@ impl OperatorArgs {
     }
 
     pub fn insert(&mut self, key: &str, value: &str) {
-        // Self-referencing keys (dx=^dx), are no-ops.
-        // The syntax dx=^dx makes sense in a nested command (or a pipeline
+        // Self-referencing keys (x: ^x), are no-ops.
+        // The syntax "x: ^x" makes sense in a nested command (or a pipeline
         // step), but the meaning is "use the value already in the hashmap".
         // Actually inserting it will lead to overwriting of the actual
         // value-of-interest, and to infinite recursion on lookup.

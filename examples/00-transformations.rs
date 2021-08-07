@@ -91,7 +91,7 @@ fn main() {
     let pipeline = "ed50_wgs84: {
         steps: [
             cart: {ellps: intl},
-            helmert: {dx: -87, dy: -96, dz: -120},
+            helmert: {x: -87, y: -96, z: -120},
             cart: {inv: true, ellps: GRS80}
         ]
     }";

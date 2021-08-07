@@ -12,9 +12,10 @@ test:
     cargo test
 
 # Check that all tests pass, and that formatting and coding conventions are OK.
-check: test
+check:
     cargo clippy
     cargo fmt -- --check
+    cargo test
     cargo doc --no-deps
     cargo package --allow-dirty
     git status
