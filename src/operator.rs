@@ -16,7 +16,7 @@ impl Operator {
     /// ```rust
     /// // EPSG:1134 - 3 parameter Helmert, ED50/WGS84
     /// let mut ctx = geodesy::Context::new();
-    /// let op = ctx.operator("helmert: {x: -87, y: -96, z: -120}");
+    /// let op = ctx.operation("helmert: {x: -87, y: -96, z: -120}");
     /// assert!(op.is_some());
     /// let op = op.unwrap();
     /// let mut operands = [geodesy::CoordinateTuple::geo(55., 12.,0.,0.)];
@@ -476,7 +476,7 @@ mod tests {
         let mut ctx = Context::new();
         ctx.register_operator("nnoopp", Nnoopp::operator);
 
-        let op = ctx.operator("nnoopp: {}").unwrap();
+        let op = ctx.operation("nnoopp: {}").unwrap();
         let mut operands = [CoordinateTuple::raw(12., 55., 100., 0.)];
         let _aha = ctx.fwd(op, operands.as_mut());
         assert_eq!(operands[0][0], 42.);

@@ -9,7 +9,7 @@ fn main() {
         println!("data_local_dir: {}", dir.to_str().unwrap_or_default());
     }
 
-    if let Some(utm32) = ctx.operator("utm: {zone: 32}") {
+    if let Some(utm32) = ctx.operation("utm: {zone: 32}") {
         let copenhagen = C::geo(55., 12., 0., 0.);
         let stockholm = C::geo(59., 18., 0., 0.);
         let mut data = [copenhagen, stockholm];
@@ -54,7 +54,7 @@ fn main() {
         dimser[3] = i as f64;
     }
 
-    let utm32 = match ctx.operator("utm: {zone: 32}") {
+    let utm32 = match ctx.operation("utm: {zone: 32}") {
         None => return println!("Awful error"),
         Some(op) => op,
     };
@@ -66,7 +66,7 @@ fn main() {
     }
 
     // Try to read predefined transformation from zip archive
-    let pladder = match ctx.operator("ed50_etrs89") {
+    let pladder = match ctx.operation("ed50_etrs89") {
         None => return println!("Awful error"),
         Some(op) => op,
     };
@@ -84,7 +84,7 @@ fn main() {
         ]
     }";
 
-    let ed50_etrs89 = match ctx.operator(pipeline) {
+    let ed50_etrs89 = match ctx.operation(pipeline) {
         None => return println!("Awful error"),
         Some(op) => op,
     };

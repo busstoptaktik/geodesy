@@ -71,7 +71,7 @@ fn main() {
     let mut ctx = geodesy::Context::new();
     ctx.register_operator("add42", Add42::operator);
 
-    let add42 = match ctx.operator("add42: {}") {
+    let add42 = match ctx.operation("add42: {}") {
         Some(value) => value,
         None => {
             println!("Awful!");
