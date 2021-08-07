@@ -21,7 +21,7 @@ a_pipeline_for_testing:
 
     steps:
         - cart: {ellps: intl}
-        - helmert: {dx: -87., dy: -96, dz: -120.}
+        - helmert: {x: -87., y: -96, z: -120.}
         - cart: {inv: true, ellps: GRS80}
 
 ---
@@ -29,7 +29,7 @@ a_pipeline_for_testing:
 _minimum_pipeline:
   steps:
     - cart: {ellps: intl}
-    - helmert: {dx: -87., dy: -96, dz: -120.}
+    - helmert: {x: -87., y: -96, z: -120.}
     - cart: {inv: true, ellps: GRS80}
 
 ---
@@ -51,12 +51,12 @@ main:
 
   steps:
     - cart: {inv: fwd, dirt: ^b}
-    - helmert: {dx: 221., dy: 222, dz: 87}
+    - helmert: {x: 221., y: 222, z: 87}
     - cart: {dir: inv, salat: banan, steak}
     - embed: {name: cucumber, dir: inv}
 
 cucumber:
   steps:
     - cart: {}
-    - helmert: {dx: 1, dy: 22, dz: 3}
+    - helmert: {x: 1, y: 22, z: 3}
     - cart: {dir: inv}

@@ -10,15 +10,14 @@ pub struct Helmert {
     scale: f64,
     rotation: bool,
     inverted: bool,
-    args: OperatorArgs
+    args: OperatorArgs,
 }
-
 
 // Based on Karsten Engsager's implementation in set_dtm_1.c (trlib),
 // but adds optional small angle approximation, and selection between
 // the "position vector" and "coordinate frame" rotation conventions.
 //
-// TO' = scale * [ROTZ * ROTY * ROTX] * FROM' + [dx, dy, dz]'
+// TO' = scale * [ROTZ * ROTY * ROTX] * FROM' + [translation x, y, z]'
 //
 //        | cz sz 0 |           | cy 0 -sy |           | 1   0  0 |
 // ROTZ = |-sz cz 0 |,   ROTY = | 0  1   0 |,   ROTX = | 0  cx sx |
@@ -48,20 +47,20 @@ fn rotation_matrix(rx: f64, ry: f64, rz: f64, exact: bool, position_vector: bool
     }
 
     // drop second order infinitesimals when using small angle approximations
-    let drop = if exact {1.0} else {0.0};
+    let drop = if exact { 1.0 } else { 0.0 };
     let keep = 1.0;
 
-    let r11  =  keep * (cy * cz);
-    let r12  =  keep * (cx * sz)  +  drop * (sx * sy * cz);
-    let r13  =  drop * (sx * sz)  -  keep * (cx * sy * cz);
+    let r11 = keep * (cy * cz);
+    let r12 = keep * (cx * sz) + drop * (sx * sy * cz);
+    let r13 = drop * (sx * sz) - keep * (cx * sy * cz);
 
-    let r21  = -keep * (cy * sz);
-    let r22  =  keep * (cx * cz)  -  drop * (sx * sy * sz);
-    let r23  =  keep * (sx * cz)  +  drop * (cx * sy * sz);
+    let r21 = -keep * (cy * sz);
+    let r22 = keep * (cx * cz) - drop * (sx * sy * sz);
+    let r23 = keep * (sx * cz) + drop * (cx * sy * sz);
 
-    let r31  =  keep * (sy);
-    let r32  = -keep * (sx * cy);
-    let r33  =  keep * (cx * cy);
+    let r31 = keep * (sy);
+    let r32 = -keep * (sx * cy);
+    let r33 = keep * (cx * cy);
 
     if position_vector {
         return [[r11, r21, r31], [r12, r22, r32], [r13, r23, r33]];
@@ -69,10 +68,8 @@ fn rotation_matrix(rx: f64, ry: f64, rz: f64, exact: bool, position_vector: bool
     [[r11, r12, r13], [r21, r22, r23], [r31, r32, r33]]
 }
 
-
 impl Helmert {
     fn new(args: &mut OperatorArgs) -> Result<Helmert, &'static str> {
-
         let x = args.numeric_value("x", 0.0)?;
         let y = args.numeric_value("y", 0.0)?;
         let z = args.numeric_value("z", 0.0)?;
@@ -93,7 +90,9 @@ impl Helmert {
                 return Err("Need value for convention when rotating");
             }
             if convention != "position_vector" && convention != "coordinate_frame" {
-                return Err("value for convention must be one of {position_vector, coordinate_frame}");
+                return Err(
+                    "value for convention must be one of {position_vector, coordinate_frame}",
+                );
             }
         }
 
@@ -104,7 +103,7 @@ impl Helmert {
         // Now make the args look like in the textbooks...
         let scale = 1.0 + scale / 1_000_000.0;
         let T = [x, y, z];
-        let R = rotation_matrix(rx, ry, rz, exact, convention=="position_vector");
+        let R = rotation_matrix(rx, ry, rz, exact, convention == "position_vector");
 
         Ok(Helmert {
             R,
@@ -169,7 +168,7 @@ impl OperatorCore for Helmert {
                 c[1] = y;
                 c[2] = z;
             }
-    }
+        }
         true
     }
 
@@ -224,16 +223,20 @@ mod tests {
         assert_eq!(operands[0].second(), 0.);
         assert_eq!(operands[0].third(), 0.);
 
-
         let definition = "helmert: {
             convention: coordinate_frame,
             x:  0.06155,  rx: -0.0394924,
             y: -0.01087,  ry: -0.0327221,
-            z: -0.04019,  rz: -0.0328979,  s: -0.009994, exact: true
+            z: -0.04019,  rz: -0.0328979,  s: -0.009994
         }";
 
         let op = ctx.operator(definition).unwrap();
-        let mut operands = [CoordinateTuple([-4052051.7643, 4212836.2017, -2545106.0245, 0.0])];
+        let mut operands = [CoordinateTuple([
+            -4052051.7643,
+            4212836.2017,
+            -2545106.0245,
+            0.0,
+        ])];
         let expect = CoordinateTuple([-4052052.7379, 4212835.9897, -2545104.5898, 0.0]);
         ctx.fwd(op, &mut operands);
         // Expected to be better than 75 um

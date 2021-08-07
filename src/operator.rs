@@ -16,7 +16,7 @@ impl Operator {
     /// ```rust
     /// // EPSG:1134 - 3 parameter Helmert, ED50/WGS84
     /// let mut ctx = geodesy::Context::new();
-    /// let op = ctx.operator("helmert: {dx: -87, dy: -96, dz: -120}");
+    /// let op = ctx.operator("helmert: {x: -87, y: -96, z: -120}");
     /// assert!(op.is_some());
     /// let op = op.unwrap();
     /// let mut operands = [geodesy::CoordinateTuple::geo(55., 12.,0.,0.)];
@@ -231,6 +231,7 @@ pub(crate) fn operator_factory(
         dir.push("geodesy");
         let filename = args.name.clone() + ".yml";
         let mut fullpath = dir.clone();
+        fullpath.push("cookbook");
         fullpath.push("transformations");
         fullpath.push(filename.clone());
         if let Ok(definition) = std::fs::read_to_string(fullpath) {
@@ -238,15 +239,16 @@ pub(crate) fn operator_factory(
             return operator_factory(&mut moreargs, ctx, recursions + 1);
         }
 
-        // If not found as freestanding file, try transformations.zip
+        // If not found as freestanding file, try cookbook.zip
         use std::io::prelude::*;
-        dir.push("transformations.zip");
+        dir.push("cookbook.zip");
         // Open the physical zip file
         if let Ok(zipfile) = std::fs::File::open(dir) {
             // Hand it over to the zip archive reader
             if let Ok(mut archive) = zip::ZipArchive::new(zipfile) {
                 // Is there a file with the name we're looking for in the zip archive?
-                if let Ok(mut file) = archive.by_name(&filename) {
+                let full_filename = String::from("cookbook/transformations/") + &filename;
+                if let Ok(mut file) = archive.by_name(&full_filename) {
                     let mut definition = String::new();
                     if file.read_to_string(&mut definition).is_ok() {
                         // Fine! Treat it just like any other macro!
@@ -281,32 +283,29 @@ mod tests {
         let mut o = Context::new();
 
         // A non-existing operator
-        let h = Operator::new(
-            "unimplemented_operator: {dx: -87, dy: -96, dz: -120}",
-            &mut o,
-        );
+        let h = Operator::new("unimplemented_operator: {x: -87, y: -96, z: -120}", &mut o);
         assert!(h.is_none());
 
         // Define "hilmert" and "halmert" to circularly define each other, in order
         // to test the operator_factory recursion breaker
         assert!(o.register_macro("halmert", "hilmert: {}"));
         assert!(o.register_macro("hilmert", "halmert: {}"));
-        if let None = Operator::new("halmert: {dx: -87, dy: -96, dz: -120}", &mut o) {
+        if let None = Operator::new("halmert: {x: -87, y: -96, z: -120}", &mut o) {
             assert!(o.report().contains("too deeply nested"));
         } else {
             panic!();
         }
 
         // Define "hulmert" as a macro forwarding its args to the "helmert" builtin
-        assert!(o.register_macro("hulmert", "helmert: {dx: ^dx, dy: ^dy, dz: ^dz}"));
+        assert!(o.register_macro("hulmert", "helmert: {x: ^x, y: ^y, z: ^z}"));
 
         // A plain operator: Helmert, EPSG:1134 - 3 parameter, ED50/WGS84
-        let hh = Operator::new("helmert: {dx: -87, dy: -96, dz: -120}", &mut o);
+        let hh = Operator::new("helmert: {x: -87, y: -96, z: -120}", &mut o);
         assert!(hh.is_some());
         let hh = hh.unwrap();
 
         // Same operator, defined through the "hulmert" macro
-        let h = Operator::new("hulmert: {dx: -87, dy: -96, dz: -120}", &mut o);
+        let h = Operator::new("hulmert: {x: -87, y: -96, z: -120}", &mut o);
         assert!(h.is_some());
         let h = h.unwrap();
 
@@ -339,7 +338,7 @@ mod tests {
         let pipeline = "ed50_etrs89: {
             steps: [
                 cart: {ellps: intl},
-                helmert: {dx: -87, dy: -96, dz: -120},
+                helmert: {x: -87, y: -96, z: -120},
                 cart: {inv: true, ellps: GRS80}
             ]
         }";
@@ -367,10 +366,10 @@ mod tests {
 
         // Try to access it from data_local_dir (i.e. $HOME/share or somesuch)
         let h = Operator::new("ed50_etrs89", &mut o);
-        // If we have access to "transformations.zip" we expect to succeed
+        // If we have access to "cookbook.zip" we expect to succeed
         if let Some(mut cookbook) = dirs::data_local_dir() {
             cookbook.push("geodesy");
-            cookbook.push("transformations.zip");
+            cookbook.push("cookbook.zip");
             if cookbook.exists() {
                 assert!(h.is_some());
                 let mut operands = [CoordinateTuple::gis(12., 55., 100., 0.)];
@@ -392,14 +391,14 @@ mod tests {
             },
             steps: [
                 cart: {ellps: ^leftleft},
-                helmert: {dx: ^dx, dy: ^dy, dz: ^dz},
+                helmert: {x: ^x, y: ^y, z: ^z},
                 cart: {inv: true, ellps: ^right}
             ]
         }";
 
         assert!(o.register_macro("geohelmert", pipeline_as_macro));
         let ed50_etrs89 = Operator::new(
-            "geohelmert: {left: intl, right: GRS80, dx: -87, dy: -96, dz: -120}",
+            "geohelmert: {left: intl, right: GRS80, x: -87, y: -96, z: -120}",
             &mut o,
         );
         assert!(ed50_etrs89.is_some());

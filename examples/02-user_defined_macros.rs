@@ -26,7 +26,7 @@ fn main() {
     let geohelmert_macro_text = "pipeline: {
             steps: [
                 cart: {ellps: ^left},
-                helmert: {dx: ^dx, dy: ^dy, dz: ^dz},
+                helmert: {x: ^x, y: ^y, z: ^z},
                 cart: {inv: true, ellps: ^right}
             ]
         }";
@@ -44,7 +44,7 @@ fn main() {
     // Now let's see whether it works - instantiate the macro, using the same
     // parameters as used in example 00.
     if let Some(ed50_wgs84) =
-        ctx.operator("geohelmert: {left: intl, right: GRS80, dx: -87, dy: -96, dz: -120}")
+        ctx.operator("geohelmert: {left: intl, right: GRS80, x: -87, y: -96, z: -120}")
     {
         // Now do the same transformation as in example 00
         ctx.inv(ed50_wgs84, &mut data);

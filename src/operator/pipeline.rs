@@ -96,7 +96,7 @@ mod tests {
             ],
             steps: [
                 cart: {ellps: intl},
-                helmert: {dx: -87, dy: -96, dz: -120},
+                helmert: {x: -87, y: -96, z: -120},
                 cart: {inv: true, ellps: GRS80}
             ]
         }";
@@ -123,9 +123,9 @@ mod tests {
         // Check that definition argument introspection works
         assert_eq!(op.args(0).used["ellps"], "intl");
 
-        assert_eq!(op.args(1).used["dx"], "-87");
-        assert_eq!(op.args(1).used["dy"], "-96");
-        assert_eq!(op.args(1).used["dz"], "-120");
+        assert_eq!(op.args(1).used["x"], "-87");
+        assert_eq!(op.args(1).used["y"], "-96");
+        assert_eq!(op.args(1).used["z"], "-120");
 
         // Note: It's superfluous to give the arg "ellps: GRS80", so it is not registered as "used"
         assert_eq!(op.args(2).used["inv"], "true");

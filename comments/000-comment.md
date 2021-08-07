@@ -78,7 +78,6 @@ Also, the `Context` is the sole interface between the `RG` transformation functi
 let utm32 = ctx.operator("utm: {zone: 32}").unwrap();
 ```
 
-
 At comment `[2]`, we use the `operator` method of the `Context` to instantiate an `Operator` (closely corresponding to the `PJ` object in PROJ). The parametrisation of the operator, i.e. the text `utm: {zone: 32}` is expressed in [YAML](https://en.wikipedia.org/wiki/YAML) using parameter naming conventions close to those used in PROJ, where the same operator would be described as `proj=utm zone=32`
 (see also `[ellps implied]` in the Notes section).
 
@@ -153,7 +152,7 @@ First a macro:
 let macro_text = "pipeline: {
         steps: [
             cart: {ellps: ^left},
-            helmert: {dx: ^dx, dy: ^dy, dz: ^dz},
+            helmert: {x: ^x, y: ^y, z: ^z},
             cart: {inv: true, ellps: ^right}
         ]
     }";
@@ -162,11 +161,11 @@ let macro_text = "pipeline: {
 ctx.register_macro("geohelmert", macro_text);
 
 // Instantiate the geohelmert macro with replacement values
-// for the parameters left, right, dx, dy, dz
+// for the parameters left, right, x, y, z
 ed50_wgs84 = ctx.operator("geohelmert: {
     left: intl,
     right: GRS80,
-    dx: -87, dy: -96, dz: -120
+    x: -87, y: -96, z: -120
 }").unwrap();
 
 // ... and use:
