@@ -237,9 +237,15 @@ mod tests {
             -2545106.0245,
             0.0,
         ])];
-        let expect = CoordinateTuple([-4052052.7379, 4212835.9897, -2545104.5898, 0.0]);
+
         ctx.fwd(op, &mut operands);
         // Expected to be better than 75 um
+        let expect = CoordinateTuple([-4052052.7379, 4212835.9897, -2545104.5898, 0.0]);
+        assert!(expect.hypot3(&operands[0]) < 75e-6);
+
+        ctx.inv(op, &mut operands);
+        // Expected to be better than 75 um
+        let expect = CoordinateTuple([-4052051.7643, 4212836.2017, -2545106.0245, 0.0]);
         assert!(expect.hypot3(&operands[0]) < 75e-6);
     }
 }
