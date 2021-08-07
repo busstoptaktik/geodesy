@@ -4,10 +4,19 @@ use crate::operator_construction::*;
 use crate::Context;
 use crate::CoordinateTuple;
 
+#[derive(Debug)]
 pub struct Helmert {
     R: [[f64; 3]; 3],
-    T: [f64; 3],
+    T0: [f64; 3],
+    R0: [f64; 3],
+    dR: [f64; 3],
+    dT: [f64; 3],
+    t_epoch: f64,
+    t_obs: f64,
     scale: f64,
+    dscale: f64,
+    exact: bool,
+    position_vector: bool,
     rotation: bool,
     inverted: bool,
     args: OperatorArgs,
@@ -70,22 +79,41 @@ fn rotation_matrix(rx: f64, ry: f64, rz: f64, exact: bool, position_vector: bool
 
 impl Helmert {
     fn new(args: &mut OperatorArgs) -> Result<Helmert, &'static str> {
+        // Translation
         let x = args.numeric_value("x", 0.0)?;
         let y = args.numeric_value("y", 0.0)?;
         let z = args.numeric_value("z", 0.0)?;
 
+        // Rotation
         let rx = args.numeric_value("rx", 0.0)?;
         let ry = args.numeric_value("ry", 0.0)?;
         let rz = args.numeric_value("rz", 0.0)?;
 
+        // Time evolution of translation
+        let dx = args.numeric_value("dx", 0.0)?;
+        let dy = args.numeric_value("dy", 0.0)?;
+        let dz = args.numeric_value("dz", 0.0)?;
+
+        // Time evolution of rotation
+        let drx = args.numeric_value("drx", 0.0)?;
+        let dry = args.numeric_value("dry", 0.0)?;
+        let drz = args.numeric_value("drz", 0.0)?;
+
+        // Epoch - "beginning of time for this transformation"
+        let t_epoch = args.numeric_value("t_epoch", std::f64::NAN)?;
+
+        // Fixed observation time - ignore fourth coordinate.
+        let t_obs = args.numeric_value("t_obs", std::f64::NAN)?;
+
+        // Scale and its time evoution
         let scale = args.numeric_value("s", 0.0)?;
+        let dscale = args.numeric_value("ds", 0.0)? * 1e-6;
 
         // Handle rotations
         let convention = args.value("convention", "");
         let exact = args.flag("exact");
-        let mut rotation = false;
-        if (rx, ry, rz) != (0., 0., 0.) {
-            rotation = true;
+        let rotation = !((rx, ry, rz) == (0., 0., 0.) && (drx, dry, drz) == (0., 0., 0.));
+        if rotation {
             if convention.is_empty() {
                 return Err("Need value for convention when rotating");
             }
@@ -100,15 +128,28 @@ impl Helmert {
         let inverted = args.flag("inv");
         let argsc = args.clone();
 
-        // Now make the args look like in the textbooks...
-        let scale = 1.0 + scale / 1_000_000.0;
-        let T = [x, y, z];
-        let R = rotation_matrix(rx, ry, rz, exact, convention == "position_vector");
+        // Now make the args look like they do in the textbooks...
+        let scale = 1.0 + scale * 1e-6;
+        let T0 = [x, y, z];
+        let dT = [dx, dy, dz];
+        let R0 = [rx, ry, rz];
+        let dR = [drx, dry, drz];
+        let position_vector = convention == "position_vector";
+
+        let R = rotation_matrix(rx, ry, rz, exact, position_vector);
 
         Ok(Helmert {
             R,
-            T,
+            R0,
+            dR,
+            T0,
+            dT,
             scale,
+            dscale,
+            t_epoch,
+            t_obs,
+            exact,
+            position_vector,
             rotation,
             inverted,
             args: argsc,
@@ -123,10 +164,36 @@ impl Helmert {
 
 impl OperatorCore for Helmert {
     fn fwd(&self, _ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
-        let scale = self.scale;
-        let R = self.R;
-        let T = self.T;
+        let mut scale = self.scale;
+        let mut R = self.R;
+        let mut T = self.T0;
+        let mut prev_t = std::f64::NAN;
         for c in operands {
+            // Time varying case?
+            if !self.t_epoch.is_nan() {
+                // Necessary to update parameters?
+                let t = if self.t_obs.is_nan() {
+                    c[3]
+                } else {
+                    self.t_obs
+                };
+                #[allow(clippy::float_cmp)]
+                if t != prev_t {
+                    prev_t = t;
+                    let dt = t - self.t_epoch;
+                    T[0] += dt * self.dT[0];
+                    T[1] += dt * self.dT[1];
+                    T[2] += dt * self.dT[2];
+                    let rx = self.R0[0] + dt * self.dR[0];
+                    let ry = self.R0[1] + dt * self.dR[1];
+                    let rz = self.R0[2] + dt * self.dR[2];
+                    if self.rotation {
+                        R = rotation_matrix(rx, ry, rz, self.exact, self.position_vector);
+                    }
+                    scale += dt * self.dscale;
+                }
+            }
+
             if self.rotation {
                 // Rotate
                 let x = c[0] * R[0][0] + c[1] * R[0][1] + c[2] * R[0][2];
@@ -149,10 +216,37 @@ impl OperatorCore for Helmert {
     }
 
     fn inv(&self, _ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
-        let scale = self.scale;
-        let R = self.R;
-        let T = self.T;
+        let mut scale = self.scale;
+        let mut R = self.R;
+        let mut T = self.T0;
+        let mut prev_t = std::f64::NAN;
+
         for c in operands {
+            // Time varying case?
+            #[allow(clippy::float_cmp)]
+            if !self.t_epoch.is_nan() {
+                // Necessary to update parameters?
+                let t = if self.t_obs.is_nan() {
+                    c[3]
+                } else {
+                    self.t_obs
+                };
+                if t != prev_t {
+                    prev_t = t;
+                    let dt = t - self.t_epoch;
+                    T[0] += dt * self.dT[0];
+                    T[1] += dt * self.dT[1];
+                    T[2] += dt * self.dT[2];
+                    let rx = self.R0[0] + dt * self.dR[0];
+                    let ry = self.R0[1] + dt * self.dR[1];
+                    let rz = self.R0[2] + dt * self.dR[2];
+                    if self.rotation {
+                        R = rotation_matrix(rx, ry, rz, self.exact, self.position_vector);
+                    }
+                    scale += dt * self.dscale;
+                }
+            }
+
             // Deoffset and unscale
             let x = (c[0] - T[0]) / scale;
             let y = (c[1] - T[1]) / scale;
@@ -223,6 +317,12 @@ mod tests {
         assert_eq!(operands[0].second(), 0.);
         assert_eq!(operands[0].third(), 0.);
 
+        // ---------------------------------------------------------------------------
+        // Test case from "Intergovernmental Committee on Surveying and Mapping (ICSM)
+        // Permanent Committee on Geodesy (PCG)": Geocentric Datum of Australia 2020,
+        // Technical Manual Version 1.0, 25 July 2017.
+        // Transformation from GDA94 to GDA2020.
+        // ---------------------------------------------------------------------------
         let definition = "helmert: {
             convention: coordinate_frame,
             x:  0.06155,  rx: -0.0394924,
@@ -231,21 +331,41 @@ mod tests {
         }";
 
         let op = ctx.operation(definition).unwrap();
-        let mut operands = [CoordinateTuple([
-            -4052051.7643,
-            4212836.2017,
-            -2545106.0245,
-            0.0,
-        ])];
+        let GDA94 = CoordinateTuple([-4052051.7643, 4212836.2017, -2545106.0245, 0.0]);
+        let GDA2020 = CoordinateTuple([-4052052.7379, 4212835.9897, -2545104.5898, 0.0]);
 
+        // The forward transformation should hit closeer than 75 um
+        let mut operands = [GDA94];
         ctx.fwd(op, &mut operands);
-        // Expected to be better than 75 um
-        let expect = CoordinateTuple([-4052052.7379, 4212835.9897, -2545104.5898, 0.0]);
-        assert!(expect.hypot3(&operands[0]) < 75e-6);
+        assert!(GDA2020.hypot3(&operands[0]) < 75e-6);
 
+        // ... and even closer on the way back
         ctx.inv(op, &mut operands);
-        // Expected to be better than 75 um
-        let expect = CoordinateTuple([-4052051.7643, 4212836.2017, -2545106.0245, 0.0]);
-        assert!(expect.hypot3(&operands[0]) < 75e-6);
+        assert!(GDA94.hypot3(&operands[0]) < 75e-7);
+
+        // ---------------------------------------------------------------------------
+        // And a time varying example from the same source: ITRF2014@2018 to GDA2020,
+        // Test point ALIC (Alice Springs)
+        // ---------------------------------------------------------------------------
+        let definition = "helmert: {
+            exact: true, convention: coordinate_frame,
+            x: 0,  rx: 0,   dx: 0,   drx: 0.00150379,
+            y: 0,  ry: 0,   dy: 0,   dry: 0.00118346,
+            z: 0,  rz: 0,   dz: 0,   drz: 0.00120716,
+            s: 0,  ds: 0,   t_epoch: 2020.0
+        }";
+        let op = ctx.operation(definition).unwrap();
+
+        let ITRF2014 = CoordinateTuple([-4052052.6588, 4212835.9938, -2545104.6946, 2018.0]);
+        let GDA2020 = CoordinateTuple([-4052052.7373, 4212835.9835, -2545104.5867, 2020.0]);
+
+        // The forward transformation should hit closeer than 40 um
+        let mut operands = [ITRF2014];
+        ctx.fwd(op, &mut operands);
+        assert!(GDA2020.hypot3(&operands[0]) < 40e-6);
+
+        // ... and even closer on the way back
+        ctx.inv(op, &mut operands);
+        assert!(ITRF2014.hypot3(&operands[0]) < 40e-8);
     }
 }
