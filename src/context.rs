@@ -11,7 +11,7 @@ pub struct Context {
     minions: Vec<Context>,
     user_defined_operators: HashMap<String, OperatorConstructor>,
     user_defined_macros: HashMap<String, String>,
-    operators: Vec<Operator>,
+    operations: Vec<Operator>,
     last_failing_operation_definition: String,
     last_failing_operation: &'static str,
     cause: &'static str,
@@ -41,7 +41,7 @@ impl Context {
             cause: "",
             user_defined_operators: HashMap::new(),
             user_defined_macros: HashMap::new(),
-            operators: Vec::new(),
+            operations: Vec::new(),
         }
     }
 
@@ -57,11 +57,11 @@ impl Context {
 
     pub fn operate(
         &mut self,
-        operator: usize,
+        operation: usize,
         operands: &mut [CoordinateTuple],
         forward: bool,
     ) -> bool {
-        if operator >= self.operators.len() {
+        if operation >= self.operations.len() {
             self.last_failing_operation = "Invalid";
             self.cause = "Attempt to access an invalid operator from context";
             return false;
@@ -72,19 +72,19 @@ impl Context {
             // Need a bit more std::thread-Rust-fu to do actual mutithreading.
             // For now, we just split the input data in chunks, process them
             // and verify that the parallel stack-functionality works.
-            result &= self.minions[i]._operate(&self.operators[operator], chunk, forward);
+            result &= self.minions[i]._operate(&self.operations[operation], chunk, forward);
             self.minions[i].stack.clear();
             i = (i + 1) % Self::CHUNKS;
         }
         result
     }
 
-    pub fn fwd(&mut self, operator: usize, operands: &mut [CoordinateTuple]) -> bool {
-        self.operate(operator, operands, true)
+    pub fn fwd(&mut self, operation: usize, operands: &mut [CoordinateTuple]) -> bool {
+        self.operate(operation, operands, true)
     }
 
-    pub fn inv(&mut self, operator: usize, operands: &mut [CoordinateTuple]) -> bool {
-        self.operate(operator, operands, false)
+    pub fn inv(&mut self, operation: usize, operands: &mut [CoordinateTuple]) -> bool {
+        self.operate(operation, operands, false)
     }
 
     pub fn register_operator(&mut self, name: &str, constructor: OperatorConstructor) {
@@ -119,13 +119,13 @@ impl Context {
         self.user_defined_macros.get(name)
     }
 
-    pub fn operator(&mut self, definition: &str) -> Option<usize> {
+    pub fn operation(&mut self, definition: &str) -> Option<usize> {
         self.last_failing_operation_definition = definition.to_string();
         self.last_failing_operation = "";
         self.cause = "";
         let op = Operator::new(definition, self)?;
-        let index = self.operators.len();
-        self.operators.push(op);
+        let index = self.operations.len();
+        self.operations.push(op);
         Some(index)
     }
 
@@ -167,7 +167,7 @@ mod tests {
         }";
 
         let mut ctx = Context::new();
-        let op = ctx.operator(pipeline);
+        let op = ctx.operation(pipeline);
         assert!(op.is_some());
         let op = op.unwrap();
         let geo = CoordinateTuple::gis(12., 55., 100., 0.);

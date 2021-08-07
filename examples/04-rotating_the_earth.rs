@@ -118,7 +118,7 @@ fn main() {
     ctx.register_operator("geodesic_shift", GeodesicShift::operator);
     let op = "geodesic_shift: {lat_0: 55, lon_0: 12, lat_1: 48, lon_1: 16.}";
 
-    let cph_to_vie = match ctx.operator(op) {
+    let cph_to_vie = match ctx.operation(op) {
         Some(value) => value,
         None => {
             println!("Awful!");

@@ -36,7 +36,7 @@ fn main() {
     let mut ctx = geodesy::Context::new();
 
     // [2] Obtain a handle to the utm-operator
-    let utm32 = ctx.operator("utm: {zone: 32}").unwrap();
+    let utm32 = ctx.operation("utm: {zone: 32}").unwrap();
 
     // [3] Coordinates of some Scandinavian capitals
     let copenhagen = Coord::geo(55., 12., 0., 0.);
@@ -75,10 +75,10 @@ Also, the `Context` is the sole interface between the `RG` transformation functi
 
 ```rust
 // [2] Obtain a handle to the utm-operator
-let utm32 = ctx.operator("utm: {zone: 32}").unwrap();
+let utm32 = ctx.operation("utm: {zone: 32}").unwrap();
 ```
 
-At comment `[2]`, we use the `operator` method of the `Context` to instantiate an `Operator` (closely corresponding to the `PJ` object in PROJ). The parametrisation of the operator, i.e. the text `utm: {zone: 32}` is expressed in [YAML](https://en.wikipedia.org/wiki/YAML) using parameter naming conventions close to those used in PROJ, where the same operator would be described as `proj=utm zone=32`
+At comment `[2]`, we use the `operation` method of the `Context` to instantiate an `Operator` (closely corresponding to the `PJ` object in PROJ). The parametrisation of the operator, i.e. the text `utm: {zone: 32}` is expressed in [YAML](https://en.wikipedia.org/wiki/YAML) using parameter naming conventions close to those used in PROJ, where the same operator would be described as `proj=utm zone=32`
 (see also `[ellps implied]` in the Notes section).
 
 So essentially, PROJ and RG uses identical operator parametrisations, but RG, being 40 years younger than PROJ, is able to leverage YAML, an already 20 years old, JSON compatible, generic data representation format. PROJ, on the other hand, was born 20 years prior to YAML, and had to implement its own domain specific format.
@@ -162,7 +162,7 @@ ctx.register_macro("geohelmert", macro_text);
 
 // Instantiate the geohelmert macro with replacement values
 // for the parameters left, right, x, y, z
-ed50_wgs84 = ctx.operator("geohelmert: {
+ed50_wgs84 = ctx.operation("geohelmert: {
     left: intl,
     right: GRS80,
     x: -87, y: -96, z: -120
@@ -188,7 +188,7 @@ pub struct MyNewOperator {
 ctx.register_operator("my_new_operator", MyNewOperator::operator);
 
 // Instantiate
-let my_new_operator_with_foo_as_42 = ctx.operator(
+let my_new_operator_with_foo_as_42 = ctx.operation(
     "my_new_operator: {foo: 42}"
 ).unwrap();
 
@@ -291,10 +291,10 @@ In both cases, the use of the GRS80 ellipsoid is implied, but may be expressly s
 
 **Note:** `[idiomatic Rust]`
 
-In production, we would check the return of `ctx.operator(...)`, rather than just `unwrap()`ping:
+In production, we would check the return of `ctx.operation(...)`, rather than just `unwrap()`ping:
 
 ```rust
-if let Some(utm32) = ctx.operator("utm: {zone: 32}") {
+if let Some(utm32) = ctx.operation("utm: {zone: 32}") {
     let copenhagen = C::geo(55., 12., 0., 0.);
     let stockholm = C::geo(59., 18., 0., 0.);
     ...

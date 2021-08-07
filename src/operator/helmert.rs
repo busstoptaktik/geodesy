@@ -230,7 +230,7 @@ mod tests {
             z: -0.04019,  rz: -0.0328979,  s: -0.009994
         }";
 
-        let op = ctx.operator(definition).unwrap();
+        let op = ctx.operation(definition).unwrap();
         let mut operands = [CoordinateTuple([
             -4052051.7643,
             4212836.2017,

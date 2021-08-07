@@ -43,11 +43,11 @@ fn main() {
     // Since all operations are carried out in place, the array needs to
     // be mutable, hence `let mut`
 
-    // Let's create a transformation element ("an operator"), turning
+    // Let's create a transformation element ("an operation"), turning
     // geographical coordinates into UTM zone 32 coordinates. Since
     // this may go wrong (e.g. due to syntax errors in the operator
     // definition), use the Rust `match` syntax to handle errors.
-    let utm32 = match ctx.operator("utm: {zone: 32}") {
+    let utm32 = match ctx.operation("utm: {zone: 32}") {
         Some(op) => op,
         None => return println!("{}", ctx.report()),
     };
@@ -72,7 +72,7 @@ fn main() {
 
     // Here's an example of handling bad syntax:
     println!("Bad syntax example:");
-    if ctx.operator("aargh: {zone: 23}").is_none() {
+    if ctx.operation("aargh: {zone: 23}").is_none() {
         println!("Deliberate error - {}", ctx.report());
     }
 
@@ -96,7 +96,7 @@ fn main() {
         ]
     }";
 
-    let ed50_wgs84 = ctx.operator(pipeline);
+    let ed50_wgs84 = ctx.operation(pipeline);
     if ed50_wgs84.is_none() {
         println!("ERROR - {}", ctx.report());
         return;
