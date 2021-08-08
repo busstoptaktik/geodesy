@@ -123,7 +123,8 @@ impl Context {
         self.last_failing_operation_definition = definition.to_string();
         self.last_failing_operation.clear();
         self.cause.clear();
-        let op = Operator::new(definition, self)?;
+        let definition = gys_to_yaml(definition);
+        let op = Operator::new(&definition, self)?;
         let index = self.operations.len();
         self.operations.push(op);
         Some(index)
@@ -140,6 +141,91 @@ impl Context {
             self.last_failing_operation, self.cause, self.last_failing_operation_definition
         )
     }
+}
+
+/// Convert "Ghastly YAML Shorthand" to YAML
+pub(crate) fn gys_to_yaml(gys: &str) -> String {
+    // Appears to be YAML already - do nothing!
+    if gys.contains('{') {
+        return String::from(gys);
+    }
+
+    let mut yaml = String::new();
+    let mut indent = "";
+    let steps: Vec<&str> = gys.split('|').collect();
+    let nsteps = steps.len();
+    if nsteps > 1 {
+        yaml += "pipeline_from_gys: {\n  steps: [\n";
+        indent = "    ";
+    }
+    println!("GYS :\n{:?}", steps);
+    for step in steps {
+        let mut elements: Vec<&str> = step.split_whitespace().collect();
+        let n = elements.len();
+        if n == 0 {
+            return String::from("Error: Empty step!");
+        }
+
+        // First the operator name
+        yaml += indent;
+        yaml += elements[0];
+        yaml += ":";
+
+        // linebreaks after the first step
+        indent = ",\n    ";
+        // No args? Then insert an empty argument list
+        if n == 1 {
+            yaml += " {}";
+            continue;
+        }
+
+        // Handle args
+        yaml += " {";
+
+        for i in 1..n {
+            // We constructed a key-value par in last iteration?
+            if elements[i].is_empty() {
+                continue;
+            }
+            let e = elements[i].to_string();
+            if e.ends_with(':') {
+                if i == n - 1 {
+                    return String::from("Missing value for key '") + &e + "'";
+                }
+                yaml += &e;
+                yaml += " ";
+                yaml += elements[i + 1];
+                if i + 2 < n {
+                    yaml += ", ";
+                }
+                elements[i + 1] = "";
+                continue;
+            };
+
+            // Ultra compact notation: key:value, no whitespace
+            if e.contains(':') {
+                yaml += &e.replace(":", ": ");
+                if i + 1 < n {
+                    yaml += ", ";
+                }
+                continue;
+            }
+
+            // Key with no value? provide "true"
+            yaml += &e;
+            yaml += ": true";
+            if i + 1 < n {
+                yaml += ", ";
+            }
+        }
+        yaml += "}";
+    }
+
+    if nsteps > 1 {
+        yaml += "\n  ]\n}";
+    }
+
+    yaml
 }
 
 //----------------------------------------------------------------------------------
@@ -182,5 +268,43 @@ mod tests {
         let result = operands[0].to_degrees();
         assert!((result[0] - 12.).abs() < 1e-12);
         assert!((result[1] - 55.).abs() < 1e-12);
+    }
+
+    #[test]
+    fn gys() {
+        use crate::Context;
+        use crate::CoordinateTuple as C;
+
+        // A pipeline in YAML
+        let pipeline = "ed50_etrs89: {
+            steps: [
+                cart: {ellps: intl},
+                helmert: {x: -87, y: -96, z: -120},
+                cart: {inv: true, ellps: GRS80}
+            ]
+        }";
+
+        // Same pipeline in Ghastly YAML Shorthand (GYS)
+        let gys = "cart ellps: intl | helmert x:-87 y:-96 z:-120 | cart inv ellps:GRS80";
+
+        let mut ctx = Context::new();
+        let op_yaml = ctx.operation(pipeline).unwrap();
+        let op_gys = ctx.operation(gys).unwrap();
+
+        let copenhagen = C::geo(55., 12., 0., 0.);
+        let stockholm = C::geo(59., 18., 0., 0.);
+        let mut yaml_data = [copenhagen, stockholm];
+        let mut gys_data = [copenhagen, stockholm];
+
+        ctx.fwd(op_yaml, &mut yaml_data);
+        ctx.fwd(op_gys, &mut gys_data);
+
+        C::geo_all(&mut yaml_data);
+        C::geo_all(&mut gys_data);
+
+        // We assert that the difference is exactly zero, since the operations
+        // should be identical. But float equality comparisons are frowned at...
+        assert!(yaml_data[0].hypot3(&gys_data[0]) < 1e-30);
+        assert!(yaml_data[1].hypot3(&gys_data[1]) < 1e-30);
     }
 }
