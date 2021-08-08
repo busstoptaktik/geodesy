@@ -46,6 +46,9 @@ impl Pipeline {
 impl OperatorCore for Pipeline {
     fn fwd(&self, ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
         for step in &self.steps {
+            if step.is_noop() {
+                continue;
+            }
             if !step.operate(ctx, operands, fwd) {
                 return false;
             }
@@ -55,6 +58,9 @@ impl OperatorCore for Pipeline {
 
     fn inv(&self, ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
         for step in self.steps.iter().rev() {
+            if step.is_noop() {
+                continue;
+            }
             if !step.operate(ctx, operands, inv) {
                 return false;
             }

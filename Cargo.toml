@@ -1,6 +1,6 @@
 [package]
 name = "geodesy"
-version = "0.5.0"
+version = "0.6.0"
 authors = ["Thomas Knudsen <knudsen.thomas@gmail.com>"]
 edition = "2018"
 default-run = "kp"
@@ -17,3 +17,4 @@ description = "A platform for experiments with geodetic transformations and data
 dirs = "3.0"
 yaml-rust = "0.4"
 zip = "0.5"
+structopt = "0.3"

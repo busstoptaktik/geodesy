@@ -4,7 +4,7 @@
 
 Thomas Knudsen <knudsen.thomas@gmail.com>
 
-2021-07-31 (with later updates)
+2021-07-31. Last [revision](#document-history) 2021-08-11
 
 ---
 
@@ -230,6 +230,39 @@ let es = GRS80.eccentricity_squared();
 
 The functionality also includes ancillary latitudes, and computation of geodesics on the ellipsoid - see [example 01](../examples/01-geometrical-geodesy.rs) for details.
 
+### Recent additions
+
+#### GYS: The Ghastly YAML Shorthand
+
+As YAML is somewhat verbose, GYS, the "Ghastly YAML Shorthand" was introduced with RG version 0.6.0. GYS can be discerned from YAML by not containing any curly braces, using pipe symbols (`|`) to indicate pipeline steps, and in general leaving out syntactical elements which are superfluous given that we know the context is RG.
+
+Internally, GYS is transformed to YAML by a simple mechanical rule set, so YAML is still the cornerstone of the RG descriptor system. The two pipelines shown below demonstrate the essentials of speaking GYS:
+
+##### **A pipeline in YAML**
+
+```yaml
+ed50_etrs89: {
+    steps: [
+        cart: {ellps: intl},
+        helmert: {x: -87, y: -96, z: -120},
+        cart: {inv: true, ellps: GRS80}
+    ]
+}
+```
+
+##### **The same pipeline in Ghastly YAML Shorthand (GYS)**
+
+```js
+cart ellps: intl | helmert x:-87 y:-96 z:-120 | invcart ellps:GRS80
+```
+
+A description is considered GYS, and internally translated to YAML, if *at least one* of these conditions is met:
+
+1. It begins and/or ends with a `|` character, i.e. an empty step.
+2. It contains a space-delimited `|` character, i.e. the sequence `_|_`.
+3. It is wrapped in square brackets: `[cart ellps: intl]`.
+4. The first token does not end with `:`
+
 ### Comming attractions
 
 RG is in early-stage development, so a number of additions are planned.
@@ -328,3 +361,9 @@ In C, using PROJ, the demo program would resemble this (untested) snippet:
     proj_context_destroy(C);
 }
 ```
+
+### Document History
+
+Major revisions and additions:
+
+* 2021-08-08: Added a section briefly describing GYS

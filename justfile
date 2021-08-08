@@ -1,14 +1,23 @@
 # Justfile for the Rust Geodesy project.
 
-alias c := check
+alias l := list
 alias r := run
 alias t := test
+alias tt := test-all
 
 # Defaults to test.
 default: test
 
-# Basic test. Use target "check" for a more in depth check up.
+# list all justfile targets
+list:
+    just -l
+
+# Basic test. Use target "test-all" or "check" for successively more in depth check ups.
 test:
+    cargo test --lib
+
+# Unit tests, doc tests and compiling of examples
+test-all:
     cargo test
 
 # Check that all tests pass, and that formatting and coding conventions are OK.
@@ -19,6 +28,17 @@ check:
     cargo doc --no-deps
     cargo package --allow-dirty
     git status
+
+# Clean, then check
+clean-check:
+    cargo clean
+    just check
+
+# Build and install cookbook
+cookbook:
+    zip -r cookbook.zip cookbook
+    mv cookbook.zip $LOCALAPPDATA/geodesy
+    ls -l $LOCALAPPDATA/geodesy
 
 # Build documentation, open in browser for inspection.
 doc:
