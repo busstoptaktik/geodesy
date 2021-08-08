@@ -13,8 +13,8 @@ pub struct Context {
     user_defined_macros: HashMap<String, String>,
     operations: Vec<Operator>,
     last_failing_operation_definition: String,
-    last_failing_operation: &'static str,
-    cause: &'static str,
+    last_failing_operation: String,
+    cause: String,
 }
 
 impl Context {
@@ -37,8 +37,8 @@ impl Context {
             stack: Vec::new(),
             minions: Vec::new(),
             last_failing_operation_definition: String::new(),
-            last_failing_operation: "",
-            cause: "",
+            last_failing_operation: String::new(),
+            cause: String::new(),
             user_defined_operators: HashMap::new(),
             user_defined_macros: HashMap::new(),
             operations: Vec::new(),
@@ -62,8 +62,8 @@ impl Context {
         forward: bool,
     ) -> bool {
         if operation >= self.operations.len() {
-            self.last_failing_operation = "Invalid";
-            self.cause = "Attempt to access an invalid operator from context";
+            self.last_failing_operation = String::from("Invalid");
+            self.cause = String::from("Attempt to access an invalid operator from context");
             return false;
         }
         let mut i = 0_usize;
@@ -121,17 +121,17 @@ impl Context {
 
     pub fn operation(&mut self, definition: &str) -> Option<usize> {
         self.last_failing_operation_definition = definition.to_string();
-        self.last_failing_operation = "";
-        self.cause = "";
+        self.last_failing_operation.clear();
+        self.cause.clear();
         let op = Operator::new(definition, self)?;
         let index = self.operations.len();
         self.operations.push(op);
         Some(index)
     }
 
-    pub fn error(&mut self, which: &'static str, why: &'static str) {
-        self.last_failing_operation = which;
-        self.cause = why;
+    pub fn error(&mut self, which: &str, why: &str) {
+        self.last_failing_operation = String::from(which);
+        self.cause = String::from(why);
     }
 
     pub fn report(&mut self) -> String {

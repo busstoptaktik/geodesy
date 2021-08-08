@@ -157,8 +157,6 @@ pub(crate) fn operator_factory(
     ctx: &mut Context,
     recursions: usize,
 ) -> Option<Operator> {
-    use crate::operator as co;
-
     if recursions > 100 {
         ctx.error("Unknown", "Operator definition too deeply nested");
         return None;
@@ -190,43 +188,12 @@ pub(crate) fn operator_factory(
         }
     }
 
-    // Builtins
-
-    // Pipelines are not characterized by the name "pipeline", but simply by containing steps.
-    if let Ok(steps) = args.numeric_value("_nsteps", 0.0) {
-        if steps > 0.0 {
-            match co::pipeline::Pipeline::new(args, ctx) {
-                Err(err) => {
-                    ctx.error(err, "pipeline");
-                    return None;
-                }
-                Ok(ok) => {
-                    return Some(Operator(Box::new(ok)));
-                }
-            }
-        }
+    // Look for built-in operators
+    if let Some(op) = builtins(ctx, args) {
+        return Some(op);
     }
 
-    let mut op: Result<Operator, &'static str> = Err("Operator name not found");
-    let mut opname = "operator_factory";
-    if args.name == "helmert" {
-        op = crate::operator::helmert::Helmert::operator(args);
-        opname = "helmert";
-    } else if args.name == "cart" {
-        op = crate::operator::cart::Cart::operator(args);
-        opname = "cart";
-    } else if args.name == "tmerc" {
-        op = co::tmerc::Tmerc::operator(args);
-        opname = "tmerc";
-    } else if args.name == "utm" {
-        op = co::tmerc::Tmerc::utmoperator(args);
-        opname = "utm";
-    } else if args.name == "noop" {
-        op = co::noop::Noop::operator(args);
-        opname = "noop";
-    }
-
-    // Look in the shared assets directory ($HOME/share/geodesy or somesuch)
+    // Finally look in the shared assets directory ($HOME/share/geodesy or somesuch)
     if let Some(mut dir) = dirs::data_local_dir() {
         dir.push("geodesy");
         let filename = args.name.clone() + ".yml";
@@ -239,7 +206,7 @@ pub(crate) fn operator_factory(
             return operator_factory(&mut moreargs, ctx, recursions + 1);
         }
 
-        // If not found as freestanding file, try cookbook.zip
+        // If not found as a freestanding file, try cookbook.zip
         use std::io::prelude::*;
         dir.push("cookbook.zip");
         // Open the physical zip file
@@ -260,14 +227,58 @@ pub(crate) fn operator_factory(
         }
     }
 
-    // Done - translate Result<Operator, str> to Option<Operator>...
-    match op {
-        Err(err) => {
-            ctx.error(opname, err);
-            None
+    // Nothing found. Complain and yell...
+    ctx.error(&args.name, "Operator name not found");
+    None
+}
+
+/// Handle instantiation of built-in operators.
+fn builtins(ctx: &mut Context, args: &mut OperatorArgs) -> Option<Operator> {
+    // Pipelines are not characterized by the name "pipeline", but simply by containing steps.
+    if let Ok(steps) = args.numeric_value("_nsteps", 0.0) {
+        if steps > 0.0 {
+            match crate::operator::pipeline::Pipeline::new(args, ctx) {
+                Err(err) => {
+                    ctx.error(err, "pipeline");
+                    return None;
+                }
+                Ok(ok) => {
+                    return Some(Operator(Box::new(ok)));
+                }
+            }
         }
-        Ok(ok) => Some(ok),
     }
+
+    // The operator name may be prefixed with "builtin_", so operator-named
+    // macros can delegate the hard work to the operators they shadow.
+    let mut opname = args.name.clone();
+    if opname.starts_with("builtin_") {
+        opname = opname.strip_prefix("builtin_").unwrap().to_string();
+    }
+
+    // Default value for op is Err("not found")
+    let mut op: Result<Operator, &'static str> = Err("Operator name not found");
+    // ...so now try to find it!
+    if opname == "cart" {
+        op = crate::operator::cart::Cart::operator(args);
+    } else if opname == "helmert" {
+        op = crate::operator::helmert::Helmert::operator(args);
+    } else if opname == "noop" {
+        op = crate::operator::noop::Noop::operator(args);
+    } else if opname == "tmerc" {
+        op = crate::operator::tmerc::Tmerc::operator(args);
+    } else if opname == "utm" {
+        op = crate::operator::tmerc::Tmerc::utmoperator(args);
+    }
+
+    // Not found? Translate to None.
+    if op.is_err() {
+        ctx.error(&opname, "Operator name not found");
+        return None;
+    }
+
+    // Success!
+    Some(op.unwrap())
 }
 
 // --------------------------------------------------------------------------------------
@@ -311,6 +322,10 @@ mod tests {
 
         assert_eq!(hh.args(0).name, h.args(0).name);
         assert_eq!(hh.args(0).used, h.args(0).used);
+
+        // Check that the "builtin_" prefix works properly: Shadow "helmert" with a
+        // forwarding macro of the same name - without making trouble for later use
+        assert!(o.register_macro("helmert", "builtin_helmert: {}"));
 
         let mut operands = [CoordinateTuple::raw(0., 0., 0., 0.)];
 
