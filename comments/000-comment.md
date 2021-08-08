@@ -4,15 +4,15 @@
 
 Thomas Knudsen <knudsen.thomas@gmail.com>
 
-2021-07-31
+2021-07-31 (with later updates)
 
 ---
 
 ### Prologue
 
-Rust Geodesy, RG, is a geodetic software system, not entirely unlike [PROJ](https://proj.org), but with much more limited transformation functionality. And while PROJ is mature, well supported, well tested, and production ready, RG is neither of these. Partially due to RG being a new born baby, partially due to its aiming at a (much) different set of use cases.
+Rust Geodesy, RG, is a geodetic software system, not entirely unlike [PROJ](https://proj.org), but with much more limited transformation functionality: While PROJ is mature, well supported, well tested, and production ready, RG is neither of these. This is partially due to RG being a new born baby, partially due to its aiming at a (much) different set of use cases.
 
-So when I liberally insert comparisons with PROJ in the following, it is for elucidation, not for mocking, neither of PROJ, nor of RG: I have spent much pleasant and instructive time with PROJ, both as a PROJ core developer and as a PROJ user (more about that in an upcomming *Comment on RG*). But I have also spent much pleasant time learning Rust and developing RG, so I feel deeply connected to both PROJ and RG.
+So when I liberally insert comparisons with PROJ in the following, it is for elucidation, not for mocking - neither of PROJ, nor of RG: I have spent much pleasant and instructive time with PROJ, both as a PROJ core developer and as a PROJ user (more about that in an upcomming *Comment on RG*). But I have also spent much pleasant time learning Rust and developing RG, so I feel deeply connected to both PROJ and RG.
 
 PROJ and RG do, however, belong in two different niches of the geodetic software ecosystem: Where PROJ is the production work horse, with the broad community of end users and developers, RG aims at a much more narrow community of geodesists, for geodetic development work - e.g. for development of transformations that may eventually end up in PROJ. As stated in the [README](/README.md)-file, RG aims to:
 
@@ -25,7 +25,7 @@ All four aims are guided by a wish to amend explicitly identified shortcomings i
 
 ### Getting beefy
 
-Talking architecture and design philosophy out of thin air is at best counterproductive, so let's start with a brief example, demonstrating the Rust Geodesy idiom for converting geographical coordinates to UTM zone 32 coordinates.
+Talking architecture and design philosophy out of thin air is at best counterproductive, so let's start with a brief example, demonstrating the RG idiom for converting geographical coordinates to UTM zone 32 coordinates.
 
 ```rust
 fn main() {
@@ -58,7 +58,7 @@ fn main() {
 
 (See also `[idiomatic Rust]` in the Notes section)
 
-At comment `[0]`, we start by renaming the library functionality for coordinate handling, from `geodesy::CoordinateTuple` to `Coord`. Since coordinates are at the heart of what we're doing, it should have a brief and clear name. Then why giving it such a long name by design, you may wonder - well, `CoordinateTuple` is the ISO-19111 standard designation of what we colloquially would call *the coordinates*.
+At comment `[0]`, we start by renaming the library functionality for coordinate handling, from `geodesy::CoordinateTuple` to `Coord`. Since coordinates are at the heart of what we're doing, it should have a brief and clear name. Then why give it such a long name by design, you may wonder - well, `CoordinateTuple` is the ISO-19111 standard designation of what we colloquially would call *the coordinates*.
 
 ---
 
@@ -78,15 +78,19 @@ Also, the `Context` is the sole interface between the `RG` transformation functi
 let utm32 = ctx.operation("utm: {zone: 32}").unwrap();
 ```
 
-At comment `[2]`, we use the `operation` method of the `Context` to instantiate an `Operator` (closely corresponding to the `PJ` object in PROJ). The parametrisation of the operator, i.e. the text `utm: {zone: 32}` is expressed in [YAML](https://en.wikipedia.org/wiki/YAML) using parameter naming conventions close to those used in PROJ, where the same operator would be described as `proj=utm zone=32`
+At comment `[2]`, we use the `operation` method of the `Context` to instantiate an `Operator` (closely corresponding to the `PJ` object in PROJ). The parametrisation of the operator, i.e. the text `utm: {zone: 32}` is expressed in [YAML](https://en.wikipedia.org/wiki/YAML) using parameter naming conventions closely corresponding to those used in PROJ, where the same operator would be described as `proj=utm zone=32`
 (see also `[ellps implied]` in the Notes section).
 
-So essentially, PROJ and RG uses identical operator parametrisations, but RG, being 40 years younger than PROJ, is able to leverage YAML, an already 20 years old, JSON compatible, generic data representation format. PROJ, on the other hand, was born 20 years prior to YAML, and had to implement its own domain specific format.
+So essentially, PROJ and RG uses identical operator parametrisations, but RG, being 40 years younger than PROJ, is able to leverage YAML, an already 20 years old generic, JSON compatible, data representation format. PROJ, on the other hand, was born 20 years prior to YAML, and had to implement its own domain specific format.
 
 Note, however, that contrary to PROJ, when we instantiate an operator in RG, we do not actually get an `Operator` object back, but just a handle to an `Operator`, living its entire life embedded inside the `Context`.
 And while the `Context` is mutable, the `Operator`, once created, is *immutable*.
 
 This makes `Operator`s thread-sharable, so the `Context` will eventually (although still not implemented), be able to automatically parallelize large transformation jobs, eliminating some of the need for separate thread handling at the application program level.
+
+Note, by the way, that the method for instantiating an `Operator` is called `Context::opera`**`tion`**`(...)`, not `Context::opera`**`tor`**`(...)`: Conceptually, an **operation** is an *instantiation of an operator*, i.e. an operator with parameters fixed, and ready for work. An **operator** on the other hand, is formally a datatype, i.e. just a description of a memory layout of the parameters.
+
+Hence, the `operation(...)` method returns a handle to an **operation**, which can be used to **operate** on a set of **operands**. It's op...s all the way down!
 
 ---
 
@@ -107,9 +111,9 @@ In this case, we choose human readable angles in degrees, and the traditional co
 let somewhere = Coord([1., 42., 3., 4.]);
 ```
 
-The `CoordinateTuple` data type does not enforce any special interpretation of what kind of coordinate it stores: That is entirely up to the `Operation` to interpret. A `CoordinateTuple` simply consists of 4 numbers with no other implied interpretation than their relative order, given by the names *first, second, third, and fourth*, respectively.
+The `CoordinateTuple` data type does not enforce any special interpretation of what kind of coordinate it stores: That is entirely up to the `Operator` to interpret. A `CoordinateTuple` simply consists of 4 numbers with no other implied interpretation than their relative order, given by the names *first, second, third, and fourth*, respectively.
 
-RG operators take *arrays of `CoordinateTuples`* as input, rather than individual elements, so at comment `[4]` we collect the elements into an array.
+RG `Operator`s take *arrays of `CoordinateTuples`* as input, rather than individual elements, so at comment `[4]` we collect the elements into an array.
 
 ---
 
@@ -125,7 +129,7 @@ As the action goes on *in place*, we allow `fwd(..)` to mutate the input data, b
 
 The printout will show the projected data in (easting, northing)-coordinate order:
 
-```
+```rust
 CoordinateTuple([ 691875.6321403517, 6098907.825001632, 0.0, 0.0])
 CoordinateTuple([1016066.6135867655, 6574904.395327058, 0.0, 0.0])
 ```
@@ -196,13 +200,13 @@ let my_new_operator_with_foo_as_42 = ctx.operation(
 ctx.fwd(my_new_operator_with_foo_as_42, data);
 ```
 
-Essentially, once they are registered, macros and user defined operators work exactly as the builtins. Also, they overshadow the builtin names, so testing alternative implementations of built in operators is as easy as registering a new operator with the same name as a builtin.
+Essentially, once they are registered, macros and user defined operators work exactly like the built-ins. Also, they overshadow the built-in names, so testing alternative implementations of built-in operators is as easy as registering a new operator with the same name as a built-in.
 
 ### Going ellipsoidal
 
 Much functionality related to geometrical geodesy can be associated with the ellipsoid model in use, and hence, in a software context, be modelled as methods on the ellipsoid object.
 
-In RG, the ellipsoid is represented by the `Ellipsoid` data type:
+In RG, ellipsoids are represented by the `Ellipsoid` data type:
 
 ```rust
 pub struct Ellipsoid {
@@ -226,7 +230,6 @@ let es = GRS80.eccentricity_squared();
 
 The functionality also includes ancillary latitudes, and computation of geodesics on the ellipsoid - see [example 01](../examples/01-geometrical-geodesy.rs) for details.
 
-
 ### Comming attractions
 
 RG is in early-stage development, so a number of additions are planned.
@@ -241,13 +244,13 @@ In `[Knudsen et al, 2019]` we identified a small number of operations collective
 4. Horizontal grid shift (“NADCON-transformation”).
 5. Vertical grid shift (ellipsoidal-to-orthometric height transformation).
 
-Of these only the first is fully implemented in RG. The Molodensky transformation has not even been started at, while the remaining parts are in various stages of completion. These are **need to do** elements for near future work.
+Of these only the two first are fully implemented in RG. The Molodensky transformation has not even been started at, while the remaining parts are in various stages of completion. These are **need to do** elements for near future work.
 
 Also, a number of additional projections are in the pipeline: first and foremost the Mercator projection (used in nautical charts), and the Lambert conformal conic projection (used in aeronautical charts).
 
 #### Physical geodesy
 
-Plans for invading the domain of physical geodesy are limited, although the `Ellipsoid` data type will probably very soon be extended with entries for the *International Gravity Formula, 1930* and *The GRS80 gravity formula*.
+Plans for invading the domain of physical geodesy are limited, although the `Ellipsoid` data type will probably very soon be extended with entries for the *International Gravity Formula, 1930* and the *GRS80 gravity formula*.
 
 #### Coordinate descriptors
 
@@ -261,10 +264,10 @@ The Rust ecosystem includes excellent logging facilities, just waiting to be imp
 
 From the detailed walkthrough of the example above, we can summarize "the philosophy of RG" as:
 
-* **Be flexible:** User defined macros and operators are first class citizens in the RG ecosystem - they are treated exactly as the builtins, and hence, can be used as vehicles for implementation of new built in functionality.
-* **Don't overspecify:** For example, the `CoordinateTuple` object is just an ordered set of four numbers, with no specific interpretation implied. It works as a shuttle, ferrying the operand between the steps of a pipeline of `Operator`s, and the meaning is entirely up to the `Operator`.
+* **Be flexible:** User defined macros and operators are first class citizens in the RG ecosystem - they are treated exactly as the built-ins, and hence, can be used as vehicles for implementation of new built-in functionality.
+* **Don't overspecify:** For example, the `CoordinateTuple` object is just an ordered set of four numbers, with no specific interpretation implied. It works as a shuttle, ferrying the operand between the steps of a pipeline of `Operator`s: the meaning of the operand is entirely up to the `Operator`.
 * **Transformations are important. Systems not so much:** RG does not anywhere refer explicitly to input or output system names. Although it can be used to construct transformations between specific reference frames (as in the "ED50 to WGS84" case, in the *user defined macro* example), it doesn't really attribute any meaning to these internally.
-* **Coordinates and data flow pathways are four dimensioonal:** From end to end, data flow through RG along 4D pathways. Since all geodata capture today is either directly or indirectly based on GNSS, the coordinates are inherently four dimensional. And while much application software ignores this fact, embracing it is the only way to obtain sub-decimeter accuracy over time scales of just a few years. Coordinate handling software should never ignore this.
+* **Coordinates and data flow pathways are four dimensioonal:** From end to end, data runs through RG along 4D pathways. Since all geodata capture today is either directly or indirectly based on GNSS, the coordinates are inherently four dimensional. And while much application software ignores this fact, embracing it is the only way to obtain sub-decimeter accuracy over time scales of just a few years. Coordinate handling software should never ignore this.
 * **Draw inspiration from good role models, but not zealously:** PROJ and the ISO-19100 series of geospatial standards are important models for the design of RG, but on the other hand, RG is also built to address and investigate some perceived shortcomings in the role models.
 
 ... and, although only sparsely touched upon above:
@@ -300,6 +303,7 @@ if let Some(utm32) = ctx.operation("utm: {zone: 32}") {
     ...
 }
 ```
+
 In C, using PROJ, the demo program would resemble this (untested) snippet:
 
 ```C
