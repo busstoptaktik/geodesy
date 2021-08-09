@@ -75,7 +75,11 @@ impl OperatorArgs {
         self.insert("_definition", definition);
 
         // Read the entire YAML-document and try to locate the `which` document
-        let docs = YamlLoader::load_from_str(definition).unwrap();
+        let docs = YamlLoader::load_from_str(definition);
+        if docs.is_err() {
+            return false;
+        }
+        let docs = docs.unwrap();
         let mut index = Some(0_usize);
 
         if !which.is_empty() {

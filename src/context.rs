@@ -146,9 +146,14 @@ impl Context {
 /// Convert "Ghastly YAML Shorthand" to YAML
 pub(crate) fn gys_to_yaml(gys: &str) -> String {
     // Appears to be YAML already - do nothing!
-    if gys.contains('{') {
+    if !is_gys(gys) {
         return String::from(gys);
     }
+
+    // Strip off superfluous GYS indicators
+    let gys = gys.trim_matches('|');
+    let gys = gys.trim_matches('[');
+    let gys = gys.trim_matches(']');
 
     let mut yaml = String::new();
     let mut indent = "";
@@ -158,7 +163,6 @@ pub(crate) fn gys_to_yaml(gys: &str) -> String {
         yaml += "pipeline_from_gys: {\n  steps: [\n";
         indent = "    ";
     }
-    println!("GYS :\n{:?}", steps);
     for step in steps {
         let mut elements: Vec<&str> = step.split_whitespace().collect();
         let n = elements.len();
@@ -228,6 +232,23 @@ pub(crate) fn gys_to_yaml(gys: &str) -> String {
     yaml
 }
 
+// True if a str appears to be in GYS format
+pub(crate) fn is_gys(gys: &str) -> bool {
+    if gys.contains(" | ") {
+        return true;
+    }
+    if gys.starts_with('|') {
+        return true;
+    }
+    if gys.ends_with('|') {
+        return true;
+    }
+    if gys.starts_with('[') && gys.ends_with(']') {
+        return true;
+    }
+    false
+}
+
 //----------------------------------------------------------------------------------
 
 #[cfg(test)]
@@ -288,6 +309,16 @@ mod tests {
         let gys = "cart ellps: intl | helmert x:-87 y:-96 z:-120 | cart inv ellps:GRS80";
 
         let mut ctx = Context::new();
+
+        // Check that the GYS syntactical indicators trigger
+        assert!(crate::context::is_gys("[cart]"));
+        assert!(crate::context::is_gys("|cart|"));
+        assert!(crate::context::is_gys("|cart"));
+        assert!(crate::context::is_gys("cart|"));
+        assert!(!crate::context::is_gys("[cart"));
+        assert!(!crate::context::is_gys("cart]"));
+
+        // Check that GYS instantiates exactly as the corresponding YAML
         let op_yaml = ctx.operation(pipeline).unwrap();
         let op_gys = ctx.operation(gys).unwrap();
 
