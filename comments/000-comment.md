@@ -230,7 +230,9 @@ let es = GRS80.eccentricity_squared();
 
 The functionality also includes ancillary latitudes, and computation of geodesics on the ellipsoid - see [example 01](../examples/01-geometrical-geodesy.rs) for details.
 
-### GYS: The Ghastly YAML Shorthand
+### Recent additions
+
+#### GYS: The Ghastly YAML Shorthand
 
 As YAML is somewhat verbose, GYS, the "Ghastly YAML Shorthand" was introduced with RG version 0.6.0. GYS can be discerned from YAML by not containing any curly braces, using pipe symbols (`|`) to indicate pipeline steps, and in general leaving out syntactical elements which are superfluous given that we know the context is RG.
 
@@ -249,6 +251,12 @@ let pipeline = "ed50_etrs89: {
 // The same pipeline in Ghastly YAML Shorthand (GYS)
 let gys = "cart ellps: intl | helmert x:-87 y:-96 z:-120 | cart inv ellps:GRS80";
 ```
+
+A description is considered GYS, and internally translated to YAML, if at least one of these conditions is met:
+
+1. It begins and/or ends with a `|` character, i.e. an empty step.
+2. It contains a space-delimited `|` character, i.e. the sequence `_|_`.
+3. It is wrapped in square brackets: `[cart ellps: intl]`.
 
 ### Comming attractions
 
