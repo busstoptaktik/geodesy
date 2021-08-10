@@ -146,6 +146,8 @@ pub trait OperatorCore {
 }
 
 
+
+
 /// Convert "Ghastly YAML Shorthand" to YAML
 fn gys_to_yaml(gys: &str) -> String {
     // TODO: remove comments, blank lines and leading/trailing whitespace
@@ -179,7 +181,11 @@ fn gys_to_yaml(gys: &str) -> String {
         indent = "    ";
     }
     for step in steps {
-        let mut elements: Vec<&str> = step.split_whitespace().collect();
+        println!("STEP: [{:?}]", step);
+        // Strip inline comments
+        let strip = step.find('#').map(|index| &step[..index]).unwrap_or(step).trim();
+        println!("STRIP: [{:?}]", strip);
+        let mut elements: Vec<&str> = strip.split_whitespace().collect();
         let n = elements.len();
         if n == 0 {
             return String::from("Error: Empty step!");
@@ -658,8 +664,9 @@ mod tests {
             ]
         }";
 
-        // Same pipeline in Ghastly YAML Shorthand (GYS)
-        let gys = "cart ellps: intl | helmert x:-87 y:-96 z:-120 | cart inv ellps:GRS80";
+        // Same pipeline in Ghastly YAML Shorthand (GYS), with some nasty
+        // inline comments to stress test gys_to_yaml().
+        let gys = "# bla bla\n\n   cart ellps: intl # another comment ending at newline\n | helmert x:-87 y:-96 z:-120 # inline comment ending at step, not at newline | cart inv ellps:GRS80";
 
         let mut ctx = Context::new();
 
