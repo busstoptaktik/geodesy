@@ -114,6 +114,10 @@ pub trait OperatorCore {
         true
     }
 
+    fn noop(&self) -> bool {
+        false
+    }
+
     // operate fwd/inv, taking operator inversion into account.
     fn operate(&self, ctx: &mut Context, operands: &mut [CoordinateTuple], forward: bool) -> bool {
         // Short form of (inverted && !forward) || (forward && !inverted)
@@ -147,6 +151,7 @@ pub trait OperatorCore {
 }
 
 mod cart;
+mod fit;
 mod helmert;
 mod noop;
 mod pipeline;
@@ -265,6 +270,8 @@ fn builtins(ctx: &mut Context, args: &mut OperatorArgs) -> Option<Operator> {
         op = crate::operator::helmert::Helmert::operator(args);
     } else if opname == "noop" {
         op = crate::operator::noop::Noop::operator(args);
+    } else if opname == "fit" || opname == "match" {
+        op = crate::operator::fit::Fit::operator(args);
     } else if opname == "tmerc" {
         op = crate::operator::tmerc::Tmerc::operator(args);
     } else if opname == "utm" {
