@@ -1,3 +1,5 @@
+#![allow(clippy::float_cmp)]
+
 use super::OperatorArgs;
 use super::OperatorCore;
 use crate::operator_construction::*;
@@ -16,14 +18,18 @@ pub struct Fit {
 struct CoordinateOrderDescriptor {
     post: [usize; 4],
     mult: [f64; 4],
-    noop: bool
+    noop: bool,
 }
 
 fn descriptor(desc: &str) -> Option<CoordinateOrderDescriptor> {
     let mut post = [0_usize, 1, 2, 3];
     let mut mult = [1_f64, 1., 1., 1.];
     if desc == "pass" {
-        return Some(CoordinateOrderDescriptor{post, mult, noop: true});
+        return Some(CoordinateOrderDescriptor {
+            post,
+            mult,
+            noop: true,
+        });
     }
 
     if desc.len() != 4 && desc.len() != 8 {
@@ -66,18 +72,18 @@ fn descriptor(desc: &str) -> Option<CoordinateOrderDescriptor> {
             'n' => 2,
             'u' => 3,
             't' => 4,
-            _ => 0,    // cannot happen: We already err'ed on unknowns
+            _ => 0, // cannot happen: We already err'ed on unknowns
         };
         indices[i] = dd;
     }
 
     // Check that the descriptor describes a true permutation:
     // all inputs go to a unique output
-    let mut count = [0_usize,0,0,0];
+    let mut count = [0_usize, 0, 0, 0];
     for i in 0..4 {
         count[(indices[i].abs() - 1) as usize] += 1;
     }
-    if count != [1,1,1,1] {
+    if count != [1, 1, 1, 1] {
         println!("Overlaps: {:?}", indices);
         return None;
     }
@@ -86,21 +92,24 @@ fn descriptor(desc: &str) -> Option<CoordinateOrderDescriptor> {
     for i in 0..4 {
         let d = indices[i];
         post[i] = (d.abs() - 1) as usize;
-        mult[i] = d.signum() as f64 * if i > 1 {1.0} else {torad};
+        mult[i] = d.signum() as f64 * if i > 1 { 1.0 } else { torad };
     }
-    let noop = mult==[1.0; 4] && post==[0_usize, 1, 2, 3];
+    #[allow(clippy::float_cmp)]
+    let noop = mult == [1.0; 4] && post == [0_usize, 1, 2, 3];
 
-    Some(CoordinateOrderDescriptor{post, mult, noop})
+    Some(CoordinateOrderDescriptor { post, mult, noop })
 }
 
-
-fn combine_descriptors(have: &CoordinateOrderDescriptor, want: &CoordinateOrderDescriptor) -> CoordinateOrderDescriptor {
+fn combine_descriptors(
+    have: &CoordinateOrderDescriptor,
+    want: &CoordinateOrderDescriptor,
+) -> CoordinateOrderDescriptor {
     let mut give = CoordinateOrderDescriptor::default();
     for i in 0..4 {
         give.mult[i] = have.mult[i] / want.mult[i];
-        give.post[i] = have.post.iter().position(|&p| p==want.post[i]).unwrap();
+        give.post[i] = have.post.iter().position(|&p| p == want.post[i]).unwrap();
     }
-    give.noop = give.mult==[1.0; 4] && give.post==[0_usize, 1, 2, 3];
+    give.noop = give.mult == [1.0; 4] && give.post == [0_usize, 1, 2, 3];
     give
 }
 
@@ -153,7 +162,7 @@ impl OperatorCore for Fit {
                 o[self.post[0]] * self.mult[0],
                 o[self.post[1]] * self.mult[1],
                 o[self.post[2]] * self.mult[2],
-                o[self.post[3]] * self.mult[3]
+                o[self.post[3]] * self.mult[3],
             ]);
         }
         true
@@ -197,8 +206,8 @@ impl OperatorCore for Fit {
 mod tests {
     #[test]
     fn descriptor() {
-        use super::descriptor;
         use super::combine_descriptors;
+        use super::descriptor;
 
         // Axis swap n<->e
         assert_eq!([1usize, 0, 2, 3], descriptor("neut").unwrap().post);
@@ -227,11 +236,11 @@ mod tests {
         let want = descriptor("wndt_gon").unwrap();
         let give = combine_descriptors(&have, &want);
         assert_eq!([1_usize, 0, 2, 3], give.post);
-        assert!(give.mult[0] + 400./360. < 1e-10);
-        assert!(give.mult[1] - 400./360. < 1e-10);
+        assert!(give.mult[0] + 400. / 360. < 1e-10);
+        assert!(give.mult[1] - 400. / 360. < 1e-10);
         assert!(give.mult[2] + 1.0 < 1e-10);
         assert!(give.mult[3] - 1.0 < 1e-10);
-        assert!(give.noop==false);
+        assert!(give.noop == false);
     }
 
     #[test]
@@ -240,10 +249,12 @@ mod tests {
         use crate::CoordinateTuple;
         let mut ctx = Context::new();
 
-        let gonify = ctx.operation("match: {have: neut_deg, want: enut_gon}").unwrap();
+        let gonify = ctx
+            .operation("match: {have: neut_deg, want: enut_gon}")
+            .unwrap();
         let mut operands = [
             CoordinateTuple::raw(90., 180., 0., 0.),
-            CoordinateTuple::raw(45., 90., 0., 0.)
+            CoordinateTuple::raw(45., 90., 0., 0.),
         ];
 
         ctx.fwd(gonify, &mut operands);
