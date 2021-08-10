@@ -10,17 +10,7 @@ fn main() {
         println!("data_local_dir: {}", dir.to_str().unwrap_or_default());
     }
 
-    let pipeline = "ed50_etrs89: {
-        # with cucumbers
-        steps: [
-            cart: {ellps: intl},
-            helmert: {x: -87, y: -96, z: -120},
-            cart: {inv: true, ellps: GRS80}
-        ]
-    }";
-    let zbigniew = ctx.operation(pipeline);
-
-    let gonify = ctx.operation("#banan\n\n   match have:neut_deg  want:enut_gon  \n#agurk").unwrap();
+    let gonify = ctx.operation("match have:neut_deg  want:enut_gon").unwrap();
 
     let mut operands = [
         C::raw(90., 180., 0., 0.),
