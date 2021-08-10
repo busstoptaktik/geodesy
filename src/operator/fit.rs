@@ -1,4 +1,63 @@
-#![allow(clippy::float_cmp)]
+/*! Declarative approach to fitting input data in one format to output data in another.
+
+Example:
+
+```gys
+fit have: neut_deg  want: enut_rad
+```
+
+We introduce the coordinate type designations "eastish, northish, upish, timish",
+and their geometrical inverses "westish, southish, downish, reversed-timeish",
+with mostly evident meaning, and convenient short forms `e, n, u, t` and `w, s, d, r`,
+respectively.
+
+Also, we introduce the 3 external angular representations "degrees, gradians, radians",
+conveniently abbrevieated as "deg", "gon" and "rad".
+
+The Rust Geodesy internal format of a four dimensional coordinate tuple is e, n, u, t,
+and the internal unit of measure for anglular coordinates is radians. In `fit`, terms,
+this is described as `enut_rad`.
+
+`fit` covers the same ground as the `PROJ` operator `axisswap`, but using a somewhat
+different approach: You never tell `fit` what you want it to do - you only tell it
+what you `have`, and what you `want` (and in most cases actually only one of those), then
+`fit` figures out how to fulfill the order.
+
+The example above specifies that an input coordinate tuple with coordinate order
+**latitude, longitude, height, time**, with latitude and longitude in degrees, should be
+converted to an output coordinate in radians and with latitude and longitude swapped.
+That output format is identical to the default internal format, so it can actually
+be left out, and the order can simply be written as
+
+```gys
+fit have: neut_deg
+```
+
+Typically, `fit` is used in both ends of a pipeline, to match input and output data:
+
+```gys
+fit have: neut_deg | cart ... | helmert ... | cart inv ... | fit want: neut_deg
+```
+
+Note that `fit want: ...` and `fit inv have: ...`. The latter format is useful when
+using RG's predefined symbolic definitions, as in:
+
+```gys
+geo | cart ... | helmert ... | cart inv ... | geo inv
+```
+
+As `fit` really provides impedance matching between input and output conventions,
+it can also be called as `match`:
+
+```gys
+match have: neut_deg  want: enut_rad
+```
+
+which can be straightforwardly read as "match this to that". Since `match` is a
+reserved word in the Rust programming language, using it as an identifier of
+code structure is inconvenient, hence the primary name of `fit`.
+
+!*/
 
 use super::OperatorArgs;
 use super::OperatorCore;
@@ -21,6 +80,7 @@ struct CoordinateOrderDescriptor {
     noop: bool,
 }
 
+#[allow(clippy::float_cmp)]
 fn descriptor(desc: &str) -> Option<CoordinateOrderDescriptor> {
     let mut post = [0_usize, 1, 2, 3];
     let mut mult = [1_f64, 1., 1., 1.];
@@ -94,12 +154,12 @@ fn descriptor(desc: &str) -> Option<CoordinateOrderDescriptor> {
         post[i] = (d.abs() - 1) as usize;
         mult[i] = d.signum() as f64 * if i > 1 { 1.0 } else { torad };
     }
-    #[allow(clippy::float_cmp)]
     let noop = mult == [1.0; 4] && post == [0_usize, 1, 2, 3];
 
     Some(CoordinateOrderDescriptor { post, mult, noop })
 }
 
+#[allow(clippy::float_cmp)]
 fn combine_descriptors(
     have: &CoordinateOrderDescriptor,
     want: &CoordinateOrderDescriptor,
@@ -168,9 +228,6 @@ impl OperatorCore for Fit {
         true
     }
 
-    #[allow(non_snake_case)] // make it possible to mimic math notation from original paper
-    #[allow(clippy::many_single_char_names)] // ditto
-    #[allow(clippy::suspicious_operation_groupings)]
     fn inv(&self, _ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
         if self.noop {
             return true;
