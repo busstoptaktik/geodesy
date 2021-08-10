@@ -1,6 +1,5 @@
 /*! Plonketi Plonk! !*/
 
-
 /// Koordinatprocessering
 fn main() {
     // use std::env;
@@ -12,10 +11,7 @@ fn main() {
 
     let gonify = ctx.operation("match have:neut_deg  want:enut_gon").unwrap();
 
-    let mut operands = [
-        C::raw(90., 180., 0., 0.),
-        C::raw(45., 90., 0., 0.)
-    ];
+    let mut operands = [C::raw(90., 180., 0., 0.), C::raw(45., 90., 0., 0.)];
     ctx.fwd(gonify, &mut operands);
     println!("GONIFIED:\n{:?}", operands);
     ctx.inv(gonify, &mut operands);
@@ -51,7 +47,6 @@ fn main() {
 
         assert!(yaml_data[0].hypot3(&gys_data[0]) < 1e-16);
         assert!(yaml_data[1].hypot3(&gys_data[1]) < 1e-16);
-
 
         if let Some(utm32) = ctx.operation("utm: {zone: 32}") {
             let copenhagen = C::geo(55., 12., 0., 0.);

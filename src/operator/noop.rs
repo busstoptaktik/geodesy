@@ -32,6 +32,10 @@ impl OperatorCore for Noop {
         "noop"
     }
 
+    fn is_noop(&self) -> bool {
+        true
+    }
+
     fn is_inverted(&self) -> bool {
         false
     }

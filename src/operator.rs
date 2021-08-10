@@ -109,7 +109,7 @@ pub trait OperatorCore {
         true
     }
 
-    fn noop(&self) -> bool {
+    fn is_noop(&self) -> bool {
         false
     }
 

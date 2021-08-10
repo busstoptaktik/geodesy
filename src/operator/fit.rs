@@ -246,7 +246,7 @@ impl OperatorCore for Fit {
         "fit"
     }
 
-    fn noop(&self) -> bool {
+    fn is_noop(&self) -> bool {
         self.noop
     }
 
