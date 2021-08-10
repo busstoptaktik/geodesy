@@ -144,7 +144,7 @@ impl Context {
 }
 
 /// Convert "Ghastly YAML Shorthand" to YAML
-pub(crate) fn gys_to_yaml(gys: &str) -> String {
+fn gys_to_yaml(gys: &str) -> String {
     // Appears to be YAML already - do nothing!
     if !is_gys(gys) {
         return String::from(gys);
@@ -233,19 +233,36 @@ pub(crate) fn gys_to_yaml(gys: &str) -> String {
 }
 
 // True if a str appears to be in GYS format
-pub(crate) fn is_gys(gys: &str) -> bool {
+fn is_gys(gys: &str) -> bool {
+    // GYS if contains a whitespace-wrapped pipe
     if gys.contains(" | ") {
         return true;
     }
+
+    // GYS if starting or ending with an empty step
     if gys.starts_with('|') {
         return true;
     }
     if gys.ends_with('|') {
         return true;
     }
-    if gys.starts_with('[') && gys.ends_with(']') {
-        return true;
+
+    // GYS if wrapped in square brackets: [gys]. Note that
+    // we cannot merge these two ifs without damaging the
+    // following test for "no trailing colon"
+    if gys.starts_with('[') {
+        return gys.ends_with(']');
     }
+    if gys.ends_with(']') {
+        return gys.starts_with('[');
+    }
+
+    // GYS if no trailing colon on first token
+    if !gys.split_whitespace().next().unwrap_or_default().ends_with(':') {
+        return true
+    }
+
+    // Otherwise not a GYS - hopefully it's YAML then!
     false
 }
 
@@ -294,6 +311,7 @@ mod tests {
     #[test]
     fn gys() {
         use crate::Context;
+        use super::is_gys;
         use crate::CoordinateTuple as C;
 
         // A pipeline in YAML
@@ -311,12 +329,12 @@ mod tests {
         let mut ctx = Context::new();
 
         // Check that the GYS syntactical indicators trigger
-        assert!(crate::context::is_gys("[cart]"));
-        assert!(crate::context::is_gys("|cart|"));
-        assert!(crate::context::is_gys("|cart"));
-        assert!(crate::context::is_gys("cart|"));
-        assert!(!crate::context::is_gys("[cart"));
-        assert!(!crate::context::is_gys("cart]"));
+        assert!(is_gys("[cart]"));
+        assert!(is_gys("|cart|"));
+        assert!(is_gys("|cart"));
+        assert!(is_gys("cart|"));
+        assert!(!is_gys("[cart"));
+        assert!(!is_gys("cart]"));
 
         // Check that GYS instantiates exactly as the corresponding YAML
         let op_yaml = ctx.operation(pipeline).unwrap();

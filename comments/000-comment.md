@@ -252,11 +252,12 @@ let pipeline = "ed50_etrs89: {
 let gys = "cart ellps: intl | helmert x:-87 y:-96 z:-120 | cart inv ellps:GRS80";
 ```
 
-A description is considered GYS, and internally translated to YAML, if at least one of these conditions is met:
+A description is considered GYS, and internally translated to YAML, if *at least one* of these conditions is met:
 
 1. It begins and/or ends with a `|` character, i.e. an empty step.
 2. It contains a space-delimited `|` character, i.e. the sequence `_|_`.
 3. It is wrapped in square brackets: `[cart ellps: intl]`.
+4. The first token does not end with `:`
 
 ### Comming attractions
 
