@@ -123,7 +123,7 @@ impl Context {
         self.last_failing_operation_definition = definition.to_string();
         self.last_failing_operation.clear();
         self.cause.clear();
-        let op = Operator::new(&definition, self)?;
+        let op = Operator::new(definition, self)?;
         let index = self.operations.len();
         self.operations.push(op);
         Some(index)
