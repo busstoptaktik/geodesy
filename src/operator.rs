@@ -140,13 +140,7 @@ pub trait OperatorCore {
     fn args(&self, step: usize) -> &OperatorArgs;
 
     fn is_inverted(&self) -> bool;
-
-    //fn left(&self) -> CoordType;
-    //fn right(&self) -> CoordType;
 }
-
-
-
 
 /// Convert "Ghastly YAML Shorthand" to YAML
 fn gys_to_yaml(gys: &str) -> String {
@@ -182,7 +176,11 @@ fn gys_to_yaml(gys: &str) -> String {
     }
     for step in steps {
         // Strip inline comments
-        let strip = step.find('#').map(|index| &step[..index]).unwrap_or(step).trim();
+        let strip = step
+            .find('#')
+            .map(|index| &step[..index])
+            .unwrap_or(step)
+            .trim();
         let mut elements: Vec<&str> = strip.split_whitespace().collect();
         let n = elements.len();
         if n == 0 {
@@ -277,15 +275,18 @@ fn is_gys(gys: &str) -> bool {
     }
 
     // GYS if no trailing colon on first token
-    if !gys.split_whitespace().next().unwrap_or_default().ends_with(':') {
-        return true
+    if !gys
+        .split_whitespace()
+        .next()
+        .unwrap_or_default()
+        .ends_with(':')
+    {
+        return true;
     }
 
     // Otherwise not a GYS - hopefully it's YAML then!
     false
 }
-
-
 
 mod cart;
 mod fit;
@@ -648,8 +649,8 @@ mod tests {
 
     #[test]
     fn gys() {
-        use crate::Context;
         use super::is_gys;
+        use crate::Context;
         use crate::CoordinateTuple as C;
 
         // A pipeline in YAML
@@ -696,5 +697,4 @@ mod tests {
         assert!(yaml_data[0].hypot3(&gys_data[0]) < 1e-30);
         assert!(yaml_data[1].hypot3(&gys_data[1]) < 1e-30);
     }
-
 }
