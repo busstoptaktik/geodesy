@@ -181,10 +181,8 @@ fn gys_to_yaml(gys: &str) -> String {
         indent = "    ";
     }
     for step in steps {
-        println!("STEP: [{:?}]", step);
         // Strip inline comments
         let strip = step.find('#').map(|index| &step[..index]).unwrap_or(step).trim();
-        println!("STRIP: [{:?}]", strip);
         let mut elements: Vec<&str> = strip.split_whitespace().collect();
         let n = elements.len();
         if n == 0 {
