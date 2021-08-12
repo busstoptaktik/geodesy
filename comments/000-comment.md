@@ -4,7 +4,7 @@
 
 Thomas Knudsen <knudsen.thomas@gmail.com>
 
-2021-07-31 (with later updates)
+2021-07-31. Last [revision](#document-history) 2021-08-11
 
 ---
 
@@ -238,18 +238,20 @@ As YAML is somewhat verbose, GYS, the "Ghastly YAML Shorthand" was introduced wi
 
 Internally, GYS is transformed to YAML by a simple mechanical rule set, so YAML is still the cornerstone of the RG descriptor system. The two pipelines shown below demonstrate the essentials of speaking GYS:
 
-```rust
-// A pipeline in YAML
-let pipeline = "ed50_etrs89: {
+**A pipeline in YAML**
+```yaml
+ed50_etrs89: {
     steps: [
         cart: {ellps: intl},
         helmert: {x: -87, y: -96, z: -120},
         cart: {inv: true, ellps: GRS80}
     ]
-}";
+}
+```
 
-// The same pipeline in Ghastly YAML Shorthand (GYS)
-let gys = "cart ellps: intl | helmert x:-87 y:-96 z:-120 | cart inv ellps:GRS80";
+**The same pipeline in Ghastly YAML Shorthand (GYS)**
+```js
+cart ellps: intl | helmert x:-87 y:-96 z:-120 | cart inv ellps:GRS80
 ```
 
 A description is considered GYS, and internally translated to YAML, if *at least one* of these conditions is met:
@@ -360,5 +362,6 @@ In C, using PROJ, the demo program would resemble this (untested) snippet:
 
 ### Document History
 
-* 2021-07-31/2021-08-07: Minor corrections
-* 2021-08-08: Added a section briefly describing GYS
+Major revisions and additions:
+
+- 2021-08-08: Added a section briefly describing GYS
