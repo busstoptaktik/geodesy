@@ -12,7 +12,7 @@ default: test
 list:
     just -l
 
-# Basic test. Use target "test-all" or "check" for successively more in depth check ups.
+# Basic test: Just library unit tests. Use target "test-all" or "check" for successively more in depth check ups.
 test:
     cargo test --lib
 
@@ -34,10 +34,10 @@ clean-check:
     cargo clean
     just check
 
-# Build and install cookbook
-cookbook:
-    zip -r cookbook.zip cookbook
-    mv cookbook.zip $LOCALAPPDATA/geodesy
+# Build and install assets
+assets:
+    zip -r assets.zip assets
+    mv assets.zip $LOCALAPPDATA/geodesy
     ls -l $LOCALAPPDATA/geodesy
 
 # Build documentation, open in browser for inspection.

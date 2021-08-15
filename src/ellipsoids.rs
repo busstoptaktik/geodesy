@@ -38,17 +38,55 @@ impl Ellipsoid {
         }
     }
 
-    /// Predefined ellipsoid
+    fn from_yaml(definition: &str) -> Option<Ellipsoid> {
+        use yaml_rust::YamlLoader;
+        if let Ok(docs) = YamlLoader::load_from_str(definition) {
+            let doc = &docs[0];
+            if let Some(a) = &doc["ellipsoid"]["shortcut"]["a"].as_f64() {
+                if let Some(rf) = &doc["ellipsoid"]["shortcut"]["rf"].as_f64() {
+                    let f = if *rf == 0.0 { 0.0 } else { 1.0 / (*rf) };
+                    if let Some(ay) = &doc["ellipsoid"]["shortcut"]["ay"].as_f64() {
+                        return Some(Ellipsoid::triaxial(*a, *ay, f));
+                    }
+                    return Some(Ellipsoid::new(*a, f));
+                }
+            }
+        }
+        None
+    }
+
+    /// Predefined ellipsoid; built-in or defined in asset collections
     #[must_use]
     pub fn named(name: &str) -> Ellipsoid {
-        match name {
-            "GRS80" => Ellipsoid::new(6_378_137.0, 1. / 298.257_222_100_882_7),
-            "intl" => Ellipsoid::new(6_378_388.0, 1. / 297.0),
-            "Helmert" => Ellipsoid::new(6_378_200.0, 1. / 298.3),
-            "clrk66" => Ellipsoid::new(6_378_206.4, 1. / 294.978_698_2),
-            "clrk80" => Ellipsoid::new(6_378_249.145, 1. / 293.465),
-            _ => Ellipsoid::new(6_378_137.0, 1. / 298.257_222_100_882_7),
+        // Have we intentionally shadowed `name` with a private asset?
+        if let Some(definition) = crate::Context::get_private_asset("ellipsoids", name, ".yml") {
+            if let Some(ellipsoid) = Ellipsoid::from_yaml(&definition) {
+                return ellipsoid;
+            }
         }
+
+        // Is it one of the few builtins?
+        if name == "GRS80" {
+            return Ellipsoid::new(6_378_137.0, 1. / 298.257_222_100_882_7);
+        } else if name == "intl" {
+            return Ellipsoid::new(6_378_388.0, 1. / 297.0);
+        } else if name == "Helmert" {
+            return Ellipsoid::new(6_378_200.0, 1. / 298.3);
+        } else if name == "clrk66" {
+            return Ellipsoid::new(6_378_206.4, 1. / 294.978_698_2);
+        } else if name == "clrk80" {
+            return Ellipsoid::new(6_378_249.145, 1. / 293.465);
+        }
+
+        // Or a shared asset?
+        if let Some(definition) = crate::Context::get_shared_asset("ellipsoids", name, ".yml") {
+            if let Some(ellipsoid) = Ellipsoid::from_yaml(&definition) {
+                return ellipsoid;
+            }
+        }
+
+        // If none of the above, we provide GRS80 as a stop-gap
+        Ellipsoid::default()
     }
 
     // ----- Eccentricities --------------------------------------------------------
@@ -616,6 +654,10 @@ mod tests {
         // Additional size descriptors
         assert!((ellps.semiminor_axis() - 6_356_752.31414_0347).abs() < 1e-9);
         assert!((ellps.semimajor_axis() - 6_378_137.0).abs() < 1e-9);
+
+        let ellps = Ellipsoid::named("unitsphere");
+        assert!((ellps.semimajor_axis() - 1.0) < 1e-10);
+        assert!(ellps.flattening() < 1e-20);
     }
 
     #[test]

@@ -25,7 +25,7 @@ impl Operator {
     /// assert!((operands[0][0].to_degrees() - 12.).abs() < 1.0e-10);
     /// ```
     pub fn new(definition: &str, ctx: &mut Context) -> Option<Operator> {
-        let definition = gys_to_yaml(definition);
+        let definition = Context::gys_to_yaml(definition);
 
         let mut oa = OperatorArgs::new();
         oa.populate(&definition, "");
@@ -142,151 +142,6 @@ pub trait OperatorCore {
     fn is_inverted(&self) -> bool;
 }
 
-/// Convert "Ghastly YAML Shorthand" to YAML
-fn gys_to_yaml(gys: &str) -> String {
-    let lines = gys.lines();
-    let mut s = Vec::new();
-    for line in lines {
-        if line.trim().starts_with('#') {
-            continue;
-        }
-        s.push(line);
-    }
-    let gys = s.join("\n").trim().to_string();
-
-    // Appears to be YAML already - do nothing!
-    if !is_gys(&gys) {
-        return gys;
-    }
-
-    // Strip off superfluous GYS indicators
-    let gys = gys.trim_matches('|');
-    let gys = gys.trim_matches('[');
-    let gys = gys.trim_matches(']');
-
-    let mut yaml = String::new();
-    let mut indent = "";
-    let steps: Vec<&str> = gys.split('|').collect();
-    let nsteps = steps.len();
-    if nsteps > 1 {
-        yaml += "pipeline_from_gys: {\n  steps: [\n";
-        indent = "    ";
-    }
-    for step in steps {
-        // Strip inline comments
-        let strip = step
-            .find('#')
-            .map(|index| &step[..index])
-            .unwrap_or(step)
-            .trim()
-            .to_string();
-        let mut elements: Vec<&str> = strip.split_whitespace().collect();
-        let n = elements.len();
-        if n == 0 {
-            return String::from("Error: Empty step!");
-        }
-
-        // changing indent after use to get linebreaks after the first step
-        yaml += indent;
-        indent = ",\n    ";
-
-        yaml += elements[0];
-        yaml += ":";
-
-        // No args? Then insert an empty argument list
-        if n == 1 {
-            yaml += " {}";
-            continue;
-        }
-
-        // Handle args
-        yaml += " {";
-
-        for i in 1..n {
-            // We constructed a key-value par in last iteration?
-            if elements[i].is_empty() {
-                continue;
-            }
-            let e = elements[i].to_string();
-            if e.ends_with(':') {
-                if i == n - 1 {
-                    return String::from("Missing value for key '") + &e + "'";
-                }
-                yaml += &e;
-                yaml += " ";
-                yaml += elements[i + 1];
-                if i + 2 < n {
-                    yaml += ", ";
-                }
-                elements[i + 1] = "";
-                continue;
-            };
-
-            // Ultra compact notation: key:value, no whitespace
-            if e.contains(':') {
-                yaml += &e.replace(":", ": ");
-                if i + 1 < n {
-                    yaml += ", ";
-                }
-                continue;
-            }
-
-            // Key with no value? provide "true"
-            yaml += &e;
-            yaml += ": true";
-            if i + 1 < n {
-                yaml += ", ";
-            }
-        }
-        yaml += "}";
-    }
-
-    if nsteps > 1 {
-        yaml += "\n  ]\n}";
-    }
-
-    yaml
-}
-
-// True if a str appears to be in GYS format
-fn is_gys(gys: &str) -> bool {
-    // GYS if contains a whitespace-wrapped pipe
-    if gys.contains(" | ") {
-        return true;
-    }
-
-    // GYS if starting or ending with an empty step
-    if gys.starts_with('|') {
-        return true;
-    }
-    if gys.ends_with('|') {
-        return true;
-    }
-
-    // GYS if wrapped in square brackets: [gys]. Note that
-    // we cannot merge these two ifs without damaging the
-    // following test for "no trailing colon"
-    if gys.starts_with('[') {
-        return gys.ends_with(']');
-    }
-    if gys.ends_with(']') {
-        return gys.starts_with('[');
-    }
-
-    // GYS if no trailing colon on first token
-    if !gys
-        .split_whitespace()
-        .next()
-        .unwrap_or_default()
-        .ends_with(':')
-    {
-        return true;
-    }
-
-    // Otherwise not a GYS - hopefully it's YAML then!
-    false
-}
-
 mod adapt;
 mod cart;
 mod helmert;
@@ -310,18 +165,23 @@ pub(crate) fn operator_factory(
         return operator_factory(&mut moreargs, ctx, recursions + 1);
     }
 
-    // Look for macros defined by files in the current working directory
-    if let Ok(definition) = std::fs::read_to_string(args.name.clone() + ".gys") {
-        let definition = gys_to_yaml(&definition);
-        let mut moreargs = args.spawn(&definition);
-        return operator_factory(&mut moreargs, ctx, recursions + 1);
-    }
-    if let Ok(definition) = std::fs::read_to_string(args.name.clone() + ".yml") {
+    // Is it a private asset (i.e. current directory) '.gys'-file?
+    if let Some(mut definition) = Context::get_private_asset("transformations", &args.name, ".gys")
+    {
+        // First expand ARGS and translate to YAML...
+        definition = expand_gys(&definition, args);
+        // Then treat it just like any other macro!
         let mut moreargs = args.spawn(&definition);
         return operator_factory(&mut moreargs, ctx, recursions + 1);
     }
 
-    // Look for runtime defined operators
+    // Is it a private asset (i.e. current directory) '.yml'-file?
+    if let Some(definition) = Context::get_private_asset("transformations", &args.name, ".yml") {
+        let mut moreargs = args.spawn(&definition);
+        return operator_factory(&mut moreargs, ctx, recursions + 1);
+    }
+
+    // Is it a runtime defined operator?
     if let Some(op) = ctx.locate_operator(&args.name) {
         let op = op(args, ctx);
         match op {
@@ -335,54 +195,24 @@ pub(crate) fn operator_factory(
         }
     }
 
-    // Look for built-in operators
+    // Is it a built-in operator?
     if let Some(op) = builtins(ctx, args) {
         return Some(op);
     }
 
-    // Finally look in the shared assets directory ($HOME/share/geodesy or somesuch)
-    if let Some(mut dir) = dirs::data_local_dir() {
-        dir.push("geodesy");
-        let filename = args.name.clone() + ".gys";
-        let mut fullpath = dir.clone();
-        fullpath.push("cookbook");
-        fullpath.push("transformations");
-        fullpath.push(filename.clone());
-        if let Ok(definition) = std::fs::read_to_string(fullpath) {
-            let mut moreargs = args.spawn(&definition);
-            return operator_factory(&mut moreargs, ctx, recursions + 1);
-        }
-        // If not found as a freestanding file, try cookbook.zip
-        use std::io::prelude::*;
-        dir.push("cookbook.zip");
-        // Open the physical zip file
-        if let Ok(zipfile) = std::fs::File::open(dir) {
-            // Hand it over to the zip archive reader
-            if let Ok(mut archive) = zip::ZipArchive::new(zipfile) {
-                // Is there a file with the name we're looking for in the zip archive?
-                let full_filename = String::from("cookbook/transformations/") + &filename;
-                if let Ok(mut file) = archive.by_name(&full_filename) {
-                    let mut definition = String::new();
-                    if file.read_to_string(&mut definition).is_ok() {
-                        // Fine! First expand ARGS...
-                        let mut gysargs = String::new();
-                        for (key, value) in &args.args {
-                            if key == "ellps" || key == "_definition" {
-                                continue;
-                            }
-                            let elt = format!(" {key}:{value}", key = key, value = value);
-                            gysargs += &elt;
-                        }
-                        definition = definition.replace("ARGS", &gysargs);
+    // Is it a shared asset '.gys'-file?
+    if let Some(mut definition) = Context::get_shared_asset("transformations", &args.name, ".gys") {
+        // First expand ARGS and translate to YAML...
+        definition = expand_gys(&definition, args);
+        // Then treat it just like any other macro!
+        let mut moreargs = args.spawn(&definition);
+        return operator_factory(&mut moreargs, ctx, recursions + 1);
+    }
 
-                        // Then translate to YAML and treat it just like any other macro!
-                        definition = gys_to_yaml(&definition);
-                        let mut moreargs = args.spawn(&definition);
-                        return operator_factory(&mut moreargs, ctx, recursions + 1);
-                    }
-                }
-            }
-        }
+    // Is it a shared asset '.yml'-file?
+    if let Some(definition) = Context::get_shared_asset("transformations", &args.name, ".yml") {
+        let mut moreargs = args.spawn(&definition);
+        return operator_factory(&mut moreargs, ctx, recursions + 1);
     }
 
     // Nothing found. Complain and yell...
@@ -413,7 +243,6 @@ fn builtins(ctx: &mut Context, args: &mut OperatorArgs) -> Option<Operator> {
     if opname.starts_with("builtin_") {
         opname = opname.strip_prefix("builtin_").unwrap().to_string();
     }
-    // println!("BUILTIN:\n{:#?}", args);
 
     // Default value for op is Err("not found")
     let mut op: Result<Operator, &'static str> = Err("Operator name not found");
@@ -440,6 +269,22 @@ fn builtins(ctx: &mut Context, args: &mut OperatorArgs) -> Option<Operator> {
 
     // Success!
     Some(op.unwrap())
+}
+
+/// Expand gys ARGS and translate to YAML
+fn expand_gys(definition: &str, args: &mut OperatorArgs) -> String {
+    let mut gysargs = String::new();
+    for (key, value) in &args.args {
+        if key == "ellps" || key == "_definition" {
+            continue;
+        }
+        let elt = format!(" {key}:{value}", key = key, value = value);
+        gysargs += &elt;
+    }
+    let definition = definition.replace("ARGS", &gysargs);
+
+    // Then translate to YAML and return
+    Context::gys_to_yaml(&definition)
 }
 
 // --------------------------------------------------------------------------------------
@@ -537,16 +382,16 @@ mod tests {
         assert!((d.third() - r.third()).abs() < 1.0e-8);
 
         // An externally defined version
-        let h = Operator::new("tests/ed50_etrs89", &mut o);
+        let h = Operator::new("ed50_etrs89", &mut o);
         assert!(h.is_some());
 
         // Try to access it from data_local_dir (i.e. $HOME/share or somesuch)
         let h = Operator::new("ed50_etrs89", &mut o);
-        // If we have access to "cookbook.zip" we expect to succeed
-        if let Some(mut cookbook) = dirs::data_local_dir() {
-            cookbook.push("geodesy");
-            cookbook.push("cookbook.zip");
-            if cookbook.exists() {
+        // If we have access to "assets.zip" we expect to succeed
+        if let Some(mut assets) = dirs::data_local_dir() {
+            assets.push("geodesy");
+            assets.push("assets.zip");
+            if assets.exists() {
                 assert!(h.is_some());
                 let mut operands = [CoordinateTuple::gis(12., 55., 100., 0.)];
                 h.unwrap().forward(&mut o, operands.as_mut());
@@ -656,66 +501,5 @@ mod tests {
         let mut operands = [CoordinateTuple::raw(12., 55., 100., 0.)];
         let _aha = ctx.fwd(op, operands.as_mut());
         assert_eq!(operands[0][0], 42.);
-    }
-
-    #[test]
-    fn gys() {
-        use super::is_gys;
-        use crate::Context;
-        use crate::CoordinateTuple as C;
-
-        let mut ctx = Context::new();
-
-        // Test the corner case of giving just "inv" as operation name
-        let inv = ctx.operation("[inv]");
-        assert!(inv.is_none());
-
-        // Test that an inv-operator actually instantiates
-        let invcart = ctx.operation("[cart inv]");
-        assert!(invcart.is_some());
-
-        // Check that the GYS syntactical indicators trigger
-        assert!(is_gys("[cart]"));
-        assert!(is_gys("|cart|"));
-        assert!(is_gys("|cart"));
-        assert!(is_gys("cart|"));
-        assert!(!is_gys("[cart"));
-        assert!(!is_gys("cart]"));
-
-        // Now a more complete test of YAML vs. GYS
-
-        // A pipeline in YAML
-        let pipeline = "ed50_etrs89: {
-            # with cucumbers
-            steps: [
-                cart: {ellps: intl},
-                helmert: {x: -87, y: -96, z: -120},
-                cart: {inv: true, ellps: GRS80}
-            ]
-        }";
-
-        // Same pipeline in Ghastly YAML Shorthand (GYS), with some nasty
-        // inline comments to stress test gys_to_yaml().
-        let gys = "# bla bla\n\n   cart ellps: intl # another comment ending at newline\n | helmert x:-87 y:-96 z:-120 # inline comment ending at step, not at newline | cart inv ellps:GRS80";
-
-        // Check that GYS instantiates exactly as the corresponding YAML
-        let op_yaml = ctx.operation(pipeline).unwrap();
-        let op_gys = ctx.operation(gys).unwrap();
-
-        let copenhagen = C::geo(55., 12., 0., 0.);
-        let stockholm = C::geo(59., 18., 0., 0.);
-        let mut yaml_data = [copenhagen, stockholm];
-        let mut gys_data = [copenhagen, stockholm];
-
-        ctx.fwd(op_yaml, &mut yaml_data);
-        ctx.fwd(op_gys, &mut gys_data);
-
-        C::geo_all(&mut yaml_data);
-        C::geo_all(&mut gys_data);
-
-        // We assert that the difference is exactly zero, since the operations
-        // should be identical. But float equality comparisons are frowned at...
-        assert!(yaml_data[0].hypot3(&gys_data[0]) < 1e-30);
-        assert!(yaml_data[1].hypot3(&gys_data[1]) < 1e-30);
     }
 }
