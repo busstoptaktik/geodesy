@@ -1,0 +1,9 @@
+ellipsoid:
+    description: Plessis 1817 (France)
+    mnemonic: plessis
+    shortcut: 
+        a: 6376523.
+        rf: 308.641
+    definition:
+        a: 6376523.
+        b: 6355863.

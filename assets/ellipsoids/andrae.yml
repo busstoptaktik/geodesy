@@ -1,0 +1,9 @@
+ellipsoid:
+    description: Andrae 1876 (Den., Iclnd.)
+    mnemonic: andrae
+    shortcut: 
+        a: 6377104.43
+        rf: 300.0
+    definition:
+        a: 6377104.43
+        rf: 300.0

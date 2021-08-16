@@ -1,0 +1,9 @@
+ellipsoid:
+    description: Kaula 1961
+    mnemonic: kaula
+    shortcut: 
+        a: 6378163.
+        rf: 298.24
+    definition:
+        a: 6378163.
+        rf: 298.24

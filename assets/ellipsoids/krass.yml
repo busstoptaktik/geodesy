@@ -1,0 +1,9 @@
+ellipsoid:
+    description: Krassovsky, 1942
+    mnemonic: krass
+    shortcut: 
+        a: 6378245.0
+        rf: 298.3
+    definition:
+        a: 6378245.0
+        rf: 298.3

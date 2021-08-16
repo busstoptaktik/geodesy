@@ -1,0 +1,9 @@
+ellipsoid:
+    description: Andrae 1876 (Denmark, Iceland)
+    mnemonic: danish
+    shortcut: 
+        a: 6377019.2563
+        rf: 300.0
+    definition:
+        a: 6377019.2563
+        rf: 300.0

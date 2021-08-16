@@ -1,0 +1,9 @@
+ellipsoid:
+    description: Modified Airy
+    mnemonic: mod_airy
+    shortcut: 
+        a: 6377340.189
+        rf: 299.325
+    definition:
+        a: 6377340.189
+        b: 6356034.446

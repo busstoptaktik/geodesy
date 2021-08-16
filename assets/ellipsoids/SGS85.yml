@@ -1,0 +1,9 @@
+ellipsoid:
+    description: Soviet Geodetic System 85
+    mnemonic: SGS85
+    shortcut: 
+        a: 6378136.0
+        rf: 298.257
+    definition:
+        a: 6378136.0
+        rf: 298.257

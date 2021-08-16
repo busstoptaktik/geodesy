@@ -1,0 +1,9 @@
+ellipsoid:
+    description: WGS 60
+    mnemonic: WGS60
+    shortcut: 
+        a: 6378165.0
+        rf: 298.3
+    definition:
+        a: 6378165.0
+        rf: 298.3

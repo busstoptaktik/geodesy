@@ -1,0 +1,9 @@
+ellipsoid:
+    description: International 1909 (Hayford)
+    mnemonic: intl
+    shortcut: 
+        a: 6378388.0
+        rf: 297.
+    definition:
+        a: 6378388.0
+        rf: 297.

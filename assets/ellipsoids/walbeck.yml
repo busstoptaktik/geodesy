@@ -1,0 +1,9 @@
+ellipsoid:
+    description: Walbeck
+    mnemonic: walbeck
+    shortcut: 
+        a: 6376896.0
+        rf: 302.78
+    definition:
+        a: 6376896.0
+        b: 6355834.8467

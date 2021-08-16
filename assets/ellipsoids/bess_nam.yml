@@ -1,0 +1,9 @@
+ellipsoid:
+    description: Bessel 1841 (Namibia)
+    mnemonic: bess_nam
+    shortcut: 
+        a: 6377483.865
+        rf: 299.1528128
+    definition:
+        a: 6377483.865
+        rf: 299.1528128

@@ -1,0 +1,9 @@
+ellipsoid:
+    description: Airy 1830
+    mnemonic: airy
+    shortcut: 
+        a: 6377563.396
+        rf: 299.3249646
+    definition:
+        a: 6377563.396
+        rf: 299.3249646

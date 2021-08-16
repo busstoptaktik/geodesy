@@ -1,0 +1,9 @@
+ellipsoid:
+    description: WGS 84
+    mnemonic: WGS84
+    shortcut: 
+        a: 6378137.0
+        rf: 298.257223563
+    definition:
+        a: 6378137.0
+        rf: 298.257223563

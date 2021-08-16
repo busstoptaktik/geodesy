@@ -1,0 +1,9 @@
+ellipsoid:
+    description: WGS 72
+    mnemonic: WGS72
+    shortcut: 
+        a: 6378135.0
+        rf: 298.26
+    definition:
+        a: 6378135.0
+        rf: 298.26

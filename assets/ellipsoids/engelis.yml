@@ -1,0 +1,9 @@
+ellipsoid:
+    description: Engelis 1985
+    mnemonic: engelis
+    shortcut: 
+        a: 6378136.05
+        rf: 298.2566
+    definition:
+        a: 6378136.05
+        rf: 298.2566

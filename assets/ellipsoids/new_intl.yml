@@ -1,0 +1,9 @@
+ellipsoid:
+    description: New International 1967
+    mnemonic: new_intl
+    shortcut: 
+        a: 6378157.5
+        rf: 298.25
+    definition:
+        a: 6378157.5
+        b: 6356772.2

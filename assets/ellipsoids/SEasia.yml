@@ -1,0 +1,9 @@
+ellipsoid:
+    description: Southeast Asia
+    mnemonic: SEasia
+    shortcut: 
+        a: 6378155.0
+        rf: 298.3
+    definition:
+        a: 6378155.0
+        b: 6356773.3205

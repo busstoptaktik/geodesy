@@ -1,0 +1,9 @@
+ellipsoid:
+    description: Naval Weapons Lab., 1965
+    mnemonic: NWL9D
+    shortcut: 
+        a: 6378145.0
+        rf: 298.25
+    definition:
+        a: 6378145.0
+        rf: 298.25

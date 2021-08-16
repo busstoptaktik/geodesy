@@ -1,0 +1,9 @@
+ellipsoid:
+    description: GSK-2011
+    mnemonic: GSK2011
+    shortcut: 
+        a: 6378136.5
+        rf: 298.2564151
+    definition:
+        a: 6378136.5
+        rf: 298.2564151

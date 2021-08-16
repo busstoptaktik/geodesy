@@ -1,0 +1,9 @@
+ellipsoid:
+    description: Helmert 1906
+    mnemonic: helmert
+    shortcut: 
+        a: 6378200.
+        rf: 298.3
+    definition:
+        a: 6378200.
+        rf: 298.3

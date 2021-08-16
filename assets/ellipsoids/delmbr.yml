@@ -1,0 +1,9 @@
+ellipsoid:
+    description: Delambre 1810 (Belgium)
+    mnemonic: delmbr
+    shortcut: 
+        a: 6376428.
+        rf: 311.5
+    definition:
+        a: 6376428.
+        rf: 311.5

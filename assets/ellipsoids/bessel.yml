@@ -1,0 +1,9 @@
+ellipsoid:
+    description: Bessel 1841
+    mnemonic: bessel
+    shortcut: 
+        a: 6377397.155
+        rf: 299.1528128
+    definition:
+        a: 6377397.155
+        rf: 299.1528128

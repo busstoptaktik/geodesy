@@ -1,0 +1,9 @@
+ellipsoid:
+    description: Fischer (Mercury Datum) 1960
+    mnemonic: fschr60
+    shortcut: 
+        a: 6378166.
+        rf: 298.3
+    definition:
+        a: 6378166.
+        rf: 298.3

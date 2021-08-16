@@ -1,0 +1,9 @@
+ellipsoid:
+    description: Everest 1830
+    mnemonic: evrst30
+    shortcut: 
+        a: 6377276.345
+        rf: 300.8017
+    definition:
+        a: 6377276.345
+        rf: 300.8017

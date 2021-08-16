@@ -76,6 +76,8 @@ impl Ellipsoid {
             return Ellipsoid::new(6_378_206.4, 1. / 294.978_698_2);
         } else if name == "clrk80" {
             return Ellipsoid::new(6_378_249.145, 1. / 293.465);
+        } else if name == "bessel" {
+            return Ellipsoid::new(6_377_397.155, 1. / 299.152_812_8);
         }
 
         // Or a shared asset?
@@ -658,6 +660,15 @@ mod tests {
         let ellps = Ellipsoid::named("unitsphere");
         assert!((ellps.semimajor_axis() - 1.0) < 1e-10);
         assert!(ellps.flattening() < 1e-20);
+
+        // Test a few of the ellipsoids imported from PROJ
+        let ellps = Ellipsoid::named("krass");
+        assert_eq!(ellps.semimajor_axis(), 6378245.0);
+        assert_eq!(ellps.flattening(), 1. / 298.3);
+
+        let ellps = Ellipsoid::named("MERIT");
+        assert_eq!(ellps.semimajor_axis(), 6378137.0);
+        assert_eq!(ellps.flattening(), 1. / 298.257);
     }
 
     #[test]
