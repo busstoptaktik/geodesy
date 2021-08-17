@@ -277,7 +277,7 @@ In `[Knudsen et al, 2019]` we identified a small number of operations collective
 4. Horizontal grid shift (“NADCON-transformation”).
 5. Vertical grid shift (ellipsoidal-to-orthometric height transformation).
 
-Of these only the two first are fully implemented in RG. The Molodensky transformation has not even been started at, while the remaining parts are in various stages of completion. These are **need to do** elements for near future work.
+Of these only the three first are fully implemented in RG, while the remaining parts are in various stages of completion. These are **need to do** elements for near future work.
 
 Also, a number of additional projections are in the pipeline: first and foremost the Mercator projection (used in nautical charts), and the Lambert conformal conic projection (used in aeronautical charts).
 

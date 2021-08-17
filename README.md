@@ -1,12 +1,13 @@
 # Geodesy
 
-*Rust Geodesy* (RG), is a platform for experiments with geodetic software, transformations, and standards. *RG* vaguely resembles the [PROJ](https://proj.org) transformation system, and was built in part on the basis of experiments with alternative data flow models for PROJ. The actual transformation functionality of *RG* is, however, minimal: At time of writing, it includes just 3 low level operations:
+*Rust Geodesy* (RG), is a platform for experiments with geodetic software, transformations, and standards. *RG* vaguely resembles the [PROJ](https://proj.org) transformation system, and was built in part on the basis of experiments with alternative data flow models for PROJ. The actual transformation functionality of *RG* is, however, minimal: At time of writing, it includes just 4 low level operations:
 
 1. The three, six, seven, and fourteen-parameter versions of the *Helmert transformation*
 2. Helmert's companion, the *cartesian/geographic* coordinate conversion
-3. The *transverse mercator* projection
+3. The full and abridged versions of the *Molodensky transformation*
+4. The *transverse mercator* projection
 
-While this is just enough to test the architecture, it is very far from enough to get through a geodesist's daily work.
+While this is sufficient to test the architecture, it is very far from enough to get through a geodesist's daily work.
 
 Hence, viewing *RG* as *another PROJ*, or *PROJ [RiiR](https://acronyms.thefreedictionary.com/RIIR)*, will lead to bad disappointment. At best, you may catch a weak mirage of a *potential* [shape of jazz to come](https://en.wikipedia.org/wiki/The_Shape_of_Jazz_to_Come) for the PROJ internal dataflow.
 
@@ -21,7 +22,7 @@ All four aims are guided by a wish to amend explicitly identified shortcomings i
 
 ## Documentation
 
-The documentation is currently very limited, but take a look at the [examples](examples), at the tests embedded in the source code, and at this blog style [comment](/comments/000-comment.md), outlining the overall philosophy and architecture of *Rust Geodesy*.
+The documentation is currently very limited, but take a look at the [examples](examples), at the tests embedded in the source code, and at this essayistic [comment](/comments/000-comment.md), outlining the overall philosophy and architecture of *Rust Geodesy*.
 
 ## License
 
