@@ -188,6 +188,7 @@ mod tests {
     #[test]
     fn molodensky() {
         use super::*;
+        use crate::CoordinateTuple as C;
         let mut ctx = Context::new();
         // ---------------------------------------------------------------------------
         // Test case from OGP Publication 373-7-2: Geomatics Guidance Note number 7,
@@ -200,27 +201,29 @@ mod tests {
         }";
         let op = ctx.operation(definition).unwrap();
 
-        let lat = 53. + (48. + 33.82 / 60.) / 60.;
-        let lon = 2. + (07. + 46.38 / 60.) / 60.;
+        let lat = C::dms_to_dd(53, 48, 33.82);
+        let lon = C::dms_to_dd(2, 7, 46.38);
         #[allow(non_snake_case)]
         let WGS84 = CoordinateTuple::geo(lat, lon, 73., 0.0);
 
-        let lat = 53. + (48. + 36.563 / 60.) / 60.;
-        let lon = 2. + (07. + 51.477 / 60.) / 60.;
+        let lat = C::dms_to_dd(53, 48, 36.563);
+        let lon = C::dms_to_dd(2, 7, 51.477);
         #[allow(non_snake_case)]
         let ED50 = CoordinateTuple::geo(lat, lon, 28.02, 0.0);
 
+        // Test coordinates are not terribly high resolution: 3 decimals on the seconds,
+        // corresponding to 3 cm, so perhaps 10 cm overall is not too bad, but it begs
+        // for additional validation.
         let mut operands = [WGS84];
         ctx.fwd(op, &mut operands);
-        assert!((ED50.to_geo()[0] - (operands[0].to_geo()[0])).abs() < 1e-6);
-        assert!((ED50.to_geo()[1] - (operands[0].to_geo()[1])).abs() < 1e-7);
-        assert!((ED50.to_geo()[2] - (operands[0].to_geo()[2])).abs() < 5e-3);
+        assert!(ED50.default_ellps_dist(&operands[0]) < 0.1);
+        // Heights are reasonable
+        assert!((ED50[2] - operands[0][2]).abs() < 5e-3);
 
         let mut operands = [ED50];
         ctx.inv(op, &mut operands);
-        assert!((WGS84.to_geo()[0] - (operands[0].to_geo()[0])).abs() < 1e-6);
-        assert!((WGS84.to_geo()[1] - (operands[0].to_geo()[1])).abs() < 1e-7);
-        assert!((WGS84.to_geo()[2] - (operands[0].to_geo()[2])).abs() < 5e-3);
+        assert!(WGS84.default_ellps_3d_dist(&operands[0]) < 0.1);
+        assert!((WGS84[2] - operands[0][2]).abs() < 5e-3);
 
         // The abridged case. Same test point
         let definition = "molodensky: {
@@ -231,14 +234,14 @@ mod tests {
 
         let mut operands = [WGS84];
         ctx.fwd(op, &mut operands);
-        assert!((ED50.to_geo()[0] - (operands[0].to_geo()[0])).abs() < 1e-6);
-        assert!((ED50.to_geo()[1] - (operands[0].to_geo()[1])).abs() < 1e-7);
-        assert!((ED50.to_geo()[2] - (operands[0].to_geo()[2])).abs() < 0.1);
+        assert!(ED50.default_ellps_dist(&operands[0]) < 0.1);
+        // Heights are worse in the abridged case
+        assert!((ED50[2] - operands[0][2]).abs() < 0.1);
 
         let mut operands = [ED50];
         ctx.inv(op, &mut operands);
-        assert!((WGS84.to_geo()[0] - (operands[0].to_geo()[0])).abs() < 1e-6);
-        assert!((WGS84.to_geo()[1] - (operands[0].to_geo()[1])).abs() < 1e-7);
-        assert!((WGS84.to_geo()[2] - (operands[0].to_geo()[2])).abs() < 0.1);
+        assert!(WGS84.default_ellps_dist(&operands[0]) < 0.1);
+        // Heights are worse in the abridged case
+        assert!((WGS84[2] - operands[0][2]).abs() < 0.1);
     }
 }

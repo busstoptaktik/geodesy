@@ -417,10 +417,16 @@ impl Ellipsoid {
     pub fn geodesic_inv(&self, from: &CoordinateTuple, to: &CoordinateTuple) -> CoordinateTuple {
         let B1 = from[1];
         let B2 = to[1];
+        let B = B2 - B1;
 
         let L1 = from[0];
         let L2 = to[0];
         let L = L2 - L1;
+
+        // Below the micrometer level, we don't care about directions
+        if L.hypot(B) < 1e-10 {
+            return CoordinateTuple::geo(0., 0., 0., 0.);
+        }
 
         let U1 = self.reduced_latitude(B1, fwd);
         let U2 = self.reduced_latitude(B2, fwd);

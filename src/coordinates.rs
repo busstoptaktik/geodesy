@@ -162,6 +162,35 @@ impl CoordinateTuple {
             .hypot(self[1] - other[1])
             .hypot(self[2] - other[2])
     }
+
+    /// The 3D distance between two points given as internal angular
+    /// coordinates. Mostly a shortcut for test authoring
+    pub fn default_ellps_3d_dist(&self, other: &CoordinateTuple) -> f64 {
+        let e = crate::Ellipsoid::default();
+        e.cartesian(self).hypot3(&e.cartesian(other))
+    }
+
+    /// The Geodesic distance on the default ellipsoid. Mostly a shortcut
+    /// for test authoring
+    pub fn default_ellps_dist(&self, other: &CoordinateTuple) -> f64 {
+        crate::Ellipsoid::default().distance(self, other)
+    }
+
+    /// Simplistic transformation from degrees, minutes and seconds-with-decimals
+    /// to degrees-with-decimals. No sanity check: Sign taken from degree-component,
+    /// minutes forced to unsigned by i16 type, but passing a negative value for
+    /// seconds leads to undefined behaviour.
+    pub fn dms_to_dd(d: i32, m: u16, s: f64) -> f64 {
+        d.signum() as f64 * (d.abs() as f64 + (m as f64 + s / 60.) / 60.)
+    }
+
+    /// Simplistic transformation from degrees and minutes-with-decimals
+    /// to degrees-with-decimals. No sanity check: Sign taken from
+    /// degree-component, but passing a negative value for minutes leads
+    /// to undefined behaviour.
+    pub fn dm_to_dd(d: i32, m: f64) -> f64 {
+        d.signum() as f64 * (d.abs() as f64 + (m as f64 / 60.))
+    }
 }
 
 impl Index<usize> for CoordinateTuple {
@@ -177,84 +206,9 @@ impl IndexMut<usize> for CoordinateTuple {
     }
 }
 
-/*
-#[derive(Clone, Copy, Debug)]
-pub struct CoordType {}
-
-#[derive(Clone, Copy, Debug, Default)]
-pub struct DMS {
-    pub s: f32,
-    pub d: i16,
-    pub m: i8,
-}
-
-#[allow(dead_code)]
-impl DMS {
-    #[must_use]
-    pub fn new(d: i16, m: i8, s: f32) -> DMS {
-        DMS { s, d, m }
-    }
-    #[must_use]
-    pub fn to_degrees(self) -> f64 {
-        (f64::from(self.s) / 60. + f64::from(self.m)) / 60. + f64::from(self.d)
-    }
-    #[must_use]
-    pub fn to_radians(self) -> f64 {
-        self.to_degrees().to_radians()
-    }
-}
-
-#[allow(dead_code)]
-enum CoordinateKind {
-    Linear,
-    Angular,
-    Parametric,
-    Pass,
-}
-
-#[allow(dead_code)]
-enum Coordinate {
-    Northish {
-        from: usize,
-        to: usize,
-        scale: f64,
-        offset: f64,
-        nan: f64,
-        kind: CoordinateKind,
-    },
-    Eastish {},
-    Upish {},
-    Timeish {},
-    Pass {},
-
-    // An `enum` may either be `unit-like`,
-    PageLoad,
-    PageUnload,
-    // like tuple structs,
-    KeyPress(char),
-    Paste(String),
-    // or c-like structures.
-    Click {
-        x: i64,
-        y: i64,
-    },
-}
-*/
-
 #[cfg(test)]
 mod tests {
-    use super::*;
-    /*
-    #[test]
-    fn dms() {
-        let dms = DMS::new(60, 24, 36.);
-        assert_eq!(dms.d, 60);
-        assert_eq!(dms.m, 24);
-        assert_eq!(dms.s, 36.);
-        let d = dms.to_degrees();
-        assert_eq!(d, 60.41);
-    }
-    */
+    use crate::CoordinateTuple;
 
     #[test]
     fn coordinatetuple() {
@@ -264,6 +218,15 @@ mod tests {
         assert_eq!(d[0], 12f64.to_radians());
         let e = d.to_degrees();
         assert_eq!(e[0], c.to_degrees()[0]);
+
+        assert_eq!(CoordinateTuple::dms_to_dd(55, 30, 36.), 55.51);
+        assert_eq!(CoordinateTuple::dm_to_dd(55, 30.60), 55.51);
+
+        let lat = CoordinateTuple::dms_to_dd(55, 30, 36.);
+        let lon = CoordinateTuple::dms_to_dd(12, 45, 36.);
+        let dms = CoordinateTuple::geo(lat, lon, 0., 2020.);
+        let geo = CoordinateTuple::geo(55.51, 12.76, 0., 2020.);
+        assert!(geo.default_ellps_dist(&dms) < 1e-10);
     }
 
     #[test]
