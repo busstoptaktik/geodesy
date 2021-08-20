@@ -40,8 +40,6 @@ From end-to-end:
 2. The `helmert` step shifts the cartesian coordinates to a new origin `[x,y,z]`
 3. Finally, the inverse `cart` step converts the cartesian coordinates back to geographical coordinates. This time on the *GRS80 ellipsoid* (`ellps:GRS80`)
 
-Notice that the last step `cart inv ellps=GRS80` could have been written slightly more compact as `invcart ellps=GRS80`.
-
 ### What does it mean?
 
 All-in-all, this amounts to a *datum shift* from the older "European Datum, 1950", *ED50*, to the current "European Terrestrial Reference Frame 1989", *ETRS89*.
