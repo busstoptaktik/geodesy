@@ -146,6 +146,7 @@ mod adapt;
 mod cart;
 mod helmert;
 mod molodensky;
+mod nmea;
 mod noop;
 mod pipeline;
 mod tmerc;
@@ -254,6 +255,8 @@ fn builtins(ctx: &mut Context, args: &mut OperatorArgs) -> Option<Operator> {
         op = crate::operator::helmert::Helmert::operator(args);
     } else if opname == "molodensky" {
         op = crate::operator::molodensky::Molodensky::operator(args);
+    } else if opname == "nmea" {
+        op = crate::operator::nmea::Nmea::operator(args);
     } else if opname == "noop" || opname == "whatever" {
         op = crate::operator::noop::Noop::operator(args);
     } else if opname == "adapt" {
