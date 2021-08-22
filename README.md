@@ -22,7 +22,13 @@ All four aims are guided by a wish to amend explicitly identified shortcomings i
 
 ## Documentation
 
-The documentation is currently very limited, but take a look at the [examples](examples), at the tests embedded in the source code, and at this essayistic [comment](/comments/000-comment.md), outlining the overall philosophy and architecture of *Rust Geodesy*.
+The documentation is currently very limited, but take a look at:
+
+- The coordinate operator [documentation](/comments/002-comment.md)
+- The API documentation at [Docs.rs](https://docs.rs/geodesy)
+- The [examples](examples)
+- The tests embedded in the [source code](/src/)
+- This essayistic [comment](/comments/000-comment.md), outlining the overall philosophy and architecture of *Rust Geodesy*.
 
 ## License
 
