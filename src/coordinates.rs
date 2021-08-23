@@ -38,7 +38,7 @@ impl CoordinateTuple {
     pub fn nmeass(latitude: f64, longitude: f64, height: f64, time: f64) -> CoordinateTuple {
         let longitude = CoordinateTuple::nmeass_to_dd(longitude);
         let latitude = CoordinateTuple::nmeass_to_dd(latitude);
-        CoordinateTuple([longitude, latitude, height, time]).to_radians()
+        CoordinateTuple::geo(latitude, longitude, height, time)
     }
 
     /// A `CoordinateTuple` consisting of 4 `NaN`s

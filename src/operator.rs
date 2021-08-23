@@ -255,8 +255,10 @@ fn builtins(ctx: &mut Context, args: &mut OperatorArgs) -> Option<Operator> {
         op = crate::operator::helmert::Helmert::operator(args);
     } else if opname == "molodensky" {
         op = crate::operator::molodensky::Molodensky::operator(args);
-    } else if opname == "nmea" {
+    } else if opname == "nmea" || opname == "dm" {
         op = crate::operator::nmea::Nmea::operator(args);
+    } else if opname == "nmeass" || opname == "dms" {
+        op = crate::operator::nmea::Nmea::dmsoperator(args);
     } else if opname == "noop" || opname == "whatever" {
         op = crate::operator::noop::Noop::operator(args);
     } else if opname == "adapt" {

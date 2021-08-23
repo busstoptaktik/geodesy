@@ -4,7 +4,7 @@
 
 Thomas Knudsen <knudsen.thomas@gmail.com>
 
-2021-08-20. Last [revision](#document-history) 2021-08-21
+2021-08-20. Last [revision](#document-history) 2021-08-23
 
 ---
 
@@ -12,12 +12,17 @@ Thomas Knudsen <knudsen.thomas@gmail.com>
 
 - [Prologue](#prologue)
 - [A brief `kp` HOWTO](#a-brief-kp-howto)
-- [`adapt`: The order-and-unit adaptor](#operator-adapt)
-- [`cart`: The geographical-to-cartesian converter](#operator-cart)
-- [`molodensky`: The full and abridged Molodensky transformations](#operator-molodensky)
-- [`noop`: The no-operation](#operator-noop)
-- [`tmerc`: The transverse Mercator projection](#operator-tmerc)
-- [`utm`: The UTM projection](#operator-)
+- [`adapt`](#operator-adapt): The order-and-unit adaptor
+- [`cart`](#operator-cart): The geographical-to-cartesian converter
+- [`dm`](#operator-nmea-dm-nmeass-and-dms): DDMM.mmm encoding, sub-entry under `nmea`
+- [`dms`](#operator-nmea-dm-nmeass-and-dms): DDMMSS.sss encoding, sub-entry under `nmea`
+- [`helmert`](#operator-helmert): The Helmert (similarity) transformation
+- [`molodensky`](#operator-molodensky): The full and abridged Molodensky transformations
+- [`nmea`](#operator-nmea-dm-nmeass-and-dms): degree/minutes encoding with obvious extension to seconds.
+- [`nmeass`](#operator-nmea-dm-nmeass-and-dms): DDMMSS.sss encoding, sub-entry under `nmea`
+- [`noop`](#operator-noop): The no-operation
+- [`tmerc`](#operator-tmerc): The transverse Mercator projection
+- [`utm`](#operator-utm): The UTM projection
 
 ### Prologue
 
@@ -133,15 +138,18 @@ cf. [Comment no. 001](/comments/001-comment.md) for details about this perennial
 
 ### Operator `helmert`
 
-**Purpose:** Datum shift using a 3, 6, 7 or 14 parameter similarity transformation.
+**Purpose:**
+Datum shift using a 3, 6, 7 or 14 parameter similarity transformation.
 
-**Description:** Mathematically, the Helmert (similarity) transformation transforms coordinates from their original coordinate system, *the source basis,* to a different system, *the target basis.* The target basis may be translated, rotated and/or scaled with respect to the source basis. The inter-axis angles are, however, fixed (hence, the "similarity" moniker).
+**Description:**
+In strictly mathematical terms, the Helmert (or *similarity*) transformation transforms coordinates from their original coordinate system, *the source basis,* to a different system, *the target basis.* The target basis may be translated, rotated and/or scaled with respect to the source basis. The inter-axis angles are, however, fixed (hence, the *similarity* moniker).
 
-While we may, mathematically, think of this as "*transforming* the coordinates from one well defined basis to another", geodetically, it is more correct to think of the operation as *aligning* rather than *transforming,* since geodetic reference frames are very far from the absolute platonic ideals implied in the mathematical idea of bases.
+So mathematically we may think of this as "*transforming* the coordinates from one well defined basis to another". But geodetically, it is more correct to think of the operation as *aligning* rather than *transforming,* since geodetic reference frames are very far from the absolute platonic ideals implied in the mathematical idea of bases.
 
-Rather, they are empirical constructions, realised using datum specific rules for survey and adjustment. Hence, coordinate tuples subjected to a given similarity transform do not magically become realised using the survey rules of the target datum. But they gain a degree of interoperability with coordinate tuples from the target: The transformed (aligned) values represent our best knowledge about *what coordinates we would obtain,* if we re-surveyed the same physical point, using the survey rules of the target datum.
+Rather, geodetic reference frames are empirical constructions, realised using datum specific rules for survey and adjustment. Hence, coordinate tuples subjected to a given similarity transform, do not magically become realised using the survey rules of the target datum. But they gain a degree of interoperability with coordinate tuples from the target: The transformed (aligned) values represent our best knowledge about *what coordinates we would obtain,* if we re-surveyed the same physical point, using the survey rules of the target datum.
 
-**Warning:** Two different conventions are common in Helmert transformations involving rotations. In some cases the rotations define a rotation of the reference frame. This is called the "coordinate frame" convention (EPSG methods 1032 and 9607). In other cases, the rotations define a rotation of the vector from the origin to the position indicated by the coordinate tuple. This is called the "position vector" convention (EPSG methods 1033 and 9606).
+**Warning:**
+Two different conventions are common in Helmert transformations involving rotations. In some cases the rotations define a rotation of the reference frame. This is called the "coordinate frame" convention (EPSG methods 1032 and 9607). In other cases, the rotations define a rotation of the vector from the origin to the position indicated by the coordinate tuple. This is called the "position vector" convention (EPSG methods 1033 and 9606).
 
 Both conventions are common, and trivially converted between as they differ by sign only. To reduce this great source of confusion, the `convention` parameter must be set to either `position vector` or `coordinate_frame` whenever the operation involved rotations. In all other cases, all parameters are optional.
 
@@ -220,6 +228,34 @@ molodensky left_ellps:WGS84 right_ellps:intl dx:84.87 dy:96.49 dz:116.95 abridge
 
 ---
 
+### Operator `nmea`, `dm`, `nmeass` and `dms`
+
+**Purpose:** Convert from/to the [NMEA 0183](https://www.nmea.org/content/STANDARDS/NMEA_0183_Standard) DDDMM.mmm format, and from/to its logical extension DDDMMSS.sss.
+
+**Description:**
+This operator can be invoked under the names `nmea`, `dm`, `nmeass` and `dms`. The former 2 handles data in DDDMM.mmm format, the latter 2 in the DDDMMSS.sss format.
+
+While "the real NMEA format" uses a postfix letter from the set `{N, S, W, E}` to indicate the sign of an angular coordinate, here we use common mathematical prefix signs. The output is a coordinate tuple in the RG internal format.
+
+EXAMPLE: convert NMEA to decimal degrees.
+```sh
+$ echo 5530.15 -1245.15 | kp "nmea | geo inv"
+> 55.5025  -12.7525 0 0
+```
+EXAMPLE: convert dms to decimal degrees.
+```sh
+$ echo 553036. -124509 | kp "dms | geo inv"
+> 55.51  -12.7525 0 0
+```
+
+**See also:**
+
+- [NMEA 0183](https://www.nmea.org/content/STANDARDS/NMEA_0183_Standard)
+- NMEA 0183 on [Wikipedia](https://en.wikipedia.org/wiki/NMEA_0183)
+- [GPSd](https://gpsd.gitlab.io/gpsd/NMEA.html) page about NMEA 0183
+
+---
+
 ### Operator `noop`
 
 **Purpose:** Do nothing
@@ -286,3 +322,4 @@ Major revisions and additions:
 
 - 2021-08-20: Initial version
 - 2021-08-21: All relevant operators described
+- 2021-08-23: nmea, dm, nmeass, dms
