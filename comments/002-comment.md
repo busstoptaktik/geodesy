@@ -238,11 +238,14 @@ This operator can be invoked under the names `nmea`, `dm`, `nmeass` and `dms`. T
 While "the real NMEA format" uses a postfix letter from the set `{N, S, W, E}` to indicate the sign of an angular coordinate, here we use common mathematical prefix signs. The output is a coordinate tuple in the RG internal format.
 
 EXAMPLE: convert NMEA to decimal degrees.
+
 ```sh
 $ echo 5530.15 -1245.15 | kp "nmea | geo inv"
 > 55.5025  -12.7525 0 0
 ```
+
 EXAMPLE: convert dms to decimal degrees.
+
 ```sh
 $ echo 553036. -124509 | kp "dms | geo inv"
 > 55.51  -12.7525 0 0

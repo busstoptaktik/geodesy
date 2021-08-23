@@ -28,14 +28,18 @@ use crate::CoordinateTuple as Coord;
 pub struct Nmea {
     args: OperatorArgs,
     inverted: bool,
-    dms: bool
+    dms: bool,
 }
 
 impl Nmea {
     /// nmea (DDDMM.mmm)
     pub fn new(args: &mut OperatorArgs) -> Result<Nmea, &'static str> {
         let inverted = args.flag("inv");
-        Ok(Nmea { args: args.clone(), inverted, dms: false })
+        Ok(Nmea {
+            args: args.clone(),
+            inverted,
+            dms: false,
+        })
     }
 
     pub(crate) fn operator(args: &mut OperatorArgs) -> Result<Operator, &'static str> {
@@ -46,7 +50,11 @@ impl Nmea {
     /// dms (DDDMMSS.sss)
     pub fn dms(args: &mut OperatorArgs) -> Result<Nmea, &'static str> {
         let inverted = args.flag("inv");
-        Ok(Nmea { args: args.clone(), inverted, dms: true })
+        Ok(Nmea {
+            args: args.clone(),
+            inverted,
+            dms: true,
+        })
     }
 
     pub(crate) fn dmsoperator(args: &mut OperatorArgs) -> Result<Operator, &'static str> {
@@ -54,7 +62,6 @@ impl Nmea {
         Ok(Operator(Box::new(op)))
     }
 }
-
 
 impl OperatorCore for Nmea {
     fn fwd(&self, _ctx: &mut Context, operands: &mut [Coord]) -> bool {

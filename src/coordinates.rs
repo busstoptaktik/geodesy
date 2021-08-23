@@ -258,9 +258,6 @@ impl CoordinateTuple {
         let s = (mm - m) * 60.;
         sign * (d * 10000. + m * 100. + s)
     }
-
-
-
 }
 
 impl Index<usize> for CoordinateTuple {
@@ -304,8 +301,14 @@ mod tests {
 
         assert_eq!(CoordinateTuple::nmea_to_dd(5500.), 55.);
         assert_eq!(CoordinateTuple::nmea_to_dd(-5500.), -55.);
-        assert_eq!(CoordinateTuple::nmea_to_dd(5530.60), -CoordinateTuple::nmea_to_dd(-5530.60));
-        assert_eq!(CoordinateTuple::nmeass_to_dd(553036.), -CoordinateTuple::nmeass_to_dd(-553036.00));
+        assert_eq!(
+            CoordinateTuple::nmea_to_dd(5530.60),
+            -CoordinateTuple::nmea_to_dd(-5530.60)
+        );
+        assert_eq!(
+            CoordinateTuple::nmeass_to_dd(553036.),
+            -CoordinateTuple::nmeass_to_dd(-553036.00)
+        );
 
         let lat = CoordinateTuple::dms_to_dd(55, 30, 36.);
         let lon = CoordinateTuple::dms_to_dd(12, 45, 36.);
