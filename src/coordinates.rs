@@ -23,6 +23,24 @@ impl CoordinateTuple {
         CoordinateTuple([first, second, third, fourth])
     }
 
+    /// A `CoordinateTuple` from latitude/longitude/height/time,
+    /// with the angular input in NMEA format: DDDMM.mmmmm
+    #[must_use]
+    pub fn nmea(latitude: f64, longitude: f64, height: f64, time: f64) -> CoordinateTuple {
+        let longitude = CoordinateTuple::nmea_to_dd(longitude);
+        let latitude = CoordinateTuple::nmea_to_dd(latitude);
+        CoordinateTuple([longitude, latitude, height, time]).to_radians()
+    }
+
+    /// A `CoordinateTuple` from latitude/longitude/height/time, with
+    /// the angular input in extended NMEA format: DDDMMSS.sssss
+    #[must_use]
+    pub fn nmeass(latitude: f64, longitude: f64, height: f64, time: f64) -> CoordinateTuple {
+        let longitude = CoordinateTuple::nmeass_to_dd(longitude);
+        let latitude = CoordinateTuple::nmeass_to_dd(latitude);
+        CoordinateTuple::geo(latitude, longitude, height, time)
+    }
+
     /// A `CoordinateTuple` consisting of 4 `NaN`s
     #[must_use]
     pub fn nan() -> CoordinateTuple {
@@ -191,6 +209,55 @@ impl CoordinateTuple {
     pub fn dm_to_dd(d: i32, m: f64) -> f64 {
         d.signum() as f64 * (d.abs() as f64 + (m as f64 / 60.))
     }
+
+    /// Simplistic transformation from the NMEA DDDMM.mmm format to
+    /// to degrees-with-decimals. No sanity check: Invalid input,
+    /// such as 5575.75 (where the number of minutes exceed 60) leads
+    /// to undefined behaviour.
+    pub fn nmea_to_dd(nmea: f64) -> f64 {
+        let sign = nmea.signum();
+        let dm = nmea.abs() as u32;
+        let fraction = nmea.abs() - dm as f64;
+        let d = dm / 100;
+        let m = (dm - d * 100) as f64 + fraction;
+        sign * (d as f64 + (m as f64 / 60.))
+    }
+
+    /// Transformation from degrees-with-decimals to the NMEA DDDMM.mmm format.
+    pub fn dd_to_nmea(dd: f64) -> f64 {
+        let sign = dd.signum();
+        let dd = dd.abs();
+        let d = dd.floor();
+        let m = (dd - d) * 60.;
+        sign * (d * 100. + m)
+    }
+
+    /// Simplistic transformation from the extended NMEA DDDMMSS.sss
+    /// format to degrees-with-decimals. No sanity check: Invalid input,
+    /// such as 557575.75 (where the number of minutes and seconds both
+    /// exceed 60) leads to undefined behaviour.
+    pub fn nmeass_to_dd(nmeass: f64) -> f64 {
+        let sign = nmeass.signum();
+        let dms = nmeass.abs() as u32;
+        let fraction = nmeass.abs() - dms as f64;
+        let d = dms / 10000;
+        let ms = dms - d * 10000;
+        let m = ms / 100;
+        let s = (ms - m * 100) as f64 + fraction;
+        sign * (d as f64 + ((s as f64 / 60.) + m as f64) / 60.)
+    }
+
+    /// Transformation from degrees-with-decimals to the extended
+    /// NMEA DDDMMSS.sss format.
+    pub fn dd_to_nmeass(dd: f64) -> f64 {
+        let sign = dd.signum();
+        let dd = dd.abs();
+        let d = dd.floor();
+        let mm = (dd - d) * 60.;
+        let m = mm.floor();
+        let s = (mm - m) * 60.;
+        sign * (d * 10000. + m * 100. + s)
+    }
 }
 
 impl Index<usize> for CoordinateTuple {
@@ -221,6 +288,27 @@ mod tests {
 
         assert_eq!(CoordinateTuple::dms_to_dd(55, 30, 36.), 55.51);
         assert_eq!(CoordinateTuple::dm_to_dd(55, 30.60), 55.51);
+
+        // nmea + nmeass
+        assert!((CoordinateTuple::nmea_to_dd(5530.60) - 55.51).abs() < 1e-10);
+        assert!((CoordinateTuple::nmea_to_dd(15530.60) - 155.51).abs() < 1e-10);
+        assert!((CoordinateTuple::nmea_to_dd(-15530.60) + 155.51).abs() < 1e-10);
+        assert!((CoordinateTuple::nmeass_to_dd(553036.0) - 55.51).abs() < 1e-10);
+        assert_eq!(CoordinateTuple::dd_to_nmea(55.5025), 5530.15);
+        assert_eq!(CoordinateTuple::dd_to_nmea(-55.5025), -5530.15);
+        assert_eq!(CoordinateTuple::dd_to_nmeass(55.5025), 553009.);
+        assert_eq!(CoordinateTuple::dd_to_nmeass(-55.51), -553036.);
+
+        assert_eq!(CoordinateTuple::nmea_to_dd(5500.), 55.);
+        assert_eq!(CoordinateTuple::nmea_to_dd(-5500.), -55.);
+        assert_eq!(
+            CoordinateTuple::nmea_to_dd(5530.60),
+            -CoordinateTuple::nmea_to_dd(-5530.60)
+        );
+        assert_eq!(
+            CoordinateTuple::nmeass_to_dd(553036.),
+            -CoordinateTuple::nmeass_to_dd(-553036.00)
+        );
 
         let lat = CoordinateTuple::dms_to_dd(55, 30, 36.);
         let lon = CoordinateTuple::dms_to_dd(12, 45, 36.);
