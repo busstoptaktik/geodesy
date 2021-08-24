@@ -198,7 +198,7 @@ impl Context {
         None
     }
 
-    /// Convert "Ghastly YAML Shorthand" to YAML
+    /// Convert "Geodetic YAML Shorthand" to YAML
     pub fn gys_to_yaml(gys: &str) -> String {
         let lines = gys.lines();
         let mut s = Vec::new();
@@ -421,7 +421,7 @@ mod tests {
             ]
         }";
 
-        // Same pipeline in Ghastly YAML Shorthand (GYS), with some nasty
+        // Same pipeline in Geodetic YAML Shorthand (GYS), with some nasty
         // inline comments to stress test gys_to_yaml().
         let gys = "# bla bla\n\n   cart ellps: intl # another comment ending at newline\n | helmert x:-87 y:-96 z:-120 # inline comment ending at step, not at newline | cart inv ellps:GRS80";
 

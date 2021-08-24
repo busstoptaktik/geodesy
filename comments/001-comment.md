@@ -48,7 +48,7 @@ It is not a particularly good datum shift, but it is sufficient in many cases: T
 
 ### Where did it come from?
 
-The pipeline described above is actually the [GYS](/comments/000-comment.md#gys-the-ghastly-yaml-shorthand) representation of datum transformation number [1134](https://epsg.org/transformation_1134/ED50-to-WGS-84-2.html) in the [EPSG](https://epsg.org/home.html) geodetic registry, where it is described as *EPSG:1134 - ED50 to WGS 84*. In RG contexts we refer to it as *ED50 to ETRS89* since, at the level of accuracy of EPSG:1134, ETRS89 and WGS84 are equivalent.
+The pipeline described above is actually the [GYS](/comments/000-comment.md#gys-the-geodetic-yaml-shorthand) representation of datum transformation number [1134](https://epsg.org/transformation_1134/ED50-to-WGS-84-2.html) in the [EPSG](https://epsg.org/home.html) geodetic registry, where it is described as *EPSG:1134 - ED50 to WGS 84*. In RG contexts we refer to it as *ED50 to ETRS89* since, at the level of accuracy of EPSG:1134, ETRS89 and WGS84 are equivalent.
 
 ### Document History
 

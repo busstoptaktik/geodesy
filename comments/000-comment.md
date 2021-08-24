@@ -232,9 +232,9 @@ The functionality also includes ancillary latitudes, and computation of geodesic
 
 ### Recent additions
 
-#### GYS: The Ghastly YAML Shorthand
+#### GYS: The Geodetic YAML Shorthand
 
-As YAML is somewhat verbose, GYS, the "Ghastly YAML Shorthand" was introduced with RG version 0.6.0. GYS can be discerned from YAML by not containing any curly braces, using pipe symbols (`|`) to indicate pipeline steps, and in general leaving out syntactical elements which are superfluous given that we know the context is RG.
+As YAML is somewhat verbose, GYS, the "Geodetic YAML Shorthand" was introduced with RG version 0.6.0. GYS can be discerned from YAML by not containing any curly braces, using pipe symbols (`|`) to indicate pipeline steps, and in general leaving out syntactical elements which are superfluous given that we know the context is RG.
 
 Internally, GYS is transformed to YAML by a simple mechanical rule set, so YAML is still the cornerstone of the RG descriptor system. The two pipelines shown below demonstrate the essentials of speaking GYS:
 
@@ -250,7 +250,7 @@ ed50_etrs89: {
 }
 ```
 
-##### **The same pipeline in Ghastly YAML Shorthand (GYS)**
+##### **The same pipeline in Geodetic YAML Shorthand (GYS)**
 
 ```js
 cart ellps: intl | helmert x:-87 y:-96 z:-120 | invcart ellps:GRS80

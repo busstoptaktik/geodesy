@@ -68,7 +68,7 @@ fn main() {
         ]
     }";
 
-    // The same pipeline in Ghastly YAML Shorthand (GYS)
+    // The same pipeline in Geodetic YAML Shorthand (GYS)
     let gys = "geo | cart ellps:intl | helmert x:-87 y:-96 z:-120 | cart inv ellps:GRS80 | geo inv";
 
     let op_yaml = ctx.operation(pipeline).unwrap();
