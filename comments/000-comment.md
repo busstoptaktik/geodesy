@@ -4,11 +4,13 @@
 
 Thomas Knudsen <knudsen.thomas@gmail.com>
 
-2021-07-31. Last [revision](#document-history) 2021-08-11
+2021-07-31. Last [revision](#document-history) 2021-08-26
 
 ---
 
 ### Prologue
+
+#### What is Rust Geodesy?
 
 Rust Geodesy, RG, is a geodetic software system, not entirely unlike [PROJ](https://proj.org), but with much more limited transformation functionality: While PROJ is mature, well supported, well tested, and production ready, RG is neither of these. This is partially due to RG being a new born baby, partially due to its aiming at a (much) different set of use cases.
 
@@ -21,11 +23,23 @@ PROJ and RG do, however, belong in two different niches of the geodetic software
 3. Hence, provide easy access to a number of basic geodetic operations, not limited to coordinate operations.
 4. Support experiments with data flow and alternative abstractions. Mostly as a tool for aims (1, 2, and 3)
 
-All four aims are guided by a wish to amend explicitly identified shortcomings in the existing geodetic system landscape.
+#### Why Rust Geodesy?
+
+The motivation for these aims, i.e. the **why** of the project, is the **wish to amend explicitly identified shortcommings** in the existing landscape of geodetic software and standards.
+
+#### How will it emerge?
+
+The development work driven by this motivation is supported by a few basic design principles, the **how** of the project:
+
+- An architectural scaffolding of four dimensional data flow paths, enabling the constrution of complex operations from simpler elements
+- A design philosophy of keeping things flexible by not overspecifying
+- A geodetic focus on transformations, i.e. relations *between* systems, rather than definition *of* systems
+
+or in fewer words: *don't overdo it*.
 
 ### Getting beefy
 
-Talking architecture and design philosophy out of thin air is at best counterproductive, so let's start with a brief example, demonstrating the RG idiom for converting geographical coordinates to UTM zone 32 coordinates.
+But talking architecture and design philosophy out of thin air is at best counterproductive, so let's start with a brief example, demonstrating the RG idiom for converting geographical coordinates to UTM zone 32 coordinates.
 
 ```rust
 fn main() {
@@ -297,15 +311,15 @@ The Rust ecosystem includes excellent logging facilities, just waiting to be imp
 
 From the detailed walkthrough of the example above, we can summarize "the philosophy of RG" as:
 
-* **Be flexible:** User defined macros and operators are first class citizens in the RG ecosystem - they are treated exactly as the built-ins, and hence, can be used as vehicles for implementation of new built-in functionality.
-* **Don't overspecify:** For example, the `CoordinateTuple` object is just an ordered set of four numbers, with no specific interpretation implied. It works as a shuttle, ferrying the operand between the steps of a pipeline of `Operator`s: the meaning of the operand is entirely up to the `Operator`.
-* **Transformations are important. Systems not so much:** RG does not anywhere refer explicitly to input or output system names. Although it can be used to construct transformations between specific reference frames (as in the "ED50 to WGS84" case, in the *user defined macro* example), it doesn't really attribute any meaning to these internally.
-* **Coordinates and data flow pathways are four dimensioonal:** From end to end, data runs through RG along 4D pathways. Since all geodata capture today is either directly or indirectly based on GNSS, the coordinates are inherently four dimensional. And while much application software ignores this fact, embracing it is the only way to obtain sub-decimeter accuracy over time scales of just a few years. Coordinate handling software should never ignore this.
-* **Draw inspiration from good role models, but not zealously:** PROJ and the ISO-19100 series of geospatial standards are important models for the design of RG, but on the other hand, RG is also built to address and investigate some perceived shortcomings in the role models.
+- **Be flexible:** User defined macros and operators are first class citizens in the RG ecosystem - they are treated exactly as the built-ins, and hence, can be used as vehicles for implementation of new built-in functionality.
+- **Don't overspecify:** For example, the `CoordinateTuple` object is just an ordered set of four numbers, with no specific interpretation implied. It works as a shuttle, ferrying the operand between the steps of a pipeline of `Operator`s: the meaning of the operand is entirely up to the `Operator`.
+- **Transformations are important. Systems not so much:** RG does not anywhere refer explicitly to input or output system names. Although it can be used to construct transformations between specific reference frames (as in the "ED50 to WGS84" case, in the *user defined macro* example), it doesn't really attribute any meaning to these internally.
+- **Coordinates and data flow pathways are four dimensional:** From end to end, data runs through RG along 4D pathways. Since all geodata capture today is either directly or indirectly based on GNSS, the coordinates are inherently four dimensional. And while much application software ignores this fact, embracing it is the only way to obtain even decimeter accuracy over time scales of just a few years. Contemporary coordinate handling software should never ignore this.
+- **Draw inspiration from good role models, but not zealously:** PROJ and the ISO-19100 series of geospatial standards are important models for the design of RG, but on the other hand, RG is also built to address and investigate some perceived shortcomings in the role models.
 
 ... and, although only sparsely touched upon above:
 
-* **Operator pipelines are awesome:** Perhaps not a surprising stance, since I invented the concept and implemented it in PROJ five years ago, through the [Plumbing for Pipelines](https://github.com/OSGeo/PROJ/pull/453) pull request.
+- **Operator pipelines are awesome:** Perhaps not a surprising stance, since I invented the concept and implemented it in PROJ five years ago, through the [Plumbing for Pipelines](https://github.com/OSGeo/PROJ/pull/453) pull request.
 
 While operator pipelines superficically look like the ISO-19100 series concept of *concatenated operations*, they are more general and as we pointed out in `[Knudsen et al, 2019]`, also very powerful as a system of bricks and mortar for the construction of new conceptual buildings. Use more pipelines!
 
@@ -366,4 +380,5 @@ In C, using PROJ, the demo program would resemble this (untested) snippet:
 
 Major revisions and additions:
 
-* 2021-08-08: Added a section briefly describing GYS
+- 2021-08-08: Added a section briefly describing GYS
+- 2021-08-26: Extended prologue
