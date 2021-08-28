@@ -45,15 +45,16 @@ doc:
     cargo doc --no-deps --open
 
 # Run default application.
-run:
-    cargo run -- --help
+run ARGS:
+    cargo run -- {{ARGS}}
 
 # Run example based on its unique prefix (e.g. 00, 01, etc.).
 run-example EXAMPLE:
     cargo run --example `basename examples/"{{EXAMPLE}}"* .rs`
 
 # Run default application and all examples.
-run-all: run
+run-all:
+    cargo run -- --help
     cargo run --example 00-transformations
     cargo run --example 01-geometric_geodesy
     cargo run --example 02-user_defined_macros
