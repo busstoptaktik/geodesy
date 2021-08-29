@@ -171,7 +171,7 @@ fn combine_descriptors(
 
 impl Adapt {
     pub fn new(args: &mut OperatorArgs) -> Result<Adapt, &'static str> {
-        let mut inverted = args.flag("inv");
+        let inverted = args.flag("inv");
 
         // What we go `from` and what we go `to` both defaults to the internal
         // representation - i.e. "do nothing", neither on in- or output.
@@ -180,10 +180,11 @@ impl Adapt {
 
         // forward and inverse give very slightly different results, due to the
         // roundoff difference betweeen multiplication and division. We avoid
-        // that by swapping the "from" and "to" descriptors instead.
+        // that by swapping the "from" and "to" descriptors instead, and handling
+        // the unconventional calling logic by overwriting the default `operate`
+        // method below.
         if inverted {
             std::mem::swap(&mut to, &mut from);
-            inverted = false;
         }
 
         let desc = descriptor(&from);
@@ -244,6 +245,16 @@ impl OperatorCore for Adapt {
             *o = c;
         }
         true
+    }
+
+    // We overwrite the default `operate` in order to handle the trick above,
+    // where we swap `from` and `to`, rather than letting `operate` call the
+    // complementary method.
+    fn operate(&self, ctx: &mut Context, operands: &mut [CoordinateTuple], forward: bool) -> bool {
+        if forward {
+            return self.fwd(ctx, operands);
+        }
+        self.inv(ctx, operands)
     }
 
     fn name(&self) -> &'static str {
