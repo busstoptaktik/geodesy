@@ -35,7 +35,7 @@ The development work driven by this motivation is supported by a few basic desig
 - A design philosophy of keeping things flexible by not overspecifying
 - A geodetic focus on transformations, i.e. relations *between* systems, rather than definition *of* systems
 
-or in fewer words: *don't overdo it*.
+or in fewer words: *Don't overdo it*.
 
 ### Getting beefy
 
@@ -70,7 +70,7 @@ fn main() {
 }
 ```
 
-(See also `[idiomatic Rust]` in the Notes section)
+(See also [Idiomatic Rust](#note-idiomatic-rust) in the Notes section)
 
 At comment `[0]`, we start by renaming the library functionality for coordinate handling, from `geodesy::CoordinateTuple` to `Coord`. Since coordinates are at the heart of what we're doing, it should have a brief and clear name. Then why give it such a long name by design, you may wonder - well, `CoordinateTuple` is the ISO-19111 standard designation of what we colloquially would call *the coordinates*.
 
@@ -93,7 +93,7 @@ let utm32 = ctx.operation("utm: {zone: 32}").unwrap();
 ```
 
 At comment `[2]`, we use the `operation` method of the `Context` to instantiate an `Operator` (closely corresponding to the `PJ` object in PROJ). The parametrisation of the operator, i.e. the text `utm: {zone: 32}` is expressed in [YAML](https://en.wikipedia.org/wiki/YAML) using parameter naming conventions closely corresponding to those used in PROJ, where the same operator would be described as `proj=utm zone=32`
-(see also `[ellps implied]` in the Notes section).
+(see also [ellps implied](#note-ellps-implied) in the Notes section).
 
 So essentially, PROJ and RG uses identical operator parametrisations, but RG, being 40 years younger than PROJ, is able to leverage YAML, an already 20 years old generic, JSON compatible, data representation format. PROJ, on the other hand, was born 20 years prior to YAML, and had to implement its own domain specific format.
 
@@ -267,7 +267,7 @@ ed50_etrs89: {
 ##### **The same pipeline in Geodetic YAML Shorthand (GYS)**
 
 ```js
-cart ellps: intl | helmert x:-87 y:-96 z:-120 | invcart ellps:GRS80
+cart ellps: intl | helmert x:-87 y:-96 z:-120 | cart inv ellps:GRS80
 ```
 
 A description is considered GYS, and internally translated to YAML, if *at least one* of these conditions is met:
@@ -291,9 +291,9 @@ In `[Knudsen et al, 2019]` we identified a small number of operations collective
 4. Horizontal grid shift (“NADCON-transformation”).
 5. Vertical grid shift (ellipsoidal-to-orthometric height transformation).
 
-Of these only the three first are fully implemented in RG, while the remaining parts are in various stages of completion. These are **need to do** elements for near future work.
+Of these only the three first are fully implemented in RG, while the grid shift operations are in various stages of completion. These are **need to do** elements for near future work.
 
-Also, a number of additional projections are in the pipeline: first and foremost the Mercator projection (used in nautical charts), and the Lambert conformal conic projection (used in aeronautical charts).
+Also, a number of additional projections are in the pipeline: First and foremost the Mercator projection (used in nautical charts), and the Lambert conformal conic projection (used in aeronautical charts).
 
 #### Physical geodesy
 
@@ -335,11 +335,11 @@ Thomas Knudsen, Kristian Evers, Geir Arne Hjelle, Guðmundur Valsson, Martin Lid
 
 ### Notes
 
-**Note:** `[ellps implied]`
+#### **Note:** ellps implied
 
 In both cases, the use of the GRS80 ellipsoid is implied, but may be expressly stated as  `utm: {zone: 32, ellps: GRS80}` resp. `proj=utm zone=32 ellps=GRS80`
 
-**Note:** `[idiomatic Rust]`
+#### **Note:** Idiomatic Rust
 
 In production, we would check the return of `ctx.operation(...)`, rather than just `unwrap()`ping:
 
