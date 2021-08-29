@@ -1,6 +1,6 @@
-# Comments on Rust Geodesy
+# Ruminations on Rust Geodesy
 
-## Comment 002: The missing manual
+## Rumination 002: The missing manual
 
 Thomas Knudsen <knudsen.thomas@gmail.com>
 
@@ -26,9 +26,9 @@ Thomas Knudsen <knudsen.thomas@gmail.com>
 
 ### Prologue
 
-Architecturally, the operators in Rust Geodesy (`cart`, `tmerc`, `helmert` etc.) live below the API surface. This means they are not (and should not be) described in the API documentation over at [docs.rs](https://docs.rs/geodesy). Rather, their use should be documented in a separate *Rust Geodesy User's Guide*, a book which may materialize some day, as time permits, interest demands, and RG has matured and stabilized sufficiently. Until then, this *Comment* will serve as stop gap for operator documentation.
+Architecturally, the operators in Rust Geodesy (`cart`, `tmerc`, `helmert` etc.) live below the API surface. This means they are not (and should not be) described in the API documentation over at [docs.rs](https://docs.rs/geodesy). Rather, their use should be documented in a separate *Rust Geodesy User's Guide*, a book which may materialize some day, as time permits, interest demands, and RG has matured and stabilized sufficiently. Until then, this *Rumination* will serve as stop gap for operator documentation.
 
-A *Rust Geodesy Programmer's Guide* would probably also be useful, and wil definitely materialize before the next week with ten fridays. Until then, the [API documentation](https://docs.rs/geodesy), the [code examples](/examples), and the [architectural overview](/comments/000-comment.md) may be useful. The RG transformation program `kp` will be described in an upcomming [RG Comment](/comments/003-comment.md). Its [source code](/src/bin/kp.rs) may also be of interest as  study material for programmers. But since it is particularly useful for practical experimentation with RG operators, let's start with a *very* brief description of `kp`.
+A *Rust Geodesy Programmer's Guide* would probably also be useful, and wil definitely materialize before the next week with ten fridays. Until then, the [API documentation](https://docs.rs/geodesy), the [code examples](/examples), and the [architectural overview](/ruminations/000-rumination.md) may be useful. The RG transformation program `kp` will be described in an upcomming [RG Rumination](/ruminations/003-rumination.md). Its [source code](/src/bin/kp.rs) may also be of interest as  study material for programmers. But since it is particularly useful for practical experimentation with RG operators, let's start with a *very* brief description of `kp`.
 
 ### A brief `kp` HOWTO
 
@@ -59,7 +59,7 @@ echo 55 12 | kp "geo | utm zone:32"
 > 691875.6321 6098907.8250 0.0000 0.0000
 ```
 
-In the examples in the operator descriptions below, we will just give the [GYS](/comments/000-comment.md#gys-the-geodetic-yaml-shorthand) representation, and imply the `echo ... | kp ...` part.
+In the examples in the operator descriptions below, we will just give the [GYS](/ruminations/000-rumination.md#gys-the-geodetic-yaml-shorthand) representation, and imply the `echo ... | kp ...` part.
 
 If in doubt, `kp --help` is readily available as an honest attempt to reduce your confusion.
 
@@ -132,7 +132,7 @@ geo | cart ... | helmert ... | cart inv ... | geo inv
 geo | cart ellps:intl | helmert x:-87 y:-96 z:-120 | cart inv ellps:GRS80 | geo inv
 ```
 
-cf. [Comment no. 001](/comments/001-comment.md) for details about this perennial pipeline.
+cf. [Rumination no. 001](/ruminations/001-rumination.md) for details about this perennial pipeline.
 
 ---
 

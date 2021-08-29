@@ -1,6 +1,6 @@
-# Comments on Rust Geodesy
+# Ruminations on Rust Geodesy
 
-## Comment 003: `kp` - the RG Coordinate Processing program
+## Rumination 003: `kp` - the RG Coordinate Processing program
 
 Thomas Knudsen <knudsen.thomas@gmail.com>
 
@@ -12,9 +12,9 @@ Thomas Knudsen <knudsen.thomas@gmail.com>
 
 `kp` is the Rust Geodesy **coordinate processing** program. The obvious abbreviation of coordinate processing is `cp`, but since `cp` is the Unix file copying program we substitute k for c - hence `kp`, which may be taken as a reference to the Danish word for coordinate processing **koordinatprocessering**.
 
-Incidentally, `kp` was also the user-id and email address for the late **Knud Poder** (1925-2019), during his work years at the Danish geodetic institute (and its successor, KMS), from the 1950s until his retirement in 1995.
+Incidentally, `kp` was also the user-id and email address of the late **Knud Poder** (1925-2019), during his work years at the Danish geodetic institute, GI (and its successor, KMS), from the 1950s until his retirement in 1995.
 
-Knud Poder was, for many years, leading the department for computational geodesy where, for some years around 1980, his deputy was Carl Christian Tscherning (1942-2014), for whom the [PROJ](https::/proj.org) transformation program [cct](https://proj.org/apps/cct.html) was named.
+For many years, Poder was in charge of the GI department for computational geodesy where, for some years around 1980, his deputy was Carl Christian Tscherning (1942-2014), for whom the [PROJ](https::/proj.org) transformation program [cct](https://proj.org/apps/cct.html) was named. Among friends, colleagues and collaborators worldwide, Knud Poder was regarded a "Nestor of computational geodesy.
 
 ### Usage
 
@@ -45,18 +45,15 @@ echo 55 12 | kp "geo | utm zone:32"
 > 691875.6321 6098907.8250 0.0000 0.0000
 ```
 
-
-
-
 ### Operators
 
-The current crop of RG operators are described in the [missing manual](/comments/002-comment.md)
+The current crop of RG operators are described in the [missing manual](/ruminations/002-rumination.md)
 
 ### A few more words about Knud Poder
 
 On the occasion of Knud Poder's 90th birthday in 2015, I wrote a few words about one of his accomplishments on the [PROJ mailing list](https://lists.osgeo.org/pipermail/proj/2015-October/006884.html):
 
-```
+```txt
 As described in a recent thread, for the next release, proj.4 will switch
 the default transverse mercator implementation from tmerc to etmerc.
 
@@ -118,7 +115,6 @@ Berlin/Göttingen/Heidelberg, 1951. K
 Neue Folge 52. Royal Prussian Geodetic Institute, Potsdam. URL
 http://bib.gfz-potsdam.de/pub/digi/krueger2.pdf
 ```
-
 
 ### Document History
 

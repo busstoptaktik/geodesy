@@ -1,6 +1,6 @@
-# Comments on Rust Geodesy
+# Ruminations on Rust Geodesy
 
-## Comment 000: Overall architecture and philosophy
+## Rumination 000: Overall architecture and philosophy
 
 Thomas Knudsen <knudsen.thomas@gmail.com>
 
@@ -14,7 +14,7 @@ Thomas Knudsen <knudsen.thomas@gmail.com>
 
 Rust Geodesy, RG, is a geodetic software system, not entirely unlike [PROJ](https://proj.org), but with much more limited transformation functionality: While PROJ is mature, well supported, well tested, and production ready, RG is neither of these. This is partially due to RG being a new born baby, partially due to its aiming at a (much) different set of use cases.
 
-So when I liberally insert comparisons with PROJ in the following, it is for elucidation, not for mocking - neither of PROJ, nor of RG: I have spent much pleasant and instructive time with PROJ, both as a PROJ core developer and as a PROJ user (more about that in an upcomming *Comment on RG*). But I have also spent much pleasant time learning Rust and developing RG, so I feel deeply connected to both PROJ and RG.
+So when I liberally insert comparisons with PROJ in the following, it is for elucidation, not for mocking - neither of PROJ, nor of RG: I have spent much pleasant and instructive time with PROJ, both as a PROJ core developer and as a PROJ user (more about that in an upcomming *Rumination on RG*). But I have also spent much pleasant time learning Rust and developing RG, so I feel deeply connected to both PROJ and RG.
 
 PROJ and RG do, however, belong in two different niches of the geodetic software ecosystem: Where PROJ is the production work horse, with the broad community of end users and developers, RG aims at a much more narrow community of geodesists, for geodetic development work - e.g. for development of transformations that may eventually end up in PROJ. As stated in the [README](/README.md)-file, RG aims to:
 
