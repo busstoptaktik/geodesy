@@ -82,7 +82,7 @@ stat:
 
 # Compact format log for changelog report
 changes:
-    git log --pretty=format:%s
+    git log --pretty=format:"%as: %s (%an)" > CHANGELOG
 
 # Some invisible oddities for general amusement
 
