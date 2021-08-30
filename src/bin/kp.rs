@@ -1,23 +1,30 @@
-//! KP: The Rust Geodesy "Coordinate Processing" program is called kp rather
-//! than the straightforward cp. Because cp is the Unix copy-command,
-//! and because kp was the login name and email address of the late
-//! Knud Poder (1925-2019), among colleagues and collaborators
-//! rightfully considered the Nestor of computational
-//! geodesy.
-
 use std::path::PathBuf;
 use structopt::StructOpt;
 
+/// KP: The Rust Geodesy "Coordinate Processing" program. Called `kp` in honor
+/// of Knud Poder (1925-2019), the nestor of computational geodesy, who would
+/// have found it amusing to know that he provides a reasonable abbreviation
+/// for something that would otherwise have collided with the name of the
+/// Unix file copying program `cp`.
 #[derive(StructOpt, Debug)]
 #[structopt(name = "kp")]
 struct Opt {
-    /// Inverse
+    /// Inverse.
+    /// Use of `inverse` mode excludes the use of `roundtrip` mode.
     #[structopt(short, long = "inv")]
     inverse: bool,
 
     /// Activate debug mode
     #[structopt(short, long)]
     debug: bool,
+
+    /// Roundtrip mode - a signature feature of Knud Poder's programs:
+    /// Evaluate the accuracy of the transformation by comparing the
+    /// input argument with its supposedly identical alter ego after
+    /// a forward+inverse transformation pair.
+    /// Use of `roundtrip` mode excludes the use of `inverse` mode.
+    #[structopt(short, long)]
+    roundtrip: bool,
 
     /// Echo input to output
     #[structopt(short, long)]
@@ -48,6 +55,11 @@ fn main() {
 
     let mut ctx = geodesy::Context::new();
 
+    if opt.inverse && opt.roundtrip {
+        eprintln!("Options `inverse` and `roundtrip` are mutually exclusive");
+        std::process::exit(exitcode::USAGE);
+    }
+
     if opt.debug {
         if let Some(dir) = dirs::data_local_dir() {
             eprintln!("data_local_dir: {}", dir.to_str().unwrap_or_default());
@@ -76,16 +88,27 @@ fn main() {
         for e in args {
             b.push(e.parse().unwrap_or(std::f64::NAN))
         }
-        let coord = Coord::raw(b[0], b[1], b[2], b[3]);
+        let coord = Coord([b[0], b[1], b[2], b[3]]);
         let mut data = [coord];
 
         // Transformation - this is the actual geodetic content
         if opt.inverse {
             ctx.inv(op, &mut data);
+            if opt.roundtrip {
+                ctx.fwd(op, &mut data);
+            }
         } else {
             ctx.fwd(op, &mut data);
+            if opt.roundtrip {
+                ctx.inv(op, &mut data);
+            }
         }
 
+        if opt.roundtrip {
+            let d = roundtrip_distance(&opt.operation, n, coord, data[0]);
+            println!("{}:  d = {:.2} mm", line, 1000. * d);
+            continue;
+        }
         // Print output
         if opt.echo {
             println!("#  {}", line);
@@ -104,4 +127,32 @@ fn main() {
             );
         }
     }
+}
+
+/// Distance between input and output after a forward-inverse roundtrip
+fn roundtrip_distance(op: &str, dim: usize, mut input: Coord, mut result: Coord) -> f64 {
+    // Try to figure out what kind of coordinates we're working with
+    if op.starts_with("geo") {
+        // Latitude, longitude...
+        input = Coord::geo(input[0], input[1], input[2], input[3]);
+        result = Coord::geo(result[0], result[1], result[2], result[3]);
+    } else if op.starts_with("gis") {
+        // Longitude, latitude...
+        input = Coord::gis(input[0], input[1], input[2], input[3]);
+        result = Coord::gis(result[0], result[1], result[2], result[3]);
+    } else if dim < 3 {
+        // 2D linear
+        return input.hypot2(&result);
+    } else {
+        // 3D linear
+        return input.hypot3(&result);
+    }
+
+    // 2D angular: geodesic distance
+    if dim < 2 {
+        return input.default_ellps_dist(&result);
+    }
+
+    // 3D angular: cartesian distance as-if-on GRS80
+    input.default_ellps_3d_dist(&result)
 }

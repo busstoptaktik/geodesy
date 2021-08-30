@@ -30,7 +30,7 @@ or, with input from `stdin`:
 echo coordinate |  kp "operation"
 ```
 
-**Example:**
+**Examples:**
 Convert the geographical coordinate tuple (55 N, 12 E) to utm, zone 32 coordinates:
 
 ```sh
@@ -45,9 +45,25 @@ echo 55 12 | kp "geo | utm zone:32"
 > 691875.6321 6098907.8250 0.0000 0.0000
 ```
 
+The `roundtrip` option measures the roundtrip accuracy of a transformation
+(i.e. how close to the origin you end up after a forward+inverse dance):
+
+```sh
+echo 55 12| kp --roundtrip "geo | utm zone:32"
+> 55 12:  d = 0.05 mm
+```
+
+The `inv` option runs the specified pipeline inversely:
+
+```sh
+echo 691875.6321 6098907.8250| cargo run -- --inv "geo | utm zone:32"
+> 54.9999999996 11.9999999994 0.00000 0.00000
+```
+
+
 ### Operators
 
-The current crop of RG operators are described in the [missing manual](/ruminations/002-rumination.md)
+The current crop of RG operators is described in the [missing manual](/ruminations/002-rumination.md)
 
 ### A few more words about Knud Poder
 
