@@ -14,7 +14,7 @@ Thomas Knudsen <knudsen.thomas@gmail.com>
 
 Incidentally, `kp` was also the user-id and email address of the late **Knud Poder** (1925-2019), during his work years at the Danish geodetic institute, GI (and its successor, KMS), from the 1950s until his retirement in 1995.
 
-For many years, Poder was in charge of the GI department for computational geodesy where, for some years around 1980, his deputy was Carl Christian Tscherning (1942-2014), for whom the [PROJ](https::/proj.org) transformation program [cct](https://proj.org/apps/cct.html) was named. Among friends, colleagues and collaborators worldwide, Knud Poder was regarded a "Nestor of computational geodesy.
+For many years, Poder was in charge of the GI department for computational geodesy where, for some years around 1980, his deputy was Carl Christian Tscherning (1942-2014), for whom the [PROJ](https::/proj.org) transformation program [cct](https://proj.org/apps/cct.html) was named. Among friends, colleagues and collaborators worldwide, Knud Poder was regarded a Nestor of computational geodesy.
 
 ### Usage
 
@@ -27,38 +27,79 @@ kp "operation" file1 file2 ...
 or, with input from `stdin`:
 
 ```sh
-echo coordinate |  kp "operation"
+echo coordinate | kp "operation"
 ```
 
-**Examples:**
+### Examples
+
 Convert the geographical coordinate tuple (55 N, 12 E) to utm, zone 32 coordinates:
 
 ```sh
-echo 55 12 0 0 | kp "geo | utm zone:32"
+$ echo 55 12 0 0 | kp "geo | utm zone:32"
 > 691875.6321 6098907.8250 0.0000 0.0000
 ```
 
 While RG coordinates are always 4D, `kp` will provide zero-values for any left-out postfix dimensions:
 
 ```sh
-echo 55 12 | kp "geo | utm zone:32"
+$ echo 55 12 | kp "geo | utm zone:32"
 > 691875.6321 6098907.8250 0.0000 0.0000
 ```
 
 The `roundtrip` option measures the roundtrip accuracy of a transformation
-(i.e. how close to the origin you end up after a forward+inverse dance):
+(i.e. how close to the origin you end up after a forward+inverse dance). Knud Poder championed this practise with his ingeniously constructed *Poder dual autochecking* method, which was essential at a time where computers were less robust than today (more about that [below](#a-few-more-words-about-knud-poder)).
 
 ```sh
-echo 55 12| kp --roundtrip "geo | utm zone:32"
+$ echo 55 12 | kp --roundtrip "geo | utm zone:32"
 > 55 12:  d = 0.05 mm
 ```
 
-The `inv` option runs the specified pipeline inversely:
+The `inv` option runs the specified pipeline inversely (but excludes the use of `roundtrip`):
 
 ```sh
-echo 691875.6321 6098907.8250| cargo run -- --inv "geo | utm zone:32"
+echo 691875.6321 6098907.8250 | cargo run -- --inv "geo | utm zone:32"
 > 54.9999999996 11.9999999994 0.00000 0.00000
 ```
+
+The `help` option works as you would expect:
+
+```txt
+$ kp --help
+kp 0.7.1
+KP: The Rust Geodesy "Coordinate Processing" program.
+Called `kp` in honor of Knud Poder (1925-2019), the
+nestor of computational geodesy, who would have found
+it amusing to know that he provides a reasonable
+abbreviation for something that would otherwise have
+collided with the name of the Unix file copying program `cp`
+
+USAGE:
+    kp.exe [FLAGS] [OPTIONS] <OPERATION> [FILE]...
+
+FLAGS:
+    -d, --debug        Activate debug mode
+    -e, --echo         Echo input to output
+    -h, --help         Prints help information
+    -i, --inv          Inverse. Use of `inverse` mode excludes the use
+                       of `roundtrip` mode
+    -r, --roundtrip    Roundtrip mode - a signature feature of Knud
+                       Poder's programs: Evaluate the accuracy of the
+                       transformation by comparing the input argument
+                       with its supposedly identical alter ego after
+                       a forward+inverse transformation pair. Use of
+                       `roundtrip` mode excludes the use of `inverse`
+                       mode
+    -V, --version      Prints version information
+    -v, --verbose      Verbose mode (-v, -vv, -vvv, etc.)
+
+OPTIONS:
+    -o, --output <output>    Output file, stdout if not present
+
+ARGS:
+    <OPERATION>    Operation to apply
+    <FILE>...      Files to process
+```
+
 
 
 ### Operators
