@@ -4,7 +4,7 @@
 
 Thomas Knudsen <knudsen.thomas@gmail.com>
 
-2021-08-26. Last [revision](#document-history) 2021-08-26
+2021-08-28. Last [revision](#document-history) 2021-08-28
 
 ---
 
@@ -18,7 +18,7 @@ For many years, Poder was in charge of the GI department for computational geode
 
 ### Usage
 
-`kp` is still under heavy development, but so far the command line syntax is:
+Basic operation of `kp` is very simple. Any complexity in `kp` usage is related to the description of the operation to carry out, which is the subject of [Rumination 002](/ruminations/002-rumination.md). The `kp` command line syntax is:
 
 ```sh
 kp "operation" file1 file2 ...
@@ -30,9 +30,15 @@ or, with input from `stdin`:
 echo coordinate | kp "operation"
 ```
 
+or, with output to the file `result`:
+
+```sh
+kp -o result "operation" file1 file2 ...
+```
+
 ### Examples
 
-Convert the geographical coordinate tuple (55 N, 12 E) to utm, zone 32 coordinates:
+Convert the coordinate tuple (55 N, 12 E) from geographical coordinates  on the GRS80 ellipsoid to Universal Transverse Mercator, zone 32 coordinates on the same (implied) ellipsoid:
 
 ```sh
 $ echo 55 12 0 0 | kp "geo | utm zone:32"
@@ -54,14 +60,24 @@ $ echo 55 12 | kp --roundtrip "geo | utm zone:32"
 > 55 12:  d = 0.05 mm
 ```
 
-The `inv` option runs the specified pipeline inversely (but excludes the use of `roundtrip`):
+The `inv` option runs the specified pipeline inversely:
 
 ```sh
-echo 691875.6321 6098907.8250 | cargo run -- --inv "geo | utm zone:32"
+$ echo 691875.6321 6098907.8250 | kp --inv "geo | utm zone:32"
 > 54.9999999996 11.9999999994 0.00000 0.00000
 ```
 
-The `help` option works as you would expect:
+The `inv` and `roundtrip` options are mutually exclusive:
+
+```txt
+$ echo 691875.6321 6098907.8250 | kp --inv --roundtrip "geo | utm zone:32"
+> Options `inverse` and `roundtrip` are mutually exclusive
+> error: process didn't exit successfully: ...
+```
+
+### Options
+
+The `help` option gives the list of options:
 
 ```txt
 $ kp --help
@@ -99,8 +115,6 @@ ARGS:
     <OPERATION>    Operation to apply
     <FILE>...      Files to process
 ```
-
-
 
 ### Operators
 

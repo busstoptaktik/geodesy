@@ -39,7 +39,7 @@ or in fewer words: *Don't overdo it*.
 
 ### Getting beefy
 
-But talking architecture and design philosophy out of thin air is at best counterproductive, so let's start with a brief example, demonstrating the RG idiom for converting geographical coordinates to UTM zone 32 coordinates.
+But talking architecture and design philosophy out of thin air is at best counterproductive, so let's start with a brief example, demonstrating the RG idiom for converting geographical coordinates to UTM zone 32 coordinates (for the corresponding operation using the RG coordinate processing command line program `kp`, see [Rumination 003](/ruminations/003-rumination.md)).
 
 ```rust
 fn main() {
@@ -81,7 +81,7 @@ At comment `[0]`, we start by renaming the library functionality for coordinate 
 let mut ctx = geodesy::Context::new();
 ```
 
-At comment `[1]` we instantiate a `Context`, which should not come as a surprise if you have been using [PROJ](https:://proj.org) recently. The `Context` provides the interface to the messy world external to RG (files, threads, communication), and in general centralizes all the *mutable state* of the system.
+At comment `[1]` we instantiate a `Context`, which should come as no surprise for anyone having used [PROJ](https:://proj.org) within the last fifteen years. The `Context` provides the interface to the messy world external to RG (files, threads, communication), and in general centralizes all the *mutable state* of the system.
 
 Also, the `Context` is the sole interface between the `RG` transformation functionality and the application program: You may instantiate a transformation object, but the `Context` handles it for you. While you need a separate `Context` for each thread of your program, the `Context` itself is designed to eventually do its work in parallel, using several threads.
 

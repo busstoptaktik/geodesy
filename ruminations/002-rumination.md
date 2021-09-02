@@ -61,7 +61,7 @@ echo 55 12 | kp "geo | utm zone:32"
 
 In the examples in the operator descriptions below, we will just give the [GYS](/ruminations/000-rumination.md#gys-the-geodetic-yaml-shorthand) representation, and imply the `echo ... | kp ...` part.
 
-If in doubt, `kp --help` is readily available as an honest attempt to reduce your confusion.
+If in doubt, use `kp --help` or read [Rumination 003: `kp` - the RG Coordinate Processing program](/ruminations/003-rumination.md).
 
 ---
 
