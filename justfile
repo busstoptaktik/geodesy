@@ -16,8 +16,8 @@ list:
 test:
     cargo test --lib
 
-# Unit tests, doc tests and compiling of examples
-test-all:
+# Unit tests, doc tests, pile test, and compiling of examples
+test-all: test-pile
     cargo test
 
 # Check that all tests pass, and that formatting and coding conventions are OK.
@@ -51,6 +51,16 @@ run ARGS:
 # Run example based on its unique prefix (e.g. 00, 01, etc.).
 run-example EXAMPLE:
     cargo run --example `basename examples/"{{EXAMPLE}}"* .rs`
+
+# Test the `pile` executable
+test-pile:
+    touch tests/foobar.pile
+    rm tests/foobar.pile
+    cargo run --bin pile -- -o tests/foobar.pile tests/foo.raw tests/bar.raw
+    diff tests/assets/proj-data/foo.aux tests/assets/expected/foo.aux
+    diff tests/assets/proj-data/bar.aux tests/assets/expected/bar.aux
+    diff tests/foobar.pile tests/assets/expected/foobar
+    rm tests/foobar.pile
 
 # Run default application and all examples.
 run-all:
