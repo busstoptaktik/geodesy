@@ -55,21 +55,28 @@ fn rotation_matrix(rx: f64, ry: f64, rz: f64, exact: bool, position_vector: bool
         cz = scz.1;
     }
 
-    // drop second order infinitesimals when using small angle approximations
-    let drop = if exact { 1.0 } else { 0.0 };
-    let keep = 1.0;
+    // Leave out the second order infinitesimals in the rotation
+    // matrix elements, when using small angle approximations
+    let r11 = cy * cz;
+    let mut r12 = cx * sz;
+    let mut r13 = -cx * sy * cz;
 
-    let r11 = keep * (cy * cz);
-    let r12 = keep * (cx * sz) + drop * (sx * sy * cz);
-    let r13 = drop * (sx * sz) - keep * (cx * sy * cz);
+    let r21 = -cy * sz;
+    let mut r22 = cx * cz;
+    let mut r23 = sx * cz;
 
-    let r21 = -keep * (cy * sz);
-    let r22 = keep * (cx * cz) - drop * (sx * sy * sz);
-    let r23 = keep * (sx * cz) + drop * (cx * sy * sz);
+    let r31 = sy;
+    let r32 = -sx * cy;
+    let r33 = cx * cy;
 
-    let r31 = keep * (sy);
-    let r32 = -keep * (sx * cy);
-    let r33 = keep * (cx * cy);
+    // But apply the second order terms in the exact case
+    if exact {
+        r12 += sx * sy * cz;
+        r13 += sx * sz;
+
+        r22 -= sx * sy * sz;
+        r23 += cx * sy * sz;
+    }
 
     if position_vector {
         return [[r11, r21, r31], [r12, r22, r32], [r13, r23, r33]];
