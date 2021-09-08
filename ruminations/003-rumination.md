@@ -6,6 +6,13 @@ Thomas Knudsen <knudsen.thomas@gmail.com>
 
 2021-08-28. Last [revision](#document-history) 2021-08-28
 
+### Abstract
+
+```sh
+$ echo 55 12 | kp "geo | utm zone:32"
+> 691875.6321 6098907.8250 0.0000 0.0000
+```
+
 ---
 
 ### Prologue

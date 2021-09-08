@@ -6,6 +6,13 @@ Thomas Knudsen <knudsen.thomas@gmail.com>
 
 2021-08-20. Last [revision](#document-history) 2021-08-23
 
+### Abstract
+
+```sh
+$ echo 553036. -124509 | kp "dms | geo inv"
+> 55.51  -12.7525 0 0
+```
+
 ---
 
 ### Contents

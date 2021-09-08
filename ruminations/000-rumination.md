@@ -6,6 +6,17 @@ Thomas Knudsen <knudsen.thomas@gmail.com>
 
 2021-07-31. Last [revision](#document-history) 2021-08-26
 
+### Abstract
+
+```rust
+let utm32 = ctx.operation("utm: {zone: 32}").unwrap();
+ctx.fwd(utm32, &mut data);
+println!({:?}, data);
+ctx.inv(utm32, &mut data);
+println!({:?}, data);
+```
+
+
 ---
 
 ### Prologue
