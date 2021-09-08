@@ -88,7 +88,7 @@ impl OperatorCore for Tmerc {
     // Forward transverse mercator, following Bowring (1989)
     fn fwd(&self, _ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
         for coord in operands {
-            let lat = coord[1];
+            let lat = coord[1] + self.lat_0;
             let c = lat.cos();
             let s = lat.sin();
             let cc = c * c;
