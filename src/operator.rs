@@ -145,6 +145,7 @@ pub trait OperatorCore {
 mod adapt;
 mod cart;
 mod helmert;
+mod merc;
 mod molodensky;
 mod nmea;
 mod noop;
@@ -253,6 +254,8 @@ fn builtins(ctx: &mut Context, args: &mut OperatorArgs) -> Option<Operator> {
         op = crate::operator::cart::Cart::operator(args);
     } else if opname == "helmert" {
         op = crate::operator::helmert::Helmert::operator(args);
+    } else if opname == "merc" {
+        op = crate::operator::merc::Merc::operator(args);
     } else if opname == "molodensky" {
         op = crate::operator::molodensky::Molodensky::operator(args);
     } else if opname == "nmea" || opname == "dm" {
