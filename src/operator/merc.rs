@@ -127,59 +127,106 @@ fn sinhpsi_to_tanphi(taup: f64, e: f64) -> f64 {
     };
 
     // Handle +/-inf, nan, and e = 1
-    if !(tau.abs() < tmax) {
+    if tau.is_nan() || (tau.abs() >= tmax) {
         return tau;
     }
 
-    // If we need to deal with e > 1, then we could include:
-    // if (e2m < 0) return std::numeric_limits<double>::quiet_NaN();
-    let mut i = NUMIT;
-    while i > 0 {
+    for _ in 0..NUMIT {
         let tau1 = (1. + tau * tau).sqrt();
         let sig = (e * (e * tau / tau1).atanh()).sinh();
         let taupa = (1. + sig * sig).sqrt() * tau - sig * tau1;
         let dtau =
             (taup - taupa) * (1. + e2m * (tau * tau)) / (e2m * tau1 * (1. + taupa * taupa).sqrt());
         tau += dtau;
-        i -= 1;
 
-        // backwards test to allow nans to succeed.
-        if !(dtau.abs() >= stol) {
+        if tau.is_nan() || (dtau.abs() < stol) {
             return tau;
         }
     }
-    return f64::NAN;
+    f64::NAN
 }
 
 #[cfg(test)]
 mod tests {
+    /// Basic test of the Mercator implementation
     #[test]
     fn merc() {
-        use crate::operator_construction::*;
-        use crate::{Context, CoordinateTuple};
+        use crate::CoordinateTuple as C;
+        let mut ctx = crate::Context::new();
+        let op = ctx.operation("merc").unwrap();
 
-        let mut ctx = Context::new();
+        // Validation value from PROJ: echo 12 55 0 0 | cct -d18 +proj=merc
+        // followed by quadrant tests from PROJ builtins.gie
+        let mut operands = [
+            C::geo(55., 12., 0., 0.),
+            C::geo(1., 2., 0., 0.),
+            C::geo(-1., 2., 0., 0.),
+            C::geo(1., -2., 0., 0.),
+            C::geo(-1., -2., 0., 0.),
+        ];
 
-        // Test the Mercator implementation
-        let op = Operator::new("merc", &mut ctx).unwrap();
+        let geographical = operands.clone();
 
-        let geo = CoordinateTuple::geo(55., 12., 100., 0.);
-        let mut operands = [geo];
+        let projected = [
+            C::raw(1335833.889519282850, 7326837.714873877354, 0., 0.),
+            C::raw(222638.981586547, 110579.965218249, 0., 0.),
+            C::raw(222638.981586547, -110579.965218249, 0., 0.),
+            C::raw(-222638.981586547, 110579.965218249, 0., 0.),
+            C::raw(-222638.981586547, -110579.965218249, 0., 0.),
+        ];
 
-        // Validation value from PROJ:
-        // echo 12 55 0 0 | cct -d18 +proj=merc
-        let merc_proj = CoordinateTuple::raw(
-            1335833.889519282849505544,
-            7326837.714873877353966236,
-            100.,
-            0.,
-        );
-        assert!(op.fwd(&mut ctx, operands.as_mut()));
-        assert!(operands[0].hypot2(&merc_proj) < 1e-5);
+        // Forward
+        assert!(ctx.fwd(op, &mut operands));
+        for i in 0..operands.len() {
+            println!("transformed {:?}", operands[i].to_geo());
+            println!("validation  {:?}", projected[i].to_geo());
+            assert!(operands[i].hypot2(&projected[i]) < 25e-9);
+        }
 
         // Roundtrip...
-        assert!(op.inv(&mut ctx, operands.as_mut()));
+        assert!(ctx.inv(op, &mut operands));
         println!("{:?}", operands[0].to_geo());
-        assert!(geo.default_ellps_dist(&operands[0]) < 1e-10);
+        for i in 0..operands.len() {
+            println!("roundtrip {:?}", operands[i].to_geo());
+            println!("original  {:?}", geographical[i].to_geo());
+            assert!(operands[i].default_ellps_dist(&geographical[i]) < 10e-9);
+        }
+    }
+
+    /// Test the "latitude of true scale" functionality
+    #[test]
+    fn lat_ts() {
+        use crate::CoordinateTuple as C;
+        let mut ctx = crate::Context::new();
+        let op = ctx.operation("merc lat_ts:55").unwrap();
+
+        // Validation values from PROJ:
+        // echo 12 55 0 0 | cct -d18 +proj=merc +lat_ts=55
+        // echo 15 45 0 0 | cct -d18 +proj=merc +lat_ts=55
+        let mut operands = [C::geo(55., 12., 0., 0.), C::geo(45., 15., 0., 0.)];
+
+        let geographical = operands.clone();
+
+        let projected = [
+            C::raw(767929.5515811865916, 4211972.1958214361221, 0., 0.),
+            C::raw(959911.9394764832687, 3214262.9417223907076, 0., 0.),
+        ];
+
+        // Forward
+        assert!(ctx.fwd(op, &mut operands));
+        for i in 0..operands.len() {
+            println!("transformed {:?}", operands[i].to_geo());
+            println!("validation  {:?}", projected[i].to_geo());
+            assert!(operands[i].hypot2(&projected[i]) < 25e-9);
+        }
+
+        // Roundtrip...
+        assert!(ctx.inv(op, &mut operands));
+        println!("{:?}", operands[0].to_geo());
+        for i in 0..operands.len() {
+            println!("roundtrip {:?}", operands[i].to_geo());
+            println!("original  {:?}", geographical[i].to_geo());
+            assert!(operands[i].default_ellps_dist(&geographical[i]) < 10e-9);
+        }
     }
 }
