@@ -127,7 +127,7 @@ fn sinhpsi_to_tanphi(taup: f64, e: f64) -> f64 {
     };
 
     // Handle +/-inf, nan, and e = 1
-    if tau.is_nan() || (tau.abs() >= tmax) {
+    if (tau.abs() >= tmax) || tau.is_nan() {
         return tau;
     }
 
@@ -139,7 +139,7 @@ fn sinhpsi_to_tanphi(taup: f64, e: f64) -> f64 {
             (taup - taupa) * (1. + e2m * (tau * tau)) / (e2m * tau1 * (1. + taupa * taupa).sqrt());
         tau += dtau;
 
-        if tau.is_nan() || (dtau.abs() < stol) {
+        if (dtau.abs() < stol) || tau.is_nan() {
             return tau;
         }
     }
