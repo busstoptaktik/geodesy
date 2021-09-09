@@ -58,6 +58,7 @@ fn main() -> Result<(), Error> {
 
     // Metadata files are placed in the `assets/proj-data` directory below the
     // directory containing the `assets.pile` file. Make sure it exists
+    #[allow(clippy::redundant_clone)]
     let mut pile_dir = default_dir.clone();
     pile_dir.push("assets");
     pile_dir.push("proj-data");
@@ -77,7 +78,7 @@ fn main() -> Result<(), Error> {
         let mut file = File::open(path)?;
         let mut buffer = Vec::<u8>::new();
         let length = file.read_to_end(&mut buffer)?;
-        pile.write(&buffer)?;
+        pile.write_all(&buffer)?;
 
         // Check that the writing went well
         let nextpos = pile.stream_position()?;
@@ -115,7 +116,7 @@ fn main() -> Result<(), Error> {
 
         // First line of the new aux file defines the pile-offset of the grid
         let line = format!("Offset: {}\n", pos);
-        aux_out.write(line.as_bytes())?;
+        aux_out.write_all(line.as_bytes())?;
 
         // The remaining lines are copied verbatim from the original
         // and supplemented with Geometry and BBox elements
@@ -145,17 +146,17 @@ fn main() -> Result<(), Error> {
             if line.starts_with("RawDefinition:") {
                 assert!(e.len() == 4);
                 let geometry = format!("Geometry: [{}, {}, {}]\n", e[1], e[2], e[3]);
-                aux_out.write(geometry.as_bytes())?;
+                aux_out.write_all(geometry.as_bytes())?;
             }
             line += "\n";
-            aux_out.write(line.as_bytes())?;
+            aux_out.write_all(line.as_bytes())?;
         }
         assert!(bbox.len() == 4);
         let bboxline = format!(
             "BBox: [{}, {}, {}, {}]\n",
             bbox["s"], bbox["w"], bbox["n"], bbox["e"]
         );
-        aux_out.write(bboxline.as_bytes())?;
+        aux_out.write_all(bboxline.as_bytes())?;
     }
 
     if opt.debug {
