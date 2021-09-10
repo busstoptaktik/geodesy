@@ -6,7 +6,6 @@ mod distances;
 #[derive(Debug, Default, PartialEq, Copy, Clone)]
 pub struct CoordinateTuple(pub [f64; 4]);
 
-
 impl Index<usize> for CoordinateTuple {
     type Output = f64;
     fn index(&self, i: usize) -> &Self::Output {
@@ -19,7 +18,6 @@ impl IndexMut<usize> for CoordinateTuple {
         &mut self.0[i]
     }
 }
-
 
 impl CoordinateTuple {
     /// A `CoordinateTuple` from latitude/longitude/height/time, with the angular input in degrees
@@ -99,7 +97,6 @@ impl CoordinateTuple {
     pub fn fourth(&self) -> f64 {
         self[3]
     }
-
 }
 
 #[cfg(test)]

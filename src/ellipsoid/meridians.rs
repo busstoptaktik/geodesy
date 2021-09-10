@@ -1,5 +1,5 @@
-use std::f64::consts::FRAC_PI_2;
 use crate::ellipsoid::Ellipsoid;
+use std::f64::consts::FRAC_PI_2;
 
 // ----- Meridian geometry -----------------------------------------------------
 impl Ellipsoid {
@@ -106,7 +106,7 @@ mod tests {
         for i in 0..s.len() {
             let angle = (10.0 * i as f64).to_radians();
             assert!((ellps.meridional_distance(angle, fwd) - s[i]).abs() < 6e-6);
-            assert!((ellps.meridional_distance(s[i], inv) - angle).abs()< 6e-11);
+            assert!((ellps.meridional_distance(s[i], inv) - angle).abs() < 6e-11);
         }
 
         // Since we suspect the deviation might be worst at 45°, we check that as well

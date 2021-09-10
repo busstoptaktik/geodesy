@@ -161,7 +161,7 @@ mod tests {
         let mut operands = [
             C::geo(55., 12., 0., 0.),
             C::geo(-55., 12., 0., 0.),
-            C::geo(45., 15., 0., 0.)
+            C::geo(45., 15., 0., 0.),
         ];
 
         let geographical = operands.clone();

@@ -1,10 +1,8 @@
-use std::f64::consts::FRAC_PI_2;
 use crate::CoordinateTuple;
 use crate::Ellipsoid;
+use std::f64::consts::FRAC_PI_2;
 
 impl Ellipsoid {
-
-
     // ----- Cartesian <--> Geographic conversion ----------------------------------
 
     /// Geographic to cartesian conversion.

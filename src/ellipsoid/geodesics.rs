@@ -1,10 +1,9 @@
 use crate::ellipsoid::Ellipsoid;
-use crate::CoordinateTuple;
 use crate::fwd;
+use crate::CoordinateTuple;
 
 // ----- Geodesics -------------------------------------------------------------
 impl Ellipsoid {
-
     /// The distance, *M*, along a meridian from the equator to the given
     /// latitude is a special case of a geodesic length.
     ///
@@ -158,7 +157,6 @@ impl Ellipsoid {
 
         // Below the micrometer level, we don't care about directions
         if L.hypot(B) < 1e-15 {
-
             return CoordinateTuple::geo(0., 0., 0., 0.);
         }
 
@@ -260,7 +258,6 @@ impl Ellipsoid {
         self.geodesic_inv(from, to)[2]
     }
 }
-
 
 // ----- Tests ---------------------------------------------------------------------
 

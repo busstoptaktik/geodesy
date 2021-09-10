@@ -11,7 +11,6 @@ pub struct Ellipsoid {
     f: f64,
 }
 
-
 /// GRS80 is the default ellipsoid.
 impl Default for Ellipsoid {
     fn default() -> Ellipsoid {

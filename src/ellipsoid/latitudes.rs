@@ -82,16 +82,14 @@ fn sinhpsi_to_tanphi(taup: f64, e: f64) -> f64 {
     f64::NAN
 }
 
-
-
 // ----- Tests ---------------------------------------------------------------------
 
 #[cfg(test)]
 mod tests {
-    use std::f64::consts::FRAC_PI_2;
+    use super::*;
     use crate::fwd;
     use crate::inv;
-    use super::*;
+    use std::f64::consts::FRAC_PI_2;
     #[test]
     fn latitudes() {
         let ellps = Ellipsoid::named("GRS80");
