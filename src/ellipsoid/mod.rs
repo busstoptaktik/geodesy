@@ -1,6 +1,6 @@
 mod cartesians;
 mod geodesics;
-mod latitudes;
+pub(crate) mod latitudes;
 mod meridians;
 
 /// Representation of a (potentially triaxial) ellipsoid.

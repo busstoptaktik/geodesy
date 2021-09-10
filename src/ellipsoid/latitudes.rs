@@ -38,7 +38,7 @@ impl Ellipsoid {
 // Ancillary function for computing the inverse isometric latitude.
 // Follows Karney, 2011, and the PROJ implementation in
 // proj/src/phi2.cpp
-fn sinhpsi_to_tanphi(taup: f64, e: f64) -> f64 {
+pub(crate) fn sinhpsi_to_tanphi(taup: f64, e: f64) -> f64 {
     // min iterations = 1, max iterations = 2; mean = 1.954
     const MAX_ITER: usize = 5;
 
