@@ -3,13 +3,12 @@
 use std::path::PathBuf;
 use structopt::StructOpt;
 
-/// KP: The Rust Geodesy "Coordinate Processing" program is called kp rather than
-/// the straightforward cp. Because cp is the Unix copy-command,
-/// and because kp was the late Knud Poder (1925-2019), among colleagues and
-/// collaborators rightfully considered the Nestor of computational
-/// geodesy.
+/// PQ: The Rust Geodesy blablabla program is called pq in order to have
+/// an alphabetically continuous source code file name "PQ.RS". We
+/// encourage porting to other languages, and look forward to the C and
+/// Fortran versions: "AB.C" and "DE.F".
 #[derive(StructOpt, Debug)]
-#[structopt(name = "kp")]
+#[structopt(name = "pq")]
 struct Opt {
     /// Inverse
     #[structopt(short, long = "inv")]
