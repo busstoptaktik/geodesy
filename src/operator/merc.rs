@@ -62,32 +62,28 @@ impl OperatorCore for Merc {
     // cf.  https://proj.org/operations/projections/merc.html
     fn fwd(&self, _ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
         let a = self.ellps.semimajor_axis();
-        let e = self.ellps.eccentricity();
         for coord in operands {
             // Easting
             coord[0] = (coord[0] - self.lon_0) * self.k_0 * a - self.x_0;
             // Northing - basically the isometric latitude multiplied by a
             let lat = coord[1] + self.lat_0;
-            let sc = lat.sin_cos();
-            coord[1] = a * self.k_0 * ((sc.0 / sc.1).asinh() - e * (e * sc.0).atanh()) - self.y_0;
+            coord[1] = a * self.k_0 * self.ellps.isometric_latitude(lat, crate::fwd) - self.y_0;
         }
         true
     }
 
     fn inv(&self, _ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
         let a = self.ellps.semimajor_axis();
-        let e = self.ellps.eccentricity();
-
         for coord in operands {
-            // Longitude
+            // Easting -> Longitude
             let x = coord[0] + self.x_0;
             coord[0] = x / (a * self.k_0) - self.lon_0;
 
-            // Latitude
+            // Northing -> Latitude
             let y = coord[1] + self.y_0;
             // The isometric latitude
             let psi = y / (a * self.k_0);
-            coord[1] = sinhpsi_to_tanphi(psi.sinh(), e).atan() - self.lat_0;
+            coord[1] = self.ellps.isometric_latitude(psi, crate::inv) - self.lat_0;
         }
         true
     }
@@ -103,47 +99,6 @@ impl OperatorCore for Merc {
     fn args(&self, _step: usize) -> &OperatorArgs {
         &self.args
     }
-}
-
-// This follows Karney, 2011, and the PROJ implementation at
-// https://github.com/OSGeo/PROJ/blob/e3d7e18f988230973ced5163fa2581b6671c8755/src/phi2.cpp#L10-L108
-// TODO: Should be the inverse mode of ellipsoid.isometric_latitude()
-fn sinhpsi_to_tanphi(taup: f64, e: f64) -> f64 {
-    // min iterations = 1, max iterations = 2; mean = 1.954
-    const NUMIT: usize = 5;
-    // Currently, Rust cannot const-evaluate powers and roots.
-    // Could use lazy_static or wait for evolution
-    let /*const*/ rooteps: f64 = f64::EPSILON.sqrt();
-    let /*const*/ tol: f64 = rooteps / 10.; // the criterion for Newton's method
-    let /*const*/ tmax: f64 = 2. / rooteps; // threshold for large arg limit exact
-    let e2m = 1. - e * e;
-    let stol = tol * taup.abs().max(1.0);
-
-    // The initial guess.  70 corresponds to chi = 89.18 deg
-    let mut tau = if taup.abs() > 70. {
-        taup * (e * e.atanh()).exp()
-    } else {
-        taup / e2m
-    };
-
-    // Handle +/-inf, nan, and e = 1
-    if (tau.abs() >= tmax) || tau.is_nan() {
-        return tau;
-    }
-
-    for _ in 0..NUMIT {
-        let tau1 = (1. + tau * tau).sqrt();
-        let sig = (e * (e * tau / tau1).atanh()).sinh();
-        let taupa = (1. + sig * sig).sqrt() * tau - sig * tau1;
-        let dtau =
-            (taup - taupa) * (1. + e2m * (tau * tau)) / (e2m * tau1 * (1. + taupa * taupa).sqrt());
-        tau += dtau;
-
-        if (dtau.abs() < stol) || tau.is_nan() {
-            return tau;
-        }
-    }
-    f64::NAN
 }
 
 #[cfg(test)]
@@ -203,12 +158,17 @@ mod tests {
         // Validation values from PROJ:
         // echo 12 55 0 0 | cct -d18 +proj=merc +lat_ts=55
         // echo 15 45 0 0 | cct -d18 +proj=merc +lat_ts=55
-        let mut operands = [C::geo(55., 12., 0., 0.), C::geo(45., 15., 0., 0.)];
+        let mut operands = [
+            C::geo(55., 12., 0., 0.),
+            C::geo(-55., 12., 0., 0.),
+            C::geo(45., 15., 0., 0.)
+        ];
 
         let geographical = operands.clone();
 
         let projected = [
             C::raw(767929.5515811865916, 4211972.1958214361221, 0., 0.),
+            C::raw(767929.5515811865916, -4211972.1958214361221, 0., 0.),
             C::raw(959911.9394764832687, 3214262.9417223907076, 0., 0.),
         ];
 
