@@ -21,13 +21,13 @@
 mod bibliography;
 mod context;
 mod coordinates;
-mod ellipsoids;
+pub(crate) mod ellipsoid;
 mod operator;
 
 // But we add `pub`-ness to a few important `struct`s.
 pub use context::Context;
 pub use coordinates::CoordinateTuple;
-pub use ellipsoids::Ellipsoid;
+pub use ellipsoid::Ellipsoid;
 
 // The bibliography needs `pub`-ness in order to be able to build the docs.
 pub use bibliography::Bibliography;

@@ -134,7 +134,7 @@ impl CoordinateTuple {
     /// # See also:
     ///
     /// [`hypot3`](CoordinateTuple::hypot3),
-    /// [`distance`](crate::ellipsoids::Ellipsoid::distance)
+    /// [`distance`](crate::ellipsoid::Ellipsoid::distance)
     ///
     /// # Examples
     ///
@@ -163,7 +163,7 @@ impl CoordinateTuple {
     /// # See also:
     ///
     /// [`hypot2`](CoordinateTuple::hypot2),
-    /// [`distance`](crate::ellipsoids::Ellipsoid::distance)
+    /// [`distance`](crate::ellipsoid::Ellipsoid::distance)
     ///
     /// # Examples
     ///
