@@ -240,8 +240,8 @@ impl Ellipsoid {
     ///
     /// # See also:
     ///
-    /// [`hypot2`](crate::coordinates::CoordinateTuple::hypot2),
-    /// [`hypot3`](crate::coordinates::CoordinateTuple::hypot3)
+    /// [`hypot2`](crate::coordinate::CoordinateTuple::hypot2),
+    /// [`hypot3`](crate::coordinate::CoordinateTuple::hypot3)
     ///
     /// # Examples
     ///
