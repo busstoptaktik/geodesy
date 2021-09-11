@@ -24,6 +24,7 @@ $ echo 553036. -124509 | kp "dms | geo inv"
 - [`dm`](#operator-nmea-dm-nmeass-and-dms): DDMM.mmm encoding, sub-entry under `nmea`
 - [`dms`](#operator-nmea-dm-nmeass-and-dms): DDMMSS.sss encoding, sub-entry under `nmea`
 - [`helmert`](#operator-helmert): The Helmert (similarity) transformation
+- [`lcc`](#operator-lcc): The Lambert Conformal Conic projection
 - [`merc`](#operator-merc): The Mercator projection
 - [`molodensky`](#operator-molodensky): The full and abridged Molodensky transformations
 - [`nmea`](#operator-nmea-dm-nmeass-and-dms): degree/minutes encoding with obvious extension to seconds.
@@ -190,6 +191,34 @@ geo | cart ellps:intl | helmert x:-87 y:-96 z:-120 | cart inv ellps:GRS80 | geo 
 ```
 
 **See also:** [PROJ documentation](https://proj.org/operations/transformations/helmert.html): *Helmert transform*. In general the two implementations should behave identically although the RG version implements neither the 4 parameter 2D Helmert variant, nor the 10 parameter 3D Molodensky-Badekas variant.
+
+---
+
+### Operator `lcc`
+
+**Purpose:** Projection from geographic to Lambert conformal conic coordinates
+
+**Description:**
+
+| Argument | Description |
+|----------|-------------|
+| `inv` | Inverse operation: LCC to geographic |
+| `ellps: name` | Use ellipsoid `name` for the conversion |
+| `k_0` | Scaling factor |
+| `lon_0` | Longitude of the projection center |
+| `lat_0` | Latitude of the projection center |
+| `lat_1` | First standard parallel |
+| `lat_2` | Second standard parallel (optional) |
+| `x_0` | False easting  |
+| `y_0` | False northing |
+
+**Example**:
+
+```js
+lcc lon_0:-100 lat_1:33 lat_2:45
+```
+
+**See also:** [PROJ documentation](https://proj.org/operations/projections/lcc.html): *Lambert Conformal Conic*. The RG implementation closely follows the PROJ version.
 
 ---
 
