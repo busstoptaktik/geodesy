@@ -103,14 +103,13 @@ impl OperatorCore for Merc {
 
 #[cfg(test)]
 mod tests {
+    use crate::Context;
     use crate::CoordinateTuple as C;
 
     /// Basic test of the Mercator implementation
     #[test]
     fn merc() {
-        use crate::CoordinateTuple as C;
-        let mut ctx = crate::Context::new();
-        let op = ctx.operation("merc").unwrap();
+        let op = "merc";
 
         // Validation value from PROJ: echo 12 55 0 0 | cct -d18 +proj=merc
         // followed by quadrant tests from PROJ builtins.gie
@@ -130,14 +129,21 @@ mod tests {
             C::raw(-222638.981586547, -110579.965218249, 0., 0.),
         ];
 
-        assert!(ctx.test(op, 0, 20e-9, 0, 10e-9, &mut operands, &mut results));
+        assert!(Context::test(
+            op,
+            0,
+            20e-9,
+            0,
+            10e-9,
+            &mut operands,
+            &mut results
+        ));
     }
 
     /// Test the "latitude of true scale" functionality
     #[test]
     fn lat_ts() {
-        let mut ctx = crate::Context::new();
-        let op = ctx.operation("merc lat_ts:55").unwrap();
+        let op = "merc lat_ts:55";
 
         // Validation values from PROJ:
         // echo 12 55 0 0 | cct -d18 +proj=merc +lat_ts=55
@@ -154,6 +160,14 @@ mod tests {
             C::raw(959911.9394764832687, 3214262.9417223907076, 0., 0.),
         ];
 
-        assert!(ctx.test(op, 0, 20e-9, 0, 10e-9, &mut operands, &mut results));
+        assert!(Context::test(
+            op,
+            0,
+            20e-9,
+            0,
+            10e-9,
+            &mut operands,
+            &mut results
+        ));
     }
 }

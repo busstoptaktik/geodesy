@@ -198,13 +198,12 @@ impl OperatorCore for Lcc {
 
 #[cfg(test)]
 mod tests {
+    use crate::Context;
     use crate::CoordinateTuple as C;
 
     #[test]
     fn one_standard_parallel() {
-        use crate::CoordinateTuple as C;
-        let mut ctx = crate::Context::new();
-        let op = ctx.operation("lcc lat_1:57 lon_0:12").unwrap();
+        let op = "lcc lat_1:57 lon_0:12";
 
         // Validation values from PROJ:
         //     echo 12 55 0 0 | cct -d18 proj=lcc lat_1=57 lon_0=12  -- | clip
@@ -222,44 +221,71 @@ mod tests {
             C::raw(115005.41456620067765471, 224484.5143763388914522, 0., 0.),
         ];
 
-        assert!(ctx.test(op, 0, 2e-9, 0, 1e-9, &mut operands, &mut results));
+        assert!(Context::test(
+            op,
+            0,
+            2e-9,
+            0,
+            1e-9,
+            &mut operands,
+            &mut results
+        ));
     }
 
     #[test]
     fn two_standard_parallels() {
-        let mut ctx = crate::Context::new();
-        let op = ctx.operation("lcc lat_1:33 lat_2:45 lon_0:10").unwrap();
+        let op = "lcc lat_1:33 lat_2:45 lon_0:10";
 
         // Validation value from PROJ:
         // echo 12 40 0 0 | cct -d12 proj=lcc lat_1=33 lat_2=45 lon_0=10 -- | clip
         let mut operands = [C::geo(40., 12., 0., 0.)];
         let mut results = [C::raw(169863.026093938359, 4735925.219292452559, 0., 0.)];
-        assert!(ctx.test(op, 0, 20e-9, 0, 20e-9, &mut operands, &mut results));
+        assert!(Context::test(
+            op,
+            0,
+            20e-9,
+            0,
+            20e-9,
+            &mut operands,
+            &mut results
+        ));
     }
 
     #[test]
     fn one_standard_parallel_and_latitudinal_offset() {
-        let mut ctx = crate::Context::new();
-        let op = ctx.operation("lcc lat_1:39 lat_0:35 lon_0:10").unwrap();
+        let op = "lcc lat_1:39 lat_0:35 lon_0:10";
 
         // Validation value from PROJ:
         // echo 12 40 0 0 | cct -d12 proj=lcc lat_1=39 lat_0=35 lon_0=10 -- | clip
         let mut operands = [C::geo(40., 12., 0., 0.)];
         let mut results = [C::raw(170800.011728740647, 557172.361112929415, 0., 0.)];
-        assert!(ctx.test(op, 0, 2e-9, 0, 1e-8, &mut operands, &mut results));
+        assert!(Context::test(
+            op,
+            0,
+            2e-9,
+            0,
+            1e-8,
+            &mut operands,
+            &mut results
+        ));
     }
 
     #[test]
     fn two_standard_parallels_and_latitudinal_offset() {
-        let mut ctx = crate::Context::new();
-        let op = ctx
-            .operation("lcc lat_1:33 lat_2:45 lat_0:35 lon_0:10")
-            .unwrap();
+        let op = "lcc lat_1:33 lat_2:45 lat_0:35 lon_0:10";
 
         // Validation value from PROJ:
         // echo 12 40 0 0 | cct -d12 proj=lcc lat_1=33 lat_2=45 lat_0=35 lon_0=10 -- | clip
         let mut operands = [C::geo(40., 12., 0., 0.)];
         let mut results = [C::raw(169863.026093938359, 554155.440793916583, 0., 0.)];
-        assert!(ctx.test(op, 0, 2e-9, 0, 1e-9, &mut operands, &mut results));
+        assert!(Context::test(
+            op,
+            0,
+            2e-9,
+            0,
+            1e-9,
+            &mut operands,
+            &mut results
+        ));
     }
 }

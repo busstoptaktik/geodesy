@@ -6,8 +6,7 @@ impl Context {
     /// Roundtrip test that `operation` yields `results` when given `operands`.
     #[allow(clippy::too_many_arguments)]
     pub fn test(
-        &mut self,
-        operation: usize,
+        operation: &str,
         fwd_metric: u8,
         fwd_delta: f64,
         inv_metric: u8,
@@ -15,20 +14,21 @@ impl Context {
         operands: &mut [CoordinateTuple],
         results: &mut [CoordinateTuple],
     ) -> bool {
-        if operation >= self.operations.len() {
-            self.last_failing_operation = String::from("Invalid");
-            self.cause = String::from("Attempt to access an invalid operator from test");
-            println!("{}", self.report());
+        let mut ctx = Context::new();
+        let op = ctx.operation(operation);
+        if op.is_none() {
+            println!("{}", ctx.report());
             return false;
         }
+        let op = op.unwrap();
 
         // We need a copy of the operands as "expected results" in the roundtrip case
         // Note that the .to_vec() method actually copies, so .clone() is not needed.
         let roundtrip = operands.to_vec();
 
         // Forward test
-        if !self.fwd(operation, operands) {
-            println!("{}", self.report());
+        if !ctx.fwd(op, operands) {
+            println!("{}", ctx.report());
             return false;
         }
         for i in 0..operands.len() {
@@ -49,13 +49,13 @@ impl Context {
             return false;
         }
 
-        if !self.operations[operation].invertible() {
+        if !ctx.operations[op].invertible() {
             return true;
         }
 
         // Roundtrip
-        if !self.inv(operation, results) {
-            println!("{}", self.report());
+        if !ctx.inv(op, results) {
+            println!("{}", ctx.report());
             return false;
         }
         for i in 0..operands.len() {
