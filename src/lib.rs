@@ -22,6 +22,7 @@ mod bibliography;
 mod context;
 mod coordinate;
 mod ellipsoid;
+mod internals;
 mod operator;
 
 // But we add `pub`-ness to a few important `struct`s.
@@ -32,7 +33,8 @@ pub use ellipsoid::Ellipsoid;
 // The bibliography needs `pub`-ness in order to be able to build the docs.
 pub use bibliography::Bibliography;
 
-/// The operator construction toolkit, for built-in and user defined operators.
+/// The operator construction toolkit. Needs `pub`-ness in order to support
+/// the construction of user defined operators.
 pub mod operator_construction {
     mod gas;
     mod operatorargs;

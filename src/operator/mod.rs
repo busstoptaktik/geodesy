@@ -142,52 +142,6 @@ pub trait OperatorCore {
     fn is_inverted(&self) -> bool;
 }
 
-// pj_tsfn is the equivalent of Charles karney's PROJ function of the
-// same name, which determines the function ts(phi) as defined in
-// Snyder (1987), Eq. (7-10)
-//
-// ts is the exponential of the negated isometric latitude, i.e.
-// exp(-𝜓), but evaluated in a numerically more stable way than
-// the naive ellps.isometric_latitude(...).exp()
-//
-// This version is essentially identical to Charles Karney's PROJ
-// version, including the majority of the comments.
-//
-// Inputs:
-//   (sin phi, cos phi) = trigs of geographic latitude
-//   e = eccentricity of the ellipsoid
-// Output:
-//   ts = exp(-psi) where psi is the isometric latitude (dimensionless)
-//      = 1 / (tan(chi) + sec(chi))
-// Here isometric latitude is defined by
-//   psi = log( tan(pi/4 + phi/2) *
-//              ( (1 - e*sin(phi)) / (1 + e*sin(phi)) )^(e/2) )
-//       = asinh(tan(phi)) - e * atanh(e * sin(phi))
-//       = asinh(tan(chi))
-//   chi = conformal latitude
-pub(super) fn pj_tsfn(sincos: (f64, f64), e: f64) -> f64 {
-    // exp(-asinh(tan(phi)))
-    //    = 1 / (tan(phi) + sec(phi))
-    //    = cos(phi) / (1 + sin(phi))  good for phi > 0
-    //    = (1 - sin(phi)) / cos(phi)  good for phi < 0
-    let factor = if sincos.0 > 0. {
-        sincos.1 / (1. + sincos.0)
-    } else {
-        (1. - sincos.0) / sincos.1
-    };
-    (e * (e * sincos.0).atanh()).exp() * factor
-}
-
-// Snyder (1982) eq. 12-15, PROJ's pj_msfn()
-pub(super) fn pj_msfn(sincos: (f64, f64), es: f64) -> f64 {
-    sincos.1 / (1. - sincos.0 * sincos.0 * es).sqrt()
-}
-
-// Equivalent to the PROJ pj_phi2 function
-pub(super) fn pj_phi2(ts0: f64, e: f64) -> f64 {
-    crate::ellipsoid::latitudes::sinhpsi_to_tanphi((1. / ts0 - ts0) / 2., e).atan()
-}
-
 mod adapt;
 mod cart;
 mod helmert;

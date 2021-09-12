@@ -62,21 +62,20 @@ impl Lcc {
             return Err("Invalid value for lat_2: |lat_2| should be < 90°");
         }
 
-        // Snyder (1982) eq. 12-15, PROJ's pj_msfn()
-        let m1 = super::pj_msfn(sc, es);
+        // Snyder (1982) eq. 12-15
+        let m1 = crate::internals::pj_msfn(sc, es);
 
-        // Snyder (1982) eq. 7-10: exp(-𝜓), evaluated in a numerically more stable way
-        // than (-ellps.isometric_latitude(...)).exp(). PROJ's pj_tsfn()
-        let ml1 = super::pj_tsfn(sc, e);
+        // Snyder (1982) eq. 7-10: exp(-𝜓)
+        let ml1 = crate::internals::pj_tsfn(sc, e);
 
         // Secant case?
         if (phi1 - phi2).abs() >= EPS10 {
             let sc = phi2.sin_cos();
-            n = (m1 / super::pj_msfn(sc, es)).ln();
+            n = (m1 / crate::internals::pj_msfn(sc, es)).ln();
             if n == 0. {
                 return Err("Invalid value for eccentricity");
             }
-            let ml2 = super::pj_tsfn(sc, e);
+            let ml2 = crate::internals::pj_tsfn(sc, e);
             let denom = (ml1 / ml2).ln();
             if denom == 0. {
                 return Err("Invalid value for eccentricity");
@@ -87,7 +86,7 @@ impl Lcc {
         let c = m1 * ml1.powf(-n) / n;
         let mut rho0 = 0.;
         if (lat_0.abs() - FRAC_PI_2).abs() > EPS10 {
-            rho0 = c * super::pj_tsfn(lat_0.sin_cos(), e).powf(n);
+            rho0 = c * crate::internals::pj_tsfn(lat_0.sin_cos(), e).powf(n);
         }
 
         let lon_0 = args.numeric_value("lon_0", 0.)?.to_radians();
@@ -140,7 +139,7 @@ impl OperatorCore for Lcc {
                     continue;
                 }
             } else {
-                rho = self.c * super::pj_tsfn(phi.sin_cos(), e).powf(self.n);
+                rho = self.c * crate::internals::pj_tsfn(phi.sin_cos(), e).powf(self.n);
             }
             let sc = (lam * self.n).sin_cos();
             coord[0] = a * self.k_0 * rho * sc.0 - self.x_0;
@@ -173,7 +172,7 @@ impl OperatorCore for Lcc {
             }
 
             let ts0 = (rho / self.c).powf(1. / self.n);
-            let phi = super::pj_phi2(ts0, e);
+            let phi = crate::internals::pj_phi2(ts0, e);
             if phi.is_infinite() || phi.is_nan() {
                 *coord = CoordinateTuple::nan();
                 continue;
