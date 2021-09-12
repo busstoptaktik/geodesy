@@ -37,7 +37,7 @@ impl Lcc {
 
         let mut phi1 = args.numeric_value("lat_1", f64::NAN)?;
         let mut phi2 = args.numeric_value("lat_2", phi1)?;
-        let mut lat_0 = if phi1 == phi2 {
+        let mut lat_0 = if (phi1 - phi2).abs() < EPS10 {
             args.numeric_value("lat_0", phi1)?
         } else {
             args.numeric_value("lat_0", 0.)?
@@ -199,80 +199,59 @@ impl OperatorCore for Lcc {
 
 #[cfg(test)]
 mod tests {
+    use crate::CoordinateTuple as C;
+
     #[test]
     fn one_standard_parallel() {
         use crate::CoordinateTuple as C;
         let mut ctx = crate::Context::new();
         let op = ctx.operation("lcc lat_1:57 lon_0:12").unwrap();
 
-        // Validation value from PROJ:
+        // Validation values from PROJ:
         //     echo 12 55 0 0 | cct -d18 proj=lcc lat_1=57 lon_0=12  -- | clip
         //     echo 10 55 0 0 | cct -d18 proj=lcc lat_1=57 lon_0=12  -- | clip
+
         let mut operands = [
             C::geo(55., 12., 0., 0.),
             C::geo(55., 10., 0., 0.),
             C::geo(59., 14., 0., 0.),
         ];
 
-        let geographical = operands.clone();
-
-        let projected = [
+        let mut results = [
             C::raw(-0.000000000101829246, -222728.122307816054672003, 0., 0.),
             C::raw(-128046.4724386522429995, -220853.7001605064142495, 0., 0.),
             C::raw(115005.41456620067765471, 224484.5143763388914522, 0., 0.),
         ];
 
-        // Forward
-        assert!(ctx.fwd(op, &mut operands));
-        for i in 0..operands.len() {
-            println!("transformed {:?}", operands[i]);
-            println!("validation  {:?}", projected[i]);
-            assert!(operands[i].hypot2(&projected[i]) < 25e-9);
-        }
-
-        // Roundtrip...
-        assert!(ctx.inv(op, &mut operands));
-        for i in 0..operands.len() {
-            println!("roundtrip {:?}", operands[i].to_geo());
-            println!("original  {:?}", geographical[i].to_geo());
-            assert!(operands[i].default_ellps_dist(&geographical[i]) < 10e-9);
-        }
+        assert!(ctx.test(op, 0, 2e-9, 0, 1e-9, &mut operands, &mut results));
     }
 
     #[test]
     fn two_standard_parallels() {
-        use crate::CoordinateTuple as C;
         let mut ctx = crate::Context::new();
         let op = ctx.operation("lcc lat_1:33 lat_2:45 lon_0:10").unwrap();
 
         // Validation value from PROJ:
         // echo 12 40 0 0 | cct -d12 proj=lcc lat_1=33 lat_2=45 lon_0=10 -- | clip
         let mut operands = [C::geo(40., 12., 0., 0.)];
+        let mut results = [C::raw(169863.026093938359, 4735925.219292452559, 0., 0.)];
+        assert!(ctx.test(op, 0, 20e-9, 0, 20e-9, &mut operands, &mut results));
+    }
 
-        let geographical = operands.clone();
+    #[test]
+    fn one_standard_parallel_and_latitudinal_offset() {
+        let mut ctx = crate::Context::new();
+        let op = ctx.operation("lcc lat_1:39 lat_0:35 lon_0:10").unwrap();
 
-        let projected = [C::raw(169863.026093938359, 4735925.219292452559, 0., 0.)];
-
-        // Forward
-        assert!(ctx.fwd(op, &mut operands));
-        for i in 0..operands.len() {
-            println!("transformed {:?}", operands[i]);
-            println!("validation  {:?}", projected[i]);
-            assert!(operands[i].hypot2(&projected[i]) < 25e-9);
-        }
-
-        // Roundtrip...
-        assert!(ctx.inv(op, &mut operands));
-        for i in 0..operands.len() {
-            println!("roundtrip {:?}", operands[i].to_geo());
-            println!("original  {:?}", geographical[i].to_geo());
-            assert!(operands[i].default_ellps_dist(&geographical[i]) < 10e-9);
-        }
+        // Validation value from PROJ:
+        // echo 12 40 0 0 | cct -d12 proj=lcc lat_1=39 lat_0=35 lon_0=10 -- | clip
+        let mut operands = [C::geo(40., 12., 0., 0.)];
+        let mut results = [C::raw(170800.011728740647, 557172.361112929415, 0., 0.)];
+        assert!(ctx.test(op, 0, 2e-9, 0, 1e-8, &mut operands, &mut results));
     }
 
     #[test]
     fn two_standard_parallels_and_latitudinal_offset() {
-        use crate::CoordinateTuple as C;
         let mut ctx = crate::Context::new();
         let op = ctx
             .operation("lcc lat_1:33 lat_2:45 lat_0:35 lon_0:10")
@@ -281,56 +260,7 @@ mod tests {
         // Validation value from PROJ:
         // echo 12 40 0 0 | cct -d12 proj=lcc lat_1=33 lat_2=45 lat_0=35 lon_0=10 -- | clip
         let mut operands = [C::geo(40., 12., 0., 0.)];
-
-        let geographical = operands.clone();
-
-        let projected = [C::raw(169863.026093938359, 554155.440793916583, 0., 0.)];
-
-        // Forward
-        assert!(ctx.fwd(op, &mut operands));
-        for i in 0..operands.len() {
-            println!("transformed {:?}", operands[i]);
-            println!("validation  {:?}", projected[i]);
-            assert!(operands[i].hypot2(&projected[i]) < 25e-9);
-        }
-
-        // Roundtrip...
-        assert!(ctx.inv(op, &mut operands));
-        for i in 0..operands.len() {
-            println!("roundtrip {:?}", operands[i].to_geo());
-            println!("original  {:?}", geographical[i].to_geo());
-            assert!(operands[i].default_ellps_dist(&geographical[i]) < 10e-9);
-        }
-    }
-
-    #[test]
-    fn one_standard_parallel_and_latitudinal_offset() {
-        use crate::CoordinateTuple as C;
-        let mut ctx = crate::Context::new();
-        let op = ctx.operation("lcc lat_1:39 lat_0:35 lon_0:10").unwrap();
-
-        // Validation value from PROJ:
-        // echo 12 40 0 0 | cct -d12 proj=lcc lat_1=39 lat_0=35 lon_0=10 -- | clip
-        let mut operands = [C::geo(40., 12., 0., 0.)];
-
-        let geographical = operands.clone();
-
-        let projected = [C::raw(170800.011728740647, 557172.361112929415, 0., 0.)];
-
-        // Forward
-        assert!(ctx.fwd(op, &mut operands));
-        for i in 0..operands.len() {
-            println!("transformed {:?}", operands[i]);
-            println!("validation  {:?}", projected[i]);
-            assert!(operands[i].hypot2(&projected[i]) < 25e-9);
-        }
-
-        // Roundtrip...
-        assert!(ctx.inv(op, &mut operands));
-        for i in 0..operands.len() {
-            println!("roundtrip {:?}", operands[i].to_geo());
-            println!("original  {:?}", geographical[i].to_geo());
-            assert!(operands[i].default_ellps_dist(&geographical[i]) < 10e-9);
-        }
+        let mut results = [C::raw(169863.026093938359, 554155.440793916583, 0., 0.)];
+        assert!(ctx.test(op, 0, 2e-9, 0, 1e-9, &mut operands, &mut results));
     }
 }
