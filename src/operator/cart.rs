@@ -72,18 +72,18 @@ impl OperatorCore for Cart {
     #[allow(clippy::many_single_char_names)] // ditto
     #[allow(clippy::suspicious_operation_groupings)]
     fn inv(&self, _ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
-        for coord in operands {
-            let X = coord.first();
-            let Y = coord.second();
-            let Z = coord.third();
-            let t = coord.fourth();
+        let a = self.ellps.semimajor_axis();
+        let es = self.es;
+        let b = self.b;
+        let ra = self.ra;
+        let ar = self.ar;
+        let ce4 = self.ce4;
 
-            let a = self.ellps.semimajor_axis();
-            let es = self.es;
-            let b = self.b;
-            let ra = self.ra;
-            let ar = self.ar;
-            let ce4 = self.ce4;
+        for coord in operands {
+            let X = coord[0];
+            let Y = coord[1];
+            let Z = coord[2];
+            let t = coord[3];
 
             // The longitude is straightforward
             let lam = Y.atan2(X);
@@ -142,34 +142,50 @@ impl OperatorCore for Cart {
 
 #[cfg(test)]
 mod tests {
+    use crate::Context;
+    use crate::CoordinateTuple as C;
     #[test]
     fn cart() {
-        use crate::operator_construction::*;
-        use crate::Context;
-        use crate::CoordinateTuple;
-        use crate::Ellipsoid;
-        let mut o = Context::new();
-        let c = Operator::new("cart: {ellps: intl}", &mut o).unwrap();
-        let mut operands = [CoordinateTuple::raw(0., 0., 0., 0.)];
+        let op = "cart";
+        let mut operands = [
+            C::geo(85., 0., 100000., 0.),
+            C::geo(55., 10., -100000., 0.),
+            C::geo(25., 20., 0., 0.),
+            C::geo(0., -20., 0., 0.),
+            C::geo(-25., 20., 10., 0.),
+        ];
 
-        // First check that (0,0,0) takes us to (a,0,0)
-        c.fwd(&mut o, operands.as_mut());
-        let a = Ellipsoid::named("intl").semimajor_axis();
-        assert_eq!(operands[0][0], a);
-        assert_eq!(operands[0][1], 0.0);
-        assert_eq!(operands[0][1], 0.0);
+        let mut results = [
+            C::raw(566462.633537476765923, 0., 6432020.33369012735784, 0.),
+            C::raw(
+                3554403.47587193036451,
+                626737.23312017065473,
+                5119468.31865925621241,
+                0.,
+            ),
+            C::raw(
+                5435195.38214521575719,
+                1978249.33652197546325,
+                2679074.46287727775052,
+                0.,
+            ),
+            C::raw(5993488.27326157130301, -2181451.33089075051248, 0., 0.),
+            C::raw(
+                5435203.89865261223167,
+                1978252.43627716740593,
+                -2679078.68905989499763,
+                0.,
+            ),
+        ];
 
-        // Some arbitrary spot - southwest of Copenhagen
-        let mut operands = [CoordinateTuple::gis(12., 55., 100., 0.)];
-
-        // Roundtrip
-        c.fwd(&mut o, operands.as_mut());
-        c.inv(&mut o, operands.as_mut());
-        let result = operands[0].to_degrees();
-
-        // And check that we're back
-        assert!((result[0] - 12.).abs() < 1.0e-10);
-        assert!((result[1] - 55.).abs() < 1.0e-10);
-        assert!((result[2] - 100.).abs() < 1.0e-8);
+        assert!(Context::test(
+            op,
+            3,
+            20e-9,
+            0,
+            10e-9,
+            &mut operands,
+            &mut results
+        ));
     }
 }
