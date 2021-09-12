@@ -14,10 +14,10 @@ impl Ellipsoid {
     #[allow(non_snake_case)] // make it possible to mimic math notation from original paper
     #[allow(clippy::many_single_char_names)] // ditto
     pub fn cartesian(&self, geographic: &CoordinateTuple) -> CoordinateTuple {
-        let lam = geographic.first();
-        let phi = geographic.second();
-        let h = geographic.third();
-        let t = geographic.fourth();
+        let lam = geographic[0];
+        let phi = geographic[1];
+        let h = geographic[2];
+        let t = geographic[3];
 
         let N = self.prime_vertical_radius_of_curvature(phi);
         let cosphi = phi.cos();
@@ -41,10 +41,10 @@ impl Ellipsoid {
     #[allow(non_snake_case)] // make it possible to mimic math notation from original paper
     #[allow(clippy::many_single_char_names)] // ditto
     pub fn geographic(&self, cartesian: &CoordinateTuple) -> CoordinateTuple {
-        let X = cartesian.first();
-        let Y = cartesian.second();
-        let Z = cartesian.third();
-        let t = cartesian.fourth();
+        let X = cartesian[0];
+        let Y = cartesian[1];
+        let Z = cartesian[2];
+        let t = cartesian[3];
 
         // We need a few additional ellipsoidal parameters
         let b = self.semiminor_axis();
