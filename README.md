@@ -1,11 +1,12 @@
 # Geodesy
 
-*Rust Geodesy* (RG), is a platform for experiments with geodetic software, transformations, and standards. *RG* vaguely resembles the [PROJ](https://proj.org) transformation system, and was built in part on the basis of experiments with alternative data flow models for PROJ. The actual transformation functionality of *RG* is, however, minimal: At time of writing, it includes just 4 low level operations:
+*Rust Geodesy* (RG), is a platform for experiments with geodetic software, transformations, and standards. *RG* vaguely resembles the [PROJ](https://proj.org) transformation system, and was built in part on the basis of experiments with alternative data flow models for PROJ. The actual transformation functionality of *RG* is, however, minimal: At time of writing, it includes just a few low level operations, including:
 
-1. The three, six, seven, and fourteen-parameter versions of the *Helmert transformation*
-2. Helmert's companion, the *cartesian/geographic* coordinate conversion
-3. The full and abridged versions of the *Molodensky transformation*
-4. The *transverse mercator* projection
+- The three, six, seven, and fourteen-parameter versions of the *Helmert transformation*
+- Helmert's companion, the *cartesian/geographic* coordinate conversion
+- The full and abridged versions of the *Molodensky transformation*
+- Three widely used conformal projections: The *Mercator*, the *Transverse Mercator*, and the *Lambert Conformal Conic* projection
+- The *Adapt* operator, which mediates between various conventions for coordinate units and order
 
 While this is sufficient to test the architecture, it is very far from enough to get through a geodesist's daily work.
 
@@ -22,13 +23,14 @@ All four aims are guided by a wish to amend explicitly identified shortcomings i
 
 ## Documentation
 
-The documentation is currently very limited, but take a look at:
+The documentation is currently limited, but take a look at:
 
 - The coordinate operator [documentation](/ruminations/002-rumination.md)
+- The [description of `kp`](/ruminations/003-rumination.md), the *Rust Geodesy* coordinate processing program
+- This essayistic [rumination](/ruminations/000-rumination.md), outlining the overall philosophy and architecture of *Rust Geodesy*.
 - The API documentation at [Docs.rs](https://docs.rs/geodesy)
 - The [examples](examples)
 - The tests embedded in the [source code](/src/)
-- This essayistic [rumination](/ruminations/000-rumination.md), outlining the overall philosophy and architecture of *Rust Geodesy*.
 
 ## License
 
