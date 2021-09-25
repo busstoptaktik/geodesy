@@ -25,6 +25,11 @@ pub enum Bibliography {
     /// [DOI](https://doi.org/10.1016/j.cageo.2019.104307)
     Cla19,
 
+    /// R.E.Deakin, 2004: The Standard and Abridged Molodensky
+    /// Coordinate Transformation Formulae.
+    /// [URL](http://www.mygeodesy.id.au/documents/Molodensky%20V2.pdf)
+    Dea04,
+
     /// R.E. Deakin, M.N. Hunter and C.F.F. Karney (2012):
     /// *A fresh look at the UTM projection:
     /// Karney-Krueger equations*.
