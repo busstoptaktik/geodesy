@@ -3,7 +3,8 @@
 ///
 /// Partially based on the PROJ implementation by Kristian Evers,
 /// partially on OGP Publication 373-7-2 – Geomatics Guidance Note
-/// number 7, part 2, and partially on R.E.Deakin, 2004: The Standard
+/// number 7, part 2, and partially on Dea04,
+/// R.E.Deakin, 2004: The Standard
 /// and Abridged Molodensky Coordinate Transformation Formulae.
 /// URL http://www.mygeodesy.id.au/documents/Molodensky%20V2.pdf
 use super::OperatorArgs;
@@ -92,14 +93,11 @@ impl Molodensky {
         let adffda = self.adffda;
 
         // Then compute the needed trigonometrical factors
+        let lam = coord[0];
         let phi = coord[1];
         let h = coord[2];
-        let sclam = coord[0].sin_cos();
-        let scphi = coord[1].sin_cos();
-        let slam = sclam.0;
-        let clam = sclam.1;
-        let sphi = scphi.0;
-        let cphi = scphi.1;
+        let (slam, clam) = lam.sin_cos();
+        let (sphi, cphi) = phi.sin_cos();
 
         // We also need the radii of curvature
         let N = self.ellps.prime_vertical_radius_of_curvature(phi);
@@ -143,11 +141,10 @@ impl Molodensky {
         // delta h
         let dh = fac * cphi + dz * sphi - (a / N) * da + N * (1.0 - f) * df * sphi * sphi;
 
-        CoordinateTuple::raw(dlam, dphi, dh, 0.0)
+        CoordinateTuple::raw(dlam, dphi, dh, 0.)
     }
 }
 
-#[allow(non_snake_case)]
 impl OperatorCore for Molodensky {
     fn fwd(&self, _ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
         for coord in operands {
@@ -159,7 +156,7 @@ impl OperatorCore for Molodensky {
         true
     }
 
-    // Inverse transverse mercator, following Bowring (1989)
+    // Inverse Molodensky
     fn inv(&self, _ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
         for coord in operands {
             let par = self.calc_molodensky_params(coord);
@@ -201,31 +198,39 @@ mod tests {
         }";
         let op = ctx.operation(definition).unwrap();
 
+        // Test point (53.80939444444444, 2.12955, 73 m)
         let lat = C::dms_to_dd(53, 48, 33.82);
         let lon = C::dms_to_dd(2, 7, 46.38);
-        #[allow(non_snake_case)]
         let WGS84 = CoordinateTuple::geo(lat, lon, 73., 0.0);
 
-        let lat = C::dms_to_dd(53, 48, 36.563);
-        let lon = C::dms_to_dd(2, 7, 51.477);
-        #[allow(non_snake_case)]
-        let ED50 = CoordinateTuple::geo(lat, lon, 28.02, 0.0);
+        // Commented out test coordinates from EPSG are not of terribly high
+        // resolution: 3 decimals on the seconds, corresponding to 30 mm.
+        // let lat = C::dms_to_dd(53, 48, 36.563);
+        // let lon = C::dms_to_dd(2, 7, 51.477);
+        // The values actually used are taken from a direct 3 parameter
+        // Helmert calculation with the same constants:
+        // echo 53.80939444444444 2.12955 73 | kp ^
+        //        "geo | cart WGS84 | helmert  x:84.87 y:96.49 z:116.95 | cart inv ellps:intl | geo inv"
+        let lat = 53.8101570592;
+        let lon = 2.1309658097;
+        let ED50 = CoordinateTuple::geo(lat, lon, 28.02470, 0.0);
 
-        // Test coordinates are not terribly high resolution: 3 decimals on the seconds,
-        // corresponding to 3 cm, so perhaps 10 cm overall is not too bad, but it begs
-        // for additional validation.
+        // In the unabridged case, Molodensky replicates Helmert to
+        // within 5 mm in the plane and the elevation.
         let mut operands = [WGS84];
         ctx.fwd(op, &mut operands);
-        assert!(ED50.default_ellps_dist(&operands[0]) < 0.1);
-        // Heights are reasonable
-        assert!((ED50[2] - operands[0][2]).abs() < 5e-3);
+        assert!(ED50.default_ellps_dist(&operands[0]) < 0.005);
+        assert!((ED50[2] - operands[0][2]).abs() < 0.005);
 
+        // The same holds in the reverse unabridged case, where
+        // additionally the elevation is even better
         let mut operands = [ED50];
         ctx.inv(op, &mut operands);
-        assert!(WGS84.default_ellps_3d_dist(&operands[0]) < 0.1);
-        assert!((WGS84[2] - operands[0][2]).abs() < 5e-3);
+        assert!(WGS84.default_ellps_3d_dist(&operands[0]) < 0.005);
+        assert!((WGS84[2] - operands[0][2]).abs() < 0.001);
 
-        // The abridged case. Same test point
+        // The abridged case. Same test point. Both plane coordinates and
+        // elevations are *much* worse, but still better-than-decimeter.
         let definition = "molodensky: {
             left_ellps: WGS84, right_ellps: intl,
             dx: 84.87, dy: 96.49, dz: 116.95, abridged: true
@@ -236,12 +241,12 @@ mod tests {
         ctx.fwd(op, &mut operands);
         assert!(ED50.default_ellps_dist(&operands[0]) < 0.1);
         // Heights are worse in the abridged case
-        assert!((ED50[2] - operands[0][2]).abs() < 0.1);
+        assert!((ED50[2] - operands[0][2]).abs() < 0.075);
 
         let mut operands = [ED50];
         ctx.inv(op, &mut operands);
         assert!(WGS84.default_ellps_dist(&operands[0]) < 0.1);
         // Heights are worse in the abridged case
-        assert!((WGS84[2] - operands[0][2]).abs() < 0.1);
+        assert!((WGS84[2] - operands[0][2]).abs() < 0.075);
     }
 }
