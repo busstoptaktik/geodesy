@@ -2,11 +2,19 @@
 /// The full and abridged Molodensky transformations for 2D and 3D data.
 ///
 /// Partially based on the PROJ implementation by Kristian Evers,
-/// partially on OGP Publication 373-7-2 – Geomatics Guidance Note
-/// number 7, part 2, and partially on Dea04,
-/// R.E.Deakin, 2004: The Standard
-/// and Abridged Molodensky Coordinate Transformation Formulae.
-/// URL http://www.mygeodesy.id.au/documents/Molodensky%20V2.pdf
+/// partially on the following 3 publications:
+///
+/// 1. OGP Publication 373-7-2 – Geomatics Guidance Note, number 7, part 2,
+///
+/// 2. [Dea04] R.E.Deakin, 2004: The Standard and Abridged Molodensky
+///    Coordinate Transformation Formulae.
+///    URL http://www.mygeodesy.id.au/documents/Molodensky%20V2.pdf
+///
+/// 3. [Ruf16] A. C. Ruffhead, 2016:  The SMITSWAM method of datum transformations
+///    consisting of Standard Molodensky in two stages with applied misclosures,
+///    Survey Review, 48:350, pp. 376-384,
+///    [DOI](https://doi.org/10.1080/00396265.2016.1191748)
+///
 use super::OperatorArgs;
 use super::OperatorCore;
 use crate::operator_construction::*;
