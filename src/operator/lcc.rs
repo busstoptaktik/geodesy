@@ -7,6 +7,7 @@ use crate::operator_construction::*;
 use crate::Context;
 use crate::CoordinateTuple;
 use crate::Ellipsoid;
+use crate::GeodesyError;
 
 const EPS10: f64 = 1e-10;
 
@@ -31,7 +32,7 @@ pub struct Lcc {
 }
 
 impl Lcc {
-    pub fn new(args: &mut OperatorArgs) -> Result<Lcc, &'static str> {
+    pub fn new(args: &mut OperatorArgs) -> Result<Lcc, GeodesyError> {
         let ellps = Ellipsoid::named(&args.value("ellps", "GRS80"));
         let inverted = args.flag("inv");
 
@@ -53,13 +54,19 @@ impl Lcc {
         let es = ellps.eccentricity_squared();
 
         if (phi1 + phi2).abs() < EPS10 {
-            return Err("Invalid value for lat_1 and lat_2: |lat_1 + lat_2| should be > 0");
+            return Err(GeodesyError::General(
+                "Lcc: Invalid value for lat_1 and lat_2: |lat_1 + lat_2| should be > 0",
+            ));
         }
         if sc.1.abs() < EPS10 || phi1.abs() >= FRAC_PI_2 {
-            return Err("Invalid value for lat_1: |lat_1| should be < 90°");
+            return Err(GeodesyError::General(
+                "Lcc: Invalid value for lat_1: |lat_1| should be < 90°",
+            ));
         }
         if phi2.cos().abs() < EPS10 || phi2.abs() >= FRAC_PI_2 {
-            return Err("Invalid value for lat_2: |lat_2| should be < 90°");
+            return Err(GeodesyError::General(
+                "Lcc: Invalid value for lat_2: |lat_2| should be < 90°",
+            ));
         }
 
         // Snyder (1982) eq. 12-15
@@ -73,12 +80,12 @@ impl Lcc {
             let sc = phi2.sin_cos();
             n = (m1 / crate::internals::pj_msfn(sc, es)).ln();
             if n == 0. {
-                return Err("Invalid value for eccentricity");
+                return Err(GeodesyError::General("Lcc: Invalid value for eccentricity"));
             }
             let ml2 = crate::internals::pj_tsfn(sc, e);
             let denom = (ml1 / ml2).ln();
             if denom == 0. {
-                return Err("Invalid value for eccentricity");
+                return Err(GeodesyError::General("Lcc: Invalid value for eccentricity"));
             }
             n /= denom;
         }
@@ -114,7 +121,7 @@ impl Lcc {
         })
     }
 
-    pub(crate) fn operator(args: &mut OperatorArgs) -> Result<Operator, &'static str> {
+    pub(crate) fn operator(args: &mut OperatorArgs) -> Result<Operator, GeodesyError> {
         let op = crate::operator::lcc::Lcc::new(args)?;
         Ok(Operator(Box::new(op)))
     }

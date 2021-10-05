@@ -4,6 +4,7 @@ use super::Operator;
 use super::OperatorArgs;
 use super::OperatorCore;
 use crate::CoordinateTuple;
+use crate::GeodesyError;
 use crate::{fwd, inv};
 
 pub struct Pipeline {
@@ -13,7 +14,7 @@ pub struct Pipeline {
 }
 
 impl Pipeline {
-    pub fn new(args: &mut OperatorArgs, ctx: &mut Context) -> Result<Pipeline, &'static str> {
+    pub fn new(args: &mut OperatorArgs, ctx: &mut Context) -> Result<Pipeline, GeodesyError> {
         let inverted = args.flag("inv");
         let mut steps = Vec::new();
         let n = args.numeric_value("_nsteps", 0.0)? as usize;
@@ -29,7 +30,7 @@ impl Pipeline {
             if let Some(op) = operator_factory(&mut oa, ctx, 0) {
                 steps.push(op);
             } else {
-                return Err("Bad step");
+                return Err(GeodesyError::General("Pipeline: Bad step"));
             }
         }
 

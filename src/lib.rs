@@ -41,10 +41,11 @@ pub mod operator_construction {
     pub use crate::operator::Operator;
     pub use crate::operator::OperatorCore;
     use crate::Context;
+    use crate::GeodesyError;
     pub use gas::Gas;
     pub use operatorargs::OperatorArgs;
     pub type OperatorConstructor =
-        fn(args: &mut OperatorArgs, ctx: &mut Context) -> Result<Operator, &'static str>;
+        fn(args: &mut OperatorArgs, ctx: &mut Context) -> Result<Operator, GeodesyError>;
 }
 
 /// Indicate that a two-way operator, function, or method, should run in the *forward* direction.
@@ -53,3 +54,22 @@ pub const fwd: bool = true;
 /// Indicate that a two-way operator, function, or method, should run in the *inverse* direction.
 #[allow(non_upper_case_globals)]
 pub const inv: bool = false;
+
+use std::io;
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum GeodesyError {
+    #[error("i/o error")]
+    Io(#[from] io::Error),
+    #[error("{0}")]
+    General(&'static str),
+    #[error("syntax error: {0}")]
+    Syntax(String),
+    #[error("{0}: {1}")]
+    Operator(&'static str, &'static str),
+    #[error("invalid header (expected {expected:?}, found {found:?})")]
+    InvalidHeader { expected: String, found: String },
+    #[error("unknown data store error")]
+    Unknown,
+}

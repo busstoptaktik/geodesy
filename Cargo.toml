@@ -1,15 +1,16 @@
 [package]
 name = "geodesy"
-version = "0.7.1"
-authors = ["Thomas Knudsen <knudsen.thomas@gmail.com>"]
-edition = "2018"
-default-run = "kp"
-readme = "README.md"
-license = "MIT OR Apache-2.0"
-repository = "https://github.com/busstoptaktik/geodesy/"
+description = "A platform for experiments with geodetic transformations and data flow"
 keywords = ["geodesy", "cartography", "transformations", "geography"]
 categories = ["science"]
-description = "A platform for experiments with geodetic transformations and data flow"
+authors = ["Thomas Knudsen <knudsen.thomas@gmail.com>"]
+readme = "README.md"
+license = "MIT OR Apache-2.0"
+
+version = "0.7.1"
+edition = "2018"
+default-run = "kp"
+repository = "https://github.com/busstoptaktik/geodesy/"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -19,3 +20,7 @@ yaml-rust = "0.4"
 zip = "0.5"
 structopt = "0.3"
 exitcode = "1.1"
+log = "0.4"
+simple_logger = "1.13"
+thiserror = "1.0"
+anyhow = "1.0"

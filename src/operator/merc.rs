@@ -6,6 +6,7 @@ use crate::operator_construction::*;
 use crate::Context;
 use crate::CoordinateTuple;
 use crate::Ellipsoid;
+use crate::GeodesyError;
 
 #[derive(Debug)]
 pub struct Merc {
@@ -20,7 +21,7 @@ pub struct Merc {
 }
 
 impl Merc {
-    pub fn new(args: &mut OperatorArgs) -> Result<Merc, &'static str> {
+    pub fn new(args: &mut OperatorArgs) -> Result<Merc, GeodesyError> {
         let ellps = Ellipsoid::named(&args.value("ellps", "GRS80"));
         let inverted = args.flag("inv");
         let lat_ts = args.numeric_value("lat_ts", f64::NAN)?;
@@ -28,7 +29,9 @@ impl Merc {
             args.numeric_value("k_0", 1.)?
         } else {
             if lat_ts.abs() > 90. {
-                return Err("Invalid value for lat_ts: |lat_ts| should be <= 90°");
+                return Err(GeodesyError::General(
+                    "Merc: Invalid value for lat_ts: |lat_ts| should be <= 90°",
+                ));
             }
             let sc = lat_ts.to_radians().sin_cos();
             sc.1 / (1. - ellps.eccentricity_squared() * sc.0 * sc.0).sqrt()
@@ -50,7 +53,7 @@ impl Merc {
         })
     }
 
-    pub(crate) fn operator(args: &mut OperatorArgs) -> Result<Operator, &'static str> {
+    pub(crate) fn operator(args: &mut OperatorArgs) -> Result<Operator, GeodesyError> {
         let op = crate::operator::merc::Merc::new(args)?;
         Ok(Operator(Box::new(op)))
     }

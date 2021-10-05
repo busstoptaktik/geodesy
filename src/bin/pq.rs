@@ -1,5 +1,7 @@
 /*! Plonketi Plonk! !*/
 //! How to append a postscript to the help message generated.
+use anyhow::{Context, Result};
+use log::{debug, trace};
 use std::path::PathBuf;
 use structopt::StructOpt;
 
@@ -35,26 +37,41 @@ struct Opt {
     // /#[structopt(short = "c", long)]
     //nb_cars: Option<i32>,
     /// Operation to apply
-    #[structopt(name = "OPERATION", parse(from_os_str))]
-    operation: PathBuf,
+    #[structopt(name = "OPERATION", parse(from_str))]
+    operation: String,
 
     /// Files to process
     #[structopt(name = "FILE", parse(from_os_str))]
     files: Vec<PathBuf>,
 }
-fn main() {
+fn main() -> Result<()> {
+    // Filter by setting RUST_LOG to one of {Error, Warn, Info, Debug, Trace}
+    if std::env::var("RUST_LOG").is_err() {
+        simple_logger::init_with_level(log::Level::Error)?;
+    } else {
+        simple_logger::init_with_env()?;
+    }
+
     let opt = Opt::from_args();
     println!("{:#?}", opt);
+    debug!("debug message 1");
+    trace!("trace message 1");
 
     // use std::env;
     use geodesy::CoordinateTuple as C;
     let mut ctx = geodesy::Context::new();
+    trace!("trace message 2");
+    debug!("debug message 2");
 
     if opt.debug {
         if let Some(dir) = dirs::data_local_dir() {
             eprintln!("data_local_dir: {}", dir.to_str().unwrap_or_default());
         }
     }
+
+    if ctx.operation(&opt.operation).is_none() {
+        println!("{}", ctx.report());
+    };
 
     // A pipeline in YAML
     let pipeline = "ed50_etrs89: {
@@ -63,7 +80,7 @@ fn main() {
             cart: {ellps: intl},
             helmert: {x: -87, y: -96, z: -120},
             cart: {inv: true, ellps: GRS80},
-            adapt: {to: neut_deg}
+            adapt: {from: neut_deg}
         ]
     }";
 
@@ -133,10 +150,9 @@ fn main() {
             dimser[3] = i as f64;
         }
 
-        let utm32 = match ctx.operation("utm: {zone: 32}") {
-            None => return println!("Awful error"),
-            Some(op) => op,
-        };
+        let utm32 = ctx
+            .operation("utm: {zone: 32}")
+            .context("Awful UTM error")?;
 
         ctx.fwd(utm32, &mut data_utm32);
         println!("utm32:");
@@ -145,10 +161,7 @@ fn main() {
         }
 
         // Try to read predefined transformation from zip archive
-        let pladder = match ctx.operation("ed50_etrs89") {
-            None => return println!("Awful error"),
-            Some(op) => op,
-        };
+        let pladder = ctx.operation("ed50_etrs89").context("Awful ED50 error")?;
         ctx.fwd(pladder, &mut data_all);
         println!("etrs89:");
         for coord in data_all {
@@ -163,15 +176,12 @@ fn main() {
         ]
     }";
 
-        let ed50_etrs89 = match ctx.operation(pipeline) {
-            None => return println!("Awful error"),
-            Some(op) => op,
-        };
-
+        let ed50_etrs89 = ctx.operation(pipeline).context("Awful repeated error")?;
         ctx.inv(ed50_etrs89, &mut data_all);
         println!("etrs89:");
         for coord in data_all {
             println!("    {:?}", coord.to_geo());
         }
     }
+    Ok(())
 }

@@ -60,6 +60,7 @@ use super::OperatorCore;
 use crate::operator_construction::*;
 use crate::Context;
 use crate::CoordinateTuple;
+use crate::GeodesyError;
 
 pub struct Adapt {
     args: OperatorArgs,
@@ -170,7 +171,7 @@ fn combine_descriptors(
 }
 
 impl Adapt {
-    pub fn new(args: &mut OperatorArgs) -> Result<Adapt, &'static str> {
+    pub fn new(args: &mut OperatorArgs) -> Result<Adapt, GeodesyError> {
         let inverted = args.flag("inv");
 
         // What we go `from` and what we go `to` both defaults to the internal
@@ -189,13 +190,13 @@ impl Adapt {
 
         let desc = descriptor(&from);
         if desc.is_none() {
-            return Err("Bad value for 'from'");
+            return Err(GeodesyError::Operator("Adapt", "Bad value for 'from'"));
         }
         let from = desc.unwrap();
 
         let desc = descriptor(&to);
         if desc.is_none() {
-            return Err("Bad value for 'to'");
+            return Err(GeodesyError::Operator("Adapt", "Bad value for 'from'"));
         }
         let to = desc.unwrap();
 
@@ -211,7 +212,7 @@ impl Adapt {
         })
     }
 
-    pub(crate) fn operator(args: &mut OperatorArgs) -> Result<Operator, &'static str> {
+    pub(crate) fn operator(args: &mut OperatorArgs) -> Result<Operator, GeodesyError> {
         let op = crate::operator::adapt::Adapt::new(args)?;
         Ok(Operator(Box::new(op)))
     }

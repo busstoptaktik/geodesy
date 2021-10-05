@@ -21,6 +21,7 @@ use crate::operator_construction::*;
 use crate::Context;
 use crate::CoordinateTuple;
 use crate::Ellipsoid;
+use crate::GeodesyError;
 
 #[derive(Debug)]
 pub struct Molodensky {
@@ -38,7 +39,7 @@ pub struct Molodensky {
 }
 
 impl Molodensky {
-    pub fn new(args: &mut OperatorArgs) -> Result<Molodensky, &'static str> {
+    pub fn new(args: &mut OperatorArgs) -> Result<Molodensky, GeodesyError> {
         let inverted = args.flag("inv");
         let abridged = args.flag("abridged");
         let dx = args.numeric_value("dx", 0.)?;
@@ -82,7 +83,7 @@ impl Molodensky {
         })
     }
 
-    pub(crate) fn operator(args: &mut OperatorArgs) -> Result<Operator, &'static str> {
+    pub(crate) fn operator(args: &mut OperatorArgs) -> Result<Operator, GeodesyError> {
         let op = crate::operator::molodensky::Molodensky::new(args)?;
         Ok(Operator(Box::new(op)))
     }

@@ -9,6 +9,7 @@ use crate::operator_construction::*;
 use crate::Context;
 use crate::CoordinateTuple;
 use crate::Ellipsoid;
+use crate::GeodesyError;
 
 #[derive(Debug)]
 pub struct Tmerc {
@@ -24,7 +25,7 @@ pub struct Tmerc {
 }
 
 impl Tmerc {
-    pub fn new(args: &mut OperatorArgs) -> Result<Tmerc, &'static str> {
+    pub fn new(args: &mut OperatorArgs) -> Result<Tmerc, GeodesyError> {
         let ellps = Ellipsoid::named(&args.value("ellps", "GRS80"));
         let inverted = args.flag("inv");
         let k_0 = args.numeric_value("k_0", 1.)?;
@@ -47,17 +48,17 @@ impl Tmerc {
         })
     }
 
-    pub(crate) fn operator(args: &mut OperatorArgs) -> Result<Operator, &'static str> {
+    pub(crate) fn operator(args: &mut OperatorArgs) -> Result<Operator, GeodesyError> {
         let op = crate::operator::tmerc::Tmerc::new(args)?;
         Ok(Operator(Box::new(op)))
     }
 
-    pub(crate) fn utmoperator(args: &mut OperatorArgs) -> Result<Operator, &'static str> {
+    pub(crate) fn utmoperator(args: &mut OperatorArgs) -> Result<Operator, GeodesyError> {
         let op = crate::operator::tmerc::Tmerc::utm(args)?;
         Ok(Operator(Box::new(op)))
     }
 
-    pub fn utm(args: &mut OperatorArgs) -> Result<Tmerc, &'static str> {
+    pub fn utm(args: &mut OperatorArgs) -> Result<Tmerc, GeodesyError> {
         let ellps = Ellipsoid::named(&args.value("ellps", "GRS80"));
         let zone = args.numeric_value("zone", f64::NAN)?;
         let inverted = args.flag("inv");

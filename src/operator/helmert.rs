@@ -3,6 +3,7 @@
 use crate::operator_construction::*;
 use crate::Context;
 use crate::CoordinateTuple;
+use crate::GeodesyError;
 
 #[derive(Debug)]
 pub struct Helmert {
@@ -85,7 +86,7 @@ fn rotation_matrix(rx: f64, ry: f64, rz: f64, exact: bool, position_vector: bool
 }
 
 impl Helmert {
-    fn new(args: &mut OperatorArgs) -> Result<Helmert, &'static str> {
+    fn new(args: &mut OperatorArgs) -> Result<Helmert, GeodesyError> {
         // Translation
         let x = args.numeric_value("x", 0.0)?;
         let y = args.numeric_value("y", 0.0)?;
@@ -122,12 +123,14 @@ impl Helmert {
         let rotation = !((rx, ry, rz) == (0., 0., 0.) && (drx, dry, drz) == (0., 0., 0.));
         if rotation {
             if convention.is_empty() {
-                return Err("Need value for convention when rotating");
+                return Err(GeodesyError::General(
+                    "Helmert: Need value for convention when rotating",
+                ));
             }
             if convention != "position_vector" && convention != "coordinate_frame" {
-                return Err(
-                    "value for convention must be one of {position_vector, coordinate_frame}",
-                );
+                return Err(GeodesyError::General(
+                    "Helmert: value for convention must be one of {position_vector, coordinate_frame}",
+                ));
             }
         }
 
@@ -163,7 +166,7 @@ impl Helmert {
         })
     }
 
-    pub(crate) fn operator(args: &mut OperatorArgs) -> Result<Operator, &'static str> {
+    pub(crate) fn operator(args: &mut OperatorArgs) -> Result<Operator, GeodesyError> {
         let op = crate::operator::helmert::Helmert::new(args)?;
         Ok(Operator(Box::new(op)))
     }

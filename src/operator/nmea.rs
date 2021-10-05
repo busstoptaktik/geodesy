@@ -24,6 +24,7 @@ use super::OperatorArgs;
 use super::OperatorCore;
 use crate::operator_construction::*;
 use crate::CoordinateTuple as Coord;
+use crate::GeodesyError;
 
 pub struct Nmea {
     args: OperatorArgs,
@@ -33,7 +34,7 @@ pub struct Nmea {
 
 impl Nmea {
     /// nmea (DDDMM.mmm)
-    pub fn new(args: &mut OperatorArgs) -> Result<Nmea, &'static str> {
+    pub fn new(args: &mut OperatorArgs) -> Result<Nmea, GeodesyError> {
         let inverted = args.flag("inv");
         Ok(Nmea {
             args: args.clone(),
@@ -42,13 +43,13 @@ impl Nmea {
         })
     }
 
-    pub(crate) fn operator(args: &mut OperatorArgs) -> Result<Operator, &'static str> {
+    pub(crate) fn operator(args: &mut OperatorArgs) -> Result<Operator, GeodesyError> {
         let op = crate::operator::nmea::Nmea::new(args)?;
         Ok(Operator(Box::new(op)))
     }
 
     /// dms (DDDMMSS.sss)
-    pub fn dms(args: &mut OperatorArgs) -> Result<Nmea, &'static str> {
+    pub fn dms(args: &mut OperatorArgs) -> Result<Nmea, GeodesyError> {
         let inverted = args.flag("inv");
         Ok(Nmea {
             args: args.clone(),
@@ -57,7 +58,7 @@ impl Nmea {
         })
     }
 
-    pub(crate) fn dmsoperator(args: &mut OperatorArgs) -> Result<Operator, &'static str> {
+    pub(crate) fn dmsoperator(args: &mut OperatorArgs) -> Result<Operator, GeodesyError> {
         let op = crate::operator::nmea::Nmea::dms(args)?;
         Ok(Operator(Box::new(op)))
     }

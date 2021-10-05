@@ -3,17 +3,18 @@ use super::OperatorArgs;
 use super::OperatorCore;
 use crate::operator_construction::*;
 use crate::CoordinateTuple;
+use crate::GeodesyError;
 
 pub struct Noop {
     args: OperatorArgs,
 }
 
 impl Noop {
-    pub fn new(args: &mut OperatorArgs) -> Result<Noop, &'static str> {
+    pub fn new(args: &mut OperatorArgs) -> Result<Noop, GeodesyError> {
         Ok(Noop { args: args.clone() })
     }
 
-    pub(crate) fn operator(args: &mut OperatorArgs) -> Result<Operator, &'static str> {
+    pub(crate) fn operator(args: &mut OperatorArgs) -> Result<Operator, GeodesyError> {
         let op = crate::operator::noop::Noop::new(args)?;
         Ok(Operator(Box::new(op)))
     }

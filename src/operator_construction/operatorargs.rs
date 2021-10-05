@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 use yaml_rust::{Yaml, YamlEmitter, YamlLoader};
 
+use crate::GeodesyError;
+
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct OperatorArgs {
     pub name: String,
@@ -242,7 +244,7 @@ impl OperatorArgs {
         arg
     }
 
-    pub fn numeric_value(&mut self, key: &str, default: f64) -> Result<f64, &'static str> {
+    pub fn numeric_value(&mut self, key: &str, default: f64) -> Result<f64, GeodesyError> {
         let arg = self.value(key, "");
 
         // key not given: return default
@@ -256,11 +258,10 @@ impl OperatorArgs {
         }
 
         // key given, but not numeric: return error string
-        Err("Numeric value expected")
-        /*Err(format!(
+        Err(GeodesyError::Syntax(format!(
             "Numeric value expected for '{}.{}' - got [{}: {}].",
-            operator_name, key, key, arg
-        ))*/
+            self.name, key, key, arg
+        )))
     }
 
     // If key is given, and value != false: true; else: false

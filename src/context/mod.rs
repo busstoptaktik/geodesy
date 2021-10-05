@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use log::info;
+
 use crate::operator_construction::*;
 use crate::CoordinateTuple;
 
@@ -28,6 +30,7 @@ impl Context {
     const CHUNK_SIZE: usize = 1000;
 
     pub fn new() -> Context {
+        info!("Creating new Context");
         let mut ctx = Context::_new();
         for _ in 0..Self::CHUNKS {
             ctx.minions.push(Context::_new());

@@ -27,7 +27,7 @@
 // this operator is **not** directly invertible (although an iterative
 // solution is feasible)
 
-use geodesy::operator_construction::*;
+use geodesy::{operator_construction::*, GeodesyError};
 use geodesy::{Context, CoordinateTuple, Ellipsoid};
 
 pub struct GeodesicShift {
@@ -41,7 +41,7 @@ pub struct GeodesicShift {
 }
 
 impl GeodesicShift {
-    fn new(args: &mut OperatorArgs) -> Result<GeodesicShift, &'static str> {
+    fn new(args: &mut OperatorArgs) -> Result<GeodesicShift, GeodesyError> {
         let ellps = Ellipsoid::named(&args.value("ellps", "GRS80"));
         let inverted = args.flag("inv");
 
@@ -54,7 +54,9 @@ impl GeodesicShift {
         let lon_1 = args.numeric_value("lon_1", std::f64::NAN)?;
 
         if [lat_0, lon_0, lat_1, lon_1].iter().any(|&f| f.is_nan()) {
-            return Err("Missing lat_0, lon_0, lat_1 or lon_1");
+            return Err(GeodesyError::General(
+                "Missing lat_0, lon_0, lat_1 or lon_1",
+            ));
         }
 
         // Now find the distance and bearing between the origin and the target
@@ -76,7 +78,7 @@ impl GeodesicShift {
 
     // This is the interface to the Rust Geodesy library: Construct a
     // GeodesicShift element, and wrap it properly for consumption.
-    pub fn operator(args: &mut OperatorArgs, _ctx: &mut Context) -> Result<Operator, &'static str> {
+    pub fn operator(args: &mut OperatorArgs, _ctx: &mut Context) -> Result<Operator, GeodesyError> {
         let op = GeodesicShift::new(args)?;
         Ok(Operator(Box::new(op)))
     }

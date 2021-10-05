@@ -1,6 +1,7 @@
 use crate::operator_construction::OperatorArgs;
 use crate::Context;
 use crate::CoordinateTuple;
+use crate::GeodesyError;
 
 // Operator is a newtype around a Boxed OperatorCore,
 // in order to be able to define methods on it.
@@ -190,7 +191,7 @@ pub(crate) fn operator_factory(
         let op = op(args, ctx);
         match op {
             Err(e) => {
-                ctx.error(e, "Runtime defined operator lookup");
+                ctx.error(&e.to_string(), "Runtime defined operator lookup");
                 return None;
             }
             Ok(op) => {
@@ -231,7 +232,7 @@ fn builtins(ctx: &mut Context, args: &mut OperatorArgs) -> Option<Operator> {
         if steps > 0.0 {
             match crate::operator::pipeline::Pipeline::new(args, ctx) {
                 Err(err) => {
-                    ctx.error(err, "pipeline");
+                    ctx.error(&err.to_string(), "pipeline");
                     return None;
                 }
                 Ok(ok) => {
@@ -249,7 +250,8 @@ fn builtins(ctx: &mut Context, args: &mut OperatorArgs) -> Option<Operator> {
     }
 
     // Default value for op is Err("not found")
-    let mut op: Result<Operator, &'static str> = Err("Operator name not found");
+    let mut op: Result<Operator, GeodesyError> =
+        Err(GeodesyError::General("Operator name not found"));
     // ...so now try to find it!
     if opname == "cart" {
         op = crate::operator::cart::Cart::operator(args);
@@ -306,6 +308,7 @@ fn expand_gys(definition: &str, args: &mut OperatorArgs) -> String {
 #[cfg(test)]
 mod tests {
     use crate::CoordinateTuple;
+    use crate::GeodesyError;
 
     #[test]
     fn operator() {
@@ -465,14 +468,14 @@ mod tests {
     }
 
     impl Nnoopp {
-        fn new(args: &mut OperatorArgs) -> Result<Nnoopp, &'static str> {
+        fn new(args: &mut OperatorArgs) -> Result<Nnoopp, GeodesyError> {
             Ok(Nnoopp { args: args.clone() })
         }
 
         pub(crate) fn operator(
             args: &mut OperatorArgs,
             _ctx: &mut Context,
-        ) -> Result<Operator, &'static str> {
+        ) -> Result<Operator, GeodesyError> {
             let op = Nnoopp::new(args)?;
             Ok(Operator { 0: Box::new(op) })
         }

@@ -10,7 +10,7 @@
 // OperatorArgs, and its core trait, OperatorCore. Since they are
 // mostly for library-internal use, they are wrapped up in the dedicated
 // module `operator_construction`.
-use geodesy::operator_construction::*;
+use geodesy::{operator_construction::*, GeodesyError};
 use geodesy::{Context, CoordinateTuple};
 
 // The functionality of the operator is straightforward: It simply
@@ -23,7 +23,7 @@ pub struct Add42 {
 }
 
 impl Add42 {
-    fn new(args: &mut OperatorArgs) -> Result<Add42, &'static str> {
+    fn new(args: &mut OperatorArgs) -> Result<Add42, GeodesyError> {
         let inverted = args.flag("inv");
         Ok(Add42 {
             args: args.clone(),
@@ -33,7 +33,7 @@ impl Add42 {
 
     // This is the interface to the Rust Geodesy library: Construct an Add42
     // element, and wrap it properly for consumption. It is 100% boilerplate.
-    pub fn operator(args: &mut OperatorArgs, _ctx: &mut Context) -> Result<Operator, &'static str> {
+    pub fn operator(args: &mut OperatorArgs, _ctx: &mut Context) -> Result<Operator, GeodesyError> {
         let op = Add42::new(args)?;
         Ok(Operator(Box::new(op)))
     }

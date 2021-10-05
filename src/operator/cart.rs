@@ -4,6 +4,7 @@ use crate::operator_construction::*;
 use crate::Context;
 use crate::CoordinateTuple;
 use crate::Ellipsoid;
+use crate::GeodesyError;
 
 pub struct Cart {
     // The usual suspects...
@@ -23,7 +24,7 @@ pub struct Cart {
 }
 
 impl Cart {
-    pub fn new(args: &mut OperatorArgs) -> Result<Cart, &'static str> {
+    pub fn new(args: &mut OperatorArgs) -> Result<Cart, GeodesyError> {
         let ellps = Ellipsoid::named(&args.value("ellps", "GRS80"));
 
         let es = ellps.eccentricity_squared();
@@ -51,7 +52,7 @@ impl Cart {
         })
     }
 
-    pub(crate) fn operator(args: &mut OperatorArgs) -> Result<Operator, &'static str> {
+    pub(crate) fn operator(args: &mut OperatorArgs) -> Result<Operator, GeodesyError> {
         let op = crate::operator::cart::Cart::new(args)?;
         Ok(Operator(Box::new(op)))
     }
