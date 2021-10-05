@@ -48,8 +48,8 @@ fn main() {
     // this may go wrong (e.g. due to syntax errors in the operator
     // definition), use the Rust `match` syntax to handle errors.
     let utm32 = match ctx.operation("utm: {zone: 32}") {
-        Some(op) => op,
-        None => return println!("{}", ctx.report()),
+        Ok(op) => op,
+        _ => return println!("{}", ctx.report()),
     };
     // Now, let's use the utm32-operator to transform some data
     ctx.fwd(utm32, &mut data);
@@ -72,7 +72,7 @@ fn main() {
 
     // Here's an example of handling bad syntax:
     println!("Bad syntax example:");
-    if ctx.operation("aargh: {zone: 23}").is_none() {
+    if ctx.operation("aargh: {zone: 23}").is_err() {
         println!("Deliberate error - {}", ctx.report());
     }
 
@@ -97,7 +97,7 @@ fn main() {
     }";
 
     let ed50_wgs84 = ctx.operation(pipeline);
-    if ed50_wgs84.is_none() {
+    if ed50_wgs84.is_err() {
         println!("ERROR - {}", ctx.report());
         return;
     };

@@ -62,14 +62,19 @@ use thiserror::Error;
 pub enum GeodesyError {
     #[error("i/o error")]
     Io(#[from] io::Error),
-    #[error("{0}")]
+    #[error("error: {0}")]
     General(&'static str),
     #[error("syntax error: {0}")]
     Syntax(String),
     #[error("{0}: {1}")]
     Operator(&'static str, &'static str),
+
     #[error("invalid header (expected {expected:?}, found {found:?})")]
     InvalidHeader { expected: String, found: String },
-    #[error("unknown data store error")]
+    #[error("operator {0} not found")]
+    NotFound(String),
+    #[error("too deep recursion for {0}")]
+    Recursion(String),
+    #[error("unknown error")]
     Unknown,
 }

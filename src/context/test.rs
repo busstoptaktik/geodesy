@@ -16,7 +16,7 @@ impl Context {
     ) -> bool {
         let mut ctx = Context::new();
         let op = ctx.operation(operation);
-        if op.is_none() {
+        if op.is_err() {
             println!("{}", ctx.report());
             return false;
         }

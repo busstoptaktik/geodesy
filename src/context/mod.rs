@@ -134,7 +134,7 @@ mod tests {
 
         let mut ctx = Context::new();
         let op = ctx.operation(pipeline);
-        assert!(op.is_some());
+        assert!(op.is_ok());
         let op = op.unwrap();
         let geo = CoordinateTuple::gis(12., 55., 100., 0.);
         let mut operands = [geo];

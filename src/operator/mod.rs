@@ -18,14 +18,14 @@ impl Operator {
     /// // EPSG:1134 - 3 parameter Helmert, ED50/WGS84
     /// let mut ctx = geodesy::Context::new();
     /// let op = ctx.operation("helmert: {x: -87, y: -96, z: -120}");
-    /// assert!(op.is_some());
+    /// assert!(op.is_ok());
     /// let op = op.unwrap();
     /// let mut operands = [geodesy::CoordinateTuple::geo(55., 12.,0.,0.)];
     /// ctx.fwd(op, &mut operands);
     /// ctx.inv(op, &mut operands);
     /// assert!((operands[0][0].to_degrees() - 12.).abs() < 1.0e-10);
     /// ```
-    pub fn new(definition: &str, ctx: &mut Context) -> Option<Operator> {
+    pub fn new(definition: &str, ctx: &mut Context) -> Result<Operator, GeodesyError> {
         let definition = Context::gys_to_yaml(definition);
 
         let mut oa = OperatorArgs::new();
@@ -158,10 +158,10 @@ pub(crate) fn operator_factory(
     args: &mut OperatorArgs,
     ctx: &mut Context,
     recursions: usize,
-) -> Option<Operator> {
+) -> Result<Operator, GeodesyError> {
     if recursions > 100 {
         ctx.error("Unknown", "Operator definition too deeply nested");
-        return None;
+        return Err(GeodesyError::Recursion("(unknown)".to_string()));
     }
 
     // Look for runtime defined macros
@@ -188,21 +188,12 @@ pub(crate) fn operator_factory(
 
     // Is it a runtime defined operator?
     if let Some(op) = ctx.locate_operator(&args.name) {
-        let op = op(args, ctx);
-        match op {
-            Err(e) => {
-                ctx.error(&e.to_string(), "Runtime defined operator lookup");
-                return None;
-            }
-            Ok(op) => {
-                return Some(op);
-            }
-        }
+        return op(args, ctx);
     }
 
     // Is it a built-in operator?
-    if let Some(op) = builtins(ctx, args) {
-        return Some(op);
+    if is_builtin(args) {
+        return builtins(ctx, args);
     }
 
     // Is it a shared asset '.gys'-file?
@@ -222,21 +213,55 @@ pub(crate) fn operator_factory(
 
     // Nothing found. Complain and yell...
     ctx.error(&args.name, "Operator name not found");
-    None
+    Err(GeodesyError::NotFound(args.name.to_string()))
+}
+
+const ALL_OPERATOR_NAMES: &[&str] = &[
+    "cart",
+    "helmert",
+    "lcc",
+    "merc",
+    "molodensky",
+    "nmea",
+    "dm",
+    "nmeass",
+    "dms",
+    "noop",
+    "whatever",
+    "adapt",
+    "tmerc",
+    "utm",
+];
+
+fn is_builtin(args: &mut OperatorArgs) -> bool {
+    // Pipelines are not characterized by the name "pipeline", but simply by containing steps.
+    if let Ok(steps) = args.numeric_value("_nsteps", 0.0) {
+        if steps > 0.0 {
+            return true;
+        }
+    }
+
+    // The operator name may be prefixed with "builtin_", so operator-named
+    // macros can delegate the hard work to the operators they shadow.
+    let mut opname = args.name.clone();
+    if opname.starts_with("builtin_") {
+        opname = opname.strip_prefix("builtin_").unwrap().to_string();
+    }
+    ALL_OPERATOR_NAMES.iter().any(|&x| x == opname)
 }
 
 /// Handle instantiation of built-in operators.
-fn builtins(ctx: &mut Context, args: &mut OperatorArgs) -> Option<Operator> {
+fn builtins(ctx: &mut Context, args: &mut OperatorArgs) -> Result<Operator, GeodesyError> {
     // Pipelines are not characterized by the name "pipeline", but simply by containing steps.
     if let Ok(steps) = args.numeric_value("_nsteps", 0.0) {
         if steps > 0.0 {
             match crate::operator::pipeline::Pipeline::new(args, ctx) {
                 Err(err) => {
                     ctx.error(&err.to_string(), "pipeline");
-                    return None;
+                    return Err(err);
                 }
                 Ok(ok) => {
-                    return Some(Operator(Box::new(ok)));
+                    return Ok(Operator(Box::new(ok)));
                 }
             }
         }
@@ -249,9 +274,8 @@ fn builtins(ctx: &mut Context, args: &mut OperatorArgs) -> Option<Operator> {
         opname = opname.strip_prefix("builtin_").unwrap().to_string();
     }
 
-    // Default value for op is Err("not found")
-    let mut op: Result<Operator, GeodesyError> =
-        Err(GeodesyError::General("Operator name not found"));
+    // Default value for op is NotFound
+    let mut op: Result<Operator, GeodesyError> = Err(GeodesyError::NotFound(opname.to_string()));
     // ...so now try to find it!
     if opname == "cart" {
         op = crate::operator::cart::Cart::operator(args);
@@ -276,15 +300,7 @@ fn builtins(ctx: &mut Context, args: &mut OperatorArgs) -> Option<Operator> {
     } else if opname == "utm" {
         op = crate::operator::tmerc::Tmerc::utmoperator(args);
     }
-
-    // Not found? Translate to None.
-    if op.is_err() {
-        ctx.error(&opname, "Operator name not found");
-        return None;
-    }
-
-    // Success!
-    Some(op.unwrap())
+    op
 }
 
 /// Expand gys ARGS and translate to YAML
@@ -318,13 +334,13 @@ mod tests {
 
         // A non-existing operator
         let h = Operator::new("unimplemented_operator: {x: -87, y: -96, z: -120}", &mut o);
-        assert!(h.is_none());
+        assert!(h.is_err());
 
         // Define "hilmert" and "halmert" to circularly define each other, in order
         // to test the operator_factory recursion breaker
         assert!(o.register_macro("halmert", "hilmert: {}"));
         assert!(o.register_macro("hilmert", "halmert: {}"));
-        if let None = Operator::new("halmert: {x: -87, y: -96, z: -120}", &mut o) {
+        if Operator::new("halmert: {x: -87, y: -96, z: -120}", &mut o).is_err() {
             assert!(o.report().contains("too deeply nested"));
         } else {
             panic!();
@@ -335,12 +351,12 @@ mod tests {
 
         // A plain operator: Helmert, EPSG:1134 - 3 parameter, ED50/WGS84
         let hh = Operator::new("helmert: {x: -87, y: -96, z: -120}", &mut o);
-        assert!(hh.is_some());
+        assert!(hh.is_ok());
         let hh = hh.unwrap();
 
         // Same operator, defined through the "hulmert" macro
         let h = Operator::new("hulmert: {x: -87, y: -96, z: -120}", &mut o);
-        assert!(h.is_some());
+        assert!(h.is_ok());
         let h = h.unwrap();
 
         assert_eq!(hh.args(0).name, h.args(0).name);
@@ -381,7 +397,7 @@ mod tests {
             ]
         }";
         let h = Operator::new(pipeline, &mut o);
-        assert!(h.is_some());
+        assert!(h.is_ok());
         let h = h.unwrap();
 
         let mut operands = [CoordinateTuple::gis(12., 55., 100., 0.)];
@@ -400,7 +416,7 @@ mod tests {
 
         // An externally defined version
         let h = Operator::new("ed50_etrs89", &mut o);
-        assert!(h.is_some());
+        assert!(h.is_ok());
 
         // Try to access it from data_local_dir (i.e. $HOME/share or somesuch)
         let h = Operator::new("ed50_etrs89", &mut o);
@@ -409,7 +425,7 @@ mod tests {
             assets.push("geodesy");
             assets.push("assets.zip");
             if assets.exists() {
-                assert!(h.is_some());
+                assert!(h.is_ok());
                 let mut operands = [CoordinateTuple::gis(12., 55., 100., 0.)];
                 h.unwrap().forward(&mut o, operands.as_mut());
                 let d = operands[0].to_degrees();
@@ -418,7 +434,7 @@ mod tests {
                 assert!((d.second() - r.second()).abs() < 1.0e-10);
                 assert!((d.third() - r.third()).abs() < 1.0e-8);
             } else {
-                assert!(h.is_none());
+                assert!(h.is_err());
             }
         }
 
@@ -439,7 +455,7 @@ mod tests {
             "geohelmert: {left: intl, right: GRS80, x: -87, y: -96, z: -120}",
             &mut o,
         );
-        assert!(ed50_etrs89.is_some());
+        assert!(ed50_etrs89.is_ok());
         let ed50_etrs89 = ed50_etrs89.unwrap();
         let mut operands = [CoordinateTuple::gis(12., 55., 100., 0.)];
 

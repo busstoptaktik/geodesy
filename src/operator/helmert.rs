@@ -306,7 +306,7 @@ mod tests {
         args.insert("z", "-120");
 
         let h = operator_factory(&mut args, &mut ctx, 0);
-        assert!(h.is_none());
+        assert!(h.is_err());
 
         // EPSG:1134 - 3 parameter, ED50/WGS84, s = sqrt(27) m
         args.insert("x", "-87");

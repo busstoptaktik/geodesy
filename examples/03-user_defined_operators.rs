@@ -72,8 +72,8 @@ fn main() {
     ctx.register_operator("add42", Add42::operator);
 
     let add42 = match ctx.operation("add42: {}") {
-        Some(value) => value,
-        None => {
+        Ok(value) => value,
+        _ => {
             println!("Awful!");
             return;
         }

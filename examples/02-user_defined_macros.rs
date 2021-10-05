@@ -43,7 +43,7 @@ fn main() {
 
     // Now let's see whether it works - instantiate the macro, using the same
     // parameters as used in example 00.
-    if let Some(ed50_wgs84) =
+    if let Ok(ed50_wgs84) =
         ctx.operation("geohelmert: {left: intl, right: GRS80, x: -87, y: -96, z: -120}")
     {
         // Now do the same transformation as in example 00

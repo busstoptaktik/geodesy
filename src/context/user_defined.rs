@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use crate::operator_construction::Operator;
 use crate::operator_construction::OperatorConstructor;
 use crate::Context;
+use crate::GeodesyError;
 
 impl Context {
     pub fn register_operator(&mut self, name: &str, constructor: OperatorConstructor) {
@@ -37,14 +38,14 @@ impl Context {
         self.user_defined_macros.get(name)
     }
 
-    pub fn operation(&mut self, definition: &str) -> Option<usize> {
+    pub fn operation(&mut self, definition: &str) -> Result<usize, GeodesyError> {
         self.last_failing_operation_definition = definition.to_string();
         self.last_failing_operation.clear();
         self.cause.clear();
         let op = Operator::new(definition, self)?;
         let index = self.operations.len();
         self.operations.push(op);
-        Some(index)
+        Ok(index)
     }
 
     /// Get definition string from the assets in the shared assets directory

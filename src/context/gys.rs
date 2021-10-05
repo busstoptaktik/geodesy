@@ -159,11 +159,11 @@ mod tests {
 
         // Test the corner case of giving just "inv" as operation name
         let inv = ctx.operation("[inv]");
-        assert!(inv.is_none());
+        assert!(inv.is_err());
 
         // Test that an inv-operator actually instantiates
         let invcart = ctx.operation("[cart inv]");
-        assert!(invcart.is_some());
+        assert!(invcart.is_ok());
 
         // Check that the GYS syntactical indicators trigger
         assert!(Context::is_gys("[cart]"));

@@ -27,7 +27,7 @@ impl Pipeline {
 
             // We need a recursive copy of "all globals so far"
             let mut oa = args.spawn(step_args);
-            if let Some(op) = operator_factory(&mut oa, ctx, 0) {
+            if let Ok(op) = operator_factory(&mut oa, ctx, 0) {
                 steps.push(op);
             } else {
                 return Err(GeodesyError::General("Pipeline: Bad step"));

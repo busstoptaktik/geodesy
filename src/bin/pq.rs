@@ -69,9 +69,7 @@ fn main() -> Result<()> {
         }
     }
 
-    if ctx.operation(&opt.operation).is_none() {
-        println!("{}", ctx.report());
-    };
+    let _oo = ctx.operation(&opt.operation)?;
 
     // A pipeline in YAML
     let pipeline = "ed50_etrs89: {
@@ -87,8 +85,8 @@ fn main() -> Result<()> {
     // The same pipeline in Geodetic YAML Shorthand (GYS)
     let gys = "geo | cart ellps:intl | helmert x:-87 y:-96 z:-120 | cart inv ellps:GRS80 | geo inv";
 
-    let op_yaml = ctx.operation(pipeline).unwrap();
-    let op_gys = ctx.operation(gys).unwrap();
+    let op_yaml = ctx.operation(pipeline)?;
+    let op_gys = ctx.operation(gys)?;
 
     let copenhagen = C::raw(55., 12., 0., 0.);
     let stockholm = C::raw(59., 18., 0., 0.);
@@ -105,7 +103,7 @@ fn main() -> Result<()> {
     assert!(yaml_data[1].hypot3(&gys_data[1]) < 1e-16);
 
     if false {
-        if let Some(utm32) = ctx.operation("utm: {zone: 32}") {
+        if let Ok(utm32) = ctx.operation("utm: {zone: 32}") {
             let copenhagen = C::geo(55., 12., 0., 0.);
             let stockholm = C::geo(59., 18., 0., 0.);
             let mut data = [copenhagen, stockholm];

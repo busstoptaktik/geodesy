@@ -121,8 +121,8 @@ fn main() {
     let op = "geodesic_shift: {lat_0: 55, lon_0: 12, lat_1: 48, lon_1: 16.}";
 
     let cph_to_vie = match ctx.operation(op) {
-        Some(value) => value,
-        None => {
+        Ok(value) => value,
+        _ => {
             println!("Awful!");
             return;
         }
