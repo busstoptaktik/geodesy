@@ -78,7 +78,7 @@ impl GeodesicShift {
 
     // This is the interface to the Rust Geodesy library: Construct a
     // GeodesicShift element, and wrap it properly for consumption.
-    pub fn operator(args: &mut OperatorArgs, _ctx: &mut Context) -> Result<Operator, GeodesyError> {
+    pub fn operator(args: &mut OperatorArgs) -> Result<Operator, GeodesyError> {
         let op = GeodesicShift::new(args)?;
         Ok(Operator(Box::new(op)))
     }

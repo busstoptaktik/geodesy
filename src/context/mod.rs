@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fs::File;
 
 use log::info;
 
@@ -6,7 +7,7 @@ use crate::operator_construction::*;
 use crate::CoordinateTuple;
 
 /// The central administration of the transformation functionality
-#[derive(Default)]
+// #[derive(Default)]
 pub struct Context {
     pub stack: Vec<Vec<CoordinateTuple>>,
     minions: Vec<Context>,
@@ -16,11 +17,18 @@ pub struct Context {
     last_failing_operation_definition: String,
     last_failing_operation: String,
     cause: String,
+    pile: Result<File, std::io::Error>,
 }
 
 mod gys;
 mod test;
 mod user_defined;
+
+impl Default for Context {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl Context {
     /// Number of chunks to process in (principle in) parallel.
@@ -39,6 +47,17 @@ impl Context {
     }
 
     fn _new() -> Context {
+        let mut pile_path = dirs::data_local_dir().unwrap_or_default();
+        pile_path.push("geodesy");
+        pile_path.push("assets.pile");
+        let pile_name = pile_path.clone();
+        let thepile = File::open(pile_path);
+        if thepile.is_err() {
+            info!("Could not find asset pile {:?}", pile_name);
+        } else {
+            info!("Found asset pile {:?}", pile_name);
+        }
+
         Context {
             stack: Vec::new(),
             minions: Vec::new(),
@@ -48,6 +67,7 @@ impl Context {
             user_defined_operators: HashMap::new(),
             user_defined_macros: HashMap::new(),
             operations: Vec::new(),
+            pile: thepile,
         }
     }
 

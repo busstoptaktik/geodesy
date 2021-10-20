@@ -1,9 +1,31 @@
 use crate::operator_construction::OperatorArgs;
+use crate::operator_construction::OperatorConstructor;
 use crate::Context;
 use crate::CoordinateTuple;
 use crate::GeodesyError;
 
-// Operator is a newtype around a Boxed OperatorCore,
+// A HashMap would have been a better choice,for the OPERATOR_LIST, except
+// for the annoying fact that it cannot be compile-time constructed
+const OPERATOR_LIST: [(&str, OperatorConstructor); 13] = [
+    ("adapt", crate::operator::adapt::Adapt::operator),
+    ("cart", crate::operator::cart::Cart::operator),
+    ("helmert", crate::operator::helmert::Helmert::operator),
+    ("lcc", crate::operator::lcc::Lcc::operator),
+    ("merc", crate::operator::merc::Merc::operator),
+    (
+        "molodensky",
+        crate::operator::molodensky::Molodensky::operator,
+    ),
+    ("dm", crate::operator::nmea::Nmea::operator),
+    ("nmea", crate::operator::nmea::Nmea::operator),
+    ("dms", crate::operator::nmea::Nmea::dmsoperator),
+    ("nmeass", crate::operator::nmea::Nmea::dmsoperator),
+    ("noop", crate::operator::noop::Noop::operator),
+    ("tmerc", crate::operator::tmerc::Tmerc::operator),
+    ("utm", crate::operator::tmerc::Tmerc::utmoperator),
+];
+
+// Operator is a newtype around a Boxed trait OperatorCore,
 // in order to be able to define methods on it.
 // There's a good description of the crux here:
 // https://stackoverflow.com/questions/35568871/is-it-possible-to-implement-methods-on-type-aliases
@@ -32,14 +54,6 @@ impl Operator {
         oa.populate(&definition, "");
         operator_factory(&mut oa, ctx, 0)
     }
-
-    pub fn forward(&self, ws: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
-        self.0.fwd(ws, operands)
-    }
-
-    pub fn inverse(&self, ws: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
-        self.0.inv(ws, operands)
-    }
 }
 
 use core::fmt::Debug;
@@ -51,7 +65,7 @@ impl Debug for Operator {
 
 // Forwarding all OperatorCore methods to the boxed content
 // Perhaps not necessary: We could deem Core low level and
-// build a high level interface on top of Core (cf forward above).
+// build a high level interface on top of Core.
 impl OperatorCore for Operator {
     fn fwd(&self, ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
         self.0.fwd(ctx, operands)
@@ -188,12 +202,7 @@ pub(crate) fn operator_factory(
 
     // Is it a runtime defined operator?
     if let Some(op) = ctx.locate_operator(&args.name) {
-        return op(args, ctx);
-    }
-
-    // Is it a built-in operator?
-    if is_builtin(args) {
-        return builtins(ctx, args);
+        return op(args);
     }
 
     // Is it a shared asset '.gys'-file?
@@ -211,43 +220,8 @@ pub(crate) fn operator_factory(
         return operator_factory(&mut moreargs, ctx, recursions + 1);
     }
 
-    // Nothing found. Complain and yell...
-    ctx.error(&args.name, "Operator name not found");
-    Err(GeodesyError::NotFound(args.name.to_string()))
-}
-
-const ALL_OPERATOR_NAMES: &[&str] = &[
-    "cart",
-    "helmert",
-    "lcc",
-    "merc",
-    "molodensky",
-    "nmea",
-    "dm",
-    "nmeass",
-    "dms",
-    "noop",
-    "whatever",
-    "adapt",
-    "tmerc",
-    "utm",
-];
-
-fn is_builtin(args: &mut OperatorArgs) -> bool {
-    // Pipelines are not characterized by the name "pipeline", but simply by containing steps.
-    if let Ok(steps) = args.numeric_value("_nsteps", 0.0) {
-        if steps > 0.0 {
-            return true;
-        }
-    }
-
-    // The operator name may be prefixed with "builtin_", so operator-named
-    // macros can delegate the hard work to the operators they shadow.
-    let mut opname = args.name.clone();
-    if opname.starts_with("builtin_") {
-        opname = opname.strip_prefix("builtin_").unwrap().to_string();
-    }
-    ALL_OPERATOR_NAMES.iter().any(|&x| x == opname)
+    // If it is none of the above, it must be a built-in operator
+    builtins(ctx, args)
 }
 
 /// Handle instantiation of built-in operators.
@@ -269,38 +243,17 @@ fn builtins(ctx: &mut Context, args: &mut OperatorArgs) -> Result<Operator, Geod
 
     // The operator name may be prefixed with "builtin_", so operator-named
     // macros can delegate the hard work to the operators they shadow.
-    let mut opname = args.name.clone();
+    let mut opname = args.name.clone().to_lowercase();
     if opname.starts_with("builtin_") {
         opname = opname.strip_prefix("builtin_").unwrap().to_string();
     }
 
-    // Default value for op is NotFound
-    let mut op: Result<Operator, GeodesyError> = Err(GeodesyError::NotFound(opname.to_string()));
-    // ...so now try to find it!
-    if opname == "cart" {
-        op = crate::operator::cart::Cart::operator(args);
-    } else if opname == "helmert" {
-        op = crate::operator::helmert::Helmert::operator(args);
-    } else if opname == "lcc" {
-        op = crate::operator::lcc::Lcc::operator(args);
-    } else if opname == "merc" {
-        op = crate::operator::merc::Merc::operator(args);
-    } else if opname == "molodensky" {
-        op = crate::operator::molodensky::Molodensky::operator(args);
-    } else if opname == "nmea" || opname == "dm" {
-        op = crate::operator::nmea::Nmea::operator(args);
-    } else if opname == "nmeass" || opname == "dms" {
-        op = crate::operator::nmea::Nmea::dmsoperator(args);
-    } else if opname == "noop" || opname == "whatever" {
-        op = crate::operator::noop::Noop::operator(args);
-    } else if opname == "adapt" {
-        op = crate::operator::adapt::Adapt::operator(args);
-    } else if opname == "tmerc" {
-        op = crate::operator::tmerc::Tmerc::operator(args);
-    } else if opname == "utm" {
-        op = crate::operator::tmerc::Tmerc::utmoperator(args);
+    if let Some(index) = OPERATOR_LIST.iter().position(|&op| op.0 == opname) {
+        return OPERATOR_LIST[index].1(args);
     }
-    op
+
+    // Not a built in operator
+    Err(GeodesyError::NotFound(opname))
 }
 
 /// Expand gys ARGS and translate to YAML
@@ -378,16 +331,6 @@ mod tests {
         assert_eq!(operands[0].second(), 0.);
         assert_eq!(operands[0].third(), 0.);
 
-        h.forward(&mut o, operands.as_mut());
-        assert_eq!(operands[0].first(), -87.);
-        assert_eq!(operands[0].second(), -96.);
-        assert_eq!(operands[0].third(), -120.);
-
-        h.inverse(&mut o, operands.as_mut());
-        assert_eq!(operands[0].first(), 0.);
-        assert_eq!(operands[0].second(), 0.);
-        assert_eq!(operands[0].third(), 0.);
-
         // A pipeline
         let pipeline = "ed50_etrs89: {
             steps: [
@@ -401,7 +344,7 @@ mod tests {
         let h = h.unwrap();
 
         let mut operands = [CoordinateTuple::gis(12., 55., 100., 0.)];
-        h.forward(&mut o, operands.as_mut());
+        h.operate(&mut o, operands.as_mut(), fwd);
         let d = operands[0].to_degrees();
         let r = CoordinateTuple::raw(
             11.998815342385209,
@@ -427,7 +370,7 @@ mod tests {
             if assets.exists() {
                 assert!(h.is_ok());
                 let mut operands = [CoordinateTuple::gis(12., 55., 100., 0.)];
-                h.unwrap().forward(&mut o, operands.as_mut());
+                h.unwrap().operate(&mut o, operands.as_mut(), fwd);
                 let d = operands[0].to_degrees();
 
                 assert!((d.first() - r.first()).abs() < 1.0e-10);
@@ -459,14 +402,14 @@ mod tests {
         let ed50_etrs89 = ed50_etrs89.unwrap();
         let mut operands = [CoordinateTuple::gis(12., 55., 100., 0.)];
 
-        ed50_etrs89.forward(&mut o, operands.as_mut());
+        ed50_etrs89.operate(&mut o, operands.as_mut(), fwd);
         let d = operands[0].to_degrees();
 
         assert!((d.first() - r.first()).abs() < 1.0e-10);
         assert!((d.second() - r.second()).abs() < 1.0e-10);
         assert!((d.third() - r.third()).abs() < 1.0e-8);
 
-        ed50_etrs89.inverse(&mut o, operands.as_mut());
+        ed50_etrs89.operate(&mut o, operands.as_mut(), inv);
         let d = operands[0].to_degrees();
 
         assert!((d.first() - 12.).abs() < 1.0e-10);
@@ -488,10 +431,7 @@ mod tests {
             Ok(Nnoopp { args: args.clone() })
         }
 
-        pub(crate) fn operator(
-            args: &mut OperatorArgs,
-            _ctx: &mut Context,
-        ) -> Result<Operator, GeodesyError> {
+        pub(crate) fn operator(args: &mut OperatorArgs) -> Result<Operator, GeodesyError> {
             let op = Nnoopp::new(args)?;
             Ok(Operator { 0: Box::new(op) })
         }

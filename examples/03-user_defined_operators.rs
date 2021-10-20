@@ -33,7 +33,7 @@ impl Add42 {
 
     // This is the interface to the Rust Geodesy library: Construct an Add42
     // element, and wrap it properly for consumption. It is 100% boilerplate.
-    pub fn operator(args: &mut OperatorArgs, _ctx: &mut Context) -> Result<Operator, GeodesyError> {
+    pub fn operator(args: &mut OperatorArgs) -> Result<Operator, GeodesyError> {
         let op = Add42::new(args)?;
         Ok(Operator(Box::new(op)))
     }

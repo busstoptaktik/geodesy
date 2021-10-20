@@ -40,12 +40,10 @@ pub mod operator_construction {
     mod operatorargs;
     pub use crate::operator::Operator;
     pub use crate::operator::OperatorCore;
-    use crate::Context;
     use crate::GeodesyError;
     pub use gas::Gas;
     pub use operatorargs::OperatorArgs;
-    pub type OperatorConstructor =
-        fn(args: &mut OperatorArgs, ctx: &mut Context) -> Result<Operator, GeodesyError>;
+    pub type OperatorConstructor = fn(args: &mut OperatorArgs) -> Result<Operator, GeodesyError>;
 }
 
 /// Indicate that a two-way operator, function, or method, should run in the *forward* direction.
