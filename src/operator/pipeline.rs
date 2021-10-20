@@ -5,7 +5,7 @@ use super::OperatorArgs;
 use super::OperatorCore;
 use crate::CoordinateTuple;
 use crate::GeodesyError;
-use crate::{fwd, inv};
+use crate::{FWD, INV};
 
 pub struct Pipeline {
     args: OperatorArgs,
@@ -50,7 +50,7 @@ impl OperatorCore for Pipeline {
             if step.is_noop() {
                 continue;
             }
-            if !step.operate(ctx, operands, fwd) {
+            if !step.operate(ctx, operands, FWD) {
                 return false;
             }
         }
@@ -62,7 +62,7 @@ impl OperatorCore for Pipeline {
             if step.is_noop() {
                 continue;
             }
-            if !step.operate(ctx, operands, inv) {
+            if !step.operate(ctx, operands, INV) {
                 return false;
             }
         }
@@ -144,7 +144,7 @@ mod tests {
         let mut operands = [crate::CoordinateTuple::gis(12., 55., 100., 0.)];
 
         /* DRUM ROLL... */
-        op.operate(&mut ctx, operands.as_mut(), fwd); // TA-DAA!
+        op.operate(&mut ctx, operands.as_mut(), FWD); // TA-DAA!
 
         // For comparison: the point (12, 55, 100, 0) transformed by the cct
         // application of the PROJ package yields:

@@ -45,8 +45,8 @@ impl Ellipsoid {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::fwd;
-    use crate::inv;
+    use crate::FWD;
+    use crate::INV;
 
     #[test]
     fn meridional_distance() {
@@ -62,10 +62,10 @@ mod tests {
         // Internal consistency: Check that at 90°, the meridional distance
         // is identical to the meridian quadrant.
         assert!(
-            (ellps.meridional_distance(FRAC_PI_2, fwd) - ellps.meridian_quadrant()).abs() < 1e-15
+            (ellps.meridional_distance(FRAC_PI_2, FWD) - ellps.meridian_quadrant()).abs() < 1e-15
         );
         assert!(
-            (ellps.meridional_distance(ellps.meridian_quadrant(), inv) - FRAC_PI_2).abs() < 1e-15
+            (ellps.meridional_distance(ellps.meridian_quadrant(), INV) - FRAC_PI_2).abs() < 1e-15
         );
 
         // Internal consistency: Roundtrip replication accuracy.
@@ -73,14 +73,14 @@ mod tests {
             // latitude -> distance -> latitude
             let b = (10. * i as f64).to_radians();
             assert!(
-                (ellps.meridional_distance(ellps.meridional_distance(b, fwd), inv) - b).abs()
+                (ellps.meridional_distance(ellps.meridional_distance(b, FWD), INV) - b).abs()
                     < 5e-11
             );
 
             // distance -> latitude -> distance;
             let d = 1_000_000. * i as f64;
             assert!(
-                (ellps.meridional_distance(ellps.meridional_distance(d, inv), fwd) - d).abs()
+                (ellps.meridional_distance(ellps.meridional_distance(d, INV), FWD) - d).abs()
                     < 6e-5
             );
         }
@@ -105,14 +105,14 @@ mod tests {
 
         for i in 0..s.len() {
             let angle = (10.0 * i as f64).to_radians();
-            assert!((ellps.meridional_distance(angle, fwd) - s[i]).abs() < 6e-6);
-            assert!((ellps.meridional_distance(s[i], inv) - angle).abs() < 6e-11);
+            assert!((ellps.meridional_distance(angle, FWD) - s[i]).abs() < 6e-6);
+            assert!((ellps.meridional_distance(s[i], INV) - angle).abs() < 6e-11);
         }
 
         // Since we suspect the deviation might be worst at 45°, we check that as well
         let angle = 45f64.to_radians();
         let length = 4984944.377857987;
-        assert!((ellps.meridional_distance(angle, fwd) - length).abs() < 4e-6);
-        assert!((ellps.meridional_distance(length, inv) - angle).abs() < 4e-6);
+        assert!((ellps.meridional_distance(angle, FWD) - length).abs() < 4e-6);
+        assert!((ellps.meridional_distance(length, INV) - angle).abs() < 4e-6);
     }
 }

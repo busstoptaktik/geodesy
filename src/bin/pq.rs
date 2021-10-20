@@ -103,8 +103,8 @@ fn main() -> Result<()> {
         println!("    {:?}", coord);
     }
 
-    ctx.operate(op_yaml, &mut yaml_data, fwd);
-    ctx.operate(op_gys, &mut gys_data, fwd);
+    ctx.operate(op_yaml, &mut yaml_data, FWD);
+    ctx.operate(op_gys, &mut gys_data, FWD);
 
     assert!(yaml_data[0].hypot3(&gys_data[0]) < 1e-16);
     assert!(yaml_data[1].hypot3(&gys_data[1]) < 1e-16);
@@ -222,11 +222,9 @@ pub enum OpError {
 }
 
 /// Indicate that a two-way operator, function, or method, should run in the *forward* direction.
-#[allow(non_upper_case_globals)]
-pub const fwd: bool = true;
+pub const FWD: bool = true;
 /// Indicate that a two-way operator, function, or method, should run in the *inverse* direction.
-#[allow(non_upper_case_globals)]
-pub const inv: bool = false;
+pub const INV: bool = false;
 
 pub type OpConstructor =
     fn(args: &mut HashMap<String, String>, ctx: &mut geodesy::Context) -> Result<Op, OpError>;
@@ -282,7 +280,7 @@ impl ConOp {
     fn fwd(&self, _ctx: &mut geodesy::Context, operands: &mut [CoordinateTuple]) -> usize {
         let mut n = usize::MAX;
         for step in &self.steps {
-            n = n.min(step.operate(_ctx, operands, fwd))
+            n = n.min(step.operate(_ctx, operands, FWD))
         }
         n
     }
@@ -290,7 +288,7 @@ impl ConOp {
     fn inv(&self, _ctx: &mut geodesy::Context, operands: &mut [CoordinateTuple]) -> usize {
         let mut n = usize::MAX;
         for step in self.steps.iter().rev() {
-            n = n.min(step.operate(_ctx, operands, inv))
+            n = n.min(step.operate(_ctx, operands, INV))
         }
         n
     }
@@ -401,7 +399,7 @@ fn hold_fest() {
     assert_eq!(using_a.b, 3.);
     let mut coords = [CoordinateTuple::origin()];
 
-    let n = using_a.operate(&mut ctx, &mut coords, fwd);
+    let n = using_a.operate(&mut ctx, &mut coords, FWD);
     assert_eq!(n, 1);
     assert_eq!(37., coords[0][0]);
     println!("Vi fik {}", coords[0][0]);

@@ -1,5 +1,5 @@
 use crate::ellipsoid::Ellipsoid;
-use crate::fwd;
+use crate::FWD;
 use crate::CoordinateTuple;
 
 // ----- Geodesics -------------------------------------------------------------
@@ -70,7 +70,7 @@ impl Ellipsoid {
         let L1 = from[0];
 
         // The latitude of P1 projected onto the auxiliary sphere
-        let U1 = self.reduced_latitude(B1, fwd);
+        let U1 = self.reduced_latitude(B1, FWD);
         let U1cos = U1.cos();
         let U1sin = U1.sin();
 
@@ -160,8 +160,8 @@ impl Ellipsoid {
             return CoordinateTuple::geo(0., 0., 0., 0.);
         }
 
-        let U1 = self.reduced_latitude(B1, fwd);
-        let U2 = self.reduced_latitude(B2, fwd);
+        let U1 = self.reduced_latitude(B1, FWD);
+        let U2 = self.reduced_latitude(B2, FWD);
 
         let U1cos = U1.cos();
         let U2cos = U2.cos();

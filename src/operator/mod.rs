@@ -282,7 +282,7 @@ mod tests {
     #[test]
     fn operator() {
         use crate::operator_construction::*;
-        use crate::{fwd, inv, Context};
+        use crate::{FWD, INV, Context};
         let mut o = Context::new();
 
         // A non-existing operator
@@ -321,12 +321,12 @@ mod tests {
 
         let mut operands = [CoordinateTuple::raw(0., 0., 0., 0.)];
 
-        h.operate(&mut o, operands.as_mut(), fwd);
+        h.operate(&mut o, operands.as_mut(), FWD);
         assert_eq!(operands[0].first(), -87.);
         assert_eq!(operands[0].second(), -96.);
         assert_eq!(operands[0].third(), -120.);
 
-        h.operate(&mut o, operands.as_mut(), inv);
+        h.operate(&mut o, operands.as_mut(), INV);
         assert_eq!(operands[0].first(), 0.);
         assert_eq!(operands[0].second(), 0.);
         assert_eq!(operands[0].third(), 0.);
@@ -344,7 +344,7 @@ mod tests {
         let h = h.unwrap();
 
         let mut operands = [CoordinateTuple::gis(12., 55., 100., 0.)];
-        h.operate(&mut o, operands.as_mut(), fwd);
+        h.operate(&mut o, operands.as_mut(), FWD);
         let d = operands[0].to_degrees();
         let r = CoordinateTuple::raw(
             11.998815342385209,
@@ -370,7 +370,7 @@ mod tests {
             if assets.exists() {
                 assert!(h.is_ok());
                 let mut operands = [CoordinateTuple::gis(12., 55., 100., 0.)];
-                h.unwrap().operate(&mut o, operands.as_mut(), fwd);
+                h.unwrap().operate(&mut o, operands.as_mut(), FWD);
                 let d = operands[0].to_degrees();
 
                 assert!((d.first() - r.first()).abs() < 1.0e-10);
@@ -402,14 +402,14 @@ mod tests {
         let ed50_etrs89 = ed50_etrs89.unwrap();
         let mut operands = [CoordinateTuple::gis(12., 55., 100., 0.)];
 
-        ed50_etrs89.operate(&mut o, operands.as_mut(), fwd);
+        ed50_etrs89.operate(&mut o, operands.as_mut(), FWD);
         let d = operands[0].to_degrees();
 
         assert!((d.first() - r.first()).abs() < 1.0e-10);
         assert!((d.second() - r.second()).abs() < 1.0e-10);
         assert!((d.third() - r.third()).abs() < 1.0e-8);
 
-        ed50_etrs89.operate(&mut o, operands.as_mut(), inv);
+        ed50_etrs89.operate(&mut o, operands.as_mut(), INV);
         let d = operands[0].to_degrees();
 
         assert!((d.first() - 12.).abs() < 1.0e-10);

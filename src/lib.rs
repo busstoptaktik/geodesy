@@ -47,11 +47,9 @@ pub mod operator_construction {
 }
 
 /// Indicate that a two-way operator, function, or method, should run in the *forward* direction.
-#[allow(non_upper_case_globals)]
-pub const fwd: bool = true;
+pub const FWD: bool = true;
 /// Indicate that a two-way operator, function, or method, should run in the *inverse* direction.
-#[allow(non_upper_case_globals)]
-pub const inv: bool = false;
+pub const INV: bool = false;
 
 use std::io;
 use thiserror::Error;

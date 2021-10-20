@@ -70,7 +70,7 @@ impl OperatorCore for Merc {
             coord[0] = (coord[0] - self.lon_0) * self.k_0 * a - self.x_0;
             // Northing - basically the isometric latitude multiplied by a
             let lat = coord[1] + self.lat_0;
-            coord[1] = a * self.k_0 * self.ellps.isometric_latitude(lat, crate::fwd) - self.y_0;
+            coord[1] = a * self.k_0 * self.ellps.isometric_latitude(lat, crate::FWD) - self.y_0;
         }
         true
     }
@@ -86,7 +86,7 @@ impl OperatorCore for Merc {
             let y = coord[1] + self.y_0;
             // The isometric latitude
             let psi = y / (a * self.k_0);
-            coord[1] = self.ellps.isometric_latitude(psi, crate::inv) - self.lat_0;
+            coord[1] = self.ellps.isometric_latitude(psi, crate::INV) - self.lat_0;
         }
         true
     }
