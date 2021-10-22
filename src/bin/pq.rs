@@ -395,13 +395,12 @@ fn hold_fest() {
     let mut args: HashMap<String, String> = HashMap::new();
     args.insert("a".to_string(), "37".to_string());
     let using_a = use_use_a(args, &mut ctx).unwrap();
-    #[allow(clippy::float_cmp)]
-    assert_eq!(using_a.b, 3.);
+    assert!((using_a.b - 3.).abs() < f64::EPSILON);
     let mut coords = [CoordinateTuple::origin()];
 
     let n = using_a.operate(&mut ctx, &mut coords, FWD);
     assert_eq!(n, 1);
-    assert_eq!(37., coords[0][0]);
+    assert!((37. - coords[0][0]).abs() < f64::EPSILON);
     println!("Vi fik {}", coords[0][0]);
     split_det_op();
 }
@@ -440,7 +439,7 @@ fn split_det_op() {
     println!("trimmed = '{}'", trimmed);
 
     // Generate trimmed steps with elements spearated by single ws and key-value pairs glued by ':' as in 'k:v'
-    let steps: Vec<_> = trimmed.split("|").collect();
+    let steps: Vec<_> = trimmed.split('|').collect();
     let mut trimmed_steps = Vec::<String>::new();
     for mut step in steps {
         step = step.trim();
