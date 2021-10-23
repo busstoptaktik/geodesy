@@ -6,23 +6,23 @@ use crate::GeodesyError;
 
 // A HashMap would have been a better choice,for the OPERATOR_LIST, except
 // for the annoying fact that it cannot be compile-time constructed
+#[rustfmt::skip]
 const OPERATOR_LIST: [(&str, OperatorConstructor); 13] = [
-    ("adapt", crate::operator::adapt::Adapt::operator),
-    ("cart", crate::operator::cart::Cart::operator),
-    ("helmert", crate::operator::helmert::Helmert::operator),
-    ("lcc", crate::operator::lcc::Lcc::operator),
-    ("merc", crate::operator::merc::Merc::operator),
-    (
-        "molodensky",
-        crate::operator::molodensky::Molodensky::operator,
-    ),
-    ("dm", crate::operator::nmea::Nmea::operator),
-    ("nmea", crate::operator::nmea::Nmea::operator),
-    ("dms", crate::operator::nmea::Nmea::dmsoperator),
-    ("nmeass", crate::operator::nmea::Nmea::dmsoperator),
-    ("noop", crate::operator::noop::Noop::operator),
-    ("tmerc", crate::operator::tmerc::Tmerc::operator),
-    ("utm", crate::operator::tmerc::Tmerc::utmoperator),
+    ("adapt",      crate::operator::adapt::Adapt::operator),
+    ("cart",       crate::operator::cart::Cart::operator),
+    ("helmert",    crate::operator::helmert::Helmert::operator),
+    ("lcc",        crate::operator::lcc::Lcc::operator),
+    ("merc",       crate::operator::merc::Merc::operator),
+
+    ("molodensky", crate::operator::molodensky::Molodensky::operator),
+    ("dm",         crate::operator::nmea::Nmea::operator),
+    ("nmea",       crate::operator::nmea::Nmea::operator),
+    ("dms",        crate::operator::nmea::Nmea::dmsoperator),
+    ("nmeass",     crate::operator::nmea::Nmea::dmsoperator),
+
+    ("noop",       crate::operator::noop::Noop::operator),
+    ("tmerc",      crate::operator::tmerc::Tmerc::operator),
+    ("utm",        crate::operator::tmerc::Tmerc::utmoperator),
 ];
 
 // Operator is a newtype around a Boxed trait OperatorCore,
@@ -282,7 +282,7 @@ mod tests {
     #[test]
     fn operator() {
         use crate::operator_construction::*;
-        use crate::{FWD, INV, Context};
+        use crate::{Context, FWD, INV};
         let mut o = Context::new();
 
         // A non-existing operator

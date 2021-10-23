@@ -1,6 +1,6 @@
 use crate::ellipsoid::Ellipsoid;
-use crate::FWD;
 use crate::CoordinateTuple;
+use crate::FWD;
 
 // ----- Geodesics -------------------------------------------------------------
 impl Ellipsoid {
