@@ -85,7 +85,7 @@ impl GeodesicShift {
 }
 
 impl OperatorCore for GeodesicShift {
-    fn fwd(&self, _ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
+    fn fwd(&self, _ctx: &Context, operands: &mut [CoordinateTuple]) -> bool {
         for coord in operands {
             let res = self.ellps.geodesic_fwd(&coord, self.bearing, self.distance);
             coord[0] = res[0];

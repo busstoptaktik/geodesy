@@ -173,7 +173,7 @@ impl Helmert {
 }
 
 impl OperatorCore for Helmert {
-    fn fwd(&self, _ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
+    fn fwd(&self, _ctx: &Context, operands: &mut [CoordinateTuple]) -> bool {
         let mut scale = self.scale;
         let mut R = self.R;
         let mut T = self.T0;
@@ -225,7 +225,7 @@ impl OperatorCore for Helmert {
         true
     }
 
-    fn inv(&self, _ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
+    fn inv(&self, _ctx: &Context, operands: &mut [CoordinateTuple]) -> bool {
         let mut scale = self.scale;
         let mut R = self.R;
         let mut T = self.T0;

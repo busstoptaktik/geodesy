@@ -87,7 +87,7 @@ impl Tmerc {
 #[allow(non_snake_case)]
 impl OperatorCore for Tmerc {
     // Forward transverse mercator, following Bowring (1989)
-    fn fwd(&self, _ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
+    fn fwd(&self, _ctx: &Context, operands: &mut [CoordinateTuple]) -> bool {
         for coord in operands {
             let lat = coord[1] + self.lat_0;
             let c = lat.cos();
@@ -120,7 +120,7 @@ impl OperatorCore for Tmerc {
     }
 
     // Inverse transverse mercator, following Bowring (1989)
-    fn inv(&self, _ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
+    fn inv(&self, _ctx: &Context, operands: &mut [CoordinateTuple]) -> bool {
         // Footpoint latitude, i.e. the latitude of a point on the central meridian
         // having the same northing as the point of interest
         for coord in operands {

@@ -1,7 +1,5 @@
-use std::collections::HashMap;
-use std::fs::File;
-
 use log::info;
+use std::collections::HashMap;
 
 use crate::operator_construction::*;
 use crate::CoordinateTuple;
@@ -9,15 +7,9 @@ use crate::CoordinateTuple;
 /// The central administration of the transformation functionality
 // #[derive(Default)]
 pub struct Context {
-    pub stack: Vec<Vec<CoordinateTuple>>,
-    minions: Vec<Context>,
     user_defined_operators: HashMap<String, OperatorConstructor>,
     user_defined_macros: HashMap<String, String>,
     operations: Vec<Operator>,
-    last_failing_operation_definition: String,
-    last_failing_operation: String,
-    cause: String,
-    pile: Result<File, std::io::Error>,
 }
 
 mod gys;
@@ -31,44 +23,26 @@ impl Default for Context {
 }
 
 impl Context {
-    /// Number of chunks to process in (principle in) parallel.
-    const CHUNKS: usize = 3;
-
-    /// Maximum size of each chunk.
-    const CHUNK_SIZE: usize = 1000;
-
     pub fn new() -> Context {
         info!("Creating new Context");
-        let mut ctx = Context::_new();
-        for _ in 0..Self::CHUNKS {
-            ctx.minions.push(Context::_new());
-        }
-        ctx
-    }
-
-    fn _new() -> Context {
-        let mut pile_path = dirs::data_local_dir().unwrap_or_default();
-        pile_path.push("geodesy");
-        pile_path.push("assets.pile");
-        let pile_name = pile_path.clone();
-        let thepile = File::open(pile_path);
-        if thepile.is_err() {
-            info!("Could not find asset pile {:?}", pile_name);
-        } else {
-            info!("Found asset pile {:?}", pile_name);
-        }
-
         Context {
-            stack: Vec::new(),
-            minions: Vec::new(),
-            last_failing_operation_definition: String::new(),
-            last_failing_operation: String::new(),
-            cause: String::new(),
             user_defined_operators: HashMap::new(),
             user_defined_macros: HashMap::new(),
             operations: Vec::new(),
-            pile: thepile,
         }
+    }
+
+    fn _grid_provider() {
+        // let mut pile_path = dirs::data_local_dir().unwrap_or_default();
+        // pile_path.push("geodesy");
+        // pile_path.push("assets.pile");
+        // let pile_name = pile_path.clone();
+        // let thepile = File::open(pile_path);
+        // if thepile.is_err() {
+        //     info!("Could not find asset pile {:?}", pile_name);
+        // } else {
+        //     info!("Found asset pile {:?}", pile_name);
+        // }
     }
 
     // Parallel execution helper for `operate`, below
@@ -82,49 +56,28 @@ impl Context {
     }
 
     pub fn operate(
-        &mut self,
+        &self,
         operation: usize,
         operands: &mut [CoordinateTuple],
         forward: bool,
     ) -> bool {
         if operation >= self.operations.len() {
-            self.last_failing_operation = String::from("Invalid");
-            self.cause = String::from("Attempt to access an invalid operator from context");
+            // self.last_failing_operation = String::from("Invalid");
+            // self.cause = String::from("Attempt to access an invalid operator from context");
             return false;
         }
-        let mut i = 0_usize;
-        let mut result = true;
-        for chunk in operands.chunks_mut(Self::CHUNK_SIZE) {
-            // Need a bit more std::thread-Rust-fu to do actual mutithreading.
-            // For now, we just split the input data in chunks, process them
-            // and verify that the parallel stack-functionality works.
-            result &= self.minions[i]._operate(&self.operations[operation], chunk, forward);
-            self.minions[i].stack.clear();
-            i = (i + 1) % Self::CHUNKS;
-        }
-        result
+        let op = &self.operations[operation];
+        op.operate(self, operands, forward)
     }
 
     /// Forward operation.
-    pub fn fwd(&mut self, operation: usize, operands: &mut [CoordinateTuple]) -> bool {
+    pub fn fwd(&self, operation: usize, operands: &mut [CoordinateTuple]) -> bool {
         self.operate(operation, operands, true)
     }
 
     /// Inverse operation.
-    pub fn inv(&mut self, operation: usize, operands: &mut [CoordinateTuple]) -> bool {
+    pub fn inv(&self, operation: usize, operands: &mut [CoordinateTuple]) -> bool {
         self.operate(operation, operands, false)
-    }
-
-    pub fn error(&mut self, which: &str, why: &str) {
-        self.last_failing_operation = String::from(which);
-        self.cause = String::from(why);
-    }
-
-    pub fn report(&mut self) -> String {
-        format!(
-            "Last failure in {}: {}\n{}",
-            self.last_failing_operation, self.cause, self.last_failing_operation_definition
-        )
     }
 }
 
@@ -132,13 +85,6 @@ impl Context {
 
 #[cfg(test)]
 mod tests {
-    #[test]
-    fn operand() {
-        use crate::Context;
-        let ctx = Context::new();
-        assert_eq!(ctx.stack.len(), 0);
-    }
-
     #[test]
     fn operate() {
         use crate::Context;

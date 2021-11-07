@@ -53,7 +53,6 @@ pub const INV: bool = false;
 
 use std::io;
 use thiserror::Error;
-
 #[derive(Error, Debug)]
 pub enum GeodesyError {
     #[error("i/o error")]

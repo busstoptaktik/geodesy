@@ -14,7 +14,7 @@ pub struct Pipeline {
 }
 
 impl Pipeline {
-    pub fn new(args: &mut OperatorArgs, ctx: &mut Context) -> Result<Pipeline, GeodesyError> {
+    pub fn new(args: &mut OperatorArgs, ctx: &Context) -> Result<Pipeline, GeodesyError> {
         let inverted = args.flag("inv");
         let mut steps = Vec::new();
         let n = args.numeric_value("_nsteps", 0.0)? as usize;
@@ -45,7 +45,7 @@ impl Pipeline {
 }
 
 impl OperatorCore for Pipeline {
-    fn fwd(&self, ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
+    fn fwd(&self, ctx: &Context, operands: &mut [CoordinateTuple]) -> bool {
         for step in &self.steps {
             if step.is_noop() {
                 continue;
@@ -57,7 +57,7 @@ impl OperatorCore for Pipeline {
         true
     }
 
-    fn inv(&self, ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
+    fn inv(&self, ctx: &Context, operands: &mut [CoordinateTuple]) -> bool {
         for step in self.steps.iter().rev() {
             if step.is_noop() {
                 continue;

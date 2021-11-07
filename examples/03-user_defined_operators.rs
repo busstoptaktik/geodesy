@@ -40,14 +40,14 @@ impl Add42 {
 }
 
 impl OperatorCore for Add42 {
-    fn fwd(&self, _ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
+    fn fwd(&self, _ctx: &Context, operands: &mut [CoordinateTuple]) -> bool {
         for coord in operands {
             coord[0] += 42.;
         }
         true
     }
 
-    fn inv(&self, _ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
+    fn inv(&self, _ctx: &Context, operands: &mut [CoordinateTuple]) -> bool {
         for coord in operands {
             coord[0] -= 42.;
         }

@@ -4,11 +4,11 @@
 // Run with:
 // cargo run --example 00-transformations
 
-fn main() {
-    // The CoordinateTuple type is much used, so
-    // we give it a very brief abbreviation
-    use geodesy::CoordinateTuple as C;
+// The CoordinateTuple type is much used, so we give it a very short alias
+use geodesy::CoordinateTuple as C;
 
+// Use Anyhow for convenient error handling
+fn main() -> anyhow::Result<()> {
     // The context is the entry point to all transformation functionality:
     let mut ctx = geodesy::Context::new();
     // The concept of a "context data structure" will be well known to
@@ -46,11 +46,8 @@ fn main() {
     // Let's create a transformation element ("an operation"), turning
     // geographical coordinates into UTM zone 32 coordinates. Since
     // this may go wrong (e.g. due to syntax errors in the operator
-    // definition), use the Rust `match` syntax to handle errors.
-    let utm32 = match ctx.operation("utm: {zone: 32}") {
-        Ok(op) => op,
-        _ => return println!("{}", ctx.report()),
-    };
+    // definition), use the Rust `?`-operator to handle errors.
+    let utm32 = ctx.operation("utm: {zone: 32}")?;
     // Now, let's use the utm32-operator to transform some data
     ctx.fwd(utm32, &mut data);
 
@@ -72,8 +69,9 @@ fn main() {
 
     // Here's an example of handling bad syntax:
     println!("Bad syntax example:");
-    if ctx.operation("aargh: {zone: 23}").is_err() {
-        println!("Deliberate error - {}", ctx.report());
+    let op = ctx.operation("aargh: {zone: 23}");
+    if op.is_err() {
+        println!("Deliberate error - {:?}", op);
     }
 
     // To get rid of roundtrip-roundoff noise, let's make a fresh
@@ -96,12 +94,7 @@ fn main() {
         ]
     }";
 
-    let ed50_wgs84 = ctx.operation(pipeline);
-    if ed50_wgs84.is_err() {
-        println!("ERROR - {}", ctx.report());
-        return;
-    };
-    let ed50_wgs84 = ed50_wgs84.unwrap();
+    let ed50_wgs84 = ctx.operation(pipeline)?;
 
     // Since the forward transformation goes *from* ed50 to wgs84, we use
     // the inverse method to take us the other way, back in time to ED50
@@ -113,4 +106,5 @@ fn main() {
     for coord in data {
         println!("    {:?}", coord);
     }
+    Ok(())
 }

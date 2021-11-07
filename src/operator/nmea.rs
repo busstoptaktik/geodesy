@@ -65,7 +65,7 @@ impl Nmea {
 }
 
 impl OperatorCore for Nmea {
-    fn fwd(&self, _ctx: &mut Context, operands: &mut [Coord]) -> bool {
+    fn fwd(&self, _ctx: &Context, operands: &mut [Coord]) -> bool {
         for o in operands {
             if self.dms {
                 *o = Coord::nmeass(o[0], o[1], o[2], o[3]);
@@ -76,7 +76,7 @@ impl OperatorCore for Nmea {
         true
     }
 
-    fn inv(&self, _ctx: &mut Context, operands: &mut [Coord]) -> bool {
+    fn inv(&self, _ctx: &Context, operands: &mut [Coord]) -> bool {
         for o in operands {
             if self.dms {
                 let longitude = Coord::dd_to_nmeass(o[0].to_degrees());

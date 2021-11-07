@@ -17,7 +17,7 @@ impl Context {
         let mut ctx = Context::new();
         let op = ctx.operation(operation);
         if op.is_err() {
-            println!("{}", ctx.report());
+            println!("{:?}", op);
             return false;
         }
         let op = op.unwrap();
@@ -28,7 +28,7 @@ impl Context {
 
         // Forward test
         if !ctx.fwd(op, operands) {
-            println!("{}", ctx.report());
+            println!("Fwd operation failed for {}", ctx.operations[op].name());
             return false;
         }
         for i in 0..operands.len() {
@@ -55,7 +55,7 @@ impl Context {
 
         // Roundtrip
         if !ctx.inv(op, results) {
-            println!("{}", ctx.report());
+            println!("Inv operation failed for {}", ctx.operations[op].name());
             return false;
         }
         for i in 0..operands.len() {

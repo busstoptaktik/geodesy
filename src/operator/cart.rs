@@ -62,7 +62,7 @@ impl OperatorCore for Cart {
     // For now, we just use the shrinkwrapped Ellipsoid-method in
     // fwd() and an optimized version of Fukushima (2006) in inv().
     // We should, however, switch to Bowring (1985).
-    fn fwd(&self, _ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
+    fn fwd(&self, _ctx: &Context, operands: &mut [CoordinateTuple]) -> bool {
         for coord in operands {
             *coord = self.ellps.cartesian(coord);
         }
@@ -72,7 +72,7 @@ impl OperatorCore for Cart {
     #[allow(non_snake_case)] // make it possible to mimic math notation from original paper
     #[allow(clippy::many_single_char_names)] // ditto
     #[allow(clippy::suspicious_operation_groupings)]
-    fn inv(&self, _ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
+    fn inv(&self, _ctx: &Context, operands: &mut [CoordinateTuple]) -> bool {
         let a = self.ellps.semimajor_axis();
         let es = self.es;
         let b = self.b;

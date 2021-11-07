@@ -131,7 +131,7 @@ impl Lcc {
 impl OperatorCore for Lcc {
     // Forward Lambert conformal conic, following the PROJ implementation,
     // cf.  https://proj.org/operations/projections/lcc.html
-    fn fwd(&self, _ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
+    fn fwd(&self, _ctx: &Context, operands: &mut [CoordinateTuple]) -> bool {
         let a = self.ellps.semimajor_axis();
         let e = self.ellps.eccentricity();
         for coord in operands {
@@ -155,7 +155,7 @@ impl OperatorCore for Lcc {
         true
     }
 
-    fn inv(&self, _ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
+    fn inv(&self, _ctx: &Context, operands: &mut [CoordinateTuple]) -> bool {
         let a = self.ellps.semimajor_axis();
         let e = self.ellps.eccentricity();
         for coord in operands {

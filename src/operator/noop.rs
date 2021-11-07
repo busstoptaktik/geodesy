@@ -21,11 +21,11 @@ impl Noop {
 }
 
 impl OperatorCore for Noop {
-    fn fwd(&self, _ctx: &mut Context, _operands: &mut [CoordinateTuple]) -> bool {
+    fn fwd(&self, _ctx: &Context, _operands: &mut [CoordinateTuple]) -> bool {
         true
     }
 
-    fn inv(&self, _ctx: &mut Context, _operands: &mut [CoordinateTuple]) -> bool {
+    fn inv(&self, _ctx: &Context, _operands: &mut [CoordinateTuple]) -> bool {
         true
     }
 

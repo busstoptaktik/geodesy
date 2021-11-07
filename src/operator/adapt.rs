@@ -219,7 +219,7 @@ impl Adapt {
 }
 
 impl OperatorCore for Adapt {
-    fn fwd(&self, _ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
+    fn fwd(&self, _ctx: &Context, operands: &mut [CoordinateTuple]) -> bool {
         if self.noop {
             return true;
         }
@@ -234,7 +234,7 @@ impl OperatorCore for Adapt {
         true
     }
 
-    fn inv(&self, _ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
+    fn inv(&self, _ctx: &Context, operands: &mut [CoordinateTuple]) -> bool {
         if self.noop {
             return true;
         }
@@ -251,7 +251,7 @@ impl OperatorCore for Adapt {
     // We overwrite the default `operate` in order to handle the trick above,
     // where we swap `from` and `to`, rather than letting `operate` call the
     // complementary method.
-    fn operate(&self, ctx: &mut Context, operands: &mut [CoordinateTuple], forward: bool) -> bool {
+    fn operate(&self, ctx: &Context, operands: &mut [CoordinateTuple], forward: bool) -> bool {
         if forward {
             return self.fwd(ctx, operands);
         }

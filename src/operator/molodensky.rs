@@ -155,7 +155,7 @@ impl Molodensky {
 }
 
 impl OperatorCore for Molodensky {
-    fn fwd(&self, _ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
+    fn fwd(&self, _ctx: &Context, operands: &mut [CoordinateTuple]) -> bool {
         for coord in operands {
             let par = self.calc_molodensky_params(coord);
             coord[0] += par[0];
@@ -166,7 +166,7 @@ impl OperatorCore for Molodensky {
     }
 
     // Inverse Molodensky
-    fn inv(&self, _ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
+    fn inv(&self, _ctx: &Context, operands: &mut [CoordinateTuple]) -> bool {
         for coord in operands {
             let par = self.calc_molodensky_params(coord);
             coord[0] -= par[0];

@@ -11,7 +11,7 @@ impl Context {
             .insert(name.to_string(), constructor);
     }
 
-    pub(crate) fn locate_operator(&mut self, name: &str) -> Option<&OperatorConstructor> {
+    pub(crate) fn locate_operator(&self, name: &str) -> Option<&OperatorConstructor> {
         self.user_defined_operators.get(name)
     }
 
@@ -34,14 +34,11 @@ impl Context {
         true
     }
 
-    pub(crate) fn locate_macro(&mut self, name: &str) -> Option<&String> {
+    pub(crate) fn locate_macro(&self, name: &str) -> Option<&String> {
         self.user_defined_macros.get(name)
     }
 
     pub fn operation(&mut self, definition: &str) -> Result<usize, GeodesyError> {
-        self.last_failing_operation_definition = definition.to_string();
-        self.last_failing_operation.clear();
-        self.cause.clear();
         let op = Operator::new(definition, self)?;
         let index = self.operations.len();
         self.operations.push(op);
@@ -83,7 +80,7 @@ impl Context {
         }
 
         // If not found as a freestanding file, try assets.zip
-        use std::io::prelude::*;
+        use std::io::Read; // For read_to_string
         dir.push("assets.zip");
         // Open the physical zip file
         if let Ok(zipfile) = std::fs::File::open(dir) {

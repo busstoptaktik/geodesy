@@ -63,7 +63,7 @@ impl Merc {
 impl OperatorCore for Merc {
     // Forward mercator, following the PROJ implementation,
     // cf.  https://proj.org/operations/projections/merc.html
-    fn fwd(&self, _ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
+    fn fwd(&self, _ctx: &Context, operands: &mut [CoordinateTuple]) -> bool {
         let a = self.ellps.semimajor_axis();
         for coord in operands {
             // Easting
@@ -75,7 +75,7 @@ impl OperatorCore for Merc {
         true
     }
 
-    fn inv(&self, _ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
+    fn inv(&self, _ctx: &Context, operands: &mut [CoordinateTuple]) -> bool {
         let a = self.ellps.semimajor_axis();
         for coord in operands {
             // Easting -> Longitude

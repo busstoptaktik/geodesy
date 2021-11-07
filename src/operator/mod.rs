@@ -3,6 +3,7 @@ use crate::operator_construction::OperatorConstructor;
 use crate::Context;
 use crate::CoordinateTuple;
 use crate::GeodesyError;
+use log::warn;
 
 // A HashMap would have been a better choice,for the OPERATOR_LIST, except
 // for the annoying fact that it cannot be compile-time constructed
@@ -47,7 +48,7 @@ impl Operator {
     /// ctx.inv(op, &mut operands);
     /// assert!((operands[0][0].to_degrees() - 12.).abs() < 1.0e-10);
     /// ```
-    pub fn new(definition: &str, ctx: &mut Context) -> Result<Operator, GeodesyError> {
+    pub fn new(definition: &str, ctx: &Context) -> Result<Operator, GeodesyError> {
         let definition = Context::gys_to_yaml(definition);
 
         let mut oa = OperatorArgs::new();
@@ -67,20 +68,15 @@ impl Debug for Operator {
 // Perhaps not necessary: We could deem Core low level and
 // build a high level interface on top of Core.
 impl OperatorCore for Operator {
-    fn fwd(&self, ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
+    fn fwd(&self, ctx: &Context, operands: &mut [CoordinateTuple]) -> bool {
         self.0.fwd(ctx, operands)
     }
 
-    fn inv(&self, ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
+    fn inv(&self, ctx: &Context, operands: &mut [CoordinateTuple]) -> bool {
         self.0.inv(ctx, operands)
     }
 
-    fn operate(
-        &self,
-        operand: &mut Context,
-        operands: &mut [CoordinateTuple],
-        forward: bool,
-    ) -> bool {
+    fn operate(&self, operand: &Context, operands: &mut [CoordinateTuple], forward: bool) -> bool {
         self.0.operate(operand, operands, forward)
     }
 
@@ -111,12 +107,12 @@ impl OperatorCore for Operator {
 /// which builds on this `trait` (which only holds `pub`ness in order to support
 /// construction of user-defined operators).
 pub trait OperatorCore {
-    fn fwd(&self, ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool;
+    fn fwd(&self, ctx: &Context, operands: &mut [CoordinateTuple]) -> bool;
 
     // implementations must override at least one of {inv, invertible}
     #[allow(unused_variables)]
-    fn inv(&self, ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
-        ctx.error(self.name(), "Operator not invertible");
+    fn inv(&self, ctx: &Context, operands: &mut [CoordinateTuple]) -> bool {
+        warn!("Operator {} not invertible", self.name());
         false
     }
 
@@ -129,7 +125,7 @@ pub trait OperatorCore {
     }
 
     // operate fwd/inv, taking operator inversion into account.
-    fn operate(&self, ctx: &mut Context, operands: &mut [CoordinateTuple], forward: bool) -> bool {
+    fn operate(&self, ctx: &Context, operands: &mut [CoordinateTuple], forward: bool) -> bool {
         // Short form of (inverted && !forward) || (forward && !inverted)
         if self.is_inverted() != forward {
             return self.fwd(ctx, operands);
@@ -170,11 +166,11 @@ mod tmerc;
 
 pub(crate) fn operator_factory(
     args: &mut OperatorArgs,
-    ctx: &mut Context,
+    ctx: &Context,
     recursions: usize,
 ) -> Result<Operator, GeodesyError> {
     if recursions > 100 {
-        ctx.error("Unknown", "Operator definition too deeply nested");
+        warn!("Operator definition too deeply nested");
         return Err(GeodesyError::Recursion("(unknown)".to_string()));
     }
 
@@ -225,13 +221,13 @@ pub(crate) fn operator_factory(
 }
 
 /// Handle instantiation of built-in operators.
-fn builtins(ctx: &mut Context, args: &mut OperatorArgs) -> Result<Operator, GeodesyError> {
+fn builtins(ctx: &Context, args: &mut OperatorArgs) -> Result<Operator, GeodesyError> {
     // Pipelines are not characterized by the name "pipeline", but simply by containing steps.
     if let Ok(steps) = args.numeric_value("_nsteps", 0.0) {
         if steps > 0.0 {
             match crate::operator::pipeline::Pipeline::new(args, ctx) {
                 Err(err) => {
-                    ctx.error(&err.to_string(), "pipeline");
+                    warn!("Pipeline error: {}", &err.to_string());
                     return Err(err);
                 }
                 Ok(ok) => {
@@ -280,7 +276,7 @@ mod tests {
     use crate::GeodesyError;
 
     #[test]
-    fn operator() {
+    fn operator() -> Result<(), GeodesyError> {
         use crate::operator_construction::*;
         use crate::{Context, FWD, INV};
         let mut o = Context::new();
@@ -293,8 +289,8 @@ mod tests {
         // to test the operator_factory recursion breaker
         assert!(o.register_macro("halmert", "hilmert: {}"));
         assert!(o.register_macro("hilmert", "halmert: {}"));
-        if Operator::new("halmert: {x: -87, y: -96, z: -120}", &mut o).is_err() {
-            assert!(o.report().contains("too deeply nested"));
+        if let Err(err) = Operator::new("halmert: {x: -87, y: -96, z: -120}", &mut o) {
+            assert!(err.to_string().contains("too deep recursion"));
         } else {
             panic!();
         }
@@ -303,14 +299,10 @@ mod tests {
         assert!(o.register_macro("hulmert", "helmert: {x: ^x, y: ^y, z: ^z}"));
 
         // A plain operator: Helmert, EPSG:1134 - 3 parameter, ED50/WGS84
-        let hh = Operator::new("helmert: {x: -87, y: -96, z: -120}", &mut o);
-        assert!(hh.is_ok());
-        let hh = hh.unwrap();
+        let hh = Operator::new("helmert: {x: -87, y: -96, z: -120}", &mut o)?;
 
         // Same operator, defined through the "hulmert" macro
-        let h = Operator::new("hulmert: {x: -87, y: -96, z: -120}", &mut o);
-        assert!(h.is_ok());
-        let h = h.unwrap();
+        let h = Operator::new("hulmert: {x: -87, y: -96, z: -120}", &mut o)?;
 
         assert_eq!(hh.args(0).name, h.args(0).name);
         assert_eq!(hh.args(0).used, h.args(0).used);
@@ -339,9 +331,7 @@ mod tests {
                 cart: {inv: true, ellps: GRS80}
             ]
         }";
-        let h = Operator::new(pipeline, &mut o);
-        assert!(h.is_ok());
-        let h = h.unwrap();
+        let h = Operator::new(pipeline, &mut o)?;
 
         let mut operands = [CoordinateTuple::gis(12., 55., 100., 0.)];
         h.operate(&mut o, operands.as_mut(), FWD);
@@ -358,26 +348,22 @@ mod tests {
         assert!((d.third() - r.third()).abs() < 1.0e-8);
 
         // An externally defined version
-        let h = Operator::new("ed50_etrs89", &mut o);
-        assert!(h.is_ok());
+        let _h = Operator::new("ed50_etrs89", &mut o)?;
 
         // Try to access it from data_local_dir (i.e. $HOME/share or somesuch)
-        let h = Operator::new("ed50_etrs89", &mut o);
-        // If we have access to "assets.zip" we expect to succeed
         if let Some(mut assets) = dirs::data_local_dir() {
             assets.push("geodesy");
             assets.push("assets.zip");
             if assets.exists() {
-                assert!(h.is_ok());
+                // If we have access to "assets.zip" we expect to succeed
+                let h = Operator::new("ed50_etrs89", &mut o)?;
                 let mut operands = [CoordinateTuple::gis(12., 55., 100., 0.)];
-                h.unwrap().operate(&mut o, operands.as_mut(), FWD);
+                h.operate(&mut o, &mut operands, FWD);
                 let d = operands[0].to_degrees();
 
                 assert!((d.first() - r.first()).abs() < 1.0e-10);
                 assert!((d.second() - r.second()).abs() < 1.0e-10);
                 assert!((d.third() - r.third()).abs() < 1.0e-8);
-            } else {
-                assert!(h.is_err());
             }
         }
 
@@ -397,24 +383,24 @@ mod tests {
         let ed50_etrs89 = Operator::new(
             "geohelmert: {left: intl, right: GRS80, x: -87, y: -96, z: -120}",
             &mut o,
-        );
-        assert!(ed50_etrs89.is_ok());
-        let ed50_etrs89 = ed50_etrs89.unwrap();
+        )?;
         let mut operands = [CoordinateTuple::gis(12., 55., 100., 0.)];
 
-        ed50_etrs89.operate(&mut o, operands.as_mut(), FWD);
+        ed50_etrs89.operate(&mut o, &mut operands, FWD);
         let d = operands[0].to_degrees();
 
         assert!((d.first() - r.first()).abs() < 1.0e-10);
         assert!((d.second() - r.second()).abs() < 1.0e-10);
         assert!((d.third() - r.third()).abs() < 1.0e-8);
 
-        ed50_etrs89.operate(&mut o, operands.as_mut(), INV);
+        ed50_etrs89.operate(&mut o, &mut operands, INV);
         let d = operands[0].to_degrees();
 
         assert!((d.first() - 12.).abs() < 1.0e-10);
         assert!((d.second() - 55.).abs() < 1.0e-10);
         assert!((d.third() - 100.).abs() < 1.0e-8);
+
+        Ok(())
     }
 
     use super::Context;
@@ -438,14 +424,14 @@ mod tests {
     }
 
     impl OperatorCore for Nnoopp {
-        fn fwd(&self, _ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
+        fn fwd(&self, _ctx: &Context, operands: &mut [CoordinateTuple]) -> bool {
             for coord in operands {
                 coord[0] = 42.;
             }
             true
         }
 
-        fn inv(&self, _ctx: &mut Context, operands: &mut [CoordinateTuple]) -> bool {
+        fn inv(&self, _ctx: &Context, operands: &mut [CoordinateTuple]) -> bool {
             for coord in operands {
                 coord[0] = 24.;
             }
