@@ -6,6 +6,30 @@ use std::{collections::HashMap, path::PathBuf};
 use structopt::StructOpt;
 
 use geodesy::CoordinateTuple;
+use geodesy::Ellipsoid;
+use geodesy::GeodesyError;
+
+pub trait GridDescriptorFunctionality {
+    fn grid_value(&self, location: CoordinateTuple) -> CoordinateTuple;
+}
+
+pub struct GridDescriptor(Box<dyn GridDescriptorFunctionality>);
+
+
+pub trait ResourceProviderFunctionality {
+    fn ellipsoid(&self, name: &str) -> Result<Ellipsoid, GeodesyError> {
+        if name == "GRS80" {
+            return Ok(Ellipsoid::default());
+        }
+        Err(GeodesyError::NotFound(String::from(name)))
+    }
+
+    fn grid_descriptor(&self, name: &str) -> Result<GridDescriptor, GeodesyError> {
+        Err(GeodesyError::NotFound(String::from(name)))
+    }
+}
+pub struct ResourceProvider(Box<dyn ResourceProviderFunctionality>);
+
 
 /// PQ: The Rust Geodesy blablabla program is called pq in order to have
 /// an alphabetically continuous source code file name "PQ.RS". We
@@ -66,6 +90,30 @@ fn main() -> Result<()> {
     debug!("debug message 2");
 
     hold_fest();
+
+    let first_list: [(String, String); 6] = [
+        (String::from("a"), String::from("a def")),
+        (String::from("b"), String::from("b def")),
+        (String::from("c"), String::from("c def")),
+        (String::from("d"), String::from("d def")),
+        (String::from("e"), String::from("e def")),
+        (String::from("f"), String::from("f def")),
+    ];
+
+    let second_list: [(String, String); 6] = [
+        (String::from("a"), String::from("   ^b  ")),
+        (String::from("b"), String::from("2 b def")),
+        (String::from("c"), String::from("2 c def")),
+        (String::from("d"), String::from("2 d def")),
+        (String::from("e"), String::from("    2 e def   ")),
+        (String::from("f"), String::from("^a")),
+    ];
+
+    let f = value_of_key("  f  ", &first_list, &second_list)?;
+    assert_eq!(f, first_list[1].1);
+
+    let e = value_of_key("  e  ", &first_list, &second_list)?;
+    assert_eq!(e, "2 e def");
 
     if opt.debug {
         if let Some(dir) = dirs::data_local_dir() {
@@ -450,4 +498,81 @@ fn split_det_op() {
 
     println!("trimmed steps = {:#?}", trimmed_steps);
     println!("docstring = '{}'", docstring);
+}
+
+fn value_of_key(key: &str, globals: &[(String, String)], locals: &[(String, String)]) -> Result<String, GeodesyError> {
+    // The haystack is a reverse iterator over both lists in series
+    let mut haystack = globals.iter().chain(locals.iter()).rev();
+
+    // Find the needle in the haystack, recursively chasing look-ups ('^')
+    let key = key.trim();
+    let mut needle = key;
+    let mut chasing = false;
+    loop {
+        let found = haystack.find(|&x| x.0 == needle);
+        if found.is_none() {
+            if chasing {
+                return Err(GeodesyError::Syntax(format!("Incomplete definition for '{}'", key)));
+            }
+            return Err(GeodesyError::NotFound(String::from(key)));
+        }
+        let thevalue = found.unwrap().1.trim();
+
+        // If the value is a(nother) lookup, we continue the search in the same iterator
+        if thevalue.starts_with("^") {
+            chasing = true;
+            needle = &thevalue[1..];
+            continue;
+        }
+
+        // Otherwise we have the proper result
+        return Ok(String::from(thevalue.trim()));
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn operator_args() -> Result<(), GeodesyError> {
+        let globals: [(String, String); 6] = [
+            (String::from("a"), String::from("a def")),
+            (String::from("b"), String::from("b def")),
+            (String::from("c"), String::from("c def")),
+            (String::from("d"), String::from("d def")),
+            (String::from("e"), String::from("e def")),
+            (String::from("f"), String::from("f def")),
+        ];
+
+        let locals: [(String, String); 6] = [
+            (String::from("a"), String::from("   ^b  ")),
+            (String::from("b"), String::from("2 b def")),
+            (String::from("c"), String::from("2 c def")),
+            (String::from("d"), String::from("^2 d def")),
+            (String::from("e"), String::from("    2 e def   ")),
+            (String::from("f"), String::from("^a")),
+        ];
+
+        let f = value_of_key("  f  ", &globals, &locals)?;
+        assert_eq!(f, globals[1].1);
+
+        let e = value_of_key("  e  ", &globals, &locals)?;
+        assert_eq!(e, "2 e def");
+
+        if let Err(d) = value_of_key("  d  ", &globals, &locals) {
+            println!("d: {:?}", d.to_string());
+            assert!(d.to_string().starts_with("syntax error"));
+        }
+        let d = value_of_key("  d  ", &globals, &locals).unwrap_err();
+        assert!(d.to_string().starts_with("syntax error"));
+
+        let _d = value_of_key("  d  ", &globals, &locals).unwrap_or_else(|e|
+            if !e.to_string().starts_with("syntax error") {
+                panic!("Expected syntax error here!");
+            } else {String::default()}
+        );
+
+        Ok(())
+    }
 }

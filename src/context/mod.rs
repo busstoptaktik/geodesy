@@ -13,6 +13,7 @@ pub struct Context {
 }
 
 mod gys;
+mod nygys;
 mod test;
 mod user_defined;
 

@@ -51,25 +51,32 @@ pub const FWD: bool = true;
 /// Indicate that a two-way operator, function, or method, should run in the *inverse* direction.
 pub const INV: bool = false;
 
-use std::io;
 use thiserror::Error;
 #[derive(Error, Debug)]
 pub enum GeodesyError {
-    #[error("i/o error")]
-    Io(#[from] io::Error),
+    // Convert any std::io::Error to GeodesyError::Io
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
+
+    // General error message
     #[error("error: {0}")]
     General(&'static str),
+
     #[error("syntax error: {0}")]
     Syntax(String),
+
     #[error("{0}: {1}")]
     Operator(&'static str, &'static str),
 
     #[error("invalid header (expected {expected:?}, found {found:?})")]
     InvalidHeader { expected: String, found: String },
+
     #[error("operator {0} not found")]
     NotFound(String),
+
     #[error("too deep recursion for {0}")]
     Recursion(String),
+
     #[error("unknown error")]
     Unknown,
 }
