@@ -263,10 +263,12 @@ impl Ellipsoid {
 
 #[cfg(test)]
 mod tests {
+    use crate::GeodesyError;
+
     use super::*;
     #[test]
-    fn geodesics() {
-        let ellps = Ellipsoid::named("GRS80");
+    fn geodesics() -> Result<(), GeodesyError>{
+        let ellps = Ellipsoid::named("GRS80")?;
 
         // (expected values from Karney: https://geographiclib.sourceforge.io/cgi-bin/GeodSolve)
 
@@ -298,5 +300,6 @@ mod tests {
         let b = ellps.geodesic_fwd(&p1, d[0], d[2]).to_degrees();
         assert!((b[0] - p2[0].to_degrees()).abs() < 1e-9);
         assert!((b[1] - p2[1].to_degrees()).abs() < 1e-9);
+        Ok(())
     }
 }

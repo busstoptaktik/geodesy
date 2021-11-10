@@ -52,12 +52,12 @@ impl Molodensky {
         // We may use `ellps, da, df`, to parameterize the operator,
         // but `left_ellps, right_ellps` is a more likely set of
         // parameters to come across in real life.
-        let mut left_ellps = Ellipsoid::named(&args.value("ellps", "GRS80"));
+        let mut left_ellps = Ellipsoid::named(&args.value("ellps", "GRS80"))?;
         if !args.value("left_ellps", "").is_empty() {
-            left_ellps = Ellipsoid::named(&args.value("left_ellps", "GRS80"));
+            left_ellps = Ellipsoid::named(&args.value("left_ellps", "GRS80"))?;
         }
         if !args.value("right_ellps", "").is_empty() {
-            let right_ellps = Ellipsoid::named(&args.value("right_ellps", "GRS80"));
+            let right_ellps = Ellipsoid::named(&args.value("right_ellps", "GRS80"))?;
             da = right_ellps.semimajor_axis() - left_ellps.semimajor_axis();
             df = right_ellps.flattening() - left_ellps.flattening();
         }

@@ -33,7 +33,7 @@ pub struct Lcc {
 
 impl Lcc {
     pub fn new(args: &mut OperatorArgs) -> Result<Lcc, GeodesyError> {
-        let ellps = Ellipsoid::named(&args.value("ellps", "GRS80"));
+        let ellps = Ellipsoid::named(&args.value("ellps", "GRS80"))?;
         let inverted = args.flag("inv");
 
         let mut phi1 = args.numeric_value("lat_1", f64::NAN)?;

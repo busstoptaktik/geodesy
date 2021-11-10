@@ -46,11 +46,12 @@ impl Ellipsoid {
 mod tests {
     use super::*;
     use crate::FWD;
+    use crate::GeodesyError;
     use crate::INV;
 
     #[test]
-    fn meridional_distance() {
-        let ellps = Ellipsoid::named("GRS80");
+    fn meridional_distance() -> Result<(), GeodesyError> {
+        let ellps = Ellipsoid::named("GRS80")?;
 
         // Rectifying radius, A
         assert!((ellps.rectifying_radius() - 6356774.720017125).abs() < 1e-9);
@@ -114,5 +115,6 @@ mod tests {
         let length = 4984944.377857987;
         assert!((ellps.meridional_distance(angle, FWD) - length).abs() < 4e-6);
         assert!((ellps.meridional_distance(length, INV) - angle).abs() < 4e-6);
+        Ok(())
     }
 }

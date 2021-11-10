@@ -22,7 +22,7 @@ pub struct Merc {
 
 impl Merc {
     pub fn new(args: &mut OperatorArgs) -> Result<Merc, GeodesyError> {
-        let ellps = Ellipsoid::named(&args.value("ellps", "GRS80"));
+        let ellps = Ellipsoid::named(&args.value("ellps", "GRS80"))?;
         let inverted = args.flag("inv");
         let lat_ts = args.numeric_value("lat_ts", f64::NAN)?;
         let k_0 = if lat_ts.is_nan() {

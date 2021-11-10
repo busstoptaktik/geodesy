@@ -25,7 +25,7 @@ pub struct Cart {
 
 impl Cart {
     pub fn new(args: &mut OperatorArgs) -> Result<Cart, GeodesyError> {
-        let ellps = Ellipsoid::named(&args.value("ellps", "GRS80"));
+        let ellps = Ellipsoid::named(&args.value("ellps", "GRS80"))?;
 
         let es = ellps.eccentricity_squared();
         let b = ellps.semiminor_axis();

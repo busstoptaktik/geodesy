@@ -33,29 +33,6 @@ impl Context {
         }
     }
 
-    fn _grid_provider() {
-        // let mut pile_path = dirs::data_local_dir().unwrap_or_default();
-        // pile_path.push("geodesy");
-        // pile_path.push("assets.pile");
-        // let pile_name = pile_path.clone();
-        // let thepile = File::open(pile_path);
-        // if thepile.is_err() {
-        //     info!("Could not find asset pile {:?}", pile_name);
-        // } else {
-        //     info!("Found asset pile {:?}", pile_name);
-        // }
-    }
-
-    // Parallel execution helper for `operate`, below
-    fn _operate(
-        &mut self,
-        operator: &Operator,
-        operands: &mut [CoordinateTuple],
-        forward: bool,
-    ) -> bool {
-        operator.operate(self, operands, forward)
-    }
-
     pub fn operate(
         &self,
         operation: usize,

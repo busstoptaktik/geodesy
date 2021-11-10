@@ -42,7 +42,7 @@ pub struct GeodesicShift {
 
 impl GeodesicShift {
     fn new(args: &mut OperatorArgs) -> Result<GeodesicShift, GeodesyError> {
-        let ellps = Ellipsoid::named(&args.value("ellps", "GRS80"));
+        let ellps = Ellipsoid::named(&args.value("ellps", "GRS80"))?;
         let inverted = args.flag("inv");
 
         // Coordinate of the origin

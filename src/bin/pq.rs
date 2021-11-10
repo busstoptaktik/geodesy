@@ -17,6 +17,8 @@ pub struct GridDescriptor(Box<dyn GridDescriptorFunctionality>);
 
 
 pub trait ResourceProviderFunctionality {
+    fn gys_resource(&self, section: &str, name: &str) -> Result<(String, String), GeodesyError>;
+
     fn ellipsoid(&self, name: &str) -> Result<Ellipsoid, GeodesyError> {
         if name == "GRS80" {
             return Ok(Ellipsoid::default());
@@ -32,9 +34,9 @@ pub struct ResourceProvider(Box<dyn ResourceProviderFunctionality>);
 
 
 /// PQ: The Rust Geodesy blablabla program is called pq in order to have
-/// an alphabetically continuous source code file name "PQ.RS". We
-/// encourage porting to other languages, and look forward to the C and
-/// Fortran versions: "AB.C" and "DE.F".
+/// an alphabetically continuous source code file name "PQ.RS".
+/// We encourage porting to other languages, and look forward to the C,
+/// Fortran, Matlab, and Lex versions: "AB.C" and "DE.F", "KL.M", "JK.L"
 #[derive(StructOpt, Debug)]
 #[structopt(name = "pq")]
 struct Opt {

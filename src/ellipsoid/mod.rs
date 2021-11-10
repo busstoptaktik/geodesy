@@ -3,6 +3,8 @@ mod geodesics;
 pub(crate) mod latitudes;
 mod meridians;
 
+use crate::GeodesyError;
+
 /// Representation of a (potentially triaxial) ellipsoid.
 #[derive(Clone, Copy, Debug)]
 pub struct Ellipsoid {
@@ -37,57 +39,44 @@ impl Ellipsoid {
         }
     }
 
-    fn from_yaml(definition: &str) -> Option<Ellipsoid> {
-        use yaml_rust::YamlLoader;
-        if let Ok(docs) = YamlLoader::load_from_str(definition) {
-            let doc = &docs[0];
-            if let Some(a) = doc["ellipsoid"]["shortcut"]["a"].as_f64() {
-                if let Some(rf) = doc["ellipsoid"]["shortcut"]["rf"].as_f64() {
-                    let f = if rf == 0.0 { 0.0 } else { 1.0 / (rf) };
-                    if let Some(ay) = doc["ellipsoid"]["shortcut"]["ay"].as_f64() {
-                        return Some(Ellipsoid::triaxial(a, ay, f));
-                    }
-                    return Some(Ellipsoid::new(a, f));
-                }
-            }
-        }
-        None
-    }
+    // fn from_yaml(definition: &str) -> Option<Ellipsoid> {
+    //     use yaml_rust::YamlLoader;
+    //     if let Ok(docs) = YamlLoader::load_from_str(definition) {
+    //         let doc = &docs[0];
+    //         if let Some(a) = doc["ellipsoid"]["shortcut"]["a"].as_f64() {
+    //             if let Some(rf) = doc["ellipsoid"]["shortcut"]["rf"].as_f64() {
+    //                 let f = if rf == 0.0 { 0.0 } else { 1.0 / (rf) };
+    //                 if let Some(ay) = doc["ellipsoid"]["shortcut"]["ay"].as_f64() {
+    //                     return Some(Ellipsoid::triaxial(a, ay, f));
+    //                 }
+    //                 return Some(Ellipsoid::new(a, f));
+    //             }
+    //         }
+    //     }
+    //     None
+    // }
 
     /// Predefined ellipsoid; built-in or defined in asset collections
     #[must_use]
-    pub fn named(name: &str) -> Ellipsoid {
-        // Have we intentionally shadowed `name` with a private asset?
-        if let Some(definition) = crate::Context::get_private_asset("ellipsoids", name, ".yml") {
-            if let Some(ellipsoid) = Ellipsoid::from_yaml(&definition) {
-                return ellipsoid;
-            }
-        }
-
+    pub fn named(name: &str) -> Result<Ellipsoid, GeodesyError> {
         // Is it one of the few builtins?
         if name == "GRS80" {
-            return Ellipsoid::new(6_378_137.0, 1. / 298.257_222_100_882_7);
+            return Ok(Ellipsoid::new(6_378_137.0, 1. / 298.257_222_100_882_7));
+        } else if name == "WGS84" {
+            return Ok(Ellipsoid::new(6_378_137.0, 1. / 298.257_223_563));
         } else if name == "intl" {
-            return Ellipsoid::new(6_378_388.0, 1. / 297.0);
+            return Ok(Ellipsoid::new(6_378_388.0, 1. / 297.0));
         } else if name == "Helmert" {
-            return Ellipsoid::new(6_378_200.0, 1. / 298.3);
+            return Ok(Ellipsoid::new(6_378_200.0, 1. / 298.3));
         } else if name == "clrk66" {
-            return Ellipsoid::new(6_378_206.4, 1. / 294.978_698_2);
+            return Ok(Ellipsoid::new(6_378_206.4, 1. / 294.978_698_2));
         } else if name == "clrk80" {
-            return Ellipsoid::new(6_378_249.145, 1. / 293.465);
+            return Ok(Ellipsoid::new(6_378_249.145, 1. / 293.465));
         } else if name == "bessel" {
-            return Ellipsoid::new(6_377_397.155, 1. / 299.152_812_8);
+            return Ok(Ellipsoid::new(6_377_397.155, 1. / 299.152_812_8));
         }
 
-        // Or a shared asset?
-        if let Some(definition) = crate::Context::get_shared_asset("ellipsoids", name, ".yml") {
-            if let Some(ellipsoid) = Ellipsoid::from_yaml(&definition) {
-                return ellipsoid;
-            }
-        }
-
-        // If none of the above, we provide GRS80 as a stop-gap
-        Ellipsoid::default()
+        Err(GeodesyError::NotFound(String::from(name)))
     }
 
     // ----- Eccentricities --------------------------------------------------------
@@ -208,25 +197,26 @@ impl Ellipsoid {
 mod tests {
     use super::*;
     #[test]
-    fn test_ellipsoid() {
+    fn test_ellipsoid() -> Result<(), GeodesyError> {
         // Constructors
-        let ellps = Ellipsoid::named("intl");
+        let ellps = Ellipsoid::named("intl")?;
         assert_eq!(ellps.flattening(), 1. / 297.);
 
-        let ellps = Ellipsoid::named("APL4.9");
-        assert_eq!(ellps.flattening(), 1. / 298.25);
+        // let ellps = Ellipsoid::named("APL4.9")?;
+        // assert_eq!(ellps.flattening(), 1. / 298.25);
 
-        let ellps = Ellipsoid::named("GRS80");
+        let ellps = Ellipsoid::named("GRS80")?;
         assert_eq!(ellps.semimajor_axis(), 6378137.0);
         assert_eq!(ellps.flattening(), 1. / 298.25722_21008_82711_24316);
 
         assert!((ellps.normalized_meridian_arc_unit() - 0.9983242984230415).abs() < 1e-13);
         assert!((4.0 * ellps.meridian_quadrant() - 40007862.9169218).abs() < 1e-7);
+        Ok(())
     }
 
     #[test]
-    fn shape_and_size() {
-        let ellps = Ellipsoid::named("GRS80");
+    fn shape_and_size() -> Result<(), GeodesyError> {
+        let ellps = Ellipsoid::named("GRS80")?;
         let ellps = Ellipsoid::new(ellps.semimajor_axis(), ellps.flattening());
         let ellps = Ellipsoid::triaxial(ellps.a, ellps.a - 1., ellps.f);
         assert_eq!(ellps.semimajor_axis(), 6378137.0);
@@ -240,23 +230,24 @@ mod tests {
         assert!((ellps.semiminor_axis() - 6_356_752.31414_0347).abs() < 1e-9);
         assert!((ellps.semimajor_axis() - 6_378_137.0).abs() < 1e-9);
 
-        let ellps = Ellipsoid::named("unitsphere");
-        assert!((ellps.semimajor_axis() - 1.0) < 1e-10);
-        assert!(ellps.flattening() < 1e-20);
+        // let ellps = Ellipsoid::named("unitsphere")?;
+        // assert!((ellps.semimajor_axis() - 1.0) < 1e-10);
+        // assert!(ellps.flattening() < 1e-20);
 
         // Test a few of the ellipsoids imported from PROJ
-        let ellps = Ellipsoid::named("krass");
-        assert_eq!(ellps.semimajor_axis(), 6378245.0);
-        assert_eq!(ellps.flattening(), 1. / 298.3);
-
-        let ellps = Ellipsoid::named("MERIT");
-        assert_eq!(ellps.semimajor_axis(), 6378137.0);
-        assert_eq!(ellps.flattening(), 1. / 298.257);
+        // let ellps = Ellipsoid::named("krass")?;
+        // assert_eq!(ellps.semimajor_axis(), 6378245.0);
+        // assert_eq!(ellps.flattening(), 1. / 298.3);
+        //
+        // let ellps = Ellipsoid::named("MERIT")?;
+        // assert_eq!(ellps.semimajor_axis(), 6378137.0);
+        // assert_eq!(ellps.flattening(), 1. / 298.257);
+        Ok(())
     }
 
     #[test]
-    fn curvatures() {
-        let ellps = Ellipsoid::named("GRS80");
+    fn curvatures() -> Result<(), GeodesyError> {
+        let ellps = Ellipsoid::named("GRS80")?;
         // The curvatures at the North Pole
         assert!(
             (ellps.meridian_radius_of_curvature(90_f64.to_radians()) - 6_399_593.6259).abs() < 1e-4
@@ -283,5 +274,6 @@ mod tests {
         assert!(
             (ellps.prime_vertical_radius_of_curvature(0.0) - ellps.semimajor_axis()).abs() < 1.0e-4
         );
+        Ok(())
     }
 }

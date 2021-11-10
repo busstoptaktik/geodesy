@@ -1,71 +1,62 @@
+#![allow(dead_code)]
+
 use crate::GeodesyError;
 
-#[allow(dead_code)]
-pub fn gys_to_steps(gys: &str) -> (String, Vec<String>) {
-    let all = gys.replace("\r", "\n").trim().to_string();
-
-    // Collect docstrings and remove plain comments
-    let mut trimmed = Vec::<String>::new();
-    let mut docstring = Vec::<String>::new();
-    for line in all.lines() {
-        let line = line.trim();
-
-        // Collect docstrings
-        if line.starts_with("##") {
-            docstring.push((line.to_string() + "    ")[3..].trim_end().to_string());
-            continue;
-        }
-
-        // Remove comments
-        let line: Vec<&str> = line.trim().split('#').collect();
-        if line[0].starts_with('#') {
-            continue;
-        }
-        trimmed.push(line[0].trim().to_string());
-    }
-
-    // Finalize the docstring
-    let docstring = docstring.join("\n").trim().to_string();
-
-    // Remove superfluous newlines in the comment-trimmed text
-    let trimmed = trimmed.join(" ").replace("\n", " ");
-
-    // Generate trimmed steps with elements spearated by single ws and key-value pairs glued by ':' as in 'k:v'
-    let steps: Vec<_> = trimmed.split('|').collect();
-    let mut trimmed_steps = Vec::<String>::new();
-    for mut step in steps {
-        step = step.trim();
-        if step.is_empty() {
-            continue;
-        }
-        // Conflate contiguous whitespace, then turn ': ' into ':'
-        let elements: Vec<_> = step.split_whitespace().collect();
-        let joined = elements.join(" ").replace(": ", ":");
-        trimmed_steps.push(joined);
-    }
-    (docstring, trimmed_steps)
+struct GysResource{
+    doc: String,
+    steps: Vec<String>
 }
 
-#[allow(dead_code)]
-pub fn step_to_args(step: &str) -> Vec::<(String, String)> {
-    let mut args = Vec::<(String, String)>::new();
-    let elements: Vec<_> = step.split_whitespace().collect();
-    for element in elements {
-        let mut parts: Vec<&str> = element.trim().split(':').collect();
-        parts.push("");
-        assert!(parts.len() > 1);
-        // If the first arg is a key-without-value, it is the name of the operator
-        if args.len()==0 {
-            if parts.len()==2 {
-                args.push((String::from("op"), String::from(parts[0])));
+impl GysResource {
+    pub fn from(text: &str) -> GysResource {
+        let all = text.replace("\r", "\n").trim().to_string();
+
+        // Collect docstrings and remove plain comments
+        let mut trimmed = Vec::<String>::new();
+        let mut docstring = Vec::<String>::new();
+        for line in all.lines() {
+            let line = line.trim();
+
+            // Collect docstrings
+            if line.starts_with("##") {
+                docstring.push((line.to_string() + "    ")[3..].trim_end().to_string());
                 continue;
             }
-        }
-        args.push((String::from(parts[0]), String::from(parts[1])));
-    }
 
-    args
-}
+            // Remove comments
+            let line: Vec<&str> = line.trim().split('#').collect();
+            if line[0].starts_with('#') {
+                continue;
+            }
+            trimmed.push(line[0].trim().to_string());
+        }
+
+        // Finalize the docstring
+        let docstring = docstring.join("\n").trim().to_string();
+
+        // Remove superfluous newlines in the comment-trimmed text
+        let trimmed = trimmed.join(" ").replace("\n", " ");
+
+        // Generate trimmed steps with elements separated by a single space and
+        // key-value pairs glued by ':' as in 'key_0:value_0 key_1:value_1' etc.
+        let steps: Vec<_> = trimmed.split('|').collect();
+        let mut trimmed_steps = Vec::<String>::new();
+        for mut step in steps {
+            step = step.trim();
+            if step.is_empty() {
+                continue;
+            }
+            // Conflate contiguous whitespace, then turn ': ' into ':'
+            let elements: Vec<_> = step.split_whitespace().collect();
+            let joined = elements.join(" ").replace(": ", ":");
+            trimmed_steps.push(joined);
+        }
+        GysResource{doc: docstring, steps: trimmed_steps}
+    }
+}  // impl GysResource
+
+
+
 
 pub struct GysArgs {
     pub globals: Vec::<(String, String)>,
@@ -76,20 +67,89 @@ pub struct GysArgs {
 impl GysArgs {
     pub fn new(globals: &[(String, String)], step: &str) -> GysArgs {
         let globals = Vec::from(globals);
-        let locals = step_to_args(step);
+        let locals = GysArgs::step_to_local_args(step);
         let used = Vec::<(String, String)>::new();
         GysArgs{globals, locals, used}
     }
 
-    pub fn value(&mut self, key: &str) -> Result<Option<String>, GeodesyError> {
-        let value = value_of_key(key, &self.globals, &self.locals)?;
-        if value.is_none() {
-            return Ok(None)
+    pub fn new_symmetric(globals: &[(String, String)], locals: &[(String, String)]) -> GysArgs {
+        let globals = Vec::from(globals);
+        let locals = Vec::from(locals);
+        let used = Vec::<(String, String)>::new();
+        GysArgs{globals, locals, used}
+    }
+
+    pub fn step_to_local_args(step: &str) -> Vec::<(String, String)> {
+        let mut args = Vec::<(String, String)>::new();
+        let elements: Vec<_> = step.split_whitespace().collect();
+        for element in elements {
+            let mut parts: Vec<&str> = element.trim().split(':').collect();
+            parts.push("");
+            assert!(parts.len() > 1);
+            // If the first arg is a key-without-value, it is the name of the operator
+            if args.len()==0 {
+                if parts.len()==2 {
+                    args.push((String::from("op"), String::from(parts[0])));
+                    continue;
+                }
+            }
+            args.push((String::from(parts[0]), String::from(parts[1])));
         }
-        let value = value.unwrap();
-        let result = String::from(&value);
-        self.used.push((String::from(key), String::from(value)));
-        Ok(Some(result))
+
+        args
+    }
+
+    pub fn value(&mut self, key: &str) -> Result<Option<String>, GeodesyError> {
+        // The haystack is a reverse iterator over both lists in series
+        let mut haystack = self.globals.iter().chain(self.locals.iter()).rev();
+
+        // Find the needle in the haystack, recursively chasing look-ups ('^')
+        // and handling defaults ('*')
+        let key = key.trim();
+        if key.is_empty() {
+            return Err(GeodesyError::Syntax(String::from("Empty key")));
+        }
+
+        let mut default = "";
+        let mut needle = key;
+        let mut chasing = false;
+        let value;
+
+        loop {
+            let found = haystack.find(|&x| x.0 == needle);
+            if found.is_none() {
+                if default != "" {
+                    return Ok(Some(String::from(default)));
+                }
+                if chasing {
+                    return Err(GeodesyError::Syntax(format!("Incomplete definition for '{}'", key)));
+                }
+                return Ok(None);
+            }
+            let thevalue = found.unwrap().1.trim();
+
+            // If the value is a(nother) lookup, we continue the search in the same iterator
+            if thevalue.starts_with("^") {
+                chasing = true;
+                needle = &thevalue[1..];
+                continue;
+            }
+
+            // If the value is a default, we continue the search using the same *key*
+            if thevalue.starts_with("*") {
+                chasing = true;
+                needle = key;
+                default = &thevalue[1..];
+                continue;
+            }
+
+            // Otherwise we have the proper result
+            value = String::from(thevalue.trim());
+            break;
+        }
+
+        self.used.push((String::from(key), String::from(&value)));
+        Ok(Some(value))
     }
 
     pub fn flag(&mut self, key: &str) -> Result<bool, GeodesyError> {
@@ -124,53 +184,9 @@ impl GysArgs {
         }
         Ok(String::from(default))
     }
-}
+} // impl GysArgs
 
-#[allow(dead_code)]
-pub fn value_of_key(key: &str, globals: &[(String, String)], locals: &[(String, String)]) -> Result<Option<String>, GeodesyError> {
-    // The haystack is a reverse iterator over both lists in series
-    let mut haystack = globals.iter().chain(locals.iter()).rev();
 
-    // Find the needle in the haystack, recursively chasing look-ups ('^')
-    let key = key.trim();
-    if key.is_empty() {
-        return Err(GeodesyError::Syntax(String::from("Empty key")));
-    }
-    let mut default = "";
-    let mut needle = key;
-    let mut chasing = false;
-    loop {
-        let found = haystack.find(|&x| x.0 == needle);
-        if found.is_none() {
-            if default != "" {
-                return Ok(Some(String::from(default)));
-            }
-            if chasing {
-                return Err(GeodesyError::Syntax(format!("Incomplete definition for '{}'", key)));
-            }
-            return Ok(None);
-        }
-        let thevalue = found.unwrap().1.trim();
-
-        // If the value is a(nother) lookup, we continue the search in the same iterator
-        if thevalue.starts_with("^") {
-            chasing = true;
-            needle = &thevalue[1..];
-            continue;
-        }
-
-        // If the value is a default, we continue the search using the same key
-        if thevalue.starts_with("*") {
-            chasing = true;
-            needle = key;
-            default = &thevalue[1..];
-            continue;
-        }
-
-        // Otherwise we have the proper result
-        return Ok(Some(String::from(thevalue.trim())));
-    }
-}
 
 
 #[cfg(test)]
@@ -199,28 +215,29 @@ mod newtests {
             (String::from("g"), String::from("*default")),
         ];
 
+        let mut arg = GysArgs::new_symmetric(&globals, &locals);
         // Check plain lookup functionality
-        let f = value_of_key("  f  ", &globals, &locals)?;
+        let f = arg.value("  f  ")?;
         assert_eq!(f.unwrap(), globals[1].1);
 
-        let e = value_of_key("  e", &globals, &locals)?;
+        let e = arg.value("  e  ")?;
         assert_eq!(e.unwrap(), "2 e def");
 
         // Check default value lookups
-        let c = value_of_key("c  ", &globals, &locals)?;
+        let c = arg.value("  c  ")?;
         assert_eq!(c.unwrap(), "c def");
 
-        let g = value_of_key(" g ", &globals, &locals)?;
+        let g = arg.value("  g  ")?;
         assert_eq!(g.unwrap(), "default");
 
-        if let Err(d) = value_of_key("d", &globals, &locals) {
+        if let Err(d) = arg.value("d") {
             println!("d: {:?}", d.to_string());
             assert!(d.to_string().starts_with("syntax error"));
         }
-        let d = value_of_key("  d  ", &globals, &locals).unwrap_err();
+        let d = arg.value("  d  ").unwrap_err();
         assert!(d.to_string().starts_with("syntax error"));
 
-        let _d = value_of_key("  d  ", &globals, &locals).unwrap_or_else(|e|
+        let _d = arg.value("  d  ").unwrap_or_else(|e|
             if !e.to_string().starts_with("syntax error") {
                 panic!("Expected syntax error here!");
             } else {Some(String::default())}
@@ -245,15 +262,15 @@ mod newtests {
 
     #[test]
     fn gys() -> Result<(), GeodesyError> {
-        let gys = "\n # agurk \n en # agurk\r\n  ## Document all cucumbers \n##\n## agurker\n\ta b:c|  c   d: e    |f g:h|\t\th\n\n\n";
-        let (doc, steps) = gys_to_steps(gys);
-        assert!(doc.starts_with("Document all cucumbers"));
-        assert!(doc.ends_with("agurker"));
-        assert_eq!(steps.len(), 4);
+        let text = "\n # agurk \n en # agurk\r\n  ## Document all cucumbers \n##\n## agurker\n\ta b:c|  c   d: e    |f g:h|\t\th\n\n\n";
+        let gys = GysResource::from(text);
+        assert!(gys.doc.starts_with("Document all cucumbers"));
+        assert!(gys.doc.ends_with("agurker"));
+        assert_eq!(gys.steps.len(), 4);
 
-        let (doc, steps) = gys_to_steps("");
-        assert!(doc.is_empty());
-        assert_eq!(steps.len(), 0);
+        let gys = GysResource::from("");
+        assert!(gys.doc.is_empty());
+        assert_eq!(gys.steps.len(), 0);
 
         Ok(())
     }
@@ -262,7 +279,7 @@ mod newtests {
     #[test]
     fn steps() -> Result<(), GeodesyError> {
         let step = "a b:c d:e f g:h";
-        let args = step_to_args(step);
+        let args = GysArgs::step_to_local_args(step);
         assert_eq!(args.len(), 5);
         assert_eq!(args[0].0, "op");
         assert_eq!(args[0].1, "a");

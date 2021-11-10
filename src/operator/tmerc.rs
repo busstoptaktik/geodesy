@@ -26,7 +26,7 @@ pub struct Tmerc {
 
 impl Tmerc {
     pub fn new(args: &mut OperatorArgs) -> Result<Tmerc, GeodesyError> {
-        let ellps = Ellipsoid::named(&args.value("ellps", "GRS80"));
+        let ellps = Ellipsoid::named(&args.value("ellps", "GRS80"))?;
         let inverted = args.flag("inv");
         let k_0 = args.numeric_value("k_0", 1.)?;
         let lon_0 = args.numeric_value("lon_0", 0.)?.to_radians();
@@ -59,7 +59,7 @@ impl Tmerc {
     }
 
     pub fn utm(args: &mut OperatorArgs) -> Result<Tmerc, GeodesyError> {
-        let ellps = Ellipsoid::named(&args.value("ellps", "GRS80"));
+        let ellps = Ellipsoid::named(&args.value("ellps", "GRS80"))?;
         let zone = args.numeric_value("zone", f64::NAN)?;
         let inverted = args.flag("inv");
         let k_0 = 0.9996;

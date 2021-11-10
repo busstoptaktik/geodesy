@@ -108,10 +108,11 @@ impl Ellipsoid {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::GeodesyError;
 
     #[test]
-    fn geo_to_cart() {
-        let ellps = Ellipsoid::named("GRS80");
+    fn geo_to_cart() -> Result<(), GeodesyError> {
+        let ellps = Ellipsoid::named("GRS80")?;
         // Roundtrip geographic <-> cartesian
         let geo = CoordinateTuple::geo(55., 12., 100., 0.);
         let cart = ellps.cartesian(&geo);
@@ -120,5 +121,6 @@ mod tests {
         assert!((geo[0] - geo2[0]).abs() < 1.0e-12);
         assert!((geo[1] - geo2[1]).abs() < 1.0e-12);
         assert!((geo[2] - geo2[2]).abs() < 1.0e-9);
+        Ok(())
     }
 }

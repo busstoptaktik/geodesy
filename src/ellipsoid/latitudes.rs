@@ -40,11 +40,12 @@ impl Ellipsoid {
 mod tests {
     use super::*;
     use crate::FWD;
+    use crate::GeodesyError;
     use crate::INV;
     use std::f64::consts::FRAC_PI_2;
     #[test]
-    fn latitudes() {
-        let ellps = Ellipsoid::named("GRS80");
+    fn latitudes() -> Result<(), GeodesyError> {
+        let ellps = Ellipsoid::named("GRS80")?;
         // Roundtrip geocentric latitude
         let lat = 55_f64.to_radians();
         let lat2 = ellps.geocentric_latitude(ellps.geocentric_latitude(lat, FWD), INV);
@@ -64,5 +65,6 @@ mod tests {
         let isometric = 50.227465815385806f64.to_radians();
         assert!((ellps.isometric_latitude(angle, FWD) - isometric).abs() < 1e-15);
         assert!((ellps.isometric_latitude(isometric, INV) - angle).abs() < 1e-15);
+        Ok(())
     }
 }

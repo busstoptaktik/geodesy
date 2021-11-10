@@ -11,9 +11,9 @@
 
 // Including the `operand` namespace gives us some slightly
 // better support for `CoordinateTuple`s
-use geodesy::CoordinateTuple;
+use geodesy::{CoordinateTuple, GeodesyError};
 
-fn main() {
+fn main() -> Result<(), GeodesyError> {
     // In example 00, we saw that the `Context` data structure is the
     // coordinating element for all things related to transformations
     // in Rust Geodesy. For generic geometric geodesy the same can be
@@ -23,7 +23,7 @@ fn main() {
     // providing our own ellipsoid parameters:
 
     // The GRS 1980 ellipsoid is built in, so we use the ::named function.
-    let GRS80 = geodesy::Ellipsoid::named("GRS80");
+    let GRS80 = geodesy::Ellipsoid::named("GRS80")?;
 
     // The Maupertuis 1738 ellipsoid is not built in, so we provide `a`,
     // the semimajor axis, and `f`, the flattening to the `new()`
@@ -109,4 +109,5 @@ fn main() {
 
     // So the Montgolfier brothers would have thought they had flown
     // approximately 3 km longer than the modern day airline pilot.
+    Ok(())
 }
