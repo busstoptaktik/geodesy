@@ -57,7 +57,6 @@ impl Ellipsoid {
     // }
 
     /// Predefined ellipsoid; built-in or defined in asset collections
-    #[must_use]
     pub fn named(name: &str) -> Result<Ellipsoid, GeodesyError> {
         // Is it one of the few builtins?
         if name == "GRS80" {

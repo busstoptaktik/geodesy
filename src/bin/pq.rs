@@ -1,42 +1,20 @@
 /*! Plonketi Plonk! !*/
 //! How to append a postscript to the help message generated.
 use anyhow::{Context, Result};
+use geodesy::PlainResourceProvider;
+use geodesy::ResourceProviderSearchLevel;
 use log::{debug, trace};
 use std::{collections::HashMap, path::PathBuf};
 use structopt::StructOpt;
 
 use geodesy::CoordinateTuple;
-use geodesy::Ellipsoid;
 use geodesy::GeodesyError;
-
-pub trait GridDescriptorFunctionality {
-    fn grid_value(&self, location: CoordinateTuple) -> CoordinateTuple;
-}
-
-pub struct GridDescriptor(Box<dyn GridDescriptorFunctionality>);
-
-
-pub trait ResourceProviderFunctionality {
-    fn gys_resource(&self, section: &str, name: &str) -> Result<(String, String), GeodesyError>;
-
-    fn ellipsoid(&self, name: &str) -> Result<Ellipsoid, GeodesyError> {
-        if name == "GRS80" {
-            return Ok(Ellipsoid::default());
-        }
-        Err(GeodesyError::NotFound(String::from(name)))
-    }
-
-    fn grid_descriptor(&self, name: &str) -> Result<GridDescriptor, GeodesyError> {
-        Err(GeodesyError::NotFound(String::from(name)))
-    }
-}
-pub struct ResourceProvider(Box<dyn ResourceProviderFunctionality>);
-
 
 /// PQ: The Rust Geodesy blablabla program is called pq in order to have
 /// an alphabetically continuous source code file name "PQ.RS".
 /// We encourage porting to other languages, and look forward to the C,
-/// Fortran, Matlab, and Lex versions: "AB.C" and "DE.F", "KL.M", "JK.L"
+/// Fortran, Matlab, and Lex versions: "AB.C" and "DE.F", "KL.M", "JK.L",
+/// and the obvious inverted ML version "ON.ML"
 #[derive(StructOpt, Debug)]
 #[structopt(name = "pq")]
 struct Opt {
@@ -91,7 +69,17 @@ fn main() -> Result<()> {
     trace!("trace message 2");
     debug!("debug message 2");
 
-    hold_fest();
+    let mut a = [0f64; 10];
+    for (i, item) in [1f64, 2., 3.].into_iter().enumerate() {
+        a[i] = item;
+    }
+    dbg!(a);
+
+    // use geodesy::{PlainResourceProvider, ResourceProviderSearchLevel};
+    let rp = PlainResourceProvider::new(ResourceProviderSearchLevel::LocalPatches, false);
+    rp.expand_experiment("jeg kan | hoppe sagde | lille Yrsa: Hansen");
+
+    have_a_ball();
 
     let first_list: [(String, String); 6] = [
         (String::from("a"), String::from("a def")),
@@ -439,7 +427,7 @@ fn use_use_a(args: HashMap<String, String>, ctx: &mut geodesy::Context) -> Resul
     Ok(using_a)
 }
 
-fn hold_fest() {
+fn have_a_ball() {
     let mut ctx = geodesy::Context::new();
 
     let mut args: HashMap<String, String> = HashMap::new();
@@ -502,7 +490,11 @@ fn split_det_op() {
     println!("docstring = '{}'", docstring);
 }
 
-fn value_of_key(key: &str, globals: &[(String, String)], locals: &[(String, String)]) -> Result<String, GeodesyError> {
+fn value_of_key(
+    key: &str,
+    globals: &[(String, String)],
+    locals: &[(String, String)],
+) -> Result<String, GeodesyError> {
     // The haystack is a reverse iterator over both lists in series
     let mut haystack = globals.iter().chain(locals.iter()).rev();
 
@@ -514,7 +506,10 @@ fn value_of_key(key: &str, globals: &[(String, String)], locals: &[(String, Stri
         let found = haystack.find(|&x| x.0 == needle);
         if found.is_none() {
             if chasing {
-                return Err(GeodesyError::Syntax(format!("Incomplete definition for '{}'", key)));
+                return Err(GeodesyError::Syntax(format!(
+                    "Incomplete definition for '{}'",
+                    key
+                )));
             }
             return Err(GeodesyError::NotFound(String::from(key)));
         }
@@ -531,7 +526,6 @@ fn value_of_key(key: &str, globals: &[(String, String)], locals: &[(String, Stri
         return Ok(String::from(thevalue.trim()));
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -569,11 +563,13 @@ mod tests {
         let d = value_of_key("  d  ", &globals, &locals).unwrap_err();
         assert!(d.to_string().starts_with("syntax error"));
 
-        let _d = value_of_key("  d  ", &globals, &locals).unwrap_or_else(|e|
+        let _d = value_of_key("  d  ", &globals, &locals).unwrap_or_else(|e| {
             if !e.to_string().starts_with("syntax error") {
                 panic!("Expected syntax error here!");
-            } else {String::default()}
-        );
+            } else {
+                String::default()
+            }
+        });
 
         Ok(())
     }

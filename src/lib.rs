@@ -26,6 +26,8 @@ mod internals;
 mod operator;
 
 // But we add `pub`-ness to a few important `struct`s.
+pub use context::nygys::{GysArgs, GysResource};
+pub use context::nygys::{PlainResourceProvider, ResourceProvider, ResourceProviderSearchLevel};
 pub use context::Context;
 pub use coordinate::CoordinateTuple;
 pub use ellipsoid::Ellipsoid;

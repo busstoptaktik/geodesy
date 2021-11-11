@@ -247,11 +247,12 @@ impl Ellipsoid {
     /// // Compute the distance between Copenhagen and Paris
     /// use geodesy::Ellipsoid;
     /// use geodesy::CoordinateTuple;
-    /// let ellps = Ellipsoid::named("GRS80");
-    /// let p0 = CoordinateTuple::geo(55., 12., 0., 0.);
-    /// let p1 = CoordinateTuple::geo(49., 2., 0., 0.);
-    /// let d = ellps.distance(&p0, &p1);
-    /// assert!((d - 956_066.231_959).abs() < 1e-5);
+    /// if let Ok(ellps) = Ellipsoid::named("GRS80") {
+    ///     let p0 = CoordinateTuple::geo(55., 12., 0., 0.);
+    ///     let p1 = CoordinateTuple::geo(49., 2., 0., 0.);
+    ///     let d = ellps.distance(&p0, &p1);
+    ///     assert!((d - 956_066.231_959).abs() < 1e-5);
+    /// }
     /// ```
     #[must_use]
     pub fn distance(&self, from: &CoordinateTuple, to: &CoordinateTuple) -> f64 {
@@ -267,7 +268,7 @@ mod tests {
 
     use super::*;
     #[test]
-    fn geodesics() -> Result<(), GeodesyError>{
+    fn geodesics() -> Result<(), GeodesyError> {
         let ellps = Ellipsoid::named("GRS80")?;
 
         // (expected values from Karney: https://geographiclib.sourceforge.io/cgi-bin/GeodSolve)

@@ -39,8 +39,8 @@ impl Ellipsoid {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::FWD;
     use crate::GeodesyError;
+    use crate::FWD;
     use crate::INV;
     use std::f64::consts::FRAC_PI_2;
     #[test]
