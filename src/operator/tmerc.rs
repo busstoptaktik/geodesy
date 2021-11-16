@@ -153,6 +153,10 @@ impl OperatorCore for Tmerc {
         "tmerc"
     }
 
+    fn debug(&self) -> String {
+        format!("{:#?}", self)
+    }
+
     fn is_inverted(&self) -> bool {
         self.inverted
     }

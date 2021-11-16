@@ -62,6 +62,7 @@ use crate::Context;
 use crate::CoordinateTuple;
 use crate::GeodesyError;
 
+#[derive(Debug, Default, Clone)]
 pub struct Adapt {
     args: OperatorArgs,
     inverted: bool,
@@ -260,6 +261,10 @@ impl OperatorCore for Adapt {
 
     fn name(&self) -> &'static str {
         "adapt"
+    }
+
+    fn debug(&self) -> String {
+        format!("{:#?}", self)
     }
 
     fn is_noop(&self) -> bool {

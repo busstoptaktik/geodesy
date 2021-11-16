@@ -60,7 +60,7 @@ impl Operator {
 use core::fmt::Debug;
 impl Debug for Operator {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        write!(f, "Operator {{{}}}", self.name())
+        write!(f, "Operator {{{}}}", self.debug())
     }
 }
 
@@ -86,6 +86,10 @@ impl OperatorCore for Operator {
 
     fn name(&self) -> &'static str {
         self.0.name()
+    }
+
+    fn debug(&self) -> String {
+        self.0.debug()
     }
 
     fn len(&self) -> usize {
@@ -137,6 +141,10 @@ pub trait OperatorCore {
 
     fn name(&self) -> &'static str {
         "UNKNOWN"
+    }
+
+    fn debug(&self) -> String {
+        String::from(self.name())
     }
 
     // number of steps. 0 unless the operator is a pipeline

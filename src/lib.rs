@@ -20,17 +20,19 @@
 // Most details are hidden: No `pub mod`s below
 mod bibliography;
 mod context;
+pub mod resource;
+
 mod coordinate;
 mod ellipsoid;
 mod internals;
 mod operator;
 
 // But we add `pub`-ness to a few important `struct`s.
-pub use context::nygys::{GysArgs, GysResource};
-pub use context::nygys::{PlainResourceProvider, ResourceProvider, ResourceProviderSearchLevel};
+pub use context::gys::{GysArgs, GysResource};
 pub use context::Context;
 pub use coordinate::CoordinateTuple;
 pub use ellipsoid::Ellipsoid;
+pub use resource::{PlainResourceProvider, Provider, SearchLevel};
 
 // The bibliography needs `pub`-ness in order to be able to build the docs.
 pub use bibliography::Bibliography;

@@ -280,6 +280,10 @@ impl OperatorCore for Helmert {
         "helmert"
     }
 
+    fn debug(&self) -> String {
+        format!("{:#?}", self)
+    }
+
     fn is_inverted(&self) -> bool {
         self.inverted
     }

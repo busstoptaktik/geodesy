@@ -5,7 +5,7 @@ use crate::Context;
 use crate::CoordinateTuple;
 use crate::Ellipsoid;
 use crate::GeodesyError;
-
+#[derive(Debug)]
 pub struct Cart {
     // The usual suspects...
     args: OperatorArgs,
@@ -130,6 +130,10 @@ impl OperatorCore for Cart {
 
     fn name(&self) -> &'static str {
         "cart"
+    }
+
+    fn debug(&self) -> String {
+        format!("{:#?}", self)
     }
 
     fn is_inverted(&self) -> bool {

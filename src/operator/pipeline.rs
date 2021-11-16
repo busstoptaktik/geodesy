@@ -7,6 +7,7 @@ use crate::CoordinateTuple;
 use crate::GeodesyError;
 use crate::{FWD, INV};
 
+#[derive(Debug)]
 pub struct Pipeline {
     args: OperatorArgs,
     steps: Vec<Operator>,
@@ -82,6 +83,15 @@ impl OperatorCore for Pipeline {
 
     fn name(&self) -> &'static str {
         "pipeline"
+    }
+
+    fn debug(&self) -> String {
+        let mut repr = String::new();
+        for step in &self.steps {
+            repr += "\n";
+            repr += &format!("{:#?}", step);
+        }
+        repr
     }
 
     fn is_inverted(&self) -> bool {

@@ -1,8 +1,8 @@
 /*! Plonketi Plonk! !*/
 //! How to append a postscript to the help message generated.
 use anyhow::{Context, Result};
+use geodesy::resource::SearchLevel;
 use geodesy::PlainResourceProvider;
-use geodesy::ResourceProviderSearchLevel;
 use log::{debug, trace};
 use std::{collections::HashMap, path::PathBuf};
 use structopt::StructOpt;
@@ -76,7 +76,7 @@ fn main() -> Result<()> {
     dbg!(a);
 
     // use geodesy::{PlainResourceProvider, ResourceProviderSearchLevel};
-    let rp = PlainResourceProvider::new(ResourceProviderSearchLevel::LocalPatches, false);
+    let rp = PlainResourceProvider::new(SearchLevel::LocalPatches, false);
     rp.expand_experiment("jeg kan | hoppe sagde | lille Yrsa: Hansen");
 
     have_a_ball();
@@ -128,6 +128,8 @@ fn main() -> Result<()> {
     let gys = "geo | cart ellps:intl | helmert x:-87 y:-96 z:-120 | cart inv ellps:GRS80 | geo inv";
 
     let op_gys = ctx.operation(gys)?;
+    println!("HER KOMMER DEN");
+    dbg!(ctx.op(op_gys));
     let op_yaml = ctx.operation(pipeline)?;
 
     let copenhagen = C::raw(55., 12., 0., 0.);

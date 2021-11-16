@@ -12,8 +12,7 @@ pub struct Context {
     operations: Vec<Operator>,
 }
 
-mod gys;
-pub mod nygys;
+pub mod gys;
 mod test;
 mod user_defined;
 
@@ -46,6 +45,10 @@ impl Context {
         }
         let op = &self.operations[operation];
         op.operate(self, operands, forward)
+    }
+
+    pub fn op(&self, operation: usize) -> &Operator {
+        &self.operations[operation]
     }
 
     /// Forward operation.
