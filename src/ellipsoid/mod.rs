@@ -8,7 +8,7 @@ use crate::GeodesyError;
 // A HashMap would have been a better choice,for the OPERATOR_LIST, except
 // for the annoying fact that it cannot be compile-time constructed
 #[rustfmt::skip]
-const ELLIPSOID_LIST: [(&str, &str, &str, &str, &str); 46] = [
+const ELLIPSOID_LIST: [(&str, &str, &str, &str, &str); 47] = [
     ("MERIT",     "6378137",       "6378137",      "298.257",            "MERIT 1983"),
     ("SGS85",     "6378136",       "6378136",      "298.257",            "Soviet Geodetic System 85"),
     ("GRS80",     "6378137",       "6378137",      "298.2572221008827",  "GRS 1980(IUGG, 1980)"),
@@ -55,6 +55,7 @@ const ELLIPSOID_LIST: [(&str, &str, &str, &str, &str); 46] = [
     ("WGS72",     "6378135",       "6378135",      "298.26",             "WGS 72"),
     ("WGS84",     "6378137",       "6378137",      "298.257223563",      "WGS 84"),
     ("sphere",    "6370997",       "6370997",      "0.",                 "Normal Sphere (r=6370997)"),
+    ("unitsphere",      "1",             "1",      "0.",                 "Unit Sphere (r=1)"),
 ];
 
 /// Representation of a (potentially triaxial) ellipsoid.
@@ -116,7 +117,8 @@ impl Ellipsoid {
             let ax: f64 = e.1.parse().unwrap();
             let ay: f64 = e.2.parse().unwrap();
             let rf: f64 = e.3.parse().unwrap();
-            return Ok(Ellipsoid::triaxial(ax, ay, 1.0 / rf));
+            let f = if rf != 0.0 { 1.0 / rf } else { rf };
+            return Ok(Ellipsoid::triaxial(ax, ay, f));
         }
         // TODO: Search asset collection
         Err(GeodesyError::NotFound(String::from(name)))
@@ -273,18 +275,18 @@ mod tests {
         assert!((ellps.semiminor_axis() - 6_356_752.31414_0347).abs() < 1e-9);
         assert!((ellps.semimajor_axis() - 6_378_137.0).abs() < 1e-9);
 
-        // let ellps = Ellipsoid::named("unitsphere")?;
-        // assert!((ellps.semimajor_axis() - 1.0) < 1e-10);
-        // assert!(ellps.flattening() < 1e-20);
+        let ellps = Ellipsoid::named("unitsphere")?;
+        assert!((ellps.semimajor_axis() - 1.0) < 1e-10);
+        assert_eq!(ellps.flattening(), 0.);
 
         // Test a few of the ellipsoids imported from PROJ
-        // let ellps = Ellipsoid::named("krass")?;
-        // assert_eq!(ellps.semimajor_axis(), 6378245.0);
-        // assert_eq!(ellps.flattening(), 1. / 298.3);
-        //
-        // let ellps = Ellipsoid::named("MERIT")?;
-        // assert_eq!(ellps.semimajor_axis(), 6378137.0);
-        // assert_eq!(ellps.flattening(), 1. / 298.257);
+        let ellps = Ellipsoid::named("krass")?;
+        assert_eq!(ellps.semimajor_axis(), 6378245.0);
+        assert_eq!(ellps.flattening(), 1. / 298.3);
+
+        let ellps = Ellipsoid::named("MERIT")?;
+        assert_eq!(ellps.semimajor_axis(), 6378137.0);
+        assert_eq!(ellps.flattening(), 1. / 298.257);
         Ok(())
     }
 

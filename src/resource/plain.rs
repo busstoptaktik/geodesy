@@ -1,97 +1,20 @@
 #![allow(dead_code)]
 
+use crate::context::gys::GysArgs;
 use crate::context::gys::GysResource;
+use crate::operator_construction as oa;
+use crate::operator_construction::Operator;
 use crate::CoordinateTuple;
-use crate::Ellipsoid;
 use crate::GeodesyError;
-use enum_iterator::IntoEnumIterator;
-use uuid::Uuid;
-pub mod plain;
+use std::collections::HashMap;
 
-#[derive(Debug, IntoEnumIterator, Clone, Copy, PartialEq, PartialOrd)]
-pub enum SearchLevel {
-    LocalPatches,
-    Locals,
-    GlobalPatches,
-    Globals,
-    Builtins,
-}
-
-pub trait Provider {
-    fn searchlevel(&self) -> SearchLevel {
-        SearchLevel::Builtins
-    }
-    fn check_builtins_first(&self) -> bool {
-        true
-    }
-
-    fn gys_resource(
-        &self,
-        branch: &str,
-        name: &str,
-        globals: Vec<(String, String)>,
-    ) -> Result<GysResource, GeodesyError> {
-        match self.gys_definition(branch, name) {
-            Ok(definition) => Ok(GysResource::new(&definition, &globals)),
-            Err(err) => Err(err),
-        }
-    }
-
-    fn gys_definition(&self, branch: &str, name: &str) -> Result<String, GeodesyError> {
-        for i in SearchLevel::into_enum_iter() {
-            if i < self.searchlevel() && i != SearchLevel::Builtins {
-                continue;
-            }
-            if let Some(definition) = Self::get_gys_definition_from_level(self, i, branch, name) {
-                return Ok(definition.trim().to_string());
-            }
-        }
-        Err(GeodesyError::NotFound(format!("{}({})", branch, name)))
-    }
-
-    #[allow(unused_variables)]
-    fn get_gys_definition_from_level(
-        &self,
-        level: SearchLevel,
-        branch: &str,
-        name: &str,
-    ) -> Option<String> {
-        None
-    }
-
-    fn operate(&self, operation: Uuid, operands: &mut [CoordinateTuple], forward: bool) -> bool;
-
-    /// Forward operation.
-    fn fwd(&self, operation: Uuid, operands: &mut [CoordinateTuple]) -> bool {
-        self.operate(operation, operands, true)
-    }
-
-    /// Inverse operation.
-    fn inv(&self, operation: Uuid, operands: &mut [CoordinateTuple]) -> bool {
-        self.operate(operation, operands, false)
-    }
-
-    fn ellipsoid(&self, name: &str) -> Result<Ellipsoid, GeodesyError> {
-        if name == "GRS80" {
-            return Ok(Ellipsoid::default());
-        }
-        Err(GeodesyError::NotFound(String::from(name)))
-    }
-
-    // fn grid_descriptor(&self, name: &str) -> Result<GridDescriptor, GeodesyError> {
-    //     Err(GeodesyError::NotFound(String::from(name)))
-    // }
-}
-
-/*
-
+use super::Provider;
+use super::SearchLevel;
 
 //---------------------------------------------------------------------------------
 // Enter the land of the ResourceProviders
 //---------------------------------------------------------------------------------
 
-use crate::Ellipsoid;
-use enum_iterator::IntoEnumIterator;
 use std::io::{BufRead, BufReader, Read};
 use std::path::PathBuf;
 use uuid::Uuid;
@@ -341,7 +264,3 @@ impl Popeline {
         })
     }
 }
-
-
-
-*/

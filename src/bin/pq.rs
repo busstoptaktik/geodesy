@@ -1,8 +1,8 @@
 /*! Plonketi Plonk! !*/
 //! How to append a postscript to the help message generated.
 use anyhow::{Context, Result};
+use geodesy::resource::plain::PlainResourceProvider;
 use geodesy::resource::SearchLevel;
-use geodesy::PlainResourceProvider;
 use log::{debug, trace};
 use std::{collections::HashMap, path::PathBuf};
 use structopt::StructOpt;

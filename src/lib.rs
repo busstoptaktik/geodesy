@@ -33,7 +33,7 @@ pub use context::gys::{GysArgs, GysResource};
 pub use context::Context;
 pub use coordinate::CoordinateTuple;
 pub use ellipsoid::Ellipsoid;
-pub use resource::{PlainResourceProvider, Provider, SearchLevel};
+pub use resource::{plain::PlainResourceProvider, Provider, SearchLevel};
 
 // The bibliography needs `pub`-ness in order to be able to build the docs.
 pub use bibliography::Bibliography;
