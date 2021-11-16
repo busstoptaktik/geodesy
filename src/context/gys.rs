@@ -212,8 +212,8 @@ mod tests {
 
 use crate::GeodesyError;
 
-/// A (potentially singleton) pipeline with (potential) documentation,
-/// split into steps, ready for further decomposition into `GysArgs`
+/// Gys representation of a (potentially singleton) pipeline with (potential)
+/// documentation, split into steps, ready for further decomposition into `GysArgs`
 #[derive(Debug, Clone)]
 pub struct GysResource {
     pub id: String,
@@ -413,7 +413,7 @@ impl GysArgs {
                 return Ok(v);
             }
 
-            // key given, but not numeric: return error string
+            // Error: key given, but not numeric
             return Err(GeodesyError::Syntax(format!(
                 "Numeric value expected for '{}' - got [{}: {}].",
                 key, key, value
@@ -431,7 +431,7 @@ impl GysArgs {
 } // impl GysArgs
 
 #[cfg(test)]
-mod ny_gys_tests {
+mod new_gys_tests {
     //use crate::GeodesyError;
     //use crate::context::nygys::*;
     use super::*;

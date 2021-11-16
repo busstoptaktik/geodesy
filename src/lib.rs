@@ -16,6 +16,7 @@
 //! Copyright by Thomas Knudsen, knudsen.thomas@gmail.com, 2020/2021
 //!
 //!
+#![doc = include_str!("../README.md")]
 
 // Most details are hidden: No `pub mod`s below
 mod bibliography;
