@@ -48,6 +48,11 @@ doc:
 run ARGS:
     cargo run -- {{ARGS}}
 
+
+# Run pq application.
+pq ARGS:
+    cargo run --bin=pq -- {{ARGS}}
+
 # Run example based on its unique prefix (e.g. 00, 01, etc.).
 run-example EXAMPLE:
     cargo run --example `basename examples/"{{EXAMPLE}}"* .rs`

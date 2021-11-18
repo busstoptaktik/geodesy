@@ -15,8 +15,6 @@ use super::SearchLevel;
 // Enter the land of the ResourceProviders
 //---------------------------------------------------------------------------------
 
-use std::io::{BufRead, BufReader, Read};
-use std::path::PathBuf;
 use uuid::Uuid;
 
 // Preliminary scaffolding
@@ -31,7 +29,7 @@ impl Opera for Operator {
 
 pub struct PlainResourceProvider {
     searchlevel: SearchLevel,
-    check_builtins_first: bool,
+    persistent_builtins: bool,
     // pile: memmap::Mmap
     user_defined_operators: HashMap<String, oa::OperatorConstructor>,
     user_defined_macros: HashMap<String, String>,
@@ -39,8 +37,14 @@ pub struct PlainResourceProvider {
     globals: Vec<(String, String)>,
 }
 
+impl Default for PlainResourceProvider {
+    fn default() -> PlainResourceProvider {
+        PlainResourceProvider::new(SearchLevel::Builtins, true)
+    }
+}
+
 impl PlainResourceProvider {
-    pub fn new(searchlevel: SearchLevel, check_builtins_first: bool) -> PlainResourceProvider {
+    pub fn new(searchlevel: SearchLevel, persistent_builtins: bool) -> PlainResourceProvider {
         let user_defined_operators = HashMap::new();
         let user_defined_macros = HashMap::new();
         let operations = HashMap::new();
@@ -48,7 +52,7 @@ impl PlainResourceProvider {
 
         PlainResourceProvider {
             searchlevel,
-            check_builtins_first,
+            persistent_builtins,
             user_defined_operators,
             user_defined_macros,
             operations,
@@ -66,8 +70,9 @@ impl Provider for PlainResourceProvider {
     fn searchlevel(&self) -> SearchLevel {
         self.searchlevel
     }
-    fn check_builtins_first(&self) -> bool {
-        self.check_builtins_first
+
+    fn persistent_builtins(&self) -> bool {
+        self.persistent_builtins
     }
 
     fn operate(&self, operation: Uuid, operands: &mut [CoordinateTuple], forward: bool) -> bool {
@@ -87,103 +92,6 @@ impl Provider for PlainResourceProvider {
     /// Inverse operation.
     fn inv(&self, operation: Uuid, operands: &mut [CoordinateTuple]) -> bool {
         self.operate(operation, operands, false)
-    }
-
-    /// workhorse for gys_definition
-    fn get_gys_definition_from_level(
-        &self,
-        level: SearchLevel,
-        branch: &str,
-        name: &str,
-    ) -> Option<String> {
-        let filename: PathBuf = match level {
-            SearchLevel::GlobalPatches => {
-                // $HOME/share/geodesy/branch/name.gys
-                let mut d = dirs::data_local_dir().unwrap_or_default();
-                d.push("geodesy");
-                d.push(branch);
-                d.push(format!("{}.gys", name));
-                d
-            }
-            SearchLevel::Globals => {
-                // $HOME/share/geodesy/branch/branch.gys
-                let mut d = dirs::data_local_dir().unwrap_or_default();
-                d.push("geodesy");
-                d.push(branch);
-                d.push(format!("{}.gys", branch));
-                d
-            }
-            SearchLevel::LocalPatches => {
-                // ./geodesy/branch/name.gys
-                let mut d = PathBuf::from(".");
-                d.push("geodesy");
-                d.push(branch);
-                d.push(format!("{}.gys", name));
-                d
-            }
-            SearchLevel::Locals => {
-                // ./geodesy/branch/branch.gys
-                let mut d = PathBuf::from(".");
-                d.push("geodesy");
-                d.push(branch);
-                d.push(format!("{}.gys", branch));
-                d
-            }
-            _ => return None,
-        };
-
-        let file = std::fs::File::open(filename);
-        if file.is_err() {
-            return None;
-        }
-        let mut file = file.unwrap();
-
-        // Patches
-        if level == SearchLevel::LocalPatches || level == SearchLevel::GlobalPatches {
-            let mut definition = String::new();
-            if file.read_to_string(&mut definition).is_ok() {
-                return Some(definition);
-            }
-            return None;
-        }
-
-        // For non-patches, we search for the *last* occurence of a section with
-        // the name we want, since updates are *appended* to the existing file
-        let mut definition = String::new();
-        let target = format!("<{}>", name);
-        let mut skipping = true;
-
-        let lines = BufReader::new(file).lines();
-        for line in lines {
-            if line.is_err() {
-                continue;
-            }
-            let line = line.ok()?;
-            if skipping && line.trim() == target {
-                skipping = false;
-                definition.clear();
-                continue;
-            }
-            if skipping {
-                continue;
-            }
-            if line.trim().starts_with('<') {
-                if line.trim() != target {
-                    skipping = true;
-                    continue;
-                }
-                // Another instance of the same target
-                definition.clear();
-                continue;
-            }
-            definition += &line;
-            definition += "\n";
-        }
-
-        if definition.is_empty() {
-            return None;
-        }
-        Some(definition)
     }
 }
 
@@ -228,12 +136,12 @@ pub struct Popeline {
 }
 
 impl Popeline {
-    pub fn new(args: &GysResource, _rp: &dyn Provider) -> Result<Popeline, GeodesyError> {
+    pub fn new(args: &GysResource, rp: &dyn Provider) -> Result<Popeline, GeodesyError> {
         let margs = args.clone();
         let mut globals = GysArgs::new(&args.globals, "");
         let inverted = globals.flag("inv");
         let _n = args.steps.len();
-        let _globals: Vec<_> = args
+        let globals: Vec<_> = args
             .globals
             .iter()
             .filter(|x| x.0 != "inv" && x.0 != "name")

@@ -39,14 +39,14 @@ impl Operator {
     /// Example:
     /// ```rust
     /// // EPSG:1134 - 3 parameter Helmert, ED50/WGS84
+    /// # use std::error::Error; fn foo() -> Result<(), Box<dyn Error>> {
     /// let mut ctx = geodesy::Context::new();
-    /// let op = ctx.operation("helmert: {x: -87, y: -96, z: -120}");
-    /// assert!(op.is_ok());
-    /// let op = op.unwrap();
+    /// let op = ctx.operation("helmert: {x: -87, y: -96, z: -120}")?;
     /// let mut operands = [geodesy::CoordinateTuple::geo(55., 12.,0.,0.)];
     /// ctx.fwd(op, &mut operands);
     /// ctx.inv(op, &mut operands);
     /// assert!((operands[0][0].to_degrees() - 12.).abs() < 1.0e-10);
+    /// # Ok(())}
     /// ```
     pub fn new(definition: &str, ctx: &Context) -> Result<Operator, GeodesyError> {
         let definition = Context::gys_to_yaml(definition);

@@ -459,6 +459,7 @@ mod new_gys_tests {
         ];
 
         let mut arg = GysArgs::new_symmetric(&globals, &locals);
+
         // Check plain lookup functionality
         let f = arg.value("  f  ")?;
         assert_eq!(f.unwrap(), globals[1].1);
