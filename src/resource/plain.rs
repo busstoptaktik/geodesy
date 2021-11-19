@@ -1,9 +1,11 @@
 #![allow(dead_code)]
+use log::info;
 
 use crate::context::gys::GysArgs;
 use crate::context::gys::GysResource;
 use crate::operator_construction as oa;
 use crate::operator_construction::Operator;
+use crate::operator_construction::OperatorArgs;
 use crate::CoordinateTuple;
 use crate::GeodesyError;
 use std::collections::HashMap;
@@ -49,6 +51,11 @@ impl PlainResourceProvider {
         let user_defined_macros = HashMap::new();
         let operations = HashMap::new();
         let globals = Vec::from([("ellps".to_string(), "GRS80".to_string())]);
+
+        info!(
+            "Creating new PlainResourceProvider - level: {:#?}, builtin persistence; {}",
+            searchlevel, persistent_builtins
+        );
 
         PlainResourceProvider {
             searchlevel,
@@ -101,8 +108,6 @@ impl Provider for PlainResourceProvider {
 
 #[cfg(test)]
 mod resourceprovidertests {
-    //use crate::GeodesyError;
-    //use crate::context::nygys::*;
     use super::*;
     #[test]
     fn gys() -> Result<(), GeodesyError> {
@@ -129,6 +134,7 @@ mod resourceprovidertests {
     }
 }
 
+#[derive(Debug)]
 pub struct Popeline {
     args: GysResource,
     steps: Vec<Operator>,
@@ -136,39 +142,100 @@ pub struct Popeline {
 }
 
 impl Popeline {
-    pub fn new(args: &GysResource, rp: &dyn Provider) -> Result<Popeline, GeodesyError> {
+    pub fn new(
+        args: &GysResource,
+        rp: &dyn Provider,
+        level: usize,
+    ) -> Result<Popeline, GeodesyError> {
+        if level > 100 {
+            return Err(GeodesyError::Recursion(format!("{:#?}", args)));
+        }
         let margs = args.clone();
         let mut globals = GysArgs::new(&args.globals, "");
+
+        // Is the pipeline itself inverted?
         let inverted = globals.flag("inv");
+
+        // How many steps?
         let _n = args.steps.len();
+
+        // Redact the globals to eliminate the chaos-inducing "inv" and "name":
+        // These are related to the pipeline itself, not its constituents.
         let globals: Vec<_> = args
             .globals
             .iter()
             .filter(|x| x.0 != "inv" && x.0 != "name")
+            .cloned()
             .collect();
-        let steps = Vec::<Operator>::new();
-        /*
-                for i in 0..n {
-                    // Each step is represented as args[_step_0] = YAML step definition.
-                    // (see OperatorArgs::populate())
-                    let step_name = format!("_step_{}", i);
-                    let step_args = &args.args[&step_name];
+        // While testing, we just accumulate popelines, not Operators
+        // let mut steps = Vec::<Operator>::new();
+        let mut steps = Vec::<Operator>::new();
+        for step in &args.steps {
+            // An embedded pipeline? (should not happen - elaborate!)
+            if step.find('|').is_some() {
+                continue;
+            }
 
-                    // We need a recursive copy of "all globals so far"
-                    let mut oa = args.spawn(step_args);
-                    if let Ok(op) = operator_factory(&mut oa, ctx, 0) {
-                        steps.push(op);
-                    } else {
-                        return Err(GeodesyError::General("Pipeline: Bad step"));
-                    }
+            let mut args = GysArgs::new(&globals, step);
+            dbg!(&args);
+
+            let nextname = &args.value("name")?.unwrap_or_default();
+
+            // A macro? - args are now globals!
+            if let Ok(mac) = rp.gys_definition("macros", nextname) {
+                for arg in &args.locals {
+                    let a = arg.clone();
+                    args.globals.push(a);
                 }
+                let nextargs = GysResource::new(&mac, &globals);
+                dbg!(&nextargs);
+                let next = Popeline::new(&nextargs, rp, level + 1)?;
+                // TODO - do something with next
+                continue;
+            }
 
-                let args = args.clone();
-        */
+            // If we do not find nextname among the resources - it's probably a builtin
+            let op = crate::operator::builtins::builtin(nextname)?;
+            let next = op(&mut OperatorArgs::default())?; // TODO OperatorArgs => args
+            steps.push(next);
+            continue;
+        }
+
         Ok(Popeline {
             args: margs,
-            steps: steps,
+            steps,
             inverted: inverted?,
         })
+    }
+}
+
+#[cfg(test)]
+mod popelinetests {
+    use super::*;
+    #[test]
+    fn gys() -> Result<(), GeodesyError> {
+        let rp = PlainResourceProvider::new(SearchLevel::LocalPatches, true);
+        let foo = rp
+            .get_gys_definition_from_level(SearchLevel::LocalPatches, "macros", "foo")
+            .unwrap();
+        assert_eq!(foo.trim(), "bar");
+
+        // This should be OK, since noop is a builtin
+        let res = GysResource::from("noop pip");
+        let p = Popeline::new(&res, &rp, 0);
+        assert!(p.is_ok());
+        dbg!(p?);
+
+        // This should be OK, due to "ignore" resolving to noop
+        let res = GysResource::from("ignore pip");
+        let p = Popeline::new(&res, &rp, 0);
+        assert!(p.is_ok());
+        dbg!(p?);
+
+        // This should fail, due to "baz" being undefined
+        let res = GysResource::from("ignore pip|baz pop");
+        let p = Popeline::new(&res, &rp, 0);
+        assert!(p.is_err());
+        Ok(())
     }
 }

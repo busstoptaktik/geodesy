@@ -1,30 +1,51 @@
 use crate::operator_construction::OperatorArgs;
-use crate::operator_construction::OperatorConstructor;
 use crate::Context;
 use crate::CoordinateTuple;
 use crate::GeodesyError;
 use log::warn;
 
-// A HashMap would have been a better choice,for the OPERATOR_LIST, except
-// for the annoying fact that it cannot be compile-time constructed
-#[rustfmt::skip]
-const OPERATOR_LIST: [(&str, OperatorConstructor); 13] = [
-    ("adapt",      crate::operator::adapt::Adapt::operator),
-    ("cart",       crate::operator::cart::Cart::operator),
-    ("helmert",    crate::operator::helmert::Helmert::operator),
-    ("lcc",        crate::operator::lcc::Lcc::operator),
-    ("merc",       crate::operator::merc::Merc::operator),
+pub mod builtins {
+    use crate::operator_construction::OperatorConstructor;
+    use crate::GeodesyError;
 
-    ("molodensky", crate::operator::molodensky::Molodensky::operator),
-    ("dm",         crate::operator::nmea::Nmea::operator),
-    ("nmea",       crate::operator::nmea::Nmea::operator),
-    ("dms",        crate::operator::nmea::Nmea::dmsoperator),
-    ("nmeass",     crate::operator::nmea::Nmea::dmsoperator),
+    // A HashMap would have been a better choice,for the OPERATOR_LIST, except
+    // for the annoying fact that it cannot be compile-time constructed
+    #[rustfmt::skip]
+    const OPERATOR_LIST: [(&str, OperatorConstructor); 13] = [
+        ("adapt",      crate::operator::adapt::Adapt::operator),
+        ("cart",       crate::operator::cart::Cart::operator),
+        ("helmert",    crate::operator::helmert::Helmert::operator),
+        ("lcc",        crate::operator::lcc::Lcc::operator),
+        ("merc",       crate::operator::merc::Merc::operator),
 
-    ("noop",       crate::operator::noop::Noop::operator),
-    ("tmerc",      crate::operator::tmerc::Tmerc::operator),
-    ("utm",        crate::operator::tmerc::Tmerc::utmoperator),
-];
+        ("molodensky", crate::operator::molodensky::Molodensky::operator),
+        ("dm",         crate::operator::nmea::Nmea::operator),
+        ("nmea",       crate::operator::nmea::Nmea::operator),
+        ("dms",        crate::operator::nmea::Nmea::dmsoperator),
+        ("nmeass",     crate::operator::nmea::Nmea::dmsoperator),
+
+        ("noop",       crate::operator::noop::Noop::operator),
+        ("tmerc",      crate::operator::tmerc::Tmerc::operator),
+        ("utm",        crate::operator::tmerc::Tmerc::utmoperator),
+    ];
+
+    /// Handle instantiation of built-in operators.
+    pub fn builtin(name: &str) -> Result<OperatorConstructor, GeodesyError> {
+        // The operator name may be prefixed with "builtin_", so operator-named
+        // macros can delegate the hard work to the operators they shadow.
+        let mut opname = String::from(name).to_lowercase();
+        if let Some(stripped) = opname.strip_prefix("builtin_") {
+            opname = String::from(stripped)
+        }
+
+        if let Some(index) = OPERATOR_LIST.iter().position(|&op| op.0 == opname) {
+            return Ok(OPERATOR_LIST[index].1);
+        }
+
+        // Not a built in operator
+        Err(GeodesyError::NotFound(opname))
+    }
+}
 
 // Operator is a newtype around a Boxed trait OperatorCore,
 // in order to be able to define methods on it.
@@ -245,19 +266,8 @@ fn builtins(ctx: &Context, args: &mut OperatorArgs) -> Result<Operator, GeodesyE
         }
     }
 
-    // The operator name may be prefixed with "builtin_", so operator-named
-    // macros can delegate the hard work to the operators they shadow.
-    let mut opname = args.name.clone().to_lowercase();
-    if opname.starts_with("builtin_") {
-        opname = opname.strip_prefix("builtin_").unwrap().to_string();
-    }
-
-    if let Some(index) = OPERATOR_LIST.iter().position(|&op| op.0 == opname) {
-        return OPERATOR_LIST[index].1(args);
-    }
-
-    // Not a built in operator
-    Err(GeodesyError::NotFound(opname))
+    let op = builtins::builtin(&args.name)?;
+    op(args)
 }
 
 /// Expand gys ARGS and translate to YAML

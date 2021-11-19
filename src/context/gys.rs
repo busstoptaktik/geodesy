@@ -223,11 +223,17 @@ pub struct GysResource {
 }
 
 impl From<&str> for GysResource {
-    fn from(definition: &str) -> GysResource {
+    fn from(definition: &str) -> Self {
         GysResource::new(
             definition,
             &[(String::from("ellps"), String::from("GRS80"))],
         )
+    }
+}
+
+impl From<(&str, &[(String, String)])> for GysResource {
+    fn from(definition_and_globals: (&str, &[(String, String)])) -> Self {
+        GysResource::new(definition_and_globals.0, definition_and_globals.1)
     }
 }
 
@@ -283,7 +289,7 @@ impl GysResource {
             trimmed_steps.push(joined);
         }
         GysResource {
-            id: id,
+            id,
             doc: docstring,
             steps: trimmed_steps,
             globals: Vec::from(globals),
@@ -292,6 +298,7 @@ impl GysResource {
 } // impl GysResource
 
 /// The raw material for instantiation of Rust Geodesy objects
+#[derive(Debug)]
 pub struct GysArgs {
     pub globals: Vec<(String, String)>,
     pub locals: Vec<(String, String)>,

@@ -4,3 +4,6 @@ bar
 baz
 <fruit>
 banana
+
+<ignore>
+noop
