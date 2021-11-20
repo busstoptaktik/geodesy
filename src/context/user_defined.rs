@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use crate::operator_construction::Operator;
-use crate::operator_construction::OperatorConstructor;
+use crate::OperatorConstructor;
 use crate::Context;
 use crate::GeodesyError;
 

@@ -20,7 +20,6 @@
 
 // Most details are hidden: No `pub mod`s below
 mod bibliography;
-mod context;
 pub mod resource;
 
 mod coordinate;
@@ -29,10 +28,9 @@ mod internals;
 mod operator;
 
 // But we add `pub`-ness to a few important `struct`s.
-pub use context::gys::{GysArgs, GysResource};
-pub use context::Context;
 pub use coordinate::CoordinateTuple;
 pub use ellipsoid::Ellipsoid;
+pub use resource::gys::{GysArgs, GysResource};
 pub use resource::{plain::PlainResourceProvider, Provider, SearchLevel};
 
 // The bibliography needs `pub`-ness in order to be able to build the docs.
@@ -45,11 +43,13 @@ pub mod operator_construction {
     mod operatorargs;
     pub use crate::operator::Operator;
     pub use crate::operator::OperatorCore;
-    use crate::GeodesyError;
     pub use gas::Gas;
-    pub use operatorargs::OperatorArgs;
-    pub type OperatorConstructor = fn(args: &mut OperatorArgs) -> Result<Operator, GeodesyError>;
+    pub use operatorargs::GysResource;
 }
+
+pub use operator::Operator;
+pub type OperatorConstructor =
+    fn(args: &GysResource, provider: &dyn Provider) -> Result<Operator, GeodesyError>;
 
 /// Indicate that a two-way operator, function, or method, should run in the *forward* direction.
 pub const FWD: bool = true;

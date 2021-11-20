@@ -18,12 +18,12 @@ use geodesy::{Context, CoordinateTuple};
 // It also implements the inverse operation, i.e. subtracting 42.
 
 pub struct Add42 {
-    args: OperatorArgs,
+    args: GysResource,
     inverted: bool,
 }
 
 impl Add42 {
-    fn new(args: &mut OperatorArgs) -> Result<Add42, GeodesyError> {
+    fn new(args: &mut GysResource) -> Result<Add42, GeodesyError> {
         let inverted = args.flag("inv");
         Ok(Add42 {
             args: args.clone(),
@@ -33,7 +33,7 @@ impl Add42 {
 
     // This is the interface to the Rust Geodesy library: Construct an Add42
     // element, and wrap it properly for consumption. It is 100% boilerplate.
-    pub fn operator(args: &mut OperatorArgs) -> Result<Operator, GeodesyError> {
+    pub fn operator(args: &mut GysResource) -> Result<Operator, GeodesyError> {
         let op = Add42::new(args)?;
         Ok(Operator(Box::new(op)))
     }
@@ -62,7 +62,7 @@ impl OperatorCore for Add42 {
         self.inverted
     }
 
-    fn args(&self, _step: usize) -> &OperatorArgs {
+    fn args(&self, _step: usize) -> &GysResource {
         &self.args
     }
 }

@@ -4,17 +4,17 @@ use yaml_rust::{Yaml, YamlEmitter, YamlLoader};
 use crate::GeodesyError;
 
 #[derive(Debug, Clone, Default, PartialEq)]
-pub struct OperatorArgs {
+pub struct GysResource {
     pub name: String,
     pub args: HashMap<String, String>,
     pub used: HashMap<String, String>,
     pub all_used: HashMap<String, String>,
 }
 
-impl OperatorArgs {
+impl GysResource {
     #[must_use]
-    pub fn new() -> OperatorArgs {
-        let mut op = OperatorArgs {
+    pub fn new() -> GysResource {
+        let mut op = GysResource {
             name: String::new(),
             args: HashMap::new(),
             used: HashMap::new(),
@@ -31,8 +31,8 @@ impl OperatorArgs {
     ///
     /// This is the mechanism for inheritance of global args in pipelines.
     #[must_use]
-    pub fn spawn(&self, definition: &str) -> OperatorArgs {
-        let mut oa = OperatorArgs::new();
+    pub fn spawn(&self, definition: &str) -> GysResource {
+        let mut oa = GysResource::new();
         for (arg, val) in &self.args {
             if arg.starts_with('_') || (arg == "inv") {
                 continue;
@@ -277,7 +277,7 @@ mod tests {
     #[test]
     fn operator_args() {
         use super::*;
-        let mut args = OperatorArgs::new();
+        let mut args = GysResource::new();
 
         // dx and dy are straightforward
         args.insert("dx", "11");
@@ -321,7 +321,7 @@ mod tests {
     #[test]
     fn preparing_args() {
         use super::*;
-        let mut args = OperatorArgs::new();
+        let mut args = GysResource::new();
 
         // Explicitly stating the name of the pipeline
         let txt = std::fs::read_to_string("tests/tests.yml").unwrap_or_default();
@@ -329,12 +329,12 @@ mod tests {
         assert_eq!(&args.value("_step_0", "    ")[0..4], "cart");
 
         // Let populate() figure out what we want
-        let mut args = OperatorArgs::new();
+        let mut args = GysResource::new();
         assert!(args.populate(&txt, ""));
         assert_eq!(&args.value("x", "5"), "3");
 
         // When op is not a pipeline
-        let mut args = OperatorArgs::new();
+        let mut args = GysResource::new();
         assert!(args.populate("cart: {ellps: intl}", ""));
         assert_eq!(args.name, "cart");
         assert_eq!(&args.value("ellps", ""), "intl");

@@ -3,6 +3,7 @@ use std::collections::HashMap;
 
 use crate::operator_construction::*;
 use crate::CoordinateTuple;
+use crate::OperatorConstructor;
 
 /// The central administration of the transformation functionality
 // #[derive(Default)]

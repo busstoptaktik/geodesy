@@ -1,31 +1,35 @@
-use super::Context;
-use super::OperatorArgs;
+use super::GysResource;
 use super::OperatorCore;
-use crate::operator_construction::*;
 use crate::CoordinateTuple;
 use crate::GeodesyError;
+use crate::Operator;
+use crate::Provider;
 
 pub struct Noop {
-    args: OperatorArgs,
+    args: Vec<(String, String)>,
 }
 
 impl Noop {
-    pub fn new(args: &mut OperatorArgs) -> Result<Noop, GeodesyError> {
-        Ok(Noop { args: args.clone() })
+    pub fn new(res: &GysResource) -> Result<Noop, GeodesyError> {
+        let args = res.to_args(0)?;
+        Ok(Noop { args: args.used })
     }
 
-    pub(crate) fn operator(args: &mut OperatorArgs) -> Result<Operator, GeodesyError> {
+    pub(crate) fn operator(
+        args: &GysResource,
+        _rp: &dyn Provider,
+    ) -> Result<Operator, GeodesyError> {
         let op = crate::operator::noop::Noop::new(args)?;
         Ok(Operator(Box::new(op)))
     }
 }
 
 impl OperatorCore for Noop {
-    fn fwd(&self, _ctx: &Context, _operands: &mut [CoordinateTuple]) -> bool {
+    fn fwd(&self, _ctx: &dyn Provider, _operands: &mut [CoordinateTuple]) -> bool {
         true
     }
 
-    fn inv(&self, _ctx: &Context, _operands: &mut [CoordinateTuple]) -> bool {
+    fn inv(&self, _ctx: &dyn Provider, _operands: &mut [CoordinateTuple]) -> bool {
         true
     }
 
@@ -41,20 +45,18 @@ impl OperatorCore for Noop {
         false
     }
 
-    fn args(&self, _step: usize) -> &OperatorArgs {
+    fn args(&self, _step: usize) -> &[(String, String)] {
         &self.args
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     #[test]
     fn noop() {
-        use crate::operator_construction::*;
-        use crate::Context;
-        use crate::CoordinateTuple;
-        let mut o = Context::new();
-        let c = Operator::new("noop: {}", &mut o).unwrap();
+        let mut o = crate::resource::plain::PlainResourceProvider::default();
+        let c = Operator::new("noop irrelevant: option", &mut o).unwrap();
 
         let mut operands = [CoordinateTuple::origin()];
 

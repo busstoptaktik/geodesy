@@ -31,7 +31,7 @@ use geodesy::{operator_construction::*, GeodesyError};
 use geodesy::{Context, CoordinateTuple, Ellipsoid};
 
 pub struct GeodesicShift {
-    args: OperatorArgs,
+    args: GysResource,
     inverted: bool,
 
     ellps: Ellipsoid,
@@ -41,7 +41,7 @@ pub struct GeodesicShift {
 }
 
 impl GeodesicShift {
-    fn new(args: &mut OperatorArgs) -> Result<GeodesicShift, GeodesyError> {
+    fn new(args: &mut GysResource) -> Result<GeodesicShift, GeodesyError> {
         let ellps = Ellipsoid::named(&args.value("ellps", "GRS80"))?;
         let inverted = args.flag("inv");
 
@@ -78,7 +78,7 @@ impl GeodesicShift {
 
     // This is the interface to the Rust Geodesy library: Construct a
     // GeodesicShift element, and wrap it properly for consumption.
-    pub fn operator(args: &mut OperatorArgs) -> Result<Operator, GeodesyError> {
+    pub fn operator(args: &mut GysResource) -> Result<Operator, GeodesyError> {
         let op = GeodesicShift::new(args)?;
         Ok(Operator(Box::new(op)))
     }
@@ -110,7 +110,7 @@ impl OperatorCore for GeodesicShift {
         self.inverted
     }
 
-    fn args(&self, _step: usize) -> &OperatorArgs {
+    fn args(&self, _step: usize) -> &GysResource {
         &self.args
     }
 }

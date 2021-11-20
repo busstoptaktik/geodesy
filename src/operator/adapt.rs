@@ -55,16 +55,16 @@ geo | cart ... | helmert ... | cart inv ... | geo inv
 
 !*/
 
-use super::OperatorArgs;
 use super::OperatorCore;
 use crate::operator_construction::*;
-use crate::Context;
 use crate::CoordinateTuple;
 use crate::GeodesyError;
+use crate::GysResource;
+use crate::Provider;
 
 #[derive(Debug, Default, Clone)]
 pub struct Adapt {
-    args: OperatorArgs,
+    args: Vec<(String, String)>,
     inverted: bool,
     post: [usize; 4],
     mult: [f64; 4],
@@ -172,13 +172,15 @@ fn combine_descriptors(
 }
 
 impl Adapt {
-    pub fn new(args: &mut OperatorArgs) -> Result<Adapt, GeodesyError> {
+    pub fn new(res: &GysResource) -> Result<Adapt, GeodesyError> {
+        let mut args = res.to_args(0)?;
         let inverted = args.flag("inv");
+        dbg!(inverted);
 
         // What we go `from` and what we go `to` both defaults to the internal
         // representation - i.e. "do nothing", neither on in- or output.
-        let mut from = args.value("from", "enut");
-        let mut to = args.value("to", "enut");
+        let mut from = args.string("from", "enut");
+        let mut to = args.string("to", "enut");
 
         // forward and inverse give very slightly different results, due to the
         // roundoff difference betweeen multiplication and division. We avoid
@@ -197,7 +199,7 @@ impl Adapt {
 
         let desc = descriptor(&to);
         if desc.is_none() {
-            return Err(GeodesyError::Operator("Adapt", "Bad value for 'from'"));
+            return Err(GeodesyError::Operator("Adapt", "Bad value for 'to'"));
         }
         let to = desc.unwrap();
 
@@ -205,7 +207,7 @@ impl Adapt {
         let give = combine_descriptors(&from, &to);
 
         Ok(Adapt {
-            args: args.clone(),
+            args: args.used,
             inverted,
             post: give.post,
             mult: give.mult,
@@ -213,14 +215,17 @@ impl Adapt {
         })
     }
 
-    pub(crate) fn operator(args: &mut OperatorArgs) -> Result<Operator, GeodesyError> {
+    pub(crate) fn operator(
+        args: &GysResource,
+        _rp: &dyn Provider,
+    ) -> Result<Operator, GeodesyError> {
         let op = crate::operator::adapt::Adapt::new(args)?;
         Ok(Operator(Box::new(op)))
     }
 }
 
 impl OperatorCore for Adapt {
-    fn fwd(&self, _ctx: &Context, operands: &mut [CoordinateTuple]) -> bool {
+    fn fwd(&self, _ctx: &dyn Provider, operands: &mut [CoordinateTuple]) -> bool {
         if self.noop {
             return true;
         }
@@ -235,7 +240,7 @@ impl OperatorCore for Adapt {
         true
     }
 
-    fn inv(&self, _ctx: &Context, operands: &mut [CoordinateTuple]) -> bool {
+    fn inv(&self, _ctx: &dyn Provider, operands: &mut [CoordinateTuple]) -> bool {
         if self.noop {
             return true;
         }
@@ -252,7 +257,7 @@ impl OperatorCore for Adapt {
     // We overwrite the default `operate` in order to handle the trick above,
     // where we swap `from` and `to`, rather than letting `operate` call the
     // complementary method.
-    fn operate(&self, ctx: &Context, operands: &mut [CoordinateTuple], forward: bool) -> bool {
+    fn operate(&self, ctx: &dyn Provider, operands: &mut [CoordinateTuple], forward: bool) -> bool {
         if forward {
             return self.fwd(ctx, operands);
         }
@@ -275,13 +280,15 @@ impl OperatorCore for Adapt {
         self.inverted
     }
 
-    fn args(&self, _step: usize) -> &OperatorArgs {
+    fn args(&self, _step: usize) -> &[(String, String)] {
         &self.args
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::GeodesyError;
+    use crate::Provider;
     #[test]
     fn descriptor() {
         use super::combine_descriptors;
@@ -322,20 +329,22 @@ mod tests {
     }
 
     #[test]
-    fn adapt() {
-        use crate::Context;
+    fn adapt() -> Result<(), GeodesyError> {
         use crate::CoordinateTuple;
-        let mut ctx = Context::new();
+        let mut ctx = crate::resource::plain::PlainResourceProvider::default();
 
-        let gonify = ctx
-            .operation("adapt: {from: neut_deg, to: enut_gon}")
-            .unwrap();
+        let gonify = ctx.operation("adapt from:neut_deg   to:enut_gon")?;
+        dbg!(gonify);
+        let op = ctx.operator(gonify)?;
+        dbg!(op);
         let mut operands = [
             CoordinateTuple::raw(90., 180., 0., 0.),
             CoordinateTuple::raw(45., 90., 0., 0.),
         ];
 
-        ctx.fwd(gonify, &mut operands);
+        dbg!(operands);
+        assert_eq!(ctx.fwd(gonify, &mut operands), true);
+        dbg!(operands);
         assert!((operands[0][0] - 200.0).abs() < 1e-10);
         assert!((operands[0][1] - 100.0).abs() < 1e-10);
         assert!((operands[1][0] - 100.0).abs() < 1e-10);
@@ -346,5 +355,7 @@ mod tests {
         assert!((operands[0][1] - 180.0).abs() < 1e-10);
         assert!((operands[1][0] - 45.0).abs() < 1e-10);
         assert!((operands[1][1] - 90.0).abs() < 1e-10);
+
+        Ok(())
     }
 }

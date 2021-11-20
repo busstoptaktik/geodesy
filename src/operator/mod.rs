@@ -1,20 +1,22 @@
-use crate::operator_construction::OperatorArgs;
-use crate::Context;
+use crate::resource::Popeline;
 use crate::CoordinateTuple;
 use crate::GeodesyError;
+use crate::GysResource;
+use crate::Provider;
 use log::warn;
 
 pub mod builtins {
-    use crate::operator_construction::OperatorConstructor;
     use crate::GeodesyError;
+    use crate::OperatorConstructor;
 
     // A HashMap would have been a better choice,for the OPERATOR_LIST, except
     // for the annoying fact that it cannot be compile-time constructed
     #[rustfmt::skip]
-    const OPERATOR_LIST: [(&str, OperatorConstructor); 13] = [
+    const OPERATOR_LIST: [(&str, OperatorConstructor); 3] = [
         ("adapt",      crate::operator::adapt::Adapt::operator),
         ("cart",       crate::operator::cart::Cart::operator),
-        ("helmert",    crate::operator::helmert::Helmert::operator),
+        ("noop",       crate::operator::noop::Noop::operator),
+/*        ("helmert",    crate::operator::helmert::Helmert::operator),
         ("lcc",        crate::operator::lcc::Lcc::operator),
         ("merc",       crate::operator::merc::Merc::operator),
 
@@ -24,10 +26,9 @@ pub mod builtins {
         ("dms",        crate::operator::nmea::Nmea::dmsoperator),
         ("nmeass",     crate::operator::nmea::Nmea::dmsoperator),
 
-        ("noop",       crate::operator::noop::Noop::operator),
         ("tmerc",      crate::operator::tmerc::Tmerc::operator),
         ("utm",        crate::operator::tmerc::Tmerc::utmoperator),
-    ];
+ */   ];
 
     /// Handle instantiation of built-in operators.
     pub fn builtin(name: &str) -> Result<OperatorConstructor, GeodesyError> {
@@ -69,12 +70,11 @@ impl Operator {
     /// assert!((operands[0][0].to_degrees() - 12.).abs() < 1.0e-10);
     /// # Ok(())}
     /// ```
-    pub fn new(definition: &str, ctx: &Context) -> Result<Operator, GeodesyError> {
-        let definition = Context::gys_to_yaml(definition);
-
-        let mut oa = OperatorArgs::new();
-        oa.populate(&definition, "");
-        operator_factory(&mut oa, ctx, 0)
+    ///
+    pub fn new(definition: &str, ctx: &dyn Provider) -> Result<Operator, GeodesyError> {
+        let res = GysResource::new(definition, ctx.globals());
+        let op = Popeline::new(&res, ctx, 0)?;
+        Ok(op)
     }
 }
 
@@ -89,15 +89,20 @@ impl Debug for Operator {
 // Perhaps not necessary: We could deem Core low level and
 // build a high level interface on top of Core.
 impl OperatorCore for Operator {
-    fn fwd(&self, ctx: &Context, operands: &mut [CoordinateTuple]) -> bool {
+    fn fwd(&self, ctx: &dyn Provider, operands: &mut [CoordinateTuple]) -> bool {
         self.0.fwd(ctx, operands)
     }
 
-    fn inv(&self, ctx: &Context, operands: &mut [CoordinateTuple]) -> bool {
+    fn inv(&self, ctx: &dyn Provider, operands: &mut [CoordinateTuple]) -> bool {
         self.0.inv(ctx, operands)
     }
 
-    fn operate(&self, operand: &Context, operands: &mut [CoordinateTuple], forward: bool) -> bool {
+    fn operate(
+        &self,
+        operand: &dyn Provider,
+        operands: &mut [CoordinateTuple],
+        forward: bool,
+    ) -> bool {
         self.0.operate(operand, operands, forward)
     }
 
@@ -117,7 +122,7 @@ impl OperatorCore for Operator {
         self.0.len()
     }
 
-    fn args(&self, step: usize) -> &OperatorArgs {
+    fn args(&self, step: usize) -> &[(String, String)] {
         self.0.args(step)
     }
 
@@ -132,11 +137,11 @@ impl OperatorCore for Operator {
 /// which builds on this `trait` (which only holds `pub`ness in order to support
 /// construction of user-defined operators).
 pub trait OperatorCore {
-    fn fwd(&self, ctx: &Context, operands: &mut [CoordinateTuple]) -> bool;
+    fn fwd(&self, ctx: &dyn Provider, operands: &mut [CoordinateTuple]) -> bool;
 
     // implementations must override at least one of {inv, invertible}
     #[allow(unused_variables)]
-    fn inv(&self, ctx: &Context, operands: &mut [CoordinateTuple]) -> bool {
+    fn inv(&self, ctx: &dyn Provider, operands: &mut [CoordinateTuple]) -> bool {
         warn!("Operator {} not invertible", self.name());
         false
     }
@@ -150,7 +155,7 @@ pub trait OperatorCore {
     }
 
     // operate fwd/inv, taking operator inversion into account.
-    fn operate(&self, ctx: &Context, operands: &mut [CoordinateTuple], forward: bool) -> bool {
+    fn operate(&self, ctx: &dyn Provider, operands: &mut [CoordinateTuple], forward: bool) -> bool {
         // Short form of (inverted && !forward) || (forward && !inverted)
         if self.is_inverted() != forward {
             return self.fwd(ctx, operands);
@@ -177,114 +182,21 @@ pub trait OperatorCore {
         self.len() == 0
     }
 
-    fn args(&self, step: usize) -> &OperatorArgs;
+    fn args(&self, step: usize) -> &[(String, String)];
 
     fn is_inverted(&self) -> bool;
 }
 
 mod adapt;
 mod cart;
-mod helmert;
+mod noop;
+/*mod helmert;
 mod lcc;
 mod merc;
 mod molodensky;
 mod nmea;
-mod noop;
 mod pipeline;
-mod tmerc;
-
-pub(crate) fn operator_factory(
-    args: &mut OperatorArgs,
-    ctx: &Context,
-    recursions: usize,
-) -> Result<Operator, GeodesyError> {
-    if recursions > 100 {
-        warn!("Operator definition too deeply nested");
-        return Err(GeodesyError::Recursion("(unknown)".to_string()));
-    }
-
-    // Look for runtime defined macros
-    if let Some(definition) = ctx.locate_macro(&args.name) {
-        let mut moreargs = args.spawn(definition);
-        return operator_factory(&mut moreargs, ctx, recursions + 1);
-    }
-
-    // Is it a private asset (i.e. current directory) '.gys'-file?
-    if let Some(mut definition) = Context::get_private_asset("transformations", &args.name, ".gys")
-    {
-        // First expand ARGS and translate to YAML...
-        definition = expand_gys(&definition, args);
-        // Then treat it just like any other macro!
-        let mut moreargs = args.spawn(&definition);
-        return operator_factory(&mut moreargs, ctx, recursions + 1);
-    }
-
-    // Is it a private asset (i.e. current directory) '.yml'-file?
-    if let Some(definition) = Context::get_private_asset("transformations", &args.name, ".yml") {
-        let mut moreargs = args.spawn(&definition);
-        return operator_factory(&mut moreargs, ctx, recursions + 1);
-    }
-
-    // Is it a runtime defined operator?
-    if let Some(op) = ctx.locate_operator(&args.name) {
-        return op(args);
-    }
-
-    // Is it a shared asset '.gys'-file?
-    if let Some(mut definition) = Context::get_shared_asset("transformations", &args.name, ".gys") {
-        // First expand ARGS and translate to YAML...
-        definition = expand_gys(&definition, args);
-        // Then treat it just like any other macro!
-        let mut moreargs = args.spawn(&definition);
-        return operator_factory(&mut moreargs, ctx, recursions + 1);
-    }
-
-    // Is it a shared asset '.yml'-file?
-    if let Some(definition) = Context::get_shared_asset("transformations", &args.name, ".yml") {
-        let mut moreargs = args.spawn(&definition);
-        return operator_factory(&mut moreargs, ctx, recursions + 1);
-    }
-
-    // If it is none of the above, it must be a built-in operator
-    builtins(ctx, args)
-}
-
-/// Handle instantiation of built-in operators.
-fn builtins(ctx: &Context, args: &mut OperatorArgs) -> Result<Operator, GeodesyError> {
-    // Pipelines are not characterized by the name "pipeline", but simply by containing steps.
-    if let Ok(steps) = args.numeric_value("_nsteps", 0.0) {
-        if steps > 0.0 {
-            match crate::operator::pipeline::Pipeline::new(args, ctx) {
-                Err(err) => {
-                    warn!("Pipeline error: {}", &err.to_string());
-                    return Err(err);
-                }
-                Ok(ok) => {
-                    return Ok(Operator(Box::new(ok)));
-                }
-            }
-        }
-    }
-
-    let op = builtins::builtin(&args.name)?;
-    op(args)
-}
-
-/// Expand gys ARGS and translate to YAML
-fn expand_gys(definition: &str, args: &mut OperatorArgs) -> String {
-    let mut gysargs = String::new();
-    for (key, value) in &args.args {
-        if key == "ellps" || key == "_definition" {
-            continue;
-        }
-        let elt = format!(" {key}:{value}", key = key, value = value);
-        gysargs += &elt;
-    }
-    let definition = definition.replace("ARGS", &gysargs);
-
-    // Then translate to YAML and return
-    Context::gys_to_yaml(&definition)
-}
+mod tmerc;*/
 
 // --------------------------------------------------------------------------------------
 
@@ -295,39 +207,43 @@ mod tests {
 
     #[test]
     fn operator() -> Result<(), GeodesyError> {
-        use crate::operator_construction::*;
-        use crate::{Context, FWD, INV};
-        let mut o = Context::new();
+        use crate::Operator;
+        use crate::PlainResourceProvider as Plain;
+        use crate::resource::SearchLevel;
+        use crate::{FWD, INV};
+        let mut o = Plain::new(SearchLevel::LocalPatches, false);
 
         // A non-existing operator
-        let h = Operator::new("unimplemented_operator: {x: -87, y: -96, z: -120}", &mut o);
+        let h = Operator::new("unimplemented_operator: x: -87 y: -96 z: -120", &mut o);
         assert!(h.is_err());
 
         // Define "hilmert" and "halmert" to circularly define each other, in order
         // to test the operator_factory recursion breaker
-        assert!(o.register_macro("halmert", "hilmert: {}"));
-        assert!(o.register_macro("hilmert", "halmert: {}"));
-        if let Err(err) = Operator::new("halmert: {x: -87, y: -96, z: -120}", &mut o) {
+        o.register_macro("halmert", "hilmert")?;
+        o.register_macro("hilmert", "halmert")?;
+        println!("{:#?}", &o.user_defined_macros);
+        if let Err(err) = Operator::new("halmert x: -87 y: -96 z: -120", &mut o) {
+            dbg!(&err);
             assert!(err.to_string().contains("too deep recursion"));
         } else {
             panic!();
         }
 
         // Define "hulmert" as a macro forwarding its args to the "helmert" builtin
-        assert!(o.register_macro("hulmert", "helmert: {x: ^x, y: ^y, z: ^z}"));
+        o.register_macro("hulmert", "helmert x: ^x y: ^y z: ^z")?;
 
         // A plain operator: Helmert, EPSG:1134 - 3 parameter, ED50/WGS84
-        let hh = Operator::new("helmert: {x: -87, y: -96, z: -120}", &mut o)?;
+        let hh = Operator::new("helmert x: -87 y: -96 z: -120", &mut o)?;
 
         // Same operator, defined through the "hulmert" macro
-        let h = Operator::new("hulmert: {x: -87, y: -96, z: -120}", &mut o)?;
+        let h = Operator::new("hulmert x: -87 y: -96 z: -120", &mut o)?;
 
-        assert_eq!(hh.args(0).name, h.args(0).name);
-        assert_eq!(hh.args(0).used, h.args(0).used);
+        // assert_eq!(hh.args(0).name, h.args(0).name);
+        // assert_eq!(hh.args(0).used, h.args(0).used);
 
         // Check that the "builtin_" prefix works properly: Shadow "helmert" with a
         // forwarding macro of the same name - without making trouble for later use
-        assert!(o.register_macro("helmert", "builtin_helmert: {}"));
+        o.register_macro("helmert", "builtin_helmert")?;
 
         let mut operands = [CoordinateTuple::raw(0., 0., 0., 0.)];
 
@@ -342,13 +258,7 @@ mod tests {
         assert_eq!(operands[0].third(), 0.);
 
         // A pipeline
-        let pipeline = "ed50_etrs89: {
-            steps: [
-                cart: {ellps: intl},
-                helmert: {x: -87, y: -96, z: -120},
-                cart: {inv: true, ellps: GRS80}
-            ]
-        }";
+        let pipeline = "cart ellps:intl | helmert x:-87 y:-96 z:-120 | cart inv ellps:GRS80";
         let h = Operator::new(pipeline, &mut o)?;
 
         let mut operands = [CoordinateTuple::gis(12., 55., 100., 0.)];
@@ -365,91 +275,96 @@ mod tests {
         assert!((d.second() - r.second()).abs() < 1.0e-10);
         assert!((d.third() - r.third()).abs() < 1.0e-8);
 
-        // An externally defined version
-        let _h = Operator::new("ed50_etrs89", &mut o)?;
+        /*
+                // An externally defined version
+                let _h = Operator::new("ed50_etrs89", &mut o)?;
 
-        // Try to access it from data_local_dir (i.e. $HOME/share or somesuch)
-        if let Some(mut assets) = dirs::data_local_dir() {
-            assets.push("geodesy");
-            assets.push("assets.zip");
-            if assets.exists() {
-                // If we have access to "assets.zip" we expect to succeed
-                let h = Operator::new("ed50_etrs89", &mut o)?;
+                // Try to access it from data_local_dir (i.e. $HOME/share or somesuch)
+                if let Some(mut assets) = dirs::data_local_dir() {
+                    assets.push("geodesy");
+                    assets.push("assets.zip");
+                    if assets.exists() {
+                        // If we have access to "assets.zip" we expect to succeed
+                        let h = Operator::new("ed50_etrs89", &mut o)?;
+                        let mut operands = [CoordinateTuple::gis(12., 55., 100., 0.)];
+                        h.operate(&mut o, &mut operands, FWD);
+                        let d = operands[0].to_degrees();
+
+                        assert!((d.first() - r.first()).abs() < 1.0e-10);
+                        assert!((d.second() - r.second()).abs() < 1.0e-10);
+                        assert!((d.third() - r.third()).abs() < 1.0e-8);
+                    }
+                }
+
+                // A parameterized macro pipeline version
+                let pipeline_as_macro = "pipeline: {
+                    globals: {
+                        leftleft: ^left
+                    },
+                    steps: [
+                        cart: {ellps: ^leftleft},
+                        helmert: {x: ^x, y: ^y, z: ^z},
+                        cart: {inv: true, ellps: ^right}
+                    ]
+                }";
+
+                o.register_macro("geohelmert", pipeline_as_macro)?;
+                let ed50_etrs89 = Operator::new(
+                    "geohelmert: {left: intl, right: GRS80, x: -87, y: -96, z: -120}",
+                    &mut o,
+                )?;
                 let mut operands = [CoordinateTuple::gis(12., 55., 100., 0.)];
-                h.operate(&mut o, &mut operands, FWD);
+
+                ed50_etrs89.operate(&mut o, &mut operands, FWD);
                 let d = operands[0].to_degrees();
 
                 assert!((d.first() - r.first()).abs() < 1.0e-10);
                 assert!((d.second() - r.second()).abs() < 1.0e-10);
                 assert!((d.third() - r.third()).abs() < 1.0e-8);
-            }
-        }
 
-        // A parameterized macro pipeline version
-        let pipeline_as_macro = "pipeline: {
-            globals: {
-                leftleft: ^left
-            },
-            steps: [
-                cart: {ellps: ^leftleft},
-                helmert: {x: ^x, y: ^y, z: ^z},
-                cart: {inv: true, ellps: ^right}
-            ]
-        }";
+                ed50_etrs89.operate(&mut o, &mut operands, INV);
+                let d = operands[0].to_degrees();
 
-        assert!(o.register_macro("geohelmert", pipeline_as_macro));
-        let ed50_etrs89 = Operator::new(
-            "geohelmert: {left: intl, right: GRS80, x: -87, y: -96, z: -120}",
-            &mut o,
-        )?;
-        let mut operands = [CoordinateTuple::gis(12., 55., 100., 0.)];
-
-        ed50_etrs89.operate(&mut o, &mut operands, FWD);
-        let d = operands[0].to_degrees();
-
-        assert!((d.first() - r.first()).abs() < 1.0e-10);
-        assert!((d.second() - r.second()).abs() < 1.0e-10);
-        assert!((d.third() - r.third()).abs() < 1.0e-8);
-
-        ed50_etrs89.operate(&mut o, &mut operands, INV);
-        let d = operands[0].to_degrees();
-
-        assert!((d.first() - 12.).abs() < 1.0e-10);
-        assert!((d.second() - 55.).abs() < 1.0e-10);
-        assert!((d.third() - 100.).abs() < 1.0e-8);
-
+                assert!((d.first() - 12.).abs() < 1.0e-10);
+                assert!((d.second() - 55.).abs() < 1.0e-10);
+                assert!((d.third() - 100.).abs() < 1.0e-8);
+        */
         Ok(())
     }
 
-    use super::Context;
-    use super::Operator;
-    use super::OperatorArgs;
     use super::OperatorCore;
+    use crate::GysResource;
+    use crate::Operator;
+    use crate::Provider;
 
     pub struct Nnoopp {
-        args: OperatorArgs,
+        args: Vec<(String, String)>,
     }
 
     impl Nnoopp {
-        fn new(args: &mut OperatorArgs) -> Result<Nnoopp, GeodesyError> {
-            Ok(Nnoopp { args: args.clone() })
+        fn new(res: &GysResource) -> Result<Nnoopp, GeodesyError> {
+            let args = res.to_args(0)?;
+            Ok(Nnoopp { args: args.used })
         }
 
-        pub(crate) fn operator(args: &mut OperatorArgs) -> Result<Operator, GeodesyError> {
+        pub(crate) fn operator(
+            args: &GysResource,
+            _rp: &dyn Provider,
+        ) -> Result<Operator, GeodesyError> {
             let op = Nnoopp::new(args)?;
-            Ok(Operator { 0: Box::new(op) })
+            Ok(Operator(Box::new(op)))
         }
     }
 
     impl OperatorCore for Nnoopp {
-        fn fwd(&self, _ctx: &Context, operands: &mut [CoordinateTuple]) -> bool {
+        fn fwd(&self, _ctx: &dyn Provider, operands: &mut [CoordinateTuple]) -> bool {
             for coord in operands {
                 coord[0] = 42.;
             }
             true
         }
 
-        fn inv(&self, _ctx: &Context, operands: &mut [CoordinateTuple]) -> bool {
+        fn inv(&self, _ctx: &dyn Provider, operands: &mut [CoordinateTuple]) -> bool {
             for coord in operands {
                 coord[0] = 24.;
             }
@@ -464,19 +379,20 @@ mod tests {
             false
         }
 
-        fn args(&self, _step: usize) -> &OperatorArgs {
+        fn args(&self, _step: usize) -> &[(String, String)] {
             &self.args
         }
     }
 
     #[test]
-    fn user_defined_operator() {
-        let mut ctx = Context::new();
-        ctx.register_operator("nnoopp", Nnoopp::operator);
+    fn user_defined_operator() -> Result<(), GeodesyError> {
+        let mut ctx = crate::resource::plain::PlainResourceProvider::default();
+        ctx.register_operator("nnoopp", Nnoopp::operator)?;
 
-        let op = ctx.operation("nnoopp: {}").unwrap();
+        let op = ctx.operation("nnoopp: {}")?;
         let mut operands = [CoordinateTuple::raw(12., 55., 100., 0.)];
         let _aha = ctx.fwd(op, operands.as_mut());
         assert_eq!(operands[0][0], 42.);
+        Ok(())
     }
 }
