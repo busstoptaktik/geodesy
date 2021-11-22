@@ -207,9 +207,9 @@ mod tests {
 
     #[test]
     fn operator() -> Result<(), GeodesyError> {
+        use crate::resource::SearchLevel;
         use crate::Operator;
         use crate::PlainResourceProvider as Plain;
-        use crate::resource::SearchLevel;
         use crate::{FWD, INV};
         let mut o = Plain::new(SearchLevel::LocalPatches, false);
 
@@ -223,7 +223,6 @@ mod tests {
         o.register_macro("hilmert", "halmert")?;
         println!("{:#?}", &o.user_defined_macros);
         if let Err(err) = Operator::new("halmert x: -87 y: -96 z: -120", &mut o) {
-            dbg!(&err);
             assert!(err.to_string().contains("too deep recursion"));
         } else {
             panic!();

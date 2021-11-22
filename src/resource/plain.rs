@@ -70,6 +70,23 @@ impl Provider for PlainResourceProvider {
         self.persistent_builtins
     }
 
+    fn get_user_defined_macro(&self, name: &str) -> Option<&String> {
+        self.user_defined_macros.get(name)
+    }
+
+    fn gys_resource(
+        &self,
+        branch: &str,
+        name: &str,
+        globals: Vec<(String, String)>,
+    ) -> Result<GysResource, GeodesyError> {
+        if branch == "macros" && self.user_defined_macros.contains_key(name) {
+            return Ok(GysResource::new(&self.user_defined_macros[name], &globals));
+        }
+        let definition = self.gys_definition(branch, name)?;
+        Ok(GysResource::new(&definition, &globals))
+    }
+
     fn operate(&self, operation: Uuid, operands: &mut [CoordinateTuple], forward: bool) -> bool {
         if !self.operations.contains_key(&operation) {
             println!("Lortelort - forkert nøgle!!!");

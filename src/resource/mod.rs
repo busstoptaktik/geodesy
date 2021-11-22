@@ -1,11 +1,11 @@
 #![allow(dead_code)]
 
+use crate::operator::OperatorCore;
 use crate::CoordinateTuple;
 use crate::Ellipsoid;
 use crate::GeodesyError;
 use crate::GysResource;
 use crate::OperatorConstructor;
-use crate::operator::OperatorCore;
 use crate::{FWD, INV};
 use enum_iterator::IntoEnumIterator;
 use uuid::Uuid;
@@ -20,7 +20,6 @@ pub enum SearchLevel {
     Globals,
     Builtins,
 }
-
 
 pub trait Provider {
     fn searchlevel(&self) -> SearchLevel {
@@ -42,7 +41,15 @@ pub trait Provider {
         Ok(GysResource::new(&definition, &globals))
     }
 
+    fn get_user_defined_macro(&self, name: &str) -> Option<&String>;
+
     fn gys_definition(&self, branch: &str, name: &str) -> Result<String, GeodesyError> {
+        if branch == "macros" {
+            if let Some(m) = self.get_user_defined_macro(name) {
+                return Ok(String::from(m));
+            }
+        }
+
         for i in SearchLevel::into_enum_iter() {
             if i < self.searchlevel() && i != SearchLevel::Builtins {
                 continue;
@@ -156,6 +163,8 @@ pub trait Provider {
     fn operate(&self, operation: Uuid, operands: &mut [CoordinateTuple], forward: bool) -> bool;
 
     fn operation(&mut self, definition: &str) -> Result<Uuid, GeodesyError>;
+
+    #[allow(unused_variables)]
     fn operator(&mut self, id: Uuid) -> Result<&Operator, GeodesyError> {
         Err(GeodesyError::General("Operator extraction not supported"))
     }
@@ -285,7 +294,6 @@ impl Popeline {
         Ok(Operator(Box::new(result)))
     }
 }
-
 
 impl OperatorCore for Popeline {
     fn fwd(&self, ctx: &dyn Provider, operands: &mut [CoordinateTuple]) -> bool {
