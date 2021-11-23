@@ -1,8 +1,8 @@
-use super::GysResource;
-use super::OperatorCore;
 use crate::CoordinateTuple;
 use crate::GeodesyError;
+use crate::GysResource;
 use crate::Operator;
+use crate::OperatorCore;
 use crate::Provider;
 
 pub struct Noop {

@@ -55,11 +55,11 @@ geo | cart ... | helmert ... | cart inv ... | geo inv
 
 !*/
 
-use super::OperatorCore;
-use crate::operator_construction::*;
 use crate::CoordinateTuple;
 use crate::GeodesyError;
 use crate::GysResource;
+use crate::Operator;
+use crate::OperatorCore;
 use crate::Provider;
 
 #[derive(Debug, Default, Clone)]

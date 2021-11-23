@@ -1,9 +1,9 @@
-use super::OperatorCore;
-use crate::operator_construction::*;
 use crate::CoordinateTuple;
 use crate::Ellipsoid;
 use crate::GeodesyError;
 use crate::GysResource;
+use crate::Operator;
+use crate::OperatorCore;
 use crate::Provider;
 #[derive(Debug)]
 pub struct Cart {

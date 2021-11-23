@@ -219,9 +219,9 @@ impl GysArgs {
         // If the key is given without any value, the flag is true
         // If the key is given with any other value than 'false', the flag is true
         match value {
-            None => return false,
+            None => false,
             Some(v) => {
-                return if v.to_lowercase() == "false" {
+                if v.to_lowercase() == "false" {
                     false
                 } else {
                     v.is_empty()

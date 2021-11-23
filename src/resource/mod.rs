@@ -288,7 +288,7 @@ impl Popeline {
         let result = Popeline {
             args: margs.globals,
             steps,
-            inverted: inverted,
+            inverted,
         };
 
         Ok(Operator(Box::new(result)))
