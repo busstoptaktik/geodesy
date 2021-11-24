@@ -1,52 +1,112 @@
-use super::operator_factory;
-use super::Context;
-use super::Operator;
-use super::OperatorArgs;
-use super::OperatorCore;
 use crate::CoordinateTuple;
 use crate::GeodesyError;
+use crate::GysArgs;
+use crate::GysResource;
+use crate::Operator;
+use crate::OperatorCore;
+use crate::Provider;
 use crate::{FWD, INV};
 
 #[derive(Debug)]
 pub struct Pipeline {
-    args: OperatorArgs,
-    steps: Vec<Operator>,
+    args: Vec<(String, String)>,
+    pub steps: Vec<Operator>,
     inverted: bool,
 }
 
 impl Pipeline {
-    pub fn new(args: &mut OperatorArgs, ctx: &Context) -> Result<Pipeline, GeodesyError> {
-        let inverted = args.flag("inv");
-        let mut steps = Vec::new();
-        let n = args.numeric_value("_nsteps", 0.0)? as usize;
+    pub fn new(
+        args: &GysResource,
+        rp: &dyn Provider,
+        recursion_level: usize,
+    ) -> Result<Operator, GeodesyError> {
+        if recursion_level > 100 {
+            return Err(GeodesyError::Recursion(format!("{:#?}", args)));
+        }
+        let mut margs = args.clone();
+        let mut globals = GysArgs::new(&args.globals, "");
 
-        for i in 0..n {
-            // Each step is represented as args[_step_0] = YAML step definition.
-            // (see OperatorArgs::populate())
-            let step_name = format!("_step_{}", i);
-            let step_args = &args.args[&step_name];
+        // Is the pipeline itself inverted?
+        let inverted = globals.flag("inv");
 
-            // We need a recursive copy of "all globals so far"
-            let mut oa = args.spawn(step_args);
-            if let Ok(op) = operator_factory(&mut oa, ctx, 0) {
-                steps.push(op);
-            } else {
-                return Err(GeodesyError::General("Pipeline: Bad step"));
+        // How many steps?
+        let n = args.steps.len();
+
+        // Redact the globals to eliminate the chaos-inducing "inv" and "name":
+        // These are related to the pipeline itself, not its constituents.
+        let globals: Vec<_> = args
+            .globals
+            .iter()
+            .filter(|x| x.0 != "inv" && x.0 != "name")
+            .cloned()
+            .collect();
+        let nextglobals = globals.clone();
+        let mut steps = Vec::<Operator>::new();
+        for step in &args.steps {
+            // An embedded pipeline? (should not happen - elaborate!)
+            if step.find('|').is_some() {
+                continue;
             }
+
+            let mut args = GysArgs::new(&nextglobals, step);
+
+            let nextname = &args.value("name")?.unwrap_or_default();
+
+            // A user defined operator?
+            if let Some(op) = rp.get_user_defined_operator(nextname) {
+                let args = GysResource::new(step, &nextglobals);
+                let next = op(&args, rp)?;
+                if n == 1 {
+                    return Ok(next);
+                }
+                steps.push(next);
+                continue;
+            }
+
+            // A macro? - args are now globals!
+            if let Ok(mac) = rp.gys_definition("macros", nextname) {
+                for arg in &args.locals {
+                    let a = arg.clone();
+                    args.globals.push(a);
+                }
+                let nextargs = GysResource::new(&mac, &args.globals);
+                let next = Pipeline::new(&nextargs, rp, recursion_level + 1)?;
+                if n == 1 {
+                    return Ok(next);
+                }
+                steps.push(next);
+                continue;
+            }
+
+            // If we did not find nextname among the resources it's probably a builtin
+            let op = crate::operator::builtins::builtin(nextname)?;
+            let args = GysResource::new(step, &nextglobals);
+            let next = op(&args, rp)?;
+            if n == 1 {
+                return Ok(next);
+            }
+            steps.push(next);
+            continue;
         }
 
-        let args = args.clone();
+        // makeshift clear text description
+        margs.globals.clear();
+        for step in margs.steps {
+            margs.globals.push((String::from("step"), step));
+        }
 
-        Ok(Pipeline {
-            args,
+        let result = Pipeline {
+            args: margs.globals,
             steps,
             inverted,
-        })
+        };
+
+        Ok(Operator(Box::new(result)))
     }
 }
 
 impl OperatorCore for Pipeline {
-    fn fwd(&self, ctx: &Context, operands: &mut [CoordinateTuple]) -> bool {
+    fn fwd(&self, ctx: &dyn Provider, operands: &mut [CoordinateTuple]) -> bool {
         for step in &self.steps {
             if step.is_noop() {
                 continue;
@@ -58,7 +118,7 @@ impl OperatorCore for Pipeline {
         true
     }
 
-    fn inv(&self, ctx: &Context, operands: &mut [CoordinateTuple]) -> bool {
+    fn inv(&self, ctx: &dyn Provider, operands: &mut [CoordinateTuple]) -> bool {
         for step in self.steps.iter().rev() {
             if step.is_noop() {
                 continue;
@@ -74,7 +134,7 @@ impl OperatorCore for Pipeline {
         self.steps.len()
     }
 
-    fn args(&self, step: usize) -> &OperatorArgs {
+    fn args(&self, step: usize) -> &[(String, String)] {
         if step >= self.len() {
             return &self.args;
         }
@@ -99,82 +159,35 @@ impl OperatorCore for Pipeline {
     }
 }
 
+// --------------------------------------------------------------------------------
+
 #[cfg(test)]
-mod tests {
+mod pipelinetests {
+    use super::*;
+    use crate::resource::SearchLevel;
+
     #[test]
-    fn pipeline() {
-        use super::*;
+    fn gys() -> Result<(), GeodesyError> {
+        let rp = crate::Plain::new(SearchLevel::LocalPatches, true);
+        let foo = rp
+            .get_gys_definition_from_level(SearchLevel::LocalPatches, "macros", "foo")
+            .unwrap();
+        assert_eq!(foo.trim(), "bar");
 
-        // Setup a 3 step pipeline
-        let pipeline = "ed50_etrs89: {
-            globals: [
-                foo: bar,
-                baz: bonk
-            ],
-            steps: [
-                cart: {ellps: intl},
-                helmert: {x: -87, y: -96, z: -120},
-                cart: {inv: true, ellps: GRS80}
-            ]
-        }";
+        // This should be OK, since noop is a builtin
+        let res = GysResource::from("noop pip");
+        let p = Pipeline::new(&res, &rp, 0);
+        assert!(p.is_ok());
 
-        // We cannot use Operator::new here, because we want to access internal
-        // elements of the Pipeline struct below. These are inaccesible after
-        // boxing.
-        let mut ctx = Context::new();
-        let mut args = OperatorArgs::new();
-        args.populate(&pipeline, "");
-        let op = Pipeline::new(&mut args, &mut ctx).unwrap();
+        // This should be OK, due to "ignore" resolving to noop
+        let res = GysResource::from("ignore pip");
+        let p = Pipeline::new(&res, &rp, 0);
+        assert!(p.is_ok());
 
-        // Check step-by-step that the pipeline was formed as expected
-        assert_eq!(op.len(), 3);
-        assert_eq!(op.steps[0].name(), "cart");
-        assert_eq!(op.steps[0].is_inverted(), false);
-
-        assert_eq!(op.steps[1].name(), "helmert");
-        assert_eq!(op.steps[1].is_inverted(), false);
-
-        assert_eq!(op.steps[2].name(), "cart");
-        assert_eq!(op.steps[2].is_inverted(), true);
-
-        // Check that definition argument introspection works
-        assert_eq!(op.args(0).used["ellps"], "intl");
-
-        assert_eq!(op.args(1).used["x"], "-87");
-        assert_eq!(op.args(1).used["y"], "-96");
-        assert_eq!(op.args(1).used["z"], "-120");
-
-        // Note: It's superfluous to give the arg "ellps: GRS80", so it is not registered as "used"
-        assert_eq!(op.args(2).used["inv"], "true");
-        assert!(op.args(2).used.get("ellps").is_none());
-
-        // -------------------------------------------------------------------------
-        // This is the first example of a running pipeline in Rust Geodesy. Awesome!
-        // -------------------------------------------------------------------------
-        let mut operands = [crate::CoordinateTuple::gis(12., 55., 100., 0.)];
-
-        /* DRUM ROLL... */
-        op.operate(&mut ctx, operands.as_mut(), FWD); // TA-DAA!
-
-        // For comparison: the point (12, 55, 100, 0) transformed by the cct
-        // application of the PROJ package yields:
-        // 11.998815342385206861  54.999382648950991381  131.202401081100106239  0.0000
-        // cct -d18 proj=pipeline step proj=cart ellps=intl step proj=helmert x=-87 y=-96 z=-120 step proj=cart inv --
-        let result = operands[0].to_degrees();
-        assert!((result[0] - 11.998815342385206861).abs() < 1e-12);
-        assert!((result[1] - 54.999382648950991381).abs() < 1e-12);
-        // We use an improved height expression, so this value differs slightly
-        // (is better) than the one from PROJ.
-        assert!((result[2] - 131.202401081100106239).abs() < 1e-8);
-
-        // And the other way round
-        /* DRUM ROLL... */
-        op.operate(&mut ctx, operands.as_mut(), false); // TA-DAA!
-        let result = operands[0].to_degrees();
-        assert!((result[0] - 12.).abs() < 1e-14);
-        assert!((result[1] - 55.).abs() < 1e-14);
-        assert!((result[2] - 100.).abs() < 1e-8);
-
-        // -------------------------------------------------------------------------
+        // This should fail, due to "baz" being undefined
+        let res = GysResource::from("ignore pip|baz pop");
+        let p = Pipeline::new(&res, &rp, 0);
+        assert!(p.is_err());
+        Ok(())
     }
 }

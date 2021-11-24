@@ -1,13 +1,13 @@
 //! Lambert Conformal Conic
 use std::f64::consts::FRAC_PI_2;
 
-use super::OperatorArgs;
-use super::OperatorCore;
-use crate::operator_construction::*;
-use crate::Context;
 use crate::CoordinateTuple;
 use crate::Ellipsoid;
 use crate::GeodesyError;
+use crate::GysResource;
+use crate::Operator;
+use crate::OperatorCore;
+use crate::Provider;
 
 const EPS10: f64 = 1e-10;
 
@@ -28,20 +28,22 @@ pub struct Lcc {
     rho0: f64,
     c: f64,
 
-    args: OperatorArgs,
+    args: Vec<(String, String)>,
 }
 
 impl Lcc {
-    pub fn new(args: &mut OperatorArgs) -> Result<Lcc, GeodesyError> {
-        let ellps = Ellipsoid::named(&args.value("ellps", "GRS80"))?;
+    pub fn new(res: &GysResource) -> Result<Lcc, GeodesyError> {
+        let mut args = res.to_args(0)?;
         let inverted = args.flag("inv");
+        let ellpsname = args.value("ellps")?.unwrap_or_default();
+        let ellps = Ellipsoid::named(&ellpsname)?;
 
-        let mut phi1 = args.numeric_value("lat_1", f64::NAN)?;
-        let mut phi2 = args.numeric_value("lat_2", phi1)?;
+        let mut phi1 = args.numeric("lat_1", f64::NAN)?;
+        let mut phi2 = args.numeric("lat_2", phi1)?;
         let mut lat_0 = if (phi1 - phi2).abs() < EPS10 {
-            args.numeric_value("lat_0", phi1)?
+            args.numeric("lat_0", phi1)?
         } else {
-            args.numeric_value("lat_0", 0.)?
+            args.numeric("lat_0", 0.)?
         };
 
         lat_0 = lat_0.to_radians();
@@ -96,11 +98,11 @@ impl Lcc {
             rho0 = c * crate::internals::pj_tsfn(lat_0.sin_cos(), e).powf(n);
         }
 
-        let lon_0 = args.numeric_value("lon_0", 0.)?.to_radians();
-        let k_0 = args.numeric_value("k_0", 1.)?;
-        let x_0 = args.numeric_value("x_0", 0.)?;
-        let y_0 = args.numeric_value("y_0", 0.)?;
-        let args = args.clone();
+        let lon_0 = args.numeric("lon_0", 0.)?.to_radians();
+        let k_0 = args.numeric("k_0", 1.)?;
+        let x_0 = args.numeric("x_0", 0.)?;
+        let y_0 = args.numeric("y_0", 0.)?;
+        let args = args.used;
 
         Ok(Lcc {
             ellps,
@@ -121,7 +123,10 @@ impl Lcc {
         })
     }
 
-    pub(crate) fn operator(args: &mut OperatorArgs) -> Result<Operator, GeodesyError> {
+    pub(crate) fn operator(
+        args: &GysResource,
+        _rp: &dyn Provider,
+    ) -> Result<Operator, GeodesyError> {
         let op = crate::operator::lcc::Lcc::new(args)?;
         Ok(Operator(Box::new(op)))
     }
@@ -131,7 +136,7 @@ impl Lcc {
 impl OperatorCore for Lcc {
     // Forward Lambert conformal conic, following the PROJ implementation,
     // cf.  https://proj.org/operations/projections/lcc.html
-    fn fwd(&self, _ctx: &Context, operands: &mut [CoordinateTuple]) -> bool {
+    fn fwd(&self, _ctx: &dyn Provider, operands: &mut [CoordinateTuple]) -> bool {
         let a = self.ellps.semimajor_axis();
         let e = self.ellps.eccentricity();
         for coord in operands {
@@ -155,7 +160,7 @@ impl OperatorCore for Lcc {
         true
     }
 
-    fn inv(&self, _ctx: &Context, operands: &mut [CoordinateTuple]) -> bool {
+    fn inv(&self, _ctx: &dyn Provider, operands: &mut [CoordinateTuple]) -> bool {
         let a = self.ellps.semimajor_axis();
         let e = self.ellps.eccentricity();
         for coord in operands {
@@ -198,18 +203,20 @@ impl OperatorCore for Lcc {
         self.inverted
     }
 
-    fn args(&self, _step: usize) -> &OperatorArgs {
+    fn args(&self, _step: usize) -> &[(String, String)] {
         &self.args
     }
 }
 
+// --------------------------------------------------------------------------------
+
 #[cfg(test)]
 mod tests {
-    use crate::Context;
     use crate::CoordinateTuple as C;
 
     #[test]
     fn one_standard_parallel() {
+        let mut rp = crate::Plain::default();
         let op = "lcc lat_1:57 lon_0:12";
 
         // Validation values from PROJ:
@@ -228,7 +235,8 @@ mod tests {
             C::raw(115005.41456620067765471, 224484.5143763388914522, 0., 0.),
         ];
 
-        assert!(Context::test(
+        assert!(crate::resource::test(
+            &mut rp,
             op,
             0,
             2e-9,
@@ -241,13 +249,16 @@ mod tests {
 
     #[test]
     fn two_standard_parallels() {
+        let mut rp = crate::Plain::default();
         let op = "lcc lat_1:33 lat_2:45 lon_0:10";
 
         // Validation value from PROJ:
         // echo 12 40 0 0 | cct -d12 proj=lcc lat_1=33 lat_2=45 lon_0=10 -- | clip
         let mut operands = [C::geo(40., 12., 0., 0.)];
         let mut results = [C::raw(169863.026093938359, 4735925.219292452559, 0., 0.)];
-        assert!(Context::test(
+
+        assert!(crate::resource::test(
+            &mut rp,
             op,
             0,
             20e-9,
@@ -260,13 +271,15 @@ mod tests {
 
     #[test]
     fn one_standard_parallel_and_latitudinal_offset() {
+        let mut rp = crate::Plain::default();
         let op = "lcc lat_1:39 lat_0:35 lon_0:10";
 
         // Validation value from PROJ:
         // echo 12 40 0 0 | cct -d12 proj=lcc lat_1=39 lat_0=35 lon_0=10 -- | clip
         let mut operands = [C::geo(40., 12., 0., 0.)];
         let mut results = [C::raw(170800.011728740647, 557172.361112929415, 0., 0.)];
-        assert!(Context::test(
+        assert!(crate::resource::test(
+            &mut rp,
             op,
             0,
             2e-9,
@@ -279,13 +292,15 @@ mod tests {
 
     #[test]
     fn two_standard_parallels_and_latitudinal_offset() {
+        let mut rp = crate::Plain::default();
         let op = "lcc lat_1:33 lat_2:45 lat_0:35 lon_0:10";
 
         // Validation value from PROJ:
         // echo 12 40 0 0 | cct -d12 proj=lcc lat_1=33 lat_2=45 lat_0=35 lon_0=10 -- | clip
         let mut operands = [C::geo(40., 12., 0., 0.)];
         let mut results = [C::raw(169863.026093938359, 554155.440793916583, 0., 0.)];
-        assert!(Context::test(
+        assert!(crate::resource::test(
+            &mut rp,
             op,
             0,
             2e-9,

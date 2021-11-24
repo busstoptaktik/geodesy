@@ -1,4 +1,4 @@
-use crate::resource::Popeline;
+use crate::operator::pipeline::Pipeline;
 use crate::CoordinateTuple;
 use crate::GeodesyError;
 use crate::GysResource;
@@ -12,22 +12,23 @@ pub mod builtins {
     // A BTreeMap would have been a better choice,for the OPERATOR_LIST, except
     // for the annoying fact that it cannot be compile-time const-constructed
     #[rustfmt::skip]
-    const OPERATOR_LIST: [(&str, OperatorConstructor); 3] = [
+    const OPERATOR_LIST: [(&str, OperatorConstructor); 8] = [
         ("adapt",      crate::operator::adapt::Adapt::operator),
         ("cart",       crate::operator::cart::Cart::operator),
         ("noop",       crate::operator::noop::Noop::operator),
-/*        ("helmert",    crate::operator::helmert::Helmert::operator),
+        ("helmert",    crate::operator::helmert::Helmert::operator),
         ("lcc",        crate::operator::lcc::Lcc::operator),
-        ("merc",       crate::operator::merc::Merc::operator),
 
+        ("merc",       crate::operator::merc::Merc::operator),
+        ("tmerc",      crate::operator::tmerc::Tmerc::operator),
+        ("utm",        crate::operator::tmerc::Tmerc::utmoperator),
+/*
         ("molodensky", crate::operator::molodensky::Molodensky::operator),
         ("dm",         crate::operator::nmea::Nmea::operator),
         ("nmea",       crate::operator::nmea::Nmea::operator),
         ("dms",        crate::operator::nmea::Nmea::dmsoperator),
         ("nmeass",     crate::operator::nmea::Nmea::dmsoperator),
 
-        ("tmerc",      crate::operator::tmerc::Tmerc::operator),
-        ("utm",        crate::operator::tmerc::Tmerc::utmoperator),
  */   ];
 
     /// Handle instantiation of built-in operators.
@@ -47,6 +48,18 @@ pub mod builtins {
         Err(GeodesyError::NotFound(opname))
     }
 }
+
+mod adapt;
+mod cart;
+mod helmert;
+mod lcc;
+mod merc;
+mod noop;
+mod pipeline;
+mod tmerc;
+/*mod molodensky;
+mod nmea;
+*/
 
 // Operator is a newtype around a Boxed trait OperatorCore,
 // in order to be able to define methods on it.
@@ -73,7 +86,7 @@ impl Operator {
     ///
     pub fn new(definition: &str, ctx: &dyn Provider) -> Result<Operator, GeodesyError> {
         let res = GysResource::new(definition, ctx.globals());
-        let op = Popeline::new(&res, ctx, 0)?;
+        let op = Pipeline::new(&res, ctx, 0)?;
         Ok(op)
     }
 }
@@ -187,17 +200,6 @@ pub trait OperatorCore {
     fn is_inverted(&self) -> bool;
 }
 
-mod adapt;
-mod cart;
-mod noop;
-/*mod helmert;
-mod lcc;
-mod merc;
-mod molodensky;
-mod nmea;
-mod pipeline;
-mod tmerc;*/
-
 // --------------------------------------------------------------------------------------
 
 #[cfg(test)]
@@ -227,7 +229,7 @@ mod tests {
         }
 
         // Define "hulmert" as a macro forwarding its args to the "helmert" builtin
-        o.register_macro("hulmert", "helmert x: ^x y: ^y z: ^z")?;
+        o.register_macro("hulmert", "helmert")?;
 
         // A plain operator: Helmert, EPSG:1134 - 3 parameter, ED50/WGS84
         let hh = Operator::new("helmert x: -87 y: -96 z: -120", &mut o)?;
@@ -235,8 +237,7 @@ mod tests {
         // Same operator, defined through the "hulmert" macro
         let h = Operator::new("hulmert x: -87 y: -96 z: -120", &mut o)?;
 
-        // assert_eq!(hh.args(0).name, h.args(0).name);
-        // assert_eq!(hh.args(0).used, h.args(0).used);
+        assert_eq!(hh.args(0), h.args(0));
 
         // Check that the "builtin_" prefix works properly: Shadow "helmert" with a
         // forwarding macro of the same name - without making trouble for later use

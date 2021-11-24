@@ -1,12 +1,12 @@
 #![allow(dead_code)]
 
-use crate::operator::OperatorCore;
 use crate::CoordinateTuple;
 use crate::Ellipsoid;
 use crate::GeodesyError;
 use crate::GysResource;
+use crate::Operator;
 use crate::OperatorConstructor;
-use crate::{FWD, INV};
+use crate::OperatorCore;
 use enum_iterator::IntoEnumIterator;
 use uuid::Uuid;
 pub mod gys;
@@ -213,187 +213,77 @@ pub trait Provider {
     // }
 }
 
-use crate::GysArgs;
-use crate::Operator;
+/// Roundtrip test that `operation` yields `results` when given `operands`.
+#[allow(clippy::too_many_arguments)]
+pub fn test(
+    rp: &mut dyn Provider,
+    operation: &str,
+    fwd_metric: u8,
+    fwd_delta: f64,
+    inv_metric: u8,
+    inv_delta: f64,
+    operands: &mut [CoordinateTuple],
+    results: &mut [CoordinateTuple],
+) -> bool {
+    let op = rp.operation(operation);
+    if op.is_err() {
+        println!("{:?}", op);
+        return false;
+    }
+    let op = op.unwrap();
 
-#[derive(Debug)]
-pub struct Popeline {
-    args: Vec<(String, String)>,
-    pub steps: Vec<Operator>,
-    inverted: bool,
-}
+    // We need a copy of the operands as "expected results" in the roundtrip case
+    // Note that the .to_vec() method actually copies, so .clone() is not needed.
+    let roundtrip = operands.to_vec();
 
-impl Popeline {
-    pub fn new(
-        args: &GysResource,
-        rp: &dyn Provider,
-        recursion_level: usize,
-    ) -> Result<Operator, GeodesyError> {
-        if recursion_level > 100 {
-            return Err(GeodesyError::Recursion(format!("{:#?}", args)));
-        }
-        let mut margs = args.clone();
-        let mut globals = GysArgs::new(&args.globals, "");
-
-        // Is the pipeline itself inverted?
-        let inverted = globals.flag("inv");
-
-        // How many steps?
-        let n = args.steps.len();
-
-        // Redact the globals to eliminate the chaos-inducing "inv" and "name":
-        // These are related to the pipeline itself, not its constituents.
-        let globals: Vec<_> = args
-            .globals
-            .iter()
-            .filter(|x| x.0 != "inv" && x.0 != "name")
-            .cloned()
-            .collect();
-        let nextglobals = globals.clone();
-        let mut steps = Vec::<Operator>::new();
-        for step in &args.steps {
-            // An embedded pipeline? (should not happen - elaborate!)
-            if step.find('|').is_some() {
-                continue;
-            }
-
-            let mut args = GysArgs::new(&nextglobals, step);
-
-            let nextname = &args.value("name")?.unwrap_or_default();
-
-            // A user defined operator?
-            if let Some(op) = rp.get_user_defined_operator(nextname) {
-                let args = GysResource::new(step, &nextglobals);
-                let next = op(&args, rp)?;
-                if n == 1 {
-                    return Ok(next);
-                }
-                steps.push(next);
-                continue;
-            }
-
-            // A macro? - args are now globals!
-            if let Ok(mac) = rp.gys_definition("macros", nextname) {
-                for arg in &args.locals {
-                    let a = arg.clone();
-                    args.globals.push(a);
-                }
-                let nextargs = GysResource::new(&mac, &globals);
-                let next = Popeline::new(&nextargs, rp, recursion_level + 1)?;
-                if n == 1 {
-                    return Ok(next);
-                }
-                steps.push(next);
-                continue;
-            }
-
-            // If we did not find nextname among the resources - it's probably a builtin
-            let op = crate::operator::builtins::builtin(nextname)?;
-            let args = GysResource::new(step, &nextglobals);
-            let next = op(&args, rp)?;
-            if n == 1 {
-                return Ok(next);
-            }
-            steps.push(next);
+    // Forward test
+    if !rp.fwd(op, operands) {
+        println!("Fwd operation failed for {}", operation);
+        return false;
+    }
+    for i in 0..operands.len() {
+        let delta = match fwd_metric {
+            0 => operands[i].hypot2(&results[i]),
+            2 => operands[i].hypot2(&results[i]),
+            _ => operands[i].hypot3(&results[i]),
+        };
+        if delta < fwd_delta {
             continue;
         }
+        println!(
+            "Failure in forward test[{}]: delta = {:.4e} (expected delta < {:e})",
+            i, delta, fwd_delta
+        );
+        println!("    got       {:?}", operands[i]);
+        println!("    expected  {:?}", results[i]);
+        return false;
+    }
 
-        // makeshift clear text description
-        margs.globals.clear();
-        for step in margs.steps {
-            margs.globals.push((String::from("step"), step));
-        }
+    if !rp.operator(op).unwrap().invertible() {
+        return true;
+    }
 
-        let result = Popeline {
-            args: margs.globals,
-            steps,
-            inverted,
+    // Roundtrip
+    if !rp.inv(op, results) {
+        println!("Inv operation failed for {}", operation);
+        return false;
+    }
+    for i in 0..operands.len() {
+        let delta = match inv_metric {
+            0 => roundtrip[i].default_ellps_dist(&results[i]),
+            2 => roundtrip[i].hypot2(&results[i]),
+            _ => roundtrip[i].hypot3(&results[i]),
         };
-
-        Ok(Operator(Box::new(result)))
-    }
-}
-
-impl OperatorCore for Popeline {
-    fn fwd(&self, ctx: &dyn Provider, operands: &mut [CoordinateTuple]) -> bool {
-        for step in &self.steps {
-            if step.is_noop() {
-                continue;
-            }
-            if !step.operate(ctx, operands, FWD) {
-                return false;
-            }
+        if delta < inv_delta {
+            continue;
         }
-        true
+        println!(
+            "Failure in inverse test[{}]: delta = {:.4e} (expected delta < {:e})",
+            i, delta, inv_delta
+        );
+        println!("    got       {:?}", results[i]);
+        println!("    expected  {:?}", roundtrip[i]);
+        return false;
     }
-
-    fn inv(&self, ctx: &dyn Provider, operands: &mut [CoordinateTuple]) -> bool {
-        for step in self.steps.iter().rev() {
-            if step.is_noop() {
-                continue;
-            }
-            if !step.operate(ctx, operands, INV) {
-                return false;
-            }
-        }
-        true
-    }
-
-    fn len(&self) -> usize {
-        self.steps.len()
-    }
-
-    fn args(&self, step: usize) -> &[(String, String)] {
-        if step >= self.len() {
-            return &self.args;
-        }
-        self.steps[step].args(0_usize)
-    }
-
-    fn name(&self) -> &'static str {
-        "pipeline"
-    }
-
-    fn debug(&self) -> String {
-        let mut repr = String::new();
-        for step in &self.steps {
-            repr += "\n";
-            repr += &format!("{:#?}", step);
-        }
-        repr
-    }
-
-    fn is_inverted(&self) -> bool {
-        self.inverted
-    }
-}
-
-#[cfg(test)]
-mod popelinetests {
-    use super::*;
-
-    #[test]
-    fn gys() -> Result<(), GeodesyError> {
-        let rp = crate::Plain::new(SearchLevel::LocalPatches, true);
-        let foo = rp
-            .get_gys_definition_from_level(SearchLevel::LocalPatches, "macros", "foo")
-            .unwrap();
-        assert_eq!(foo.trim(), "bar");
-
-        // This should be OK, since noop is a builtin
-        let res = GysResource::from("noop pip");
-        let p = Popeline::new(&res, &rp, 0);
-        assert!(p.is_ok());
-
-        // This should be OK, due to "ignore" resolving to noop
-        let res = GysResource::from("ignore pip");
-        let p = Popeline::new(&res, &rp, 0);
-        assert!(p.is_ok());
-
-        // This should fail, due to "baz" being undefined
-        let res = GysResource::from("ignore pip|baz pop");
-        let p = Popeline::new(&res, &rp, 0);
-        assert!(p.is_err());
-        Ok(())
-    }
+    true
 }

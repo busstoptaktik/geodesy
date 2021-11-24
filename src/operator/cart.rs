@@ -156,6 +156,7 @@ mod tests {
     use crate::CoordinateTuple as C;
     #[test]
     fn cart() {
+        let mut rp = crate::Plain::default();
         let op = "cart";
         let mut operands = [
             C::geo(85., 0., 100000., 0.),
@@ -188,15 +189,15 @@ mod tests {
             ),
         ];
 
-        /*        assert!(Context::test(
-                    op,
-                    3,
-                    20e-9,
-                    0,
-                    10e-9,
-                    &mut operands,
-                    &mut results
-                ));
-        */
+        assert!(crate::resource::test(
+            &mut rp,
+            op,
+            3,
+            20e-9,
+            0,
+            10e-9,
+            &mut operands,
+            &mut results
+        ));
     }
 }

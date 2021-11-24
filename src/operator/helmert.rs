@@ -1,9 +1,11 @@
 #![allow(non_snake_case)]
 
-use crate::operator_construction::*;
-use crate::Context;
 use crate::CoordinateTuple;
 use crate::GeodesyError;
+use crate::GysResource;
+use crate::Operator;
+use crate::OperatorCore;
+use crate::Provider;
 
 #[derive(Debug)]
 pub struct Helmert {
@@ -20,7 +22,7 @@ pub struct Helmert {
     position_vector: bool,
     rotation: bool,
     inverted: bool,
-    args: OperatorArgs,
+    args: Vec<(String, String)>,
 }
 
 // Based on Karsten Engsager's implementation in set_dtm_1.c (trlib),
@@ -86,57 +88,71 @@ fn rotation_matrix(rx: f64, ry: f64, rz: f64, exact: bool, position_vector: bool
 }
 
 impl Helmert {
-    fn new(args: &mut OperatorArgs) -> Result<Helmert, GeodesyError> {
+    fn new(res: &GysResource) -> Result<Helmert, GeodesyError> {
+        let mut args = res.to_args(0)?;
         // Translation
-        let x = args.numeric_value("x", 0.0)?;
-        let y = args.numeric_value("y", 0.0)?;
-        let z = args.numeric_value("z", 0.0)?;
+        let x = args.numeric("x", 0.0)?;
+        let y = args.numeric("y", 0.0)?;
+        let z = args.numeric("z", 0.0)?;
 
         // Rotation
-        let rx = args.numeric_value("rx", 0.0)?;
-        let ry = args.numeric_value("ry", 0.0)?;
-        let rz = args.numeric_value("rz", 0.0)?;
+        let rx = args.numeric("rx", 0.0)?;
+        let ry = args.numeric("ry", 0.0)?;
+        let rz = args.numeric("rz", 0.0)?;
 
         // Time evolution of translation
-        let dx = args.numeric_value("dx", 0.0)?;
-        let dy = args.numeric_value("dy", 0.0)?;
-        let dz = args.numeric_value("dz", 0.0)?;
+        let dx = args.numeric("dx", 0.0)?;
+        let dy = args.numeric("dy", 0.0)?;
+        let dz = args.numeric("dz", 0.0)?;
 
         // Time evolution of rotation
-        let drx = args.numeric_value("drx", 0.0)?;
-        let dry = args.numeric_value("dry", 0.0)?;
-        let drz = args.numeric_value("drz", 0.0)?;
+        let drx = args.numeric("drx", 0.0)?;
+        let dry = args.numeric("dry", 0.0)?;
+        let drz = args.numeric("drz", 0.0)?;
 
         // Epoch - "beginning of time for this transformation"
-        let t_epoch = args.numeric_value("t_epoch", std::f64::NAN)?;
+        let t_epoch = args.numeric("t_epoch", std::f64::NAN)?;
 
         // Fixed observation time - ignore fourth coordinate.
-        let t_obs = args.numeric_value("t_obs", std::f64::NAN)?;
+        let t_obs = args.numeric("t_obs", std::f64::NAN)?;
 
         // Scale and its time evoution
-        let scale = args.numeric_value("s", 0.0)?;
-        let dscale = args.numeric_value("ds", 0.0)? * 1e-6;
+        let scale = args.numeric("s", 0.0)?;
+        let dscale = args.numeric("ds", 0.0)? * 1e-6;
 
         // Handle rotations
-        let convention = args.value("convention", "");
+        let convention = args.value("convention");
         let exact = args.flag("exact");
         let rotation = !((rx, ry, rz) == (0., 0., 0.) && (drx, dry, drz) == (0., 0., 0.));
+        let mut position_vector = true;
         if rotation {
-            if convention.is_empty() {
-                return Err(GeodesyError::General(
-                    "Helmert: Need value for convention when rotating",
-                ));
-            }
-            if convention != "position_vector" && convention != "coordinate_frame" {
-                return Err(GeodesyError::General(
-                    "Helmert: value for convention must be one of {position_vector, coordinate_frame}",
-                ));
+            match convention {
+                Err(_) => {
+                    return Err(GeodesyError::General(
+                        "Helmert: Need value for convention when rotating",
+                    ))
+                }
+                Ok(d) => match d {
+                    None => {
+                        return Err(GeodesyError::General(
+                            "Helmert: Need value for convention when rotating",
+                        ))
+                    }
+                    Some(value) => {
+                        if value == "position_vector" {
+                            position_vector = true
+                        } else if value == "coordinate_frame" {
+                            position_vector = false
+                        } else {
+                            return Err(GeodesyError::General("Helmert: value for convention must be one of {position_vector, coordinate_frame}"));
+                        }
+                    }
+                },
             }
         }
 
-        // We cannot call args.clone until we're done accessing the args.
         let inverted = args.flag("inv");
-        let argsc = args.clone();
+        let argsc = args.used;
 
         // Now make the args look like they do in the textbooks...
         let scale = 1.0 + scale * 1e-6;
@@ -144,7 +160,6 @@ impl Helmert {
         let dT = [dx, dy, dz];
         let R0 = [rx, ry, rz];
         let dR = [drx, dry, drz];
-        let position_vector = convention == "position_vector";
 
         let R = rotation_matrix(rx, ry, rz, exact, position_vector);
 
@@ -166,14 +181,17 @@ impl Helmert {
         })
     }
 
-    pub(crate) fn operator(args: &mut OperatorArgs) -> Result<Operator, GeodesyError> {
+    pub(crate) fn operator(
+        args: &GysResource,
+        _rp: &dyn Provider,
+    ) -> Result<Operator, GeodesyError> {
         let op = crate::operator::helmert::Helmert::new(args)?;
         Ok(Operator(Box::new(op)))
     }
 }
 
 impl OperatorCore for Helmert {
-    fn fwd(&self, _ctx: &Context, operands: &mut [CoordinateTuple]) -> bool {
+    fn fwd(&self, _ctx: &dyn Provider, operands: &mut [CoordinateTuple]) -> bool {
         let mut scale = self.scale;
         let mut R = self.R;
         let mut T = self.T0;
@@ -225,7 +243,7 @@ impl OperatorCore for Helmert {
         true
     }
 
-    fn inv(&self, _ctx: &Context, operands: &mut [CoordinateTuple]) -> bool {
+    fn inv(&self, _ctx: &dyn Provider, operands: &mut [CoordinateTuple]) -> bool {
         let mut scale = self.scale;
         let mut R = self.R;
         let mut T = self.T0;
@@ -288,45 +306,32 @@ impl OperatorCore for Helmert {
         self.inverted
     }
 
-    fn args(&self, _step: usize) -> &OperatorArgs {
+    fn args(&self, _step: usize) -> &[(String, String)] {
         &self.args
     }
 }
 
+// --------------------------------------------------------------------------------
+
 #[cfg(test)]
 mod tests {
-    use crate::operator::operator_factory;
+    use super::*;
+    use crate::{FWD, INV};
 
     #[test]
-    fn helmert() {
+    fn helmert() -> Result<(), GeodesyError> {
         use super::*;
-        let mut ctx = Context::new();
-        let mut args = OperatorArgs::new();
-
-        // Check that non-numeric value, for key expecting numeric, errs properly.
-        args.name("helmert");
-        args.insert("x", "foo"); // Bad value here.
-        args.insert("y", "-96");
-        args.insert("z", "-120");
-
-        let h = operator_factory(&mut args, &mut ctx, 0);
-        assert!(h.is_err());
+        let mut ctx = crate::Plain::default();
 
         // EPSG:1134 - 3 parameter, ED50/WGS84, s = sqrt(27) m
-        args.insert("x", "-87");
-        assert_eq!(args.value("x", ""), "-87");
-        assert_eq!(args.value("y", ""), "-96");
-        assert_eq!(args.value("z", ""), "-120");
-
-        let h = operator_factory(&mut args, &mut ctx, 0).unwrap();
-
+        let h = ctx.operation("helmert x:-87 y:-96 z:-120")?;
         let mut operands = [CoordinateTuple::origin()];
-        h.fwd(&mut ctx, operands.as_mut());
+        ctx.operate(h, &mut operands, FWD);
         assert_eq!(operands[0].first(), -87.);
         assert_eq!(operands[0].second(), -96.);
         assert_eq!(operands[0].third(), -120.);
 
-        h.inv(&mut ctx, operands.as_mut());
+        ctx.operate(h, &mut operands, INV);
         assert_eq!(operands[0].first(), 0.);
         assert_eq!(operands[0].second(), 0.);
         assert_eq!(operands[0].third(), 0.);
@@ -337,12 +342,10 @@ mod tests {
         // Technical Manual Version 1.0, 25 July 2017.
         // Transformation from GDA94 to GDA2020.
         // ---------------------------------------------------------------------------
-        let definition = "helmert: {
-            convention: coordinate_frame,
-            x:  0.06155,  rx: -0.0394924,
-            y: -0.01087,  ry: -0.0327221,
-            z: -0.04019,  rz: -0.0328979,  s: -0.009994
-        }";
+        let definition = "helmert convention: coordinate_frame
+            x:  0.06155  rx: -0.0394924
+            y: -0.01087  ry: -0.0327221
+            z: -0.04019  rz: -0.0328979  s: -0.009994";
 
         let op = ctx.operation(definition).unwrap();
         let GDA94 = CoordinateTuple([-4052051.7643, 4212836.2017, -2545106.0245, 0.0]);
@@ -361,13 +364,11 @@ mod tests {
         // And a time varying example from the same source: ITRF2014@2018 to GDA2020,
         // Test point ALIC (Alice Springs)
         // ---------------------------------------------------------------------------
-        let definition = "helmert: {
-            exact: true, convention: coordinate_frame,
-            x: 0,  rx: 0,   dx: 0,   drx: 0.00150379,
-            y: 0,  ry: 0,   dy: 0,   dry: 0.00118346,
-            z: 0,  rz: 0,   dz: 0,   drz: 0.00120716,
-            s: 0,  ds: 0,   t_epoch: 2020.0
-        }";
+        let definition = "helmert exact convention: coordinate_frame
+            x: 0  rx: 0   dx: 0   drx: 0.00150379
+            y: 0  ry: 0   dy: 0   dry: 0.00118346
+            z: 0  rz: 0   dz: 0   drz: 0.00120716
+            s: 0  ds: 0   t_epoch: 2020.0";
         let op = ctx.operation(definition).unwrap();
 
         let ITRF2014 = CoordinateTuple([-4052052.6588, 4212835.9938, -2545104.6946, 2018.0]);
@@ -381,5 +382,7 @@ mod tests {
         // ... and even closer on the way back
         ctx.inv(op, &mut operands);
         assert!(ITRF2014.hypot3(&operands[0]) < 40e-8);
+
+        Ok(())
     }
 }

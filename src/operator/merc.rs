@@ -1,12 +1,12 @@
 //! Mercator
 
-use super::OperatorArgs;
-use super::OperatorCore;
-use crate::operator_construction::*;
-use crate::Context;
 use crate::CoordinateTuple;
 use crate::Ellipsoid;
 use crate::GeodesyError;
+use crate::GysResource;
+use crate::Operator;
+use crate::OperatorCore;
+use crate::Provider;
 
 #[derive(Debug)]
 pub struct Merc {
@@ -17,16 +17,19 @@ pub struct Merc {
     lat_0: f64,
     x_0: f64,
     y_0: f64,
-    args: OperatorArgs,
+    args: Vec<(String, String)>,
 }
 
 impl Merc {
-    pub fn new(args: &mut OperatorArgs) -> Result<Merc, GeodesyError> {
-        let ellps = Ellipsoid::named(&args.value("ellps", "GRS80"))?;
+    pub fn new(res: &GysResource) -> Result<Merc, GeodesyError> {
+        let mut args = res.to_args(0)?;
         let inverted = args.flag("inv");
-        let lat_ts = args.numeric_value("lat_ts", f64::NAN)?;
+        let ellpsname = args.value("ellps")?.unwrap_or_default();
+        let ellps = Ellipsoid::named(&ellpsname)?;
+
+        let lat_ts = args.numeric("lat_ts", f64::NAN)?;
         let k_0 = if lat_ts.is_nan() {
-            args.numeric_value("k_0", 1.)?
+            args.numeric("k_0", 1.)?
         } else {
             if lat_ts.abs() > 90. {
                 return Err(GeodesyError::General(
@@ -36,11 +39,11 @@ impl Merc {
             let sc = lat_ts.to_radians().sin_cos();
             sc.1 / (1. - ellps.eccentricity_squared() * sc.0 * sc.0).sqrt()
         };
-        let lon_0 = args.numeric_value("lon_0", 0.)?.to_radians();
-        let lat_0 = args.numeric_value("lat_0", 0.)?.to_radians();
-        let x_0 = args.numeric_value("x_0", 0.)?;
-        let y_0 = args.numeric_value("y_0", 0.)?;
-        let args = args.clone();
+        let lon_0 = args.numeric("lon_0", 0.)?.to_radians();
+        let lat_0 = args.numeric("lat_0", 0.)?.to_radians();
+        let x_0 = args.numeric("x_0", 0.)?;
+        let y_0 = args.numeric("y_0", 0.)?;
+        let args = args.used;
         Ok(Merc {
             ellps,
             inverted,
@@ -53,7 +56,10 @@ impl Merc {
         })
     }
 
-    pub(crate) fn operator(args: &mut OperatorArgs) -> Result<Operator, GeodesyError> {
+    pub(crate) fn operator(
+        args: &GysResource,
+        _rp: &dyn Provider,
+    ) -> Result<Operator, GeodesyError> {
         let op = crate::operator::merc::Merc::new(args)?;
         Ok(Operator(Box::new(op)))
     }
@@ -63,7 +69,7 @@ impl Merc {
 impl OperatorCore for Merc {
     // Forward mercator, following the PROJ implementation,
     // cf.  https://proj.org/operations/projections/merc.html
-    fn fwd(&self, _ctx: &Context, operands: &mut [CoordinateTuple]) -> bool {
+    fn fwd(&self, _ctx: &dyn Provider, operands: &mut [CoordinateTuple]) -> bool {
         let a = self.ellps.semimajor_axis();
         for coord in operands {
             // Easting
@@ -75,7 +81,7 @@ impl OperatorCore for Merc {
         true
     }
 
-    fn inv(&self, _ctx: &Context, operands: &mut [CoordinateTuple]) -> bool {
+    fn inv(&self, _ctx: &dyn Provider, operands: &mut [CoordinateTuple]) -> bool {
         let a = self.ellps.semimajor_axis();
         for coord in operands {
             // Easting -> Longitude
@@ -99,19 +105,19 @@ impl OperatorCore for Merc {
         self.inverted
     }
 
-    fn args(&self, _step: usize) -> &OperatorArgs {
+    fn args(&self, _step: usize) -> &[(String, String)] {
         &self.args
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::Context;
     use crate::CoordinateTuple as C;
 
     /// Basic test of the Mercator implementation
     #[test]
     fn merc() {
+        let mut rp = crate::Plain::default();
         let op = "merc";
 
         // Validation value from PROJ: echo 12 55 0 0 | cct -d18 +proj=merc
@@ -132,7 +138,8 @@ mod tests {
             C::raw(-222638.981586547, -110579.965218249, 0., 0.),
         ];
 
-        assert!(Context::test(
+        assert!(crate::resource::test(
+            &mut rp,
             op,
             0,
             20e-9,
@@ -146,6 +153,7 @@ mod tests {
     /// Test the "latitude of true scale" functionality
     #[test]
     fn lat_ts() {
+        let mut rp = crate::Plain::default();
         let op = "merc lat_ts:55";
 
         // Validation values from PROJ:
@@ -163,7 +171,8 @@ mod tests {
             C::raw(959911.9394764832687, 3214262.9417223907076, 0., 0.),
         ];
 
-        assert!(Context::test(
+        assert!(crate::resource::test(
+            &mut rp,
             op,
             0,
             20e-9,

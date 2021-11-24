@@ -3,13 +3,13 @@
 // Renovering af Poder/Engsager tmerc i B:\2019\Projects\FIRE\tramp\tramp\tramp.c
 // Detaljer i C:\Users\B004330\Downloads\2.1.2 A HIGHLY ACCURATE WORLD WIDE ALGORITHM FOR THE TRANSVE (1).doc
 
-use super::OperatorArgs;
-use super::OperatorCore;
-use crate::operator_construction::*;
-use crate::Context;
 use crate::CoordinateTuple;
 use crate::Ellipsoid;
 use crate::GeodesyError;
+use crate::GysResource;
+use crate::Operator;
+use crate::OperatorCore;
+use crate::Provider;
 
 #[derive(Debug)]
 pub struct Tmerc {
@@ -21,20 +21,23 @@ pub struct Tmerc {
     lat_0: f64,
     x_0: f64,
     y_0: f64,
-    args: OperatorArgs,
+    args: Vec<(String, String)>,
 }
 
 impl Tmerc {
-    pub fn new(args: &mut OperatorArgs) -> Result<Tmerc, GeodesyError> {
-        let ellps = Ellipsoid::named(&args.value("ellps", "GRS80"))?;
+    pub fn new(res: &GysResource) -> Result<Tmerc, GeodesyError> {
+        let mut args = res.to_args(0)?;
         let inverted = args.flag("inv");
-        let k_0 = args.numeric_value("k_0", 1.)?;
-        let lon_0 = args.numeric_value("lon_0", 0.)?.to_radians();
-        let lat_0 = args.numeric_value("lat_0", 0.)?.to_radians();
-        let x_0 = args.numeric_value("x_0", 0.)?;
-        let y_0 = args.numeric_value("y_0", 0.)?;
+        let ellpsname = args.value("ellps")?.unwrap_or_default();
+        let ellps = Ellipsoid::named(&ellpsname)?;
+
+        let k_0 = args.numeric("k_0", 1.)?;
+        let lon_0 = args.numeric("lon_0", 0.)?.to_radians();
+        let lat_0 = args.numeric("lat_0", 0.)?.to_radians();
+        let x_0 = args.numeric("x_0", 0.)?;
+        let y_0 = args.numeric("y_0", 0.)?;
         let eps = ellps.second_eccentricity_squared();
-        let args = args.clone();
+        let args = args.used;
         Ok(Tmerc {
             ellps,
             inverted,
@@ -48,27 +51,36 @@ impl Tmerc {
         })
     }
 
-    pub(crate) fn operator(args: &mut OperatorArgs) -> Result<Operator, GeodesyError> {
+    pub(crate) fn operator(
+        args: &GysResource,
+        _rp: &dyn Provider,
+    ) -> Result<Operator, GeodesyError> {
         let op = crate::operator::tmerc::Tmerc::new(args)?;
         Ok(Operator(Box::new(op)))
     }
 
-    pub(crate) fn utmoperator(args: &mut OperatorArgs) -> Result<Operator, GeodesyError> {
+    pub(crate) fn utmoperator(
+        args: &GysResource,
+        _rp: &dyn Provider,
+    ) -> Result<Operator, GeodesyError> {
         let op = crate::operator::tmerc::Tmerc::utm(args)?;
         Ok(Operator(Box::new(op)))
     }
 
-    pub fn utm(args: &mut OperatorArgs) -> Result<Tmerc, GeodesyError> {
-        let ellps = Ellipsoid::named(&args.value("ellps", "GRS80"))?;
-        let zone = args.numeric_value("zone", f64::NAN)?;
+    pub fn utm(res: &GysResource) -> Result<Tmerc, GeodesyError> {
+        let mut args = res.to_args(0)?;
         let inverted = args.flag("inv");
+        let ellpsname = args.value("ellps")?.unwrap_or_default();
+
+        let ellps = Ellipsoid::named(&ellpsname)?;
+        let zone = args.numeric("zone", f64::NAN)?;
         let k_0 = 0.9996;
         let lon_0 = (-183. + 6. * zone).to_radians();
         let lat_0 = 0.;
         let x_0 = 500_000.;
         let y_0 = 0.;
         let eps = ellps.second_eccentricity_squared();
-        let args = args.clone();
+        let args = args.used;
 
         Ok(Tmerc {
             ellps,
@@ -87,7 +99,7 @@ impl Tmerc {
 #[allow(non_snake_case)]
 impl OperatorCore for Tmerc {
     // Forward transverse mercator, following Bowring (1989)
-    fn fwd(&self, _ctx: &Context, operands: &mut [CoordinateTuple]) -> bool {
+    fn fwd(&self, _ctx: &dyn Provider, operands: &mut [CoordinateTuple]) -> bool {
         for coord in operands {
             let lat = coord[1] + self.lat_0;
             let c = lat.cos();
@@ -120,7 +132,7 @@ impl OperatorCore for Tmerc {
     }
 
     // Inverse transverse mercator, following Bowring (1989)
-    fn inv(&self, _ctx: &Context, operands: &mut [CoordinateTuple]) -> bool {
+    fn inv(&self, _ctx: &dyn Provider, operands: &mut [CoordinateTuple]) -> bool {
         // Footpoint latitude, i.e. the latitude of a point on the central meridian
         // having the same northing as the point of interest
         for coord in operands {
@@ -161,22 +173,21 @@ impl OperatorCore for Tmerc {
         self.inverted
     }
 
-    fn args(&self, _step: usize) -> &OperatorArgs {
+    fn args(&self, _step: usize) -> &[(String, String)] {
         &self.args
     }
 }
 
 #[cfg(test)]
 mod tests {
-    #[test]
-    fn utm() {
-        use crate::operator_construction::*;
-        use crate::{Context, CoordinateTuple, Ellipsoid};
+    use super::*;
 
-        let mut ctx = Context::new();
+    #[test]
+    fn utm() -> Result<(), GeodesyError> {
+        let mut ctx = crate::Plain::default();
 
         // Test the UTM implementation
-        let op = Operator::new("utm: {zone: 32}", &mut ctx).unwrap();
+        let op = Operator::new("utm zone: 32", &mut ctx)?;
 
         let geo = CoordinateTuple::geo(55., 12., 100., 0.);
         let mut operands = [geo];
@@ -200,7 +211,7 @@ mod tests {
         assert!(ellps.distance(&operands[0], &geo) < 1e-4);
 
         // Test a Greenland extreme value (a zone 19 point projected in zone 24)
-        let op = Operator::new("utm: {zone: 24}", &mut ctx).unwrap();
+        let op = Operator::new("utm zone: 24", &mut ctx).unwrap();
         let geo = CoordinateTuple::geo(80., -72., 100., 0.);
         let mut operands = [geo];
 
@@ -220,16 +231,15 @@ mod tests {
         // But obviously much worse than Poder/Engsager's:
         // echo -72 80 0 0 | cct +proj=utm +zone=24 +ellps=GRS80 | cct -I +proj=utm +zone=24 +ellps=GRS80
         // -72.0000000022   80.0000000001        0.0000        0.0000
+        Ok(())
     }
 
     #[test]
-    fn tmerc() {
-        use crate::operator_construction::*;
-        use crate::*;
-        let mut ctx = Context::new();
+    fn tmerc() -> Result<(), GeodesyError> {
+        let mut ctx = crate::Plain::default();
 
         // Test the plain tmerc, by reimplementing the UTM above manually
-        let op = Operator::new("tmerc: {k_0: 0.9996, lon_0: 9, x_0: 500000}", &mut ctx).unwrap();
+        let op = Operator::new("tmerc k_0: 0.9996 lon_0: 9 x_0: 500000", &mut ctx)?;
 
         let mut operands = [CoordinateTuple::gis(12., 55., 100., 0.)];
         assert!(op.fwd(&mut ctx, operands.as_mut()));
@@ -238,5 +248,6 @@ mod tests {
         // echo 12 55 0 0 | cct -d18 +proj=utm +zone=32
         let utm_proj = CoordinateTuple::raw(691_875.632_139_661, 6_098_907.825_005_012, 100., 0.);
         assert!(operands[0].hypot2(&utm_proj) < 1e-5);
+        Ok(())
     }
 }

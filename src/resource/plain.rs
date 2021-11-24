@@ -107,7 +107,6 @@ impl Provider for PlainResourceProvider {
         let name = op.name();
         self.operations.insert(id, op);
         assert_eq!(name, self.operations[&id].name());
-        dbg!(id);
         Ok(id)
     }
 
