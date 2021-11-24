@@ -115,7 +115,7 @@ impl OperatorCore for Cart {
             // in Fukushima's and Claessens' Fortranesque implementations,
             // were explicitly eliminated (by introducing s02 = S0*S0, etc.).
             // For clarity, we keep the full expressions here, and leave the
-            // elimination task to the Rust optimizer.
+            // elimination task to the optimizer.
             let A = S0.hypot(C0);
             let F = P * A * A * A - es * C0 * C0 * C0;
             let B = ce4 * S0 * S0 * C0 * C0 * P * (A - ar);
@@ -148,6 +148,8 @@ impl OperatorCore for Cart {
         &self.args
     }
 }
+
+// --------------------------------------------------------------------------------
 
 #[cfg(test)]
 mod tests {

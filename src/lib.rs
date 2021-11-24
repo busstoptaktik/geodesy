@@ -31,23 +31,10 @@ mod operator;
 pub use coordinate::CoordinateTuple;
 pub use ellipsoid::Ellipsoid;
 pub use resource::gys::{GysArgs, GysResource};
-pub use resource::{plain::PlainResourceProvider, Provider, SearchLevel};
+pub use resource::{plain::PlainResourceProvider as Plain, Provider, SearchLevel};
 
 // The bibliography needs `pub`-ness in order to be able to build the docs.
 pub use bibliography::Bibliography;
-
-/*
-/// The operator construction toolkit. Needs `pub`-ness in order to support
-/// the construction of user defined operators.
-pub mod operator_construction {
-    // mod gas;
-    // mod operatorargs;
-    pub use crate::operator::Operator;
-    pub use crate::operator::OperatorCore;
-    // pub use gas::Gas;
-    // pub use operatorargs::GysResource;
-}
-*/
 
 pub use operator::Operator;
 pub use operator::OperatorCore;

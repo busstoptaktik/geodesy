@@ -5,6 +5,7 @@ use crate::CoordinateTuple;
 use crate::GeodesyError;
 use crate::GysResource;
 use crate::Operator;
+use crate::OperatorConstructor;
 use std::collections::BTreeMap;
 
 use super::Provider;
@@ -21,8 +22,8 @@ pub struct PlainResourceProvider {
     searchlevel: SearchLevel,
     persistent_builtins: bool,
     // pile: memmap::Mmap
-    user_defined_operators: BTreeMap<String, crate::OperatorConstructor>,
-    pub user_defined_macros: BTreeMap<String, String>,
+    user_defined_operators: BTreeMap<String, OperatorConstructor>,
+    user_defined_macros: BTreeMap<String, String>,
     operations: BTreeMap<Uuid, Operator>,
     globals: Vec<(String, String)>,
 }
@@ -74,6 +75,10 @@ impl Provider for PlainResourceProvider {
         self.user_defined_macros.get(name)
     }
 
+    fn get_user_defined_operator(&self, name: &str) -> Option<&OperatorConstructor> {
+        self.user_defined_operators.get(name)
+    }
+
     fn gys_resource(
         &self,
         branch: &str,
@@ -116,6 +121,17 @@ impl Provider for PlainResourceProvider {
     fn register_macro(&mut self, name: &str, definition: &str) -> Result<bool, GeodesyError> {
         self.user_defined_macros
             .insert(String::from(name), String::from(definition));
+        Ok(true)
+    }
+
+    fn register_operator(
+        &mut self,
+        name: &str,
+        constructor: OperatorConstructor,
+    ) -> Result<bool, GeodesyError> {
+        self.user_defined_operators
+            .insert(String::from(name), constructor);
+        dbg!(self.user_defined_operators.keys());
         Ok(true)
     }
 

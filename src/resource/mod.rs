@@ -41,7 +41,15 @@ pub trait Provider {
         Ok(GysResource::new(&definition, &globals))
     }
 
-    fn get_user_defined_macro(&self, name: &str) -> Option<&String>;
+    #[allow(unused_variables)]
+    fn get_user_defined_macro(&self, name: &str) -> Option<&String> {
+        None
+    }
+
+    #[allow(unused_variables)]
+    fn get_user_defined_operator(&self, name: &str) -> Option<&OperatorConstructor> {
+        None
+    }
 
     fn gys_definition(&self, branch: &str, name: &str) -> Result<String, GeodesyError> {
         if branch == "macros" {
@@ -178,7 +186,7 @@ pub trait Provider {
     fn register_operator(
         &mut self,
         name: &str,
-        definition: OperatorConstructor,
+        constructor: OperatorConstructor,
     ) -> Result<bool, GeodesyError> {
         Err(GeodesyError::General("Operator registration not supported"))
     }
@@ -252,6 +260,17 @@ impl Popeline {
             let mut args = GysArgs::new(&nextglobals, step);
 
             let nextname = &args.value("name")?.unwrap_or_default();
+
+            // A user defined operator?
+            if let Some(op) = rp.get_user_defined_operator(nextname) {
+                let args = GysResource::new(step, &nextglobals);
+                let next = op(&args, rp)?;
+                if n == 1 {
+                    return Ok(next);
+                }
+                steps.push(next);
+                continue;
+            }
 
             // A macro? - args are now globals!
             if let Ok(mac) = rp.gys_definition("macros", nextname) {
@@ -352,11 +371,10 @@ impl OperatorCore for Popeline {
 #[cfg(test)]
 mod popelinetests {
     use super::*;
-    use crate::PlainResourceProvider;
 
     #[test]
     fn gys() -> Result<(), GeodesyError> {
-        let rp = PlainResourceProvider::new(SearchLevel::LocalPatches, true);
+        let rp = crate::Plain::new(SearchLevel::LocalPatches, true);
         let foo = rp
             .get_gys_definition_from_level(SearchLevel::LocalPatches, "macros", "foo")
             .unwrap();

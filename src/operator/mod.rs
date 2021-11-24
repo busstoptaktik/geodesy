@@ -9,8 +9,8 @@ pub mod builtins {
     use crate::GeodesyError;
     use crate::OperatorConstructor;
 
-    // A HashMap would have been a better choice,for the OPERATOR_LIST, except
-    // for the annoying fact that it cannot be compile-time constructed
+    // A BTreeMap would have been a better choice,for the OPERATOR_LIST, except
+    // for the annoying fact that it cannot be compile-time const-constructed
     #[rustfmt::skip]
     const OPERATOR_LIST: [(&str, OperatorConstructor); 3] = [
         ("adapt",      crate::operator::adapt::Adapt::operator),
@@ -208,8 +208,7 @@ mod tests {
     #[test]
     fn operator() -> Result<(), GeodesyError> {
         use crate::resource::SearchLevel;
-        use crate::Operator;
-        use crate::PlainResourceProvider as Plain;
+        use crate::{Operator, Plain};
         use crate::{FWD, INV};
         let mut o = Plain::new(SearchLevel::LocalPatches, false);
 
@@ -221,7 +220,6 @@ mod tests {
         // to test the operator_factory recursion breaker
         o.register_macro("halmert", "hilmert")?;
         o.register_macro("hilmert", "halmert")?;
-        println!("{:#?}", &o.user_defined_macros);
         if let Err(err) = Operator::new("halmert x: -87 y: -96 z: -120", &mut o) {
             assert!(err.to_string().contains("too deep recursion"));
         } else {
@@ -385,10 +383,12 @@ mod tests {
 
     #[test]
     fn user_defined_operator() -> Result<(), GeodesyError> {
-        let mut ctx = crate::resource::plain::PlainResourceProvider::default();
+        let mut ctx = crate::Plain::default();
         ctx.register_operator("nnoopp", Nnoopp::operator)?;
 
-        let op = ctx.operation("nnoopp: {}")?;
+        let op = ctx.operation("nnoopp");
+        dbg!(&op);
+        let op = op.unwrap();
         let mut operands = [CoordinateTuple::raw(12., 55., 100., 0.)];
         let _aha = ctx.fwd(op, operands.as_mut());
         assert_eq!(operands[0][0], 42.);

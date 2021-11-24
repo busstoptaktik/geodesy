@@ -181,14 +181,15 @@ impl GysArgs {
             }
             let thevalue = found.unwrap().1.trim();
 
-            // If the value is a(nother) lookup, we continue the search in the same iterator
+            // If the value is a(nother) lookup, we continue the search in the same iterator,
+            // now using a *new search key*, as specified by the current value
             if let Some(stripped) = thevalue.strip_prefix('^') {
                 chasing = true;
                 needle = stripped;
                 continue;
             }
 
-            // If the value is a default, we continue the search using the same *key*
+            // If the value is a default, we continue the search using the *same key*
             if let Some(stripped) = thevalue.strip_prefix('*') {
                 chasing = true;
                 needle = key;
@@ -209,24 +210,19 @@ impl GysArgs {
     pub fn flag(&mut self, key: &str) -> bool {
         let value = self.value(key);
 
-        // If incompletely given, the flag value is false
+        // If incompletely given (i.e. contains a lookup for a non-existing key),
+        // the flag value is false
         if value.is_err() {
             return false;
         }
+
         let value = value.unwrap();
         // If the key is not given, the flag is false
-        // If the key is given and the value is 'false', the flag is false
-        // If the key is given without any value, the flag is true
-        // If the key is given with any other value than 'false', the flag is true
+        // If the key is given and its lowercased value is 'false', the flag is false
+        // In any other case, the flag is true
         match value {
             None => false,
-            Some(v) => {
-                if v.to_lowercase() == "false" {
-                    false
-                } else {
-                    v.is_empty()
-                }
-            }
+            Some(v) => !(v.to_lowercase() == "false"),
         }
     }
 
@@ -245,7 +241,7 @@ impl GysArgs {
                 return Ok(v);
             }
 
-            // Error: key given, but not numeric
+            // Error: key given, but value not numeric
             return Err(GeodesyError::Syntax(format!(
                 "Numeric value expected for '{}' - got [{}: {}].",
                 key, key, value
@@ -255,30 +251,30 @@ impl GysArgs {
     }
 } // impl GysArgs
 
+// --------------------------------------------------------------------------------
+
 #[cfg(test)]
-mod new_gys_tests {
-    //use crate::GeodesyError;
-    //use crate::context::nygys::*;
+mod gys_tests {
     use super::*;
 
     // Testing GysArgs
     #[test]
     fn args() -> Result<(), GeodesyError> {
         let globals: [(String, String); 6] = [
-            (String::from("a"), String::from("a def")),
-            (String::from("b"), String::from("b def")),
-            (String::from("c"), String::from("c def")),
-            (String::from("d"), String::from("d def")),
-            (String::from("e"), String::from("e def")),
-            (String::from("f"), String::from("f def")),
+            (String::from("a"), String::from("a_def")),
+            (String::from("b"), String::from("b_def")),
+            (String::from("c"), String::from("c_def")),
+            (String::from("d"), String::from("d_def")),
+            (String::from("e"), String::from("e_def")),
+            (String::from("f"), String::from("f_def")),
         ];
 
         let locals: [(String, String); 7] = [
             (String::from("a"), String::from("   ^b  ")),
-            (String::from("b"), String::from("2 b def")),
-            (String::from("c"), String::from("*2 c def")),
-            (String::from("d"), String::from("^2 d def")),
-            (String::from("e"), String::from("    2 e def   ")),
+            (String::from("b"), String::from("2_b_def")),
+            (String::from("c"), String::from("*2")),
+            (String::from("d"), String::from("^2")),
+            (String::from("e"), String::from("    2  ")),
             (String::from("f"), String::from("^a")),
             (String::from("g"), String::from("*default")),
         ];
@@ -290,29 +286,30 @@ mod new_gys_tests {
         assert_eq!(f.unwrap(), globals[1].1);
 
         let e = arg.value("  e  ")?;
-        assert_eq!(e.unwrap(), "2 e def");
+        assert_eq!(e.unwrap(), "2");
 
         // Check default value lookups
         let c = arg.value("  c  ")?;
-        assert_eq!(c.unwrap(), "c def");
+        assert_eq!(c.unwrap(), "c_def");
 
         let g = arg.value("  g  ")?;
         assert_eq!(g.unwrap(), "default");
 
         if let Err(d) = arg.value("d") {
-            println!("d: {:?}", d.to_string());
-            assert!(d.to_string().starts_with("syntax error"));
-        }
-        let d = arg.value("  d  ").unwrap_err();
-        assert!(d.to_string().starts_with("syntax error"));
-
-        let _d = arg.value("  d  ").unwrap_or_else(|e| {
-            if !e.to_string().starts_with("syntax error") {
-                panic!("Expected syntax error here!");
+            if let GeodesyError::Syntax(ref e) = d {
+                assert!(e.starts_with("Incomplete"));
             } else {
-                Some(String::default())
+                panic!("Unexpected error variant");
             }
-        });
+        } else {
+            panic!("Expected error here");
+        }
+
+        if let GeodesyError::Syntax(d) = arg.value("  d  ").unwrap_err() {
+            assert!(d.starts_with("Incomplete"));
+        } else {
+            panic!("Unexpected error variant");
+        }
 
         // step_to_local_args - check the 'name'-magic
         let step = "a b:c d:e f g:h";
@@ -323,17 +320,17 @@ mod new_gys_tests {
 
         let mut arg = GysArgs::new(
             &globals,
-            "banana tomato aa:^a bb:b c:*no cc:*yes 33:33 true:FaLsE",
+            "banana aa:^a bb:b c:*no cc:*yes 33:33 true:FaLsE tomato",
         );
         assert_eq!(arg.flag("tomato"), true);
         assert_eq!(arg.string("name", ""), "banana");
 
-        assert_eq!(arg.string("c", ""), "c def");
+        assert_eq!(arg.string("c", ""), "c_def");
         assert_eq!(arg.string("cc", ""), "yes");
 
-        assert_eq!(arg.flag("33"), true);
         assert_eq!(arg.string("33", "44"), "33");
         assert_eq!(arg.numeric("33", 44.)?, 33.);
+        assert_eq!(arg.flag("33"), true);
 
         assert_eq!(arg.flag("true"), false);
 
