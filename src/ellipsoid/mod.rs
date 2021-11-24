@@ -92,23 +92,6 @@ impl Ellipsoid {
         }
     }
 
-    // fn from_yaml(definition: &str) -> Option<Ellipsoid> {
-    //     use yaml_rust::YamlLoader;
-    //     if let Ok(docs) = YamlLoader::load_from_str(definition) {
-    //         let doc = &docs[0];
-    //         if let Some(a) = doc["ellipsoid"]["shortcut"]["a"].as_f64() {
-    //             if let Some(rf) = doc["ellipsoid"]["shortcut"]["rf"].as_f64() {
-    //                 let f = if rf == 0.0 { 0.0 } else { 1.0 / (rf) };
-    //                 if let Some(ay) = doc["ellipsoid"]["shortcut"]["ay"].as_f64() {
-    //                     return Some(Ellipsoid::triaxial(a, ay, f));
-    //                 }
-    //                 return Some(Ellipsoid::new(a, f));
-    //             }
-    //         }
-    //     }
-    //     None
-    // }
-
     /// Predefined ellipsoid; built-in or defined in asset collections
     pub fn named(name: &str) -> Result<Ellipsoid, GeodesyError> {
         // Is it one of the few builtins?

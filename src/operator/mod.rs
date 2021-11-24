@@ -12,7 +12,7 @@ pub mod builtins {
     // A BTreeMap would have been a better choice,for the OPERATOR_LIST, except
     // for the annoying fact that it cannot be compile-time const-constructed
     #[rustfmt::skip]
-    const OPERATOR_LIST: [(&str, OperatorConstructor); 8] = [
+    const OPERATOR_LIST: [(&str, OperatorConstructor); 11] = [
         ("adapt",      crate::operator::adapt::Adapt::operator),
         ("cart",       crate::operator::cart::Cart::operator),
         ("noop",       crate::operator::noop::Noop::operator),
@@ -22,12 +22,12 @@ pub mod builtins {
         ("merc",       crate::operator::merc::Merc::operator),
         ("tmerc",      crate::operator::tmerc::Tmerc::operator),
         ("utm",        crate::operator::tmerc::Tmerc::utmoperator),
-/*
         ("molodensky", crate::operator::molodensky::Molodensky::operator),
-        ("dm",         crate::operator::nmea::Nmea::operator),
         ("nmea",       crate::operator::nmea::Nmea::operator),
-        ("dms",        crate::operator::nmea::Nmea::dmsoperator),
         ("nmeass",     crate::operator::nmea::Nmea::dmsoperator),
+/*
+        ("dm",         crate::operator::nmea::Nmea::operator),
+        ("dms",        crate::operator::nmea::Nmea::dmsoperator),
 
  */   ];
 
@@ -54,12 +54,11 @@ mod cart;
 mod helmert;
 mod lcc;
 mod merc;
+mod molodensky;
+mod nmea;
 mod noop;
 mod pipeline;
 mod tmerc;
-/*mod molodensky;
-mod nmea;
-*/
 
 // Operator is a newtype around a Boxed trait OperatorCore,
 // in order to be able to define methods on it.

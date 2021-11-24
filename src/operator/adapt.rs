@@ -142,7 +142,6 @@ fn descriptor(desc: &str) -> Option<CoordinateOrderDescriptor> {
         count[(indices[i].abs() - 1) as usize] += 1;
     }
     if count != [1, 1, 1, 1] {
-        // println!("Overlaps: {:?}", indices);
         return None;
     }
 

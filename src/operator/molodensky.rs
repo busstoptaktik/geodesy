@@ -15,13 +15,13 @@
 ///    Survey Review, 48:350, pp. 376-384,
 ///    [DOI](https://doi.org/10.1080/00396265.2016.1191748)
 ///
-use super::OperatorArgs;
-use super::OperatorCore;
-use crate::operator_construction::*;
-use crate::Context;
 use crate::CoordinateTuple;
 use crate::Ellipsoid;
 use crate::GeodesyError;
+use crate::GysResource;
+use crate::Operator;
+use crate::OperatorCore;
+use crate::Provider;
 
 #[derive(Debug)]
 pub struct Molodensky {
@@ -35,29 +35,29 @@ pub struct Molodensky {
     df: f64,
     adffda: f64,
     es: f64,
-    args: OperatorArgs,
+    args: Vec<(String, String)>,
 }
 
 impl Molodensky {
-    pub fn new(args: &mut OperatorArgs) -> Result<Molodensky, GeodesyError> {
+    pub fn new(res: &GysResource) -> Result<Molodensky, GeodesyError> {
+        let mut args = res.to_args(0)?;
         let inverted = args.flag("inv");
-        let abridged = args.flag("abridged");
-        let dx = args.numeric_value("dx", 0.)?;
-        let dy = args.numeric_value("dy", 0.)?;
-        let dz = args.numeric_value("dz", 0.)?;
+        let ellps = Ellipsoid::named(&args.string("ellps", "")).unwrap_or_default();
 
-        let mut da = args.numeric_value("da", 0.)?;
-        let mut df = args.numeric_value("df", 0.)?;
+        let abridged = args.flag("abridged");
+        let dx = args.numeric("dx", 0.)?;
+        let dy = args.numeric("dy", 0.)?;
+        let dz = args.numeric("dz", 0.)?;
+
+        let mut da = args.numeric("da", 0.)?;
+        let mut df = args.numeric("df", 0.)?;
 
         // We may use `ellps, da, df`, to parameterize the operator,
         // but `left_ellps, right_ellps` is a more likely set of
         // parameters to come across in real life.
-        let mut left_ellps = Ellipsoid::named(&args.value("ellps", "GRS80"))?;
-        if !args.value("left_ellps", "").is_empty() {
-            left_ellps = Ellipsoid::named(&args.value("left_ellps", "GRS80"))?;
-        }
-        if !args.value("right_ellps", "").is_empty() {
-            let right_ellps = Ellipsoid::named(&args.value("right_ellps", "GRS80"))?;
+        let left_ellps = Ellipsoid::named(&args.string("ellps", "")).unwrap_or(ellps);
+        let right_ellps = Ellipsoid::named(&args.string("right_ellps", "")).unwrap_or(ellps);
+        if args.value("right_ellps").is_ok() {
             da = right_ellps.semimajor_axis() - left_ellps.semimajor_axis();
             df = right_ellps.flattening() - left_ellps.flattening();
         }
@@ -67,7 +67,7 @@ impl Molodensky {
         // Precompute what little we can
         let adffda = left_ellps.semimajor_axis() * df + left_ellps.flattening() * da;
 
-        let args = args.clone();
+        let args = args.used;
         Ok(Molodensky {
             ellps: left_ellps,
             inverted,
@@ -83,7 +83,10 @@ impl Molodensky {
         })
     }
 
-    pub(crate) fn operator(args: &mut OperatorArgs) -> Result<Operator, GeodesyError> {
+    pub(crate) fn operator(
+        args: &GysResource,
+        _rp: &dyn Provider,
+    ) -> Result<Operator, GeodesyError> {
         let op = crate::operator::molodensky::Molodensky::new(args)?;
         Ok(Operator(Box::new(op)))
     }
@@ -155,7 +158,7 @@ impl Molodensky {
 }
 
 impl OperatorCore for Molodensky {
-    fn fwd(&self, _ctx: &Context, operands: &mut [CoordinateTuple]) -> bool {
+    fn fwd(&self, _ctx: &dyn Provider, operands: &mut [CoordinateTuple]) -> bool {
         for coord in operands {
             let par = self.calc_molodensky_params(coord);
             coord[0] += par[0];
@@ -166,7 +169,7 @@ impl OperatorCore for Molodensky {
     }
 
     // Inverse Molodensky
-    fn inv(&self, _ctx: &Context, operands: &mut [CoordinateTuple]) -> bool {
+    fn inv(&self, _ctx: &dyn Provider, operands: &mut [CoordinateTuple]) -> bool {
         for coord in operands {
             let par = self.calc_molodensky_params(coord);
             coord[0] -= par[0];
@@ -184,7 +187,7 @@ impl OperatorCore for Molodensky {
         self.inverted
     }
 
-    fn args(&self, _step: usize) -> &OperatorArgs {
+    fn args(&self, _step: usize) -> &[(String, String)] {
         &self.args
     }
 }
@@ -195,16 +198,14 @@ mod tests {
     fn molodensky() {
         use super::*;
         use crate::CoordinateTuple as C;
-        let mut ctx = Context::new();
+        let mut ctx = crate::Plain::default();
         // ---------------------------------------------------------------------------
         // Test case from OGP Publication 373-7-2: Geomatics Guidance Note number 7,
         // part 2: Transformation from WGS84 to ED50.
         // ---------------------------------------------------------------------------
 
-        let definition = "molodensky: {
-            left_ellps: WGS84, right_ellps: intl,
-            dx: 84.87, dy: 96.49, dz: 116.95, abridged: false
-        }";
+        let definition = "molodensky left_ellps: WGS84 right_ellps: intl
+            dx: 84.87 dy: 96.49 dz: 116.95 abridged: false";
         let op = ctx.operation(definition).unwrap();
 
         // Test point (53.80939444444444, 2.12955, 73 m)
@@ -240,10 +241,8 @@ mod tests {
 
         // The abridged case. Same test point. Both plane coordinates and
         // elevations are *much* worse, but still better-than-decimeter.
-        let definition = "molodensky: {
-            left_ellps: WGS84, right_ellps: intl,
-            dx: 84.87, dy: 96.49, dz: 116.95, abridged: true
-        }";
+        let definition = "molodensky left_ellps: WGS84 right_ellps: intl
+            dx: 84.87 dy: 96.49 dz: 116.95 abridged: true";
         let op = ctx.operation(definition).unwrap();
 
         let mut operands = [WGS84];

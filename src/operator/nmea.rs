@@ -19,53 +19,61 @@
 //! > 55.51  -12.7525 0 0
 //! ```
 
-use super::Context;
-use super::OperatorArgs;
-use super::OperatorCore;
-use crate::operator_construction::*;
 use crate::CoordinateTuple as Coord;
 use crate::GeodesyError;
+use crate::GysResource;
+use crate::Operator;
+use crate::OperatorCore;
+use crate::Provider;
 
 pub struct Nmea {
-    args: OperatorArgs,
+    args: Vec<(String, String)>,
     inverted: bool,
     dms: bool,
 }
 
 impl Nmea {
     /// nmea (DDDMM.mmm)
-    pub fn new(args: &mut OperatorArgs) -> Result<Nmea, GeodesyError> {
+    pub fn new(res: &GysResource) -> Result<Nmea, GeodesyError> {
+        let mut args = res.to_args(0)?;
         let inverted = args.flag("inv");
         Ok(Nmea {
-            args: args.clone(),
+            args: args.used,
             inverted,
             dms: false,
         })
     }
 
-    pub(crate) fn operator(args: &mut OperatorArgs) -> Result<Operator, GeodesyError> {
+    pub(crate) fn operator(
+        args: &GysResource,
+        _rp: &dyn Provider,
+    ) -> Result<Operator, GeodesyError> {
         let op = crate::operator::nmea::Nmea::new(args)?;
         Ok(Operator(Box::new(op)))
     }
 
     /// dms (DDDMMSS.sss)
-    pub fn dms(args: &mut OperatorArgs) -> Result<Nmea, GeodesyError> {
+    pub fn dms(res: &GysResource) -> Result<Nmea, GeodesyError> {
+        let mut args = res.to_args(0)?;
         let inverted = args.flag("inv");
         Ok(Nmea {
-            args: args.clone(),
+            args: args.used,
             inverted,
             dms: true,
         })
     }
 
-    pub(crate) fn dmsoperator(args: &mut OperatorArgs) -> Result<Operator, GeodesyError> {
+    pub(crate) fn dmsoperator(
+        args: &GysResource,
+        _rp: &dyn Provider,
+    ) -> Result<Operator, GeodesyError> {
         let op = crate::operator::nmea::Nmea::dms(args)?;
         Ok(Operator(Box::new(op)))
     }
 }
 
 impl OperatorCore for Nmea {
-    fn fwd(&self, _ctx: &Context, operands: &mut [Coord]) -> bool {
+    fn fwd(&self, _ctx: &dyn Provider, operands: &mut [Coord]) -> bool {
         for o in operands {
             if self.dms {
                 *o = Coord::nmeass(o[0], o[1], o[2], o[3]);
@@ -76,7 +84,7 @@ impl OperatorCore for Nmea {
         true
     }
 
-    fn inv(&self, _ctx: &Context, operands: &mut [Coord]) -> bool {
+    fn inv(&self, _ctx: &dyn Provider, operands: &mut [Coord]) -> bool {
         for o in operands {
             if self.dms {
                 let longitude = Coord::dd_to_nmeass(o[0].to_degrees());
@@ -103,20 +111,19 @@ impl OperatorCore for Nmea {
         self.inverted
     }
 
-    fn args(&self, _step: usize) -> &OperatorArgs {
+    fn args(&self, _step: usize) -> &[(String, String)] {
         &self.args
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::Context;
-    use crate::CoordinateTuple as Coord;
+    use super::*;
     #[test]
-    fn nmea() {
-        let mut ctx = Context::new();
-        let nmea = ctx.operation("nmea").unwrap();
-        let aemn = ctx.operation("nmea inv").unwrap();
+    fn nmea() -> Result<(), GeodesyError> {
+        let mut ctx = crate::Plain::default();
+        let nmea = ctx.operation("nmea")?;
+        let aemn = ctx.operation("nmea inv")?;
 
         let coord_nmea = Coord::raw(5530.15, -1245.15, 0., 0.);
         let coord_internal = Coord::geo(55.5025, -12.7525, 0., 0.);
@@ -137,12 +144,13 @@ mod tests {
         assert!((operands[0][1] + 1245.15).abs() < 1e-10);
         ctx.inv(aemn, &mut operands);
         assert!(operands[0].default_ellps_dist(&coord_internal) < 1e-10);
+        Ok(())
     }
 
     #[test]
-    fn dms() {
-        let mut ctx = Context::new();
-        let dms = ctx.operation("dms").unwrap();
+    fn dms() -> Result<(), GeodesyError> {
+        let mut ctx = crate::Plain::default();
+        let dms = ctx.operation("nmeass")?;
 
         let coord_dms = Coord::raw(553036., -124509., 0., 0.);
         let coord_internal = Coord::geo(55.51, -12.7525, 0., 0.);
@@ -154,5 +162,6 @@ mod tests {
         ctx.inv(dms, &mut operands);
         assert!((operands[0][0] - 553036.).abs() < 1e-10);
         assert!((operands[0][1] + 124509.).abs() < 1e-10);
+        Ok(())
     }
 }
