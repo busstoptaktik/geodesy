@@ -22,10 +22,6 @@ memmap = "0.7"
 enum-iterator = "0.7.0"
 uuid = { version = "0.8", features = ["v4"] }
 
-# We're eliminating these
-# yaml-rust = "0.4"
-# zip = "0.5"
-
 # Command line program helpers
 structopt = "0.3"
 exitcode = "1.1"

@@ -70,10 +70,21 @@ impl Tmerc {
     pub fn utm(res: &GysResource) -> Result<Tmerc, GeodesyError> {
         let mut args = res.to_args(0)?;
         let inverted = args.flag("inv");
-        let ellpsname = args.value("ellps")?.unwrap_or_default();
+        let ellpsname = args.string("ellps", "");
 
         let ellps = Ellipsoid::named(&ellpsname)?;
         let zone = args.numeric("zone", f64::NAN)?;
+        if zone.is_nan() {
+            return Err(GeodesyError::General("UTM: Bad or missing 'zone'"));
+        }
+        let izone = zone as i64;
+        if zone != izone as f64 {
+            return Err(GeodesyError::General("UTM: 'zone' must be an integer in the interval 1..60"));
+        }
+        if izone < 1 || izone > 60 {
+            return Err(GeodesyError::General("UTM: 'zone' must be in the interval 1..60"));
+        }
+
         let k_0 = 0.9996;
         let lon_0 = (-183. + 6. * zone).to_radians();
         let lat_0 = 0.;

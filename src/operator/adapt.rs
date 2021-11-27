@@ -174,7 +174,6 @@ impl Adapt {
     pub fn new(res: &GysResource) -> Result<Adapt, GeodesyError> {
         let mut args = res.to_args(0)?;
         let inverted = args.flag("inv");
-        dbg!(inverted);
 
         // What we go `from` and what we go `to` both defaults to the internal
         // representation - i.e. "do nothing", neither on in- or output.

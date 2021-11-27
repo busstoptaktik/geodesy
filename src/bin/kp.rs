@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use std::time;
 use structopt::StructOpt;
 
 /// KP: The Rust Geodesy "Coordinate Processing" program. Called `kp` in honor
@@ -47,13 +48,15 @@ struct Opt {
     files: Vec<PathBuf>,
 }
 
-use geodesy::CoordinateTuple as Coord;
 use std::io::{self, BufRead};
 
-fn main() {
+use geodesy::CoordinateTuple as Coord;
+use geodesy::Provider;
+
+fn main() -> anyhow::Result<()> {
     let opt = Opt::from_args();
 
-    let mut ctx = geodesy::Context::new();
+    let mut ctx = geodesy::Plain::new(geodesy::SearchLevel::LocalPatches, false);
 
     if opt.inverse && opt.roundtrip {
         eprintln!("Options `inverse` and `roundtrip` are mutually exclusive");
@@ -67,11 +70,18 @@ fn main() {
         eprintln!("{:#?}", opt);
     }
 
-    let op = ctx.operation(&opt.operation).unwrap();
+    let start = time::Instant::now();
+    let op = ctx.operation(&opt.operation)?;
+    if opt.verbose > 2 {
+        let duration = start.elapsed();
+        println!("Created operation in: {:?}", duration);
+        println!("{:#?}", ctx.operator(op)?);
+    }
     let stdin = io::stdin();
 
+    let start = time::Instant::now();
     for line in stdin.lock().lines() {
-        let line = line.unwrap();
+        let line = line?;
         let line = line.trim();
 
         let mut args: Vec<&str> = line.split_whitespace().collect();
@@ -82,7 +92,7 @@ fn main() {
             continue;
         }
 
-        // Convert test to CoordinateTuple
+        // Convert text to CoordinateTuple
         args.extend(["0"; 4]);
         let mut b: Vec<f64> = vec![];
         for e in args {
@@ -127,6 +137,11 @@ fn main() {
             );
         }
     }
+    if opt.verbose > 1 {
+        let duration = start.elapsed();
+        println!("Transformed in: {:?}", duration);
+    }
+    Ok(())
 }
 
 /// Distance between input and output after a forward-inverse roundtrip

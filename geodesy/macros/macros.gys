@@ -7,3 +7,15 @@ banana
 
 <ignore>
 noop
+
+<ed50_etrs89>
+cart ellps: intl | helmert x: -87  y: -96  z: -120 | cart inv: true ellps: GRS80
+
+<geo>
+adapt from: neut_deg
+<gis>
+adapt from: enut_deg
+<neut>
+adapt from: neut
+<nautical>
+nmea
