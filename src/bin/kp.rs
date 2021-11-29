@@ -1,3 +1,6 @@
+use geodesy::CoordinateTuple as Coord;
+use geodesy::Provider;
+use std::io::BufRead;
 use std::path::PathBuf;
 use std::time;
 use structopt::StructOpt;
@@ -48,11 +51,6 @@ struct Opt {
     files: Vec<PathBuf>,
 }
 
-use std::io::{self, BufRead};
-
-use geodesy::CoordinateTuple as Coord;
-use geodesy::Provider;
-
 fn main() -> anyhow::Result<()> {
     let opt = Opt::from_args();
 
@@ -77,10 +75,9 @@ fn main() -> anyhow::Result<()> {
         println!("Created operation in: {:?}", duration);
         println!("{:#?}", ctx.operator(op)?);
     }
-    let stdin = io::stdin();
 
     let start = time::Instant::now();
-    for line in stdin.lock().lines() {
+    for line in std::io::stdin().lock().lines() {
         let line = line?;
         let line = line.trim();
 

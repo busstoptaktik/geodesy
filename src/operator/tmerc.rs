@@ -79,10 +79,14 @@ impl Tmerc {
         }
         let izone = zone as i64;
         if zone != izone as f64 {
-            return Err(GeodesyError::General("UTM: 'zone' must be an integer in the interval 1..60"));
+            return Err(GeodesyError::General(
+                "UTM: 'zone' must be an integer in the interval 1..60",
+            ));
         }
         if izone < 1 || izone > 60 {
-            return Err(GeodesyError::General("UTM: 'zone' must be in the interval 1..60"));
+            return Err(GeodesyError::General(
+                "UTM: 'zone' must be in the interval 1..60",
+            ));
         }
 
         let k_0 = 0.9996;

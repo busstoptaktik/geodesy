@@ -67,15 +67,16 @@ impl GysResource {
         let steps: Vec<_> = trimmed.split('|').collect();
         let mut trimmed_steps = Vec::<String>::new();
         for mut step in steps {
+            // Ignore empty steps
             step = step.trim();
             if step.is_empty() {
                 continue;
             }
-            // Conflate contiguous whitespace, then turn ': ' into ':'
-            let elements: Vec<_> = step.split_whitespace().collect();
-            let joined = elements.join(" ").replace(": ", ":");
-            trimmed_steps.push(joined);
+            // Normalize flags and repeated args
+            let normalized = GysArgs::normalize_step(step);
+            trimmed_steps.push(normalized);
         }
+
         GysResource {
             id,
             doc: docstring,
@@ -90,7 +91,7 @@ impl GysResource {
                 "Attempt to extract undefined step from GysResource",
             ));
         }
-        Ok(GysArgs::new(&self.globals, &self.steps[0]))
+        Ok(GysArgs::new(&self.globals, &self.steps[step]))
     }
 } // impl GysResource
 
@@ -105,7 +106,7 @@ pub struct GysArgs {
 impl GysArgs {
     pub fn new(globals: &[(String, String)], step: &str) -> GysArgs {
         let globals = Vec::from(globals);
-        let locals = GysArgs::step_to_local_args(step);
+        let locals = GysArgs::step_to_args(step);
         let mut used = Vec::<(String, String)>::new();
         for name in &locals {
             if name.0 == "name" {
@@ -119,18 +120,12 @@ impl GysArgs {
         }
     }
 
-    pub fn new_symmetric(globals: &[(String, String)], locals: &[(String, String)]) -> GysArgs {
-        let globals = Vec::from(globals);
-        let locals = Vec::from(locals);
-        let used = Vec::<(String, String)>::new();
-        GysArgs {
-            globals,
-            locals,
-            used,
-        }
-    }
+    fn step_to_args(step: &str) -> Vec<(String, String)> {
+        // Conflate contiguous whitespace, then turn ': ' into ':'
+        let step = step.trim().to_string();
+        let elements: Vec<_> = step.split_whitespace().collect();
+        let step = elements.join(" ").replace(": ", ":");
 
-    fn step_to_local_args(step: &str) -> Vec<(String, String)> {
         let mut args = Vec::<(String, String)>::new();
         let elements: Vec<_> = step.split_whitespace().collect();
         for element in elements {
@@ -143,10 +138,53 @@ impl GysArgs {
                 args.push((String::from("name"), String::from(parts[0])));
                 continue;
             }
+
+            // In case of repeated args, only retain the last one specified
+            if let Some(index) = args.iter().position(|x| x.0 == parts[0]) {
+                args.remove(index);
+            }
+
+            // Flag normalization 1: Leave out flags explicitly set to false
+            if parts[1].to_lowercase() == "false" {
+                continue;
+            }
+
+            // Flag normalization 2: Remove explicit "true" values from flags
+            if parts[1].to_lowercase() == "true" {
+                parts[1] = "";
+            }
+
             args.push((String::from(parts[0]), String::from(parts[1])));
         }
 
         args
+    }
+
+    // Opposite of step_to_args
+    fn args_to_step(args: &[(String, String)]) -> String {
+        let mut joined = String::new();
+        for element in args {
+            if element.0.is_empty() {
+                continue;
+            }
+            joined += &element.0;
+            if element.1.is_empty() {
+                joined += " ";
+                continue;
+            }
+            joined += ":";
+            joined += &element.1;
+            joined += " ";
+        }
+        joined.trim().to_string()
+    }
+
+    fn normalize_step(step: &str) -> String {
+        // Normalize flags and repeated args
+        let normal = GysArgs::step_to_args(step);
+        // Re-join the normalized elements
+        let joined = GysArgs::args_to_step(&normal);
+        joined.trim().to_string()
     }
 
     pub fn value(&mut self, key: &str) -> Result<Option<String>, GeodesyError> {
@@ -269,23 +307,14 @@ mod gys_tests {
             (String::from("f"), String::from("f_def")),
         ];
 
-        let locals: [(String, String); 7] = [
-            (String::from("a"), String::from("   ^b  ")),
-            (String::from("b"), String::from("2_b_def")),
-            (String::from("c"), String::from("*2")),
-            (String::from("d"), String::from("^2")),
-            (String::from("e"), String::from("    2  ")),
-            (String::from("f"), String::from("^a")),
-            (String::from("g"), String::from("*default")),
-        ];
-
-        let mut arg = GysArgs::new_symmetric(&globals, &locals);
+        let step = String::from("foo a:    ^b  b:2_b_def c:*2 d:^2 e:    2   f:^a g:*default");
+        let mut arg = GysArgs::new(&globals, &step);
 
         // Check plain lookup functionality
-        let f = arg.value("  f  ")?;
+        let f = arg.value("f")?;
         assert_eq!(f.unwrap(), globals[1].1);
 
-        let e = arg.value("  e  ")?;
+        let e = arg.value("e")?;
         assert_eq!(e.unwrap(), "2");
 
         // Check default value lookups
@@ -311,9 +340,9 @@ mod gys_tests {
             panic!("Unexpected error variant");
         }
 
-        // step_to_local_args - check the 'name'-magic
+        // step_to_args - check the 'name'-magic
         let step = "a b:c d:e f g:h";
-        let args = GysArgs::step_to_local_args(step);
+        let args = GysArgs::step_to_args(step);
         assert_eq!(args.len(), 5);
         assert_eq!(args[0].0, "name");
         assert_eq!(args[0].1, "a");
@@ -333,6 +362,11 @@ mod gys_tests {
         assert_eq!(arg.flag("33"), true);
 
         assert_eq!(arg.flag("true"), false);
+
+        let mut arg = GysArgs::new(&globals, "a b:c b:d inv:true inv inv:false");
+        assert_eq!(arg.locals.len(), 2);
+        assert_eq!(arg.string("b", ""), "d");
+        assert_eq!(arg.flag("inv"), false);
 
         Ok(())
     }

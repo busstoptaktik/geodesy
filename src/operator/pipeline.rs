@@ -63,13 +63,44 @@ impl Pipeline {
                 continue;
             }
 
-            // A macro? - args are now globals!
+            // A macro?
             if let Ok(mac) = rp.gys_definition("macros", nextname) {
-                for arg in &args.locals {
-                    let a = arg.clone();
-                    args.globals.push(a);
+                // Is the macro itself inverted? (i.e. is a top level "inv" flag present)
+                let inverted_macro = args
+                    .locals
+                    .iter()
+                    .find(|&x| x.0 == "inv" && x.1.to_lowercase() != "false")
+                    .is_some();
+
+                // move the macro arguments into globals, so they will be picked up by the macro steps
+                let mut globalocals: Vec<_> = args
+                    .locals
+                    .iter()
+                    .filter(|x| x.0 != "inv" && x.0 != "name")
+                    .cloned()
+                    .collect();
+                args.globals.append(&mut globalocals);
+                args.globals
+                    .push((String::from("name"), String::from(nextname)));
+
+                let mut nextargs = GysResource::new(&mac, &args.globals);
+                nextargs.id = String::from(nextname);
+
+                // If there is just one step, it will be returned from the upcomming call to
+                // Pipeline::new(...) "as is" and not as a pipeline, so if the step is defined
+                // as inverted, we must reinstate the previously redacted "inv" argument.
+                // However, if the step itself includes an inv flag, we must instead remove that.
+                if nextargs.steps.len() == 1 && inverted_macro {
+                    let mut definition = nextargs.steps[0].clone();
+                    definition += " ";
+                    if definition.contains(" inv ") {
+                        definition = definition.replace(" inv ", " ");
+                        nextargs.steps[0] = definition.trim().to_string();
+                    } else {
+                        nextargs.steps[0] += " inv";
+                    }
                 }
-                let nextargs = GysResource::new(&mac, &args.globals);
+
                 let next = Pipeline::new(&nextargs, rp, recursion_level + 1)?;
                 if n == 1 {
                     return Ok(next);

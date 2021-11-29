@@ -8,10 +8,11 @@
 use geodesy::CoordinateTuple as C;
 
 // Let Anyhow and GeodesyError play together for convenient error handling
-use anyhow::Result;
-use geodesy::GeodesyError as Error;
-fn main() -> Result<(), Error> {
-    let mut ctx = geodesy::Context::new();
+use anyhow::Context;
+use geodesy::Provider;
+
+fn main() -> anyhow::Result<()> {
+    let mut ctx = geodesy::Plain::new(geodesy::SearchLevel::LocalPatches, false);
 
     // Same test coordinates as in example 00.
     let cph = C::gis(12., 55., 0., 0.); // Copenhagen
@@ -27,29 +28,26 @@ fn main() -> Result<(), Error> {
     // Since this cartesian|helmert|geodetic triplet is quite useful in
     // its own right, then why not create a macro, making it immediately
     // available under the name `geohelmert`?
-    let geohelmert_macro_text = "pipeline: {
-            steps: [
-                cart: {ellps: ^left},
-                helmert: {x: ^x, y: ^y, z: ^z},
-                cart: {inv: true, ellps: ^right}
-            ]
-        }";
+    let geohelmert_macro_text = "cart ellps:^left | helmert | cart inv ellps:^right";
     // Note the 'hats' (^). The hat points upward, and is known as
     // "the look up operator". Within a macro, it looks up and
     // captures values set in the calling environment, as will become
     // clear in a moment...
 
-    // First we need to register our macro in the context element
-    if !ctx.register_macro("geohelmert", geohelmert_macro_text) {
-        return Err(Error::General(
-            "Awful error: Couldn't register macro 'geohelmert'",
-        ));
-    };
+    // First we need to register our macro in the resource provider ("context")
+    ctx.register_macro("geohelmert", geohelmert_macro_text)
+        .context("Macro registration failed")?;
+    // if !ctx.register_macro("geohelmert", geohelmert_macro_text) {
+    //         return Err(Error::General(
+    //         "Awful error: Couldn't register macro 'geohelmert'",
+    //     ));
+    // };
 
     // Now let's see whether it works - instantiate the macro, using the same
     // parameters as used in example 00.
-    let ed50_wgs84 =
-        ctx.operation("geohelmert: {left: intl, right: GRS80, x: -87, y: -96, z: -120}")?;
+    let ed50_wgs84 = ctx
+        .operation("geohelmert left:intl right:GRS80 x:-87 y:-96 z:-120")
+        .context("Macro not found")?;
     // ... and do the same transformation as in example 00
     ctx.inv(ed50_wgs84, &mut data);
 

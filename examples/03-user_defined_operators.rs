@@ -10,8 +10,8 @@
 // OperatorArgs, and its core trait, OperatorCore. Since they are
 // mostly for library-internal use, they are wrapped up in the dedicated
 // module `operator_construction`.
-use geodesy::{operator_construction::*, GeodesyError};
-use geodesy::{Context, CoordinateTuple};
+use geodesy::GeodesyError;
+use geodesy::{CoordinateTuple, Provider};
 
 // The functionality of the operator is straightforward: It simply
 // adds 42 to the first element of any coordinate tuple thrown at it.

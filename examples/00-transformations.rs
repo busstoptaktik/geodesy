@@ -6,11 +6,12 @@
 
 // The CoordinateTuple type is much used, so we give it a very short alias
 use geodesy::CoordinateTuple as C;
+use geodesy::Provider;
 
 // Use Anyhow for convenient error handling
 fn main() -> anyhow::Result<()> {
     // The context is the entry point to all transformation functionality:
-    let mut ctx = geodesy::Context::new();
+    let mut ctx = geodesy::Plain::default();
     // The concept of a "context data structure" will be well known to
     // PROJ users, where the context plays a somewhat free-flowing role,
     // and only becomes truly visible in multithreaded cases.
