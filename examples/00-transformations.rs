@@ -31,7 +31,7 @@ fn main() -> anyhow::Result<()> {
     // `gis` and `geo` have a sibling `raw` which generates coordinate tuples
     // from raw numbers, in case your point coordinates are already given in
     // radians. But since a coordinate tuple is really just an array of 4
-    // double precision numbers, you can also generate it directly using plain
+    // double precision numbers, you may also generate it directly using plain
     // Rust syntax:
     let cph_raw = C([12_f64.to_radians(), 55_f64.to_radians(), 0., 0.0]);
 
@@ -48,7 +48,7 @@ fn main() -> anyhow::Result<()> {
     // geographical coordinates into UTM zone 32 coordinates. Since
     // this may go wrong (e.g. due to syntax errors in the operator
     // definition), use the Rust `?`-operator to handle errors.
-    let utm32 = ctx.operation("utm: {zone: 32}")?;
+    let utm32 = ctx.operation("utm zone: 32")?;
     // Now, let's use the utm32-operator to transform some data
     ctx.fwd(utm32, &mut data);
 
@@ -70,7 +70,7 @@ fn main() -> anyhow::Result<()> {
 
     // Here's an example of handling bad syntax:
     println!("Bad syntax example:");
-    let op = ctx.operation("aargh: {zone: 23}");
+    let op = ctx.operation("aargh zone: 23");
     if op.is_err() {
         println!("Deliberate error - {:?}", op);
     }
@@ -87,14 +87,7 @@ fn main() -> anyhow::Result<()> {
     // pre- and post-processing steps, taking us from geographical
     // coordinates to cartesian, and back. Hence, we need a pipeline
     // of 3 steps:
-    let pipeline = "ed50_wgs84: {
-        steps: [
-            cart: {ellps: intl},
-            helmert: {x: -87, y: -96, z: -120},
-            cart: {inv: true, ellps: GRS80}
-        ]
-    }";
-
+    let pipeline = "cart ellps: intl | helmert x: -87 y: -96 z: -120 | cart inv: true ellps: GRS80";
     let ed50_wgs84 = ctx.operation(pipeline)?;
 
     // Since the forward transformation goes *from* ed50 to wgs84, we use

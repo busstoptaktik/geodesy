@@ -26,12 +26,15 @@
 // Also note that since the return-bearing depends on the destination,
 // this operator is **not** directly invertible (although an iterative
 // solution is feasible)
-
-use geodesy::{operator_construction::*, GeodesyError};
-use geodesy::{Context, CoordinateTuple, Ellipsoid};
+use geodesy::Ellipsoid;
+use geodesy::GeodesyError;
+use geodesy::GysResource;
+use geodesy::Operator;
+use geodesy::OperatorCore;
+use geodesy::{CoordinateTuple, Provider};
 
 pub struct GeodesicShift {
-    args: GysResource,
+    args: Vec<(String, String)>,
     inverted: bool,
 
     ellps: Ellipsoid,
@@ -41,17 +44,18 @@ pub struct GeodesicShift {
 }
 
 impl GeodesicShift {
-    fn new(args: &mut GysResource) -> Result<GeodesicShift, GeodesyError> {
-        let ellps = Ellipsoid::named(&args.value("ellps", "GRS80"))?;
+    fn new(res: &GysResource) -> Result<GeodesicShift, GeodesyError> {
+        let mut args = res.to_args(0)?;
+        let ellps = Ellipsoid::named(&args.string("ellps", "GRS80"))?;
         let inverted = args.flag("inv");
 
         // Coordinate of the origin
-        let lat_0 = args.numeric_value("lat_0", std::f64::NAN)?;
-        let lon_0 = args.numeric_value("lon_0", std::f64::NAN)?;
+        let lat_0 = args.numeric("lat_0", std::f64::NAN)?;
+        let lon_0 = args.numeric("lon_0", std::f64::NAN)?;
 
         // Coordinate of the target
-        let lat_1 = args.numeric_value("lat_1", std::f64::NAN)?;
-        let lon_1 = args.numeric_value("lon_1", std::f64::NAN)?;
+        let lat_1 = args.numeric("lat_1", std::f64::NAN)?;
+        let lon_1 = args.numeric("lon_1", std::f64::NAN)?;
 
         if [lat_0, lon_0, lat_1, lon_1].iter().any(|&f| f.is_nan()) {
             return Err(GeodesyError::General(
@@ -68,7 +72,7 @@ impl GeodesicShift {
         let distance = d[2];
 
         Ok(GeodesicShift {
-            args: args.clone(),
+            args: args.used,
             ellps,
             inverted,
             bearing,
@@ -78,14 +82,14 @@ impl GeodesicShift {
 
     // This is the interface to the Rust Geodesy library: Construct a
     // GeodesicShift element, and wrap it properly for consumption.
-    pub fn operator(args: &mut GysResource) -> Result<Operator, GeodesyError> {
+    pub fn operator(args: &GysResource, _rp: &dyn Provider) -> Result<Operator, GeodesyError> {
         let op = GeodesicShift::new(args)?;
         Ok(Operator(Box::new(op)))
     }
 }
 
 impl OperatorCore for GeodesicShift {
-    fn fwd(&self, _ctx: &Context, operands: &mut [CoordinateTuple]) -> bool {
+    fn fwd(&self, _ctx: &dyn Provider, operands: &mut [CoordinateTuple]) -> bool {
         for coord in operands {
             let res = self.ellps.geodesic_fwd(&coord, self.bearing, self.distance);
             coord[0] = res[0];
@@ -110,23 +114,17 @@ impl OperatorCore for GeodesicShift {
         self.inverted
     }
 
-    fn args(&self, _step: usize) -> &GysResource {
+    fn args(&self, _step: usize) -> &[(String, String)] {
         &self.args
     }
 }
 
-fn main() {
-    let mut ctx = geodesy::Context::new();
-    ctx.register_operator("geodesic_shift", GeodesicShift::operator);
-    let op = "geodesic_shift: {lat_0: 55, lon_0: 12, lat_1: 48, lon_1: 16.}";
+fn main() -> anyhow::Result<()> {
+    let mut ctx = geodesy::Plain::new(geodesy::SearchLevel::LocalPatches, false);
+    ctx.register_operator("geodesic_shift", GeodesicShift::operator)?;
+    let op = "geodesic_shift lat_0: 55 lon_0: 12 lat_1: 48 lon_1: 16";
 
-    let cph_to_vie = match ctx.operation(op) {
-        Ok(value) => value,
-        _ => {
-            println!("Awful!");
-            return;
-        }
-    };
+    let cph_to_vie = ctx.operation(op)?;
 
     // Same test coordinates as in example 00, but no conversion to radians.
     let cph = CoordinateTuple::geo(55., 12., 0., 0.); // Copenhagen
@@ -147,4 +145,5 @@ fn main() {
 
     // And assert there is no way back...
     assert_eq!(false, ctx.inv(cph_to_vie, &mut data));
+    Ok(())
 }

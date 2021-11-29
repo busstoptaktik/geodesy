@@ -74,8 +74,9 @@ impl Operator {
     /// ```rust
     /// // EPSG:1134 - 3 parameter Helmert, ED50/WGS84
     /// # use std::error::Error; fn foo() -> Result<(), Box<dyn Error>> {
-    /// let mut ctx = geodesy::Context::new();
-    /// let op = ctx.operation("helmert: {x: -87, y: -96, z: -120}")?;
+    /// let mut ctx = geodesy::Plain::default();
+    /// use geodesy::Provider;
+    /// let op = ctx.operation("helmert x: -87 y: -96 z: -120")?;
     /// let mut operands = [geodesy::CoordinateTuple::geo(55., 12.,0.,0.)];
     /// ctx.fwd(op, &mut operands);
     /// ctx.inv(op, &mut operands);

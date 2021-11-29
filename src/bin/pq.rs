@@ -1,14 +1,10 @@
 /*! Plonketi Plonk! !*/
 //! How to append a postscript to the help message generated.
-use anyhow::{Context, Result};
-use geodesy::resource::plain::PlainResourceProvider;
 use geodesy::resource::SearchLevel;
+use geodesy::Provider;
 use log::{debug, trace};
-use std::{collections::HashMap, path::PathBuf};
+use std::path::PathBuf;
 use structopt::StructOpt;
-
-use geodesy::CoordinateTuple;
-use geodesy::GeodesyError;
 
 /// PQ: The Rust Geodesy blablabla program is called pq in order to have
 /// an alphabetically continuous source code file name "PQ.RS".
@@ -50,7 +46,7 @@ struct Opt {
     #[structopt(name = "FILE", parse(from_os_str))]
     files: Vec<PathBuf>,
 }
-fn main() -> Result<()> {
+fn main() -> anyhow::Result<()> {
     // Filter by setting RUST_LOG to one of {Error, Warn, Info, Debug, Trace}
     if std::env::var("RUST_LOG").is_err() {
         simple_logger::init_with_level(log::Level::Error)?;
@@ -65,7 +61,7 @@ fn main() -> Result<()> {
 
     // use std::env;
     use geodesy::CoordinateTuple as C;
-    let mut ctx = geodesy::Context::new();
+    let mut ctx = geodesy::Plain::new(SearchLevel::LocalPatches, false);
     trace!("trace message 2");
     debug!("debug message 2");
 
@@ -75,35 +71,10 @@ fn main() -> Result<()> {
     }
     dbg!(a);
 
-    // use geodesy::{PlainResourceProvider, ResourceProviderSearchLevel};
-    let rp = PlainResourceProvider::new(SearchLevel::LocalPatches, false);
+    let rp = geodesy::Plain::new(SearchLevel::LocalPatches, false);
     rp.expand_experiment("jeg kan | hoppe sagde | lille Yrsa: Hansen");
 
-    have_a_ball();
-
-    let first_list: [(String, String); 6] = [
-        (String::from("a"), String::from("a def")),
-        (String::from("b"), String::from("b def")),
-        (String::from("c"), String::from("c def")),
-        (String::from("d"), String::from("d def")),
-        (String::from("e"), String::from("e def")),
-        (String::from("f"), String::from("f def")),
-    ];
-
-    let second_list: [(String, String); 6] = [
-        (String::from("a"), String::from("   ^b  ")),
-        (String::from("b"), String::from("2 b def")),
-        (String::from("c"), String::from("2 c def")),
-        (String::from("d"), String::from("2 d def")),
-        (String::from("e"), String::from("    2 e def   ")),
-        (String::from("f"), String::from("^a")),
-    ];
-
-    let f = value_of_key("  f  ", &first_list, &second_list)?;
-    assert_eq!(f, first_list[1].1);
-
-    let e = value_of_key("  e  ", &first_list, &second_list)?;
-    assert_eq!(e, "2 e def");
+    // have_a_ball();
 
     if opt.debug {
         if let Some(dir) = dirs::data_local_dir() {
@@ -113,123 +84,20 @@ fn main() -> Result<()> {
 
     let _oo = ctx.operation(&opt.operation)?;
 
-    // A pipeline in YAML
-    let pipeline = "none: {
-        steps: [
-            adapt: {from: neut_deg},
-            cart: {ellps: intl},
-            helmert: {x: -87, y: -96, z: -120},
-            cart: {inv: true, ellps: GRS80},
-            adapt: {to: neut_deg}
-        ]
-    }";
-
-    // The same pipeline in Geodetic YAML Shorthand (GYS)
-    let gys = "geo | cart ellps:intl | helmert x:-87 y:-96 z:-120 | cart inv ellps:GRS80 | geo inv";
-
-    let op_gys = ctx.operation(gys)?;
-    println!("HER KOMMER DEN");
-    dbg!(ctx.op(op_gys));
-    let op_yaml = ctx.operation(pipeline)?;
+    // A pipeline in Geodetic YAML Shorthand (GYS)
+    let _gys =
+        "geo | cart ellps:intl | helmert x:-87 y:-96 z:-120 | cart inv ellps:GRS80 | geo inv";
 
     let copenhagen = C::raw(55., 12., 0., 0.);
     let stockholm = C::raw(59., 18., 0., 0.);
-    let mut yaml_data = [copenhagen, stockholm];
-    let mut gys_data = [copenhagen, stockholm];
-    for coord in yaml_data {
+    let mut _gys_data = [copenhagen, stockholm];
+    for coord in _gys_data {
         println!("    {:?}", coord);
-    }
-    for coord in gys_data {
-        println!("    {:?}", coord);
-    }
-
-    ctx.operate(op_yaml, &mut yaml_data, FWD);
-    ctx.operate(op_gys, &mut gys_data, FWD);
-
-    assert!(yaml_data[0].hypot3(&gys_data[0]) < 1e-16);
-    assert!(yaml_data[1].hypot3(&gys_data[1]) < 1e-16);
-
-    if false {
-        if let Ok(utm32) = ctx.operation("utm: {zone: 32}") {
-            let copenhagen = C::geo(55., 12., 0., 0.);
-            let stockholm = C::geo(59., 18., 0., 0.);
-            let mut data = [copenhagen, stockholm];
-
-            ctx.fwd(utm32, &mut data);
-            println!("{:?}", data);
-        }
-
-        let coo = C([1., 2., 3., 4.]);
-        println!("coo: {:?}", coo);
-
-        let geo = C::geo(55., 12., 0., 0.);
-        let gis = C::gis(12., 55., 0., 0.);
-        assert_eq!(geo, gis);
-        println!("geo: {:?}", geo.to_geo());
-
-        // Some Nordic/Baltic capitals
-        let nuk = C::gis(-52., 64., 0., 0.); // Nuuk
-        let tor = C::gis(-7., 62., 0., 0.); // Tórshavn
-        let cph = C::gis(12., 55., 0., 0.); // Copenhagen
-        let osl = C::gis(10., 60., 0., 0.); // Oslo
-        let sth = C::gis(18., 59., 0., 0.); // Stockholm
-        let mar = C::gis(20., 60., 0., 0.); // Mariehamn
-        let hel = C::gis(25., 60., 0., 0.); // Helsinki
-        let tal = C::gis(25., 59., 0., 0.); // Tallinn
-        let rga = C::gis(24., 57., 0., 0.); // Riga
-        let vil = C::gis(25., 55., 0., 0.); // Vilnius
-
-        // Gothenburg is not a capital, but it is strategically placed
-        // approximately equidistant from OSL, CPH and STH, so it
-        // deserves special treatment by getting its coordinate
-        // from direct inline construction, which is perfectly
-        // possible: A coordinate is just an array of four double
-        // precision floats
-        let got = C::geo(58., 12., 0., 0.0);
-
-        let mut data_all = [nuk, tor, osl, cph, sth, mar, hel, tal, rga, vil];
-        let mut data_utm32 = [osl, cph, got];
-
-        // We loop over the full dataset, and add some arbitrary time information
-        for (i, dimser) in data_all.iter_mut().enumerate() {
-            dimser[3] = i as f64;
-        }
-
-        let utm32 = ctx
-            .operation("utm: {zone: 32}")
-            .context("Awful UTM error")?;
-
-        ctx.fwd(utm32, &mut data_utm32);
-        println!("utm32:");
-        for coord in data_utm32 {
-            println!("    {:?}", coord);
-        }
-
-        // Try to read predefined transformation from zip archive
-        let pladder = ctx.operation("ed50_etrs89").context("Awful ED50 error")?;
-        ctx.fwd(pladder, &mut data_all);
-        println!("etrs89:");
-        for coord in data_all {
-            println!("    {:?}", coord.to_geo());
-        }
-
-        let pipeline = "ed50_etrs89: {
-        steps: [
-            cart: {ellps: intl},
-            helmert: {x: -87, y: -96, z: -120},
-            cart: {inv: true, ellps: GRS80}
-        ]
-    }";
-
-        let ed50_etrs89 = ctx.operation(pipeline).context("Awful repeated error")?;
-        ctx.inv(ed50_etrs89, &mut data_all);
-        println!("etrs89:");
-        for coord in data_all {
-            println!("    {:?}", coord.to_geo());
-        }
     }
     Ok(())
 }
+
+/* Ultrasmall geodetic transformation system experiment
 
 use log::error;
 use std::io;
@@ -529,6 +397,7 @@ fn value_of_key(
     }
 }
 
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -576,3 +445,4 @@ mod tests {
         Ok(())
     }
 }
+*/

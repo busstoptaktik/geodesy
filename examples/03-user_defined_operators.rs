@@ -11,6 +11,9 @@
 // mostly for library-internal use, they are wrapped up in the dedicated
 // module `operator_construction`.
 use geodesy::GeodesyError;
+use geodesy::GysResource;
+use geodesy::Operator;
+use geodesy::OperatorCore;
 use geodesy::{CoordinateTuple, Provider};
 
 // The functionality of the operator is straightforward: It simply
@@ -18,36 +21,37 @@ use geodesy::{CoordinateTuple, Provider};
 // It also implements the inverse operation, i.e. subtracting 42.
 
 pub struct Add42 {
-    args: GysResource,
+    args: Vec<(String, String)>,
     inverted: bool,
 }
 
 impl Add42 {
-    fn new(args: &mut GysResource) -> Result<Add42, GeodesyError> {
+    fn new(res: &GysResource) -> Result<Add42, GeodesyError> {
+        let mut args = res.to_args(0)?;
         let inverted = args.flag("inv");
         Ok(Add42 {
-            args: args.clone(),
+            args: args.used,
             inverted,
         })
     }
 
     // This is the interface to the Rust Geodesy library: Construct an Add42
     // element, and wrap it properly for consumption. It is 100% boilerplate.
-    pub fn operator(args: &mut GysResource) -> Result<Operator, GeodesyError> {
+    pub fn operator(args: &GysResource, _rp: &dyn Provider) -> Result<Operator, GeodesyError> {
         let op = Add42::new(args)?;
         Ok(Operator(Box::new(op)))
     }
 }
 
 impl OperatorCore for Add42 {
-    fn fwd(&self, _ctx: &Context, operands: &mut [CoordinateTuple]) -> bool {
+    fn fwd(&self, _ctx: &dyn Provider, operands: &mut [CoordinateTuple]) -> bool {
         for coord in operands {
             coord[0] += 42.;
         }
         true
     }
 
-    fn inv(&self, _ctx: &Context, operands: &mut [CoordinateTuple]) -> bool {
+    fn inv(&self, _ctx: &dyn Provider, operands: &mut [CoordinateTuple]) -> bool {
         for coord in operands {
             coord[0] -= 42.;
         }
@@ -62,22 +66,15 @@ impl OperatorCore for Add42 {
         self.inverted
     }
 
-    fn args(&self, _step: usize) -> &GysResource {
+    fn args(&self, _step: usize) -> &[(String, String)] {
         &self.args
     }
 }
 
-fn main() {
-    let mut ctx = geodesy::Context::new();
-    ctx.register_operator("add42", Add42::operator);
-
-    let add42 = match ctx.operation("add42: {}") {
-        Ok(value) => value,
-        _ => {
-            println!("Awful!");
-            return;
-        }
-    };
+fn main() -> anyhow::Result<()> {
+    let mut ctx = geodesy::Plain::new(geodesy::SearchLevel::LocalPatches, false);
+    ctx.register_operator("add42", Add42::operator)?;
+    let add42 = ctx.operation("add42")?;
 
     // Same test coordinates as in example 00, but no conversion to radians.
     let cph = CoordinateTuple::raw(12., 55., 0., 0.); // Copenhagen
@@ -104,4 +101,5 @@ fn main() {
     for coord in data {
         println!("    {:?}", coord);
     }
+    Ok(())
 }
