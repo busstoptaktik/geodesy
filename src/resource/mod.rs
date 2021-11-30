@@ -10,6 +10,7 @@ use crate::OperatorCore;
 use enum_iterator::IntoEnumIterator;
 use uuid::Uuid;
 pub mod gys;
+pub mod minimal;
 pub mod plain;
 
 #[derive(Debug, IntoEnumIterator, Clone, Copy, Eq, PartialEq, PartialOrd)]
@@ -202,10 +203,7 @@ pub trait Provider {
     }
 
     fn ellipsoid(&self, name: &str) -> Result<Ellipsoid, GeodesyError> {
-        if name == "GRS80" {
-            return Ok(Ellipsoid::default());
-        }
-        Err(GeodesyError::NotFound(String::from(name)))
+        Ellipsoid::named(name)
     }
 
     // fn grid_descriptor(&self, name: &str) -> Result<GridDescriptor, GeodesyError> {

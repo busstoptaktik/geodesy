@@ -1,22 +1,13 @@
-#![allow(dead_code)]
 use log::info;
+/// Plain resource provider. Support for user defined operators
+/// and macros using a text file library
+use std::collections::BTreeMap;
+use uuid::Uuid;
 
+use super::{GysResource, Provider, SearchLevel};
 use crate::CoordinateTuple;
 use crate::GeodesyError;
-use crate::GysResource;
-use crate::Operator;
-use crate::OperatorConstructor;
-use std::collections::BTreeMap;
-
-use super::Provider;
-use super::SearchLevel;
-use crate::operator::OperatorCore;
-
-//---------------------------------------------------------------------------------
-// Enter the land of the ResourceProviders
-//---------------------------------------------------------------------------------
-
-use uuid::Uuid;
+use crate::{Operator, OperatorConstructor, OperatorCore};
 
 pub struct PlainResourceProvider {
     searchlevel: SearchLevel,
@@ -30,7 +21,7 @@ pub struct PlainResourceProvider {
 
 impl Default for PlainResourceProvider {
     fn default() -> PlainResourceProvider {
-        PlainResourceProvider::new(SearchLevel::Builtins, true)
+        PlainResourceProvider::new(SearchLevel::LocalPatches, false)
     }
 }
 
@@ -156,9 +147,8 @@ impl Provider for PlainResourceProvider {
 #[cfg(test)]
 mod resourceprovidertests {
     use super::*;
-    use crate::GeodesyError;
     #[test]
-    fn gys() -> Result<(), GeodesyError> {
+    fn plain() -> Result<(), GeodesyError> {
         let rp = PlainResourceProvider::new(SearchLevel::LocalPatches, true);
         let foo = rp
             .get_gys_definition_from_level(SearchLevel::LocalPatches, "macros", "foo")

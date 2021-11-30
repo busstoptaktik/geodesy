@@ -18,26 +18,27 @@
 //!
 #![doc = include_str!("../README.md")]
 
-// Most details are hidden: No `pub mod`s below
+// Most details are hidden: Few `pub mod`s below
 mod bibliography;
-pub mod resource;
-
 mod coordinate;
 mod ellipsoid;
 mod internals;
 mod operator;
+pub mod resource;
 
-// But we add `pub`-ness to a few important `struct`s.
+// But we add `pub`-ness to some important `struct`s and traits.
 pub use coordinate::CoordinateTuple;
 pub use ellipsoid::Ellipsoid;
 pub use resource::gys::{GysArgs, GysResource};
-pub use resource::{plain::PlainResourceProvider as Plain, Provider, SearchLevel};
+pub use resource::minimal::MinimalResourceProvider as Minimal;
+pub use resource::plain::PlainResourceProvider as Plain;
+pub use resource::{Provider, SearchLevel};
 
 // The bibliography needs `pub`-ness in order to be able to build the docs.
 pub use bibliography::Bibliography;
 
-pub use operator::Operator;
-pub use operator::OperatorCore;
+// These need `pub`-ness in order to support user-defined operators
+pub use operator::{Operator, OperatorCore};
 pub type OperatorConstructor =
     fn(args: &GysResource, provider: &dyn Provider) -> Result<Operator, GeodesyError>;
 
@@ -46,6 +47,7 @@ pub const FWD: bool = true;
 /// Indicate that a two-way operator, function, or method, should run in the *inverse* direction.
 pub const INV: bool = false;
 
+/// And obviously the GeodesyError enum needs `pub`-ness
 use thiserror::Error;
 #[derive(Error, Debug)]
 pub enum GeodesyError {

@@ -92,6 +92,9 @@ impl Pipeline {
                 // However, if the step itself includes an inv flag, we must instead remove that.
                 if nextargs.steps.len() == 1 && inverted_macro {
                     let mut definition = nextargs.steps[0].clone();
+                    // Add a space to make an 'inv' at the end look like an 'inv' in the
+                    // interior: We need to search for ' inv ' rather than 'inv' as we do
+                    // not want to catch stuff like 'invalid', 'noninvariant', 'spinv' etc.
                     definition += " ";
                     if definition.contains(" inv ") {
                         definition = definition.replace(" inv ", " ");
