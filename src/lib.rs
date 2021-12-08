@@ -32,7 +32,7 @@ pub use ellipsoid::Ellipsoid;
 pub use resource::gys::{GysArgs, GysResource};
 pub use resource::minimal::MinimalResourceProvider as Minimal;
 pub use resource::plain::PlainResourceProvider as Plain;
-pub use resource::plain::SearchLevel as SearchLevel;
+pub use resource::plain::SearchLevel;
 pub use resource::Provider;
 
 // The bibliography needs `pub`-ness in order to be able to build the docs.

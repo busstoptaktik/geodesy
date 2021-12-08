@@ -74,7 +74,7 @@ impl OperatorCore for Add42 {
 fn main() -> anyhow::Result<()> {
     let mut ctx = geodesy::Plain::new(geodesy::SearchLevel::LocalPatches, false);
     ctx.register_operator("add42", Add42::operator)?;
-    let add42 = ctx.operation("add42")?;
+    let add42 = ctx.define_operation("add42")?;
 
     // Same test coordinates as in example 00, but no conversion to radians.
     let cph = CoordinateTuple::raw(12., 55., 0., 0.); // Copenhagen

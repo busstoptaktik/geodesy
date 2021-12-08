@@ -206,7 +206,7 @@ mod tests {
 
         let definition = "molodensky left_ellps: WGS84 right_ellps: intl
             dx: 84.87 dy: 96.49 dz: 116.95 abridged: false";
-        let op = ctx.operation(definition).unwrap();
+        let op = ctx.define_operation(definition).unwrap();
 
         // Test point (53.80939444444444, 2.12955, 73 m)
         let lat = C::dms_to_dd(53, 48, 33.82);
@@ -243,7 +243,7 @@ mod tests {
         // elevations are *much* worse, but still better-than-decimeter.
         let definition = "molodensky left_ellps: WGS84 right_ellps: intl
             dx: 84.87 dy: 96.49 dz: 116.95 abridged: true";
-        let op = ctx.operation(definition).unwrap();
+        let op = ctx.define_operation(definition).unwrap();
 
         let mut operands = [WGS84];
         ctx.fwd(op, &mut operands);

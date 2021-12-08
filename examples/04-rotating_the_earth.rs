@@ -124,7 +124,7 @@ fn main() -> anyhow::Result<()> {
     ctx.register_operator("geodesic_shift", GeodesicShift::operator)?;
     let op = "geodesic_shift lat_0: 55 lon_0: 12 lat_1: 48 lon_1: 16";
 
-    let cph_to_vie = ctx.operation(op)?;
+    let cph_to_vie = ctx.define_operation(op)?;
 
     // Same test coordinates as in example 00, but no conversion to radians.
     let cph = CoordinateTuple::geo(55., 12., 0., 0.); // Copenhagen

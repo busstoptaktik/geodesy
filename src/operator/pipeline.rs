@@ -64,7 +64,7 @@ impl Pipeline {
             }
 
             // A macro?
-            if let Ok(mac) = rp.gys_definition("macros", nextname) {
+            if let Ok(mac) = rp.get_resource_definition("macros", nextname) {
                 // Is the macro itself inverted? (i.e. is a top level "inv" flag present)
                 let inverted_macro = args
                     .locals

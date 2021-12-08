@@ -21,7 +21,7 @@ pub trait Provider {
         name: &str,
         globals: Vec<(String, String)>,
     ) -> Result<GysResource, GeodesyError> {
-        let definition = self.gys_definition(branch, name)?;
+        let definition = self.get_resource_definition(branch, name)?;
         Ok(GysResource::new(&definition, &globals))
     }
 
@@ -36,17 +36,23 @@ pub trait Provider {
     }
 
     #[allow(unused_variables)]
-    fn gys_definition(&self, branch: &str, name: &str) -> Result<String, GeodesyError> {
-        Err(GeodesyError::General("Definition lookup not supported by this provider"))
+    fn get_resource_definition(&self, branch: &str, name: &str) -> Result<String, GeodesyError> {
+        Err(GeodesyError::General(
+            "Definition lookup not supported by this provider",
+        ))
     }
 
+    fn apply_operation(
+        &self,
+        operation: Uuid,
+        operands: &mut [CoordinateTuple],
+        forward: bool,
+    ) -> bool;
 
-    fn operate(&self, operation: Uuid, operands: &mut [CoordinateTuple], forward: bool) -> bool;
-
-    fn operation(&mut self, definition: &str) -> Result<Uuid, GeodesyError>;
+    fn define_operation(&mut self, definition: &str) -> Result<Uuid, GeodesyError>;
 
     #[allow(unused_variables)]
-    fn operator(&mut self, id: Uuid) -> Result<&Operator, GeodesyError> {
+    fn get_operation(&mut self, id: Uuid) -> Result<&Operator, GeodesyError> {
         Err(GeodesyError::General("Operator extraction not supported"))
     }
 
@@ -66,12 +72,12 @@ pub trait Provider {
 
     /// Operate in forward direction.
     fn fwd(&self, operation: Uuid, operands: &mut [CoordinateTuple]) -> bool {
-        self.operate(operation, operands, true)
+        self.apply_operation(operation, operands, true)
     }
 
     /// Operate in inverse direction.
     fn inv(&self, operation: Uuid, operands: &mut [CoordinateTuple]) -> bool {
-        self.operate(operation, operands, false)
+        self.apply_operation(operation, operands, false)
     }
 
     fn ellipsoid(&self, name: &str) -> Result<Ellipsoid, GeodesyError> {
@@ -95,7 +101,7 @@ pub fn test(
     operands: &mut [CoordinateTuple],
     results: &mut [CoordinateTuple],
 ) -> bool {
-    let op = rp.operation(operation);
+    let op = rp.define_operation(operation);
     if op.is_err() {
         println!("{:?}", op);
         return false;
@@ -129,7 +135,7 @@ pub fn test(
         return false;
     }
 
-    if !rp.operator(op).unwrap().invertible() {
+    if !rp.get_operation(op).unwrap().invertible() {
         return true;
     }
 

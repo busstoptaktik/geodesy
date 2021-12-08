@@ -122,8 +122,8 @@ mod tests {
     #[test]
     fn nmea() -> Result<(), GeodesyError> {
         let mut ctx = crate::Plain::default();
-        let nmea = ctx.operation("nmea")?;
-        let aemn = ctx.operation("nmea inv")?;
+        let nmea = ctx.define_operation("nmea")?;
+        let aemn = ctx.define_operation("nmea inv")?;
 
         let coord_nmea = Coord::raw(5530.15, -1245.15, 0., 0.);
         let coord_internal = Coord::geo(55.5025, -12.7525, 0., 0.);
@@ -150,7 +150,7 @@ mod tests {
     #[test]
     fn dms() -> Result<(), GeodesyError> {
         let mut ctx = crate::Plain::default();
-        let dms = ctx.operation("nmeass")?;
+        let dms = ctx.define_operation("nmeass")?;
 
         let coord_dms = Coord::raw(553036., -124509., 0., 0.);
         let coord_internal = Coord::geo(55.51, -12.7525, 0., 0.);

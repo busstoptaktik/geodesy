@@ -324,14 +324,14 @@ mod tests {
         let mut ctx = crate::Plain::default();
 
         // EPSG:1134 - 3 parameter, ED50/WGS84, s = sqrt(27) m
-        let h = ctx.operation("helmert x:-87 y:-96 z:-120")?;
+        let h = ctx.define_operation("helmert x:-87 y:-96 z:-120")?;
         let mut operands = [CoordinateTuple::origin()];
-        ctx.operate(h, &mut operands, FWD);
+        ctx.apply_operation(h, &mut operands, FWD);
         assert_eq!(operands[0].first(), -87.);
         assert_eq!(operands[0].second(), -96.);
         assert_eq!(operands[0].third(), -120.);
 
-        ctx.operate(h, &mut operands, INV);
+        ctx.apply_operation(h, &mut operands, INV);
         assert_eq!(operands[0].first(), 0.);
         assert_eq!(operands[0].second(), 0.);
         assert_eq!(operands[0].third(), 0.);
@@ -347,7 +347,7 @@ mod tests {
             y: -0.01087  ry: -0.0327221
             z: -0.04019  rz: -0.0328979  s: -0.009994";
 
-        let op = ctx.operation(definition).unwrap();
+        let op = ctx.define_operation(definition).unwrap();
         let GDA94 = CoordinateTuple([-4052051.7643, 4212836.2017, -2545106.0245, 0.0]);
         let GDA2020 = CoordinateTuple([-4052052.7379, 4212835.9897, -2545104.5898, 0.0]);
 
@@ -369,7 +369,7 @@ mod tests {
             y: 0  ry: 0   dy: 0   dry: 0.00118346
             z: 0  rz: 0   dz: 0   drz: 0.00120716
             s: 0  ds: 0   t_epoch: 2020.0";
-        let op = ctx.operation(definition).unwrap();
+        let op = ctx.define_operation(definition).unwrap();
 
         let ITRF2014 = CoordinateTuple([-4052052.6588, 4212835.9938, -2545104.6946, 2018.0]);
         let GDA2020 = CoordinateTuple([-4052052.7373, 4212835.9835, -2545104.5867, 2020.0]);

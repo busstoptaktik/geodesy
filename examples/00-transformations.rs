@@ -48,7 +48,7 @@ fn main() -> anyhow::Result<()> {
     // geographical coordinates into UTM zone 32 coordinates. Since
     // this may go wrong (e.g. due to syntax errors in the operator
     // definition), use the Rust `?`-operator to handle errors.
-    let utm32 = ctx.operation("utm zone: 32")?;
+    let utm32 = ctx.define_operation("utm zone: 32")?;
     // Now, let's use the utm32-operator to transform some data
     ctx.fwd(utm32, &mut data);
 
@@ -70,7 +70,7 @@ fn main() -> anyhow::Result<()> {
 
     // Here's an example of handling bad syntax:
     println!("Bad syntax example:");
-    let op = ctx.operation("aargh zone: 23");
+    let op = ctx.define_operation("aargh zone: 23");
     if op.is_err() {
         println!("Deliberate error - {:?}", op);
     }
@@ -88,7 +88,7 @@ fn main() -> anyhow::Result<()> {
     // coordinates to cartesian, and back. Hence, we need a pipeline
     // of 3 steps:
     let pipeline = "cart ellps: intl | helmert x: -87 y: -96 z: -120 | cart inv: true ellps: GRS80";
-    let ed50_wgs84 = ctx.operation(pipeline)?;
+    let ed50_wgs84 = ctx.define_operation(pipeline)?;
 
     // Since the forward transformation goes *from* ed50 to wgs84, we use
     // the inverse method to take us the other way, back in time to ED50

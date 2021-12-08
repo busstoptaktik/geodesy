@@ -76,7 +76,7 @@ impl Operator {
     /// # use std::error::Error; fn foo() -> Result<(), Box<dyn Error>> {
     /// let mut ctx = geodesy::Plain::default();
     /// use geodesy::Provider;
-    /// let op = ctx.operation("helmert x: -87 y: -96 z: -120")?;
+    /// let op = ctx.define_operation("helmert x: -87 y: -96 z: -120")?;
     /// let mut operands = [geodesy::CoordinateTuple::geo(55., 12.,0.,0.)];
     /// ctx.fwd(op, &mut operands);
     /// ctx.inv(op, &mut operands);
@@ -387,7 +387,7 @@ mod tests {
         let mut ctx = crate::Plain::default();
         ctx.register_operator("nnoopp", Nnoopp::operator)?;
 
-        let op = ctx.operation("nnoopp");
+        let op = ctx.define_operation("nnoopp");
         dbg!(&op);
         let op = op.unwrap();
         let mut operands = [CoordinateTuple::raw(12., 55., 100., 0.)];

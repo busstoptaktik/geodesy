@@ -46,7 +46,7 @@ fn main() -> anyhow::Result<()> {
     // Now let's see whether it works - instantiate the macro, using the same
     // parameters as used in example 00.
     let ed50_wgs84 = ctx
-        .operation("geohelmert left:intl right:GRS80 x:-87 y:-96 z:-120")
+        .define_operation("geohelmert left:intl right:GRS80 x:-87 y:-96 z:-120")
         .context("Macro not found")?;
     // ... and do the same transformation as in example 00
     ctx.inv(ed50_wgs84, &mut data);

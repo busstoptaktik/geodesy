@@ -81,7 +81,7 @@ fn main() -> Result<(), anyhow::Error> {
         }
     }
 
-    let _oo = ctx.operation(&opt.operation)?;
+    let _oo = ctx.define_operation(&opt.operation)?;
 
     // A pipeline in Geodetic YAML Shorthand (GYS)
     let _gys =

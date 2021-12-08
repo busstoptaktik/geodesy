@@ -3,9 +3,9 @@ use log::info;
 use std::collections::BTreeMap;
 use uuid::Uuid;
 
-use crate::Provider;
 use crate::CoordinateTuple;
 use crate::GeodesyError;
+use crate::Provider;
 use crate::{Operator, OperatorCore};
 
 pub struct MinimalResourceProvider {
@@ -32,7 +32,12 @@ impl MinimalResourceProvider {
 }
 
 impl Provider for MinimalResourceProvider {
-    fn operate(&self, operation: Uuid, operands: &mut [CoordinateTuple], forward: bool) -> bool {
+    fn apply_operation(
+        &self,
+        operation: Uuid,
+        operands: &mut [CoordinateTuple],
+        forward: bool,
+    ) -> bool {
         if !self.operations.contains_key(&operation) {
             return false;
         }
@@ -40,7 +45,7 @@ impl Provider for MinimalResourceProvider {
         op.operate(self, operands, forward)
     }
 
-    fn operation(&mut self, definition: &str) -> Result<Uuid, GeodesyError> {
+    fn define_operation(&mut self, definition: &str) -> Result<Uuid, GeodesyError> {
         let op = Operator::new(definition, self)?;
         let id = Uuid::new_v4();
         let name = op.name();
@@ -49,7 +54,7 @@ impl Provider for MinimalResourceProvider {
         Ok(id)
     }
 
-    fn operator(&mut self, id: Uuid) -> Result<&Operator, GeodesyError> {
+    fn get_operation(&mut self, id: Uuid) -> Result<&Operator, GeodesyError> {
         if let Some(op) = self.operations.get(&id) {
             return Ok(op);
         }
@@ -67,10 +72,10 @@ mod resourceprovidertests {
     #[test]
     fn minimal() -> Result<(), GeodesyError> {
         let rp_patch = MinimalResourceProvider::new();
-        let foo = rp_patch.gys_definition("macros", "foo");
+        let foo = rp_patch.get_resource_definition("macros", "foo");
         assert!(foo.is_err());
         let rp_local = MinimalResourceProvider::new();
-        let foo = rp_local.gys_definition("macros", "foo");
+        let foo = rp_local.get_resource_definition("macros", "foo");
         assert!(foo.is_err());
 
         Ok(())

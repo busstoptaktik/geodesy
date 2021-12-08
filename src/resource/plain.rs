@@ -1,13 +1,13 @@
+use log::info;
 /// Plain resource provider. Support for user defined operators
 /// and macros using a text file library
 use std::collections::BTreeMap;
-use log::info;
 use uuid::Uuid;
 
 use super::GysResource;
-use crate::Provider;
 use crate::CoordinateTuple;
 use crate::GeodesyError;
+use crate::Provider;
 use crate::{Operator, OperatorConstructor, OperatorCore};
 
 use enum_iterator::IntoEnumIterator;
@@ -19,7 +19,6 @@ pub enum SearchLevel {
     Globals,
     Builtins,
 }
-
 
 pub struct PlainResourceProvider {
     searchlevel: SearchLevel,
@@ -184,7 +183,7 @@ impl Provider for PlainResourceProvider {
         self.user_defined_operators.get(name)
     }
 
-    fn gys_definition(&self, branch: &str, name: &str) -> Result<String, GeodesyError> {
+    fn get_resource_definition(&self, branch: &str, name: &str) -> Result<String, GeodesyError> {
         if branch == "macros" {
             if let Some(m) = self.get_user_defined_macro(name) {
                 return Ok(String::from(m));
@@ -211,11 +210,16 @@ impl Provider for PlainResourceProvider {
         if branch == "macros" && self.user_defined_macros.contains_key(name) {
             return Ok(GysResource::new(&self.user_defined_macros[name], &globals));
         }
-        let definition = self.gys_definition(branch, name)?;
+        let definition = self.get_resource_definition(branch, name)?;
         Ok(GysResource::new(&definition, &globals))
     }
 
-    fn operate(&self, operation: Uuid, operands: &mut [CoordinateTuple], forward: bool) -> bool {
+    fn apply_operation(
+        &self,
+        operation: Uuid,
+        operands: &mut [CoordinateTuple],
+        forward: bool,
+    ) -> bool {
         if !self.operations.contains_key(&operation) {
             println!("Lortelort - forkert nøgle!!!");
             return false;
@@ -224,7 +228,7 @@ impl Provider for PlainResourceProvider {
         op.operate(self, operands, forward)
     }
 
-    fn operation(&mut self, definition: &str) -> Result<Uuid, GeodesyError> {
+    fn define_operation(&mut self, definition: &str) -> Result<Uuid, GeodesyError> {
         let op = Operator::new(definition, self)?;
         let id = Uuid::new_v4();
         let name = op.name();
@@ -233,7 +237,7 @@ impl Provider for PlainResourceProvider {
         Ok(id)
     }
 
-    fn operator(&mut self, id: Uuid) -> Result<&Operator, GeodesyError> {
+    fn get_operation(&mut self, id: Uuid) -> Result<&Operator, GeodesyError> {
         if let Some(op) = self.operations.get(&id) {
             return Ok(op);
         }
@@ -263,12 +267,12 @@ impl Provider for PlainResourceProvider {
 
     /// Forward operation.
     fn fwd(&self, operation: Uuid, operands: &mut [CoordinateTuple]) -> bool {
-        self.operate(operation, operands, true)
+        self.apply_operation(operation, operands, true)
     }
 
     /// Inverse operation.
     fn inv(&self, operation: Uuid, operands: &mut [CoordinateTuple]) -> bool {
-        self.operate(operation, operands, false)
+        self.apply_operation(operation, operands, false)
     }
 }
 
@@ -294,10 +298,10 @@ mod resourceprovidertests {
         assert_eq!(foo.trim(), "baz");
 
         let rp_patch = PlainResourceProvider::new(SearchLevel::LocalPatches, false);
-        let foo = rp_patch.gys_definition("macros", "foo")?;
+        let foo = rp_patch.get_resource_definition("macros", "foo")?;
         assert_eq!(foo, "bar");
         let rp_local = PlainResourceProvider::new(SearchLevel::Locals, false);
-        let foo = rp_local.gys_definition("macros", "foo")?;
+        let foo = rp_local.get_resource_definition("macros", "foo")?;
         assert_eq!(foo, "baz");
 
         Ok(())

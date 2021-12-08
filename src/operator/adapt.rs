@@ -331,9 +331,9 @@ mod tests {
         use crate::CoordinateTuple;
         let mut ctx = crate::resource::plain::PlainResourceProvider::default();
 
-        let gonify = ctx.operation("adapt from:neut_deg   to:enut_gon")?;
+        let gonify = ctx.define_operation("adapt from:neut_deg   to:enut_gon")?;
         dbg!(gonify);
-        let op = ctx.operator(gonify)?;
+        let op = ctx.get_operation(gonify)?;
         dbg!(op);
         let mut operands = [
             CoordinateTuple::raw(90., 180., 0., 0.),

@@ -69,11 +69,11 @@ fn main() -> Result<(), anyhow::Error> {
     }
 
     let start = time::Instant::now();
-    let op = ctx.operation(&opt.operation)?;
+    let op = ctx.define_operation(&opt.operation)?;
     if opt.verbose > 2 {
         let duration = start.elapsed();
         println!("Created operation in: {:?}", duration);
-        println!("{:#?}", ctx.operator(op)?);
+        println!("{:#?}", ctx.get_operation(op)?);
     }
 
     let start = time::Instant::now();
