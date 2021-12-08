@@ -51,7 +51,7 @@ struct Opt {
     files: Vec<PathBuf>,
 }
 
-fn main() -> anyhow::Result<()> {
+fn main() -> Result<(), anyhow::Error> {
     let opt = Opt::from_args();
 
     let mut ctx = geodesy::Plain::new(geodesy::SearchLevel::LocalPatches, false);

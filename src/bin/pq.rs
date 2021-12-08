@@ -46,7 +46,7 @@ struct Opt {
     #[structopt(name = "FILE", parse(from_os_str))]
     files: Vec<PathBuf>,
 }
-fn main() -> anyhow::Result<()> {
+fn main() -> Result<(), anyhow::Error> {
     // Filter by setting RUST_LOG to one of {Error, Warn, Info, Debug, Trace}
     if std::env::var("RUST_LOG").is_err() {
         simple_logger::init_with_level(log::Level::Error)?;
