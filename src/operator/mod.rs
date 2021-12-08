@@ -209,7 +209,7 @@ mod tests {
 
     #[test]
     fn operator() -> Result<(), GeodesyError> {
-        use crate::resource::SearchLevel;
+        use crate::SearchLevel;
         use crate::{Operator, Plain};
         use crate::{FWD, INV};
         let mut o = Plain::new(SearchLevel::LocalPatches, false);

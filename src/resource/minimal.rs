@@ -3,7 +3,7 @@ use log::info;
 use std::collections::BTreeMap;
 use uuid::Uuid;
 
-use super::{Provider, SearchLevel};
+use crate::Provider;
 use crate::CoordinateTuple;
 use crate::GeodesyError;
 use crate::{Operator, OperatorCore};
@@ -32,19 +32,6 @@ impl MinimalResourceProvider {
 }
 
 impl Provider for MinimalResourceProvider {
-    fn searchlevel(&self) -> SearchLevel {
-        SearchLevel::Builtins
-    }
-
-    fn persistent_builtins(&self) -> bool {
-        true
-    }
-
-    #[allow(unused_variables)]
-    fn gys_definition(&self, branch: &str, name: &str) -> Result<String, GeodesyError> {
-        Err(GeodesyError::General("Not supported by Minimal provider"))
-    }
-
     fn operate(&self, operation: Uuid, operands: &mut [CoordinateTuple], forward: bool) -> bool {
         if !self.operations.contains_key(&operation) {
             return false;
@@ -79,18 +66,6 @@ mod resourceprovidertests {
     use super::*;
     #[test]
     fn minimal() -> Result<(), GeodesyError> {
-        let rp = MinimalResourceProvider::new();
-        let foo = rp
-            .get_gys_definition_from_level(SearchLevel::LocalPatches, "macros", "foo")
-            .unwrap();
-        assert_eq!(foo.trim(), "bar");
-
-        let rp = MinimalResourceProvider::new();
-        let foo = rp
-            .get_gys_definition_from_level(SearchLevel::Locals, "macros", "foo")
-            .unwrap();
-        assert_eq!(foo.trim(), "baz");
-
         let rp_patch = MinimalResourceProvider::new();
         let foo = rp_patch.gys_definition("macros", "foo");
         assert!(foo.is_err());

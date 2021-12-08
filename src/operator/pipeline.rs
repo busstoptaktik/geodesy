@@ -198,7 +198,7 @@ impl OperatorCore for Pipeline {
 #[cfg(test)]
 mod pipelinetests {
     use super::*;
-    use crate::resource::SearchLevel;
+    use crate::SearchLevel;
 
     #[test]
     fn gys() -> Result<(), GeodesyError> {

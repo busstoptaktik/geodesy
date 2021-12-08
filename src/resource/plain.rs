@@ -1,13 +1,25 @@
-use log::info;
 /// Plain resource provider. Support for user defined operators
 /// and macros using a text file library
 use std::collections::BTreeMap;
+use log::info;
 use uuid::Uuid;
 
-use super::{GysResource, Provider, SearchLevel};
+use super::GysResource;
+use crate::Provider;
 use crate::CoordinateTuple;
 use crate::GeodesyError;
 use crate::{Operator, OperatorConstructor, OperatorCore};
+
+use enum_iterator::IntoEnumIterator;
+#[derive(Debug, IntoEnumIterator, Clone, Copy, Eq, PartialEq, PartialOrd)]
+pub enum SearchLevel {
+    LocalPatches,
+    Locals,
+    GlobalPatches,
+    Globals,
+    Builtins,
+}
+
 
 pub struct PlainResourceProvider {
     searchlevel: SearchLevel,
@@ -47,13 +59,6 @@ impl PlainResourceProvider {
         }
     }
 
-    pub fn expand_experiment(&self, definition: &str) {
-        let first = GysResource::new(definition, &self.globals);
-        dbg!(first);
-    }
-}
-
-impl Provider for PlainResourceProvider {
     fn searchlevel(&self) -> SearchLevel {
         self.searchlevel
     }
@@ -62,12 +67,139 @@ impl Provider for PlainResourceProvider {
         self.persistent_builtins
     }
 
+    /// workhorse for gys_definition. Move to plain, since we don't actually want this part
+    /// to be user visible. Also, remove methods "searchlevel" and "persistent_builtins",
+    /// since they are related to a specific resource provider (Plain).
+    /// Then introduce the dynamically allocated grid accessor element. (TODO!)
+    pub(crate) fn get_gys_definition_from_level(
+        &self,
+        level: SearchLevel,
+        branch: &str,
+        name: &str,
+    ) -> Option<String> {
+        use std::io::BufRead;
+        let filename: std::path::PathBuf = match level {
+            SearchLevel::GlobalPatches => {
+                // $HOME/share/geodesy/branch/name.gys
+                let mut d = dirs::data_local_dir().unwrap_or_default();
+                d.push("geodesy");
+                d.push(branch);
+                d.push(format!("{}.gys", name));
+                d
+            }
+            SearchLevel::Globals => {
+                // $HOME/share/geodesy/branch/branch.gys
+                let mut d = dirs::data_local_dir().unwrap_or_default();
+                d.push("geodesy");
+                d.push(branch);
+                d.push(format!("{}.gys", branch));
+                d
+            }
+            SearchLevel::LocalPatches => {
+                // ./geodesy/branch/name.gys
+                let mut d = std::path::PathBuf::from(".");
+                d.push("geodesy");
+                d.push(branch);
+                d.push(format!("{}.gys", name));
+                d
+            }
+            SearchLevel::Locals => {
+                // ./geodesy/branch/branch.gys
+                let mut d = std::path::PathBuf::from(".");
+                d.push("geodesy");
+                d.push(branch);
+                d.push(format!("{}.gys", branch));
+                d
+            }
+            _ => return None,
+        };
+
+        let file = std::fs::File::open(filename);
+        if file.is_err() {
+            return None;
+        }
+        let mut file = file.unwrap();
+
+        // Patches
+        if level == SearchLevel::LocalPatches || level == SearchLevel::GlobalPatches {
+            use std::io::Read;
+            let mut definition = String::new();
+            if file.read_to_string(&mut definition).is_ok() {
+                return Some(definition);
+            }
+            return None;
+        }
+
+        // For non-patches, we search for the *last* occurence of a section with
+        // the name we want, since updates are *appended* to the existing file
+        let mut definition = String::new();
+        let target = format!("<{}>", name);
+        let mut skipping = true;
+
+        let lines = std::io::BufReader::new(file).lines();
+        for line in lines {
+            if line.is_err() {
+                continue;
+            }
+            let line = line.ok()?;
+            if skipping && line.trim() == target {
+                skipping = false;
+                definition.clear();
+                continue;
+            }
+            if skipping {
+                continue;
+            }
+            if line.trim().starts_with('<') {
+                if line.trim() != target {
+                    skipping = true;
+                    continue;
+                }
+                // Another instance of the same target
+                definition.clear();
+                continue;
+            }
+            definition += &line;
+            definition += "\n";
+        }
+
+        if definition.is_empty() {
+            return None;
+        }
+        Some(definition)
+    }
+
+    pub fn expand_experiment(&self, definition: &str) {
+        let first = GysResource::new(definition, &self.globals);
+        dbg!(first);
+    }
+}
+
+impl Provider for PlainResourceProvider {
     fn get_user_defined_macro(&self, name: &str) -> Option<&String> {
         self.user_defined_macros.get(name)
     }
 
     fn get_user_defined_operator(&self, name: &str) -> Option<&OperatorConstructor> {
         self.user_defined_operators.get(name)
+    }
+
+    fn gys_definition(&self, branch: &str, name: &str) -> Result<String, GeodesyError> {
+        if branch == "macros" {
+            if let Some(m) = self.get_user_defined_macro(name) {
+                return Ok(String::from(m));
+            }
+        }
+
+        for i in SearchLevel::into_enum_iter() {
+            if i < self.searchlevel() && i != SearchLevel::Builtins {
+                continue;
+            }
+            if let Some(definition) = Self::get_gys_definition_from_level(self, i, branch, name) {
+                return Ok(definition.trim().to_string());
+            }
+        }
+        Err(GeodesyError::NotFound(format!("{}({})", branch, name)))
     }
 
     fn gys_resource(
