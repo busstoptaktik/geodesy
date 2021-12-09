@@ -2,6 +2,7 @@ use log::info;
 /// Plain resource provider. Support for user defined operators
 /// and macros using a text file library
 use std::collections::BTreeMap;
+use std::fs::File;
 use uuid::Uuid;
 
 use super::GysResource;
@@ -23,7 +24,7 @@ pub enum SearchLevel {
 pub struct PlainResourceProvider {
     searchlevel: SearchLevel,
     persistent_builtins: bool,
-    // pile: memmap::Mmap
+    pile: memmap::Mmap,
     user_defined_operators: BTreeMap<String, OperatorConstructor>,
     user_defined_macros: BTreeMap<String, String>,
     operations: BTreeMap<Uuid, Operator>,
@@ -48,9 +49,23 @@ impl PlainResourceProvider {
             searchlevel, persistent_builtins
         );
 
+        let f = File::open("geodesy/pile/pile.bin").expect("Error: 'pile.bin' not found");
+        // Create the memory mapped buffer
+        let pile = unsafe { memmap::Mmap::map(&f).expect("Error mapping 'pile.bin'")};
+        dbg!(pile[0]);
+        dbg!(pile[1]);
+        dbg!(pile[2]);
+        dbg!(pile[3]);
+        dbg!(&pile);
+
+        let pop: &[f32] = unsafe { std::slice::from_raw_parts(pile.as_ptr() as *const f32, pile.len()/4) };
+        dbg!(pop[0]);
+        dbg!(pop[1]);
+
         PlainResourceProvider {
             searchlevel,
             persistent_builtins,
+            pile,
             user_defined_operators,
             user_defined_macros,
             operations,
@@ -276,13 +291,11 @@ impl Provider for PlainResourceProvider {
     }
 }
 
-// let f = File::open("numbers.bin").expect("Error: 'numbers.bin' not found");
-// Create the memory mapped buffer
-// let mmap = unsafe { memmap::Mmap::map(&f).expect("Error mapping 'numbers.bin'") };
 
 #[cfg(test)]
 mod resourceprovidertests {
     use super::*;
+    use crate::GysResource;
     #[test]
     fn plain() -> Result<(), GeodesyError> {
         let rp = PlainResourceProvider::new(SearchLevel::LocalPatches, true);
@@ -304,6 +317,36 @@ mod resourceprovidertests {
         let foo = rp_local.get_resource_definition("macros", "foo")?;
         assert_eq!(foo, "baz");
 
+        let pop = rp_local.get_resource_definition("pile", "geoid")?;
+        println!("POP: {}", pop);
+        let gys = GysResource::new(&pop, &[]);
+        println!("GYS: {:#?}", gys);
+        let mut args = gys.to_args(0)?;
+        println!("ARGS: {:?}", args);
+
+        let left = args.numeric("Left", f64::NAN)?;
+        let right = args.numeric("Right", f64::NAN)?;
+
+        let top = args.numeric("Top", f64::NAN)?;
+        let bottom = args.numeric("Bottom", f64::NAN)?;
+
+        let cols = args.numeric("Columns", f64::NAN)?;
+        let rows = args.numeric("Rows", f64::NAN)?;
+
+        assert!(cols > 1.);
+        assert!(rows > 1.);
+        println!("size: [{} x {}]", cols, rows);
+
+        // from first to last
+        println!("e interval: [{}; {}]", left, right);
+        println!("n interval: [{}; {}]", top, bottom);
+
+        // last minus first
+        let de = (right - left) / (cols - 1.);
+        let dn = (bottom - top) / (rows - 1.);
+        println!("step: [{} x {}]", de, dn);
+
+        assert!(1 == 0);
         Ok(())
     }
 }

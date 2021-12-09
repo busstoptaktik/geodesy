@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::fs::{File, OpenOptions};
 use std::io::{BufRead, Error, Read, Seek, SeekFrom, Write};
 use std::path::PathBuf;
@@ -32,6 +31,7 @@ fn main() -> Result<(), Error> {
 
     let mut default_dir = dirs::data_local_dir().unwrap_or_default();
     default_dir.push("geodesy");
+    default_dir.push("pile");
     eprintln!("Default directory: {}", default_dir.to_str().unwrap());
     let mut pile_path = default_dir.clone();
     if let Some(output) = &opt.output {
@@ -41,11 +41,11 @@ fn main() -> Result<(), Error> {
         eprintln!("pilepath: {}", pile_path.to_str().unwrap_or_default());
         eprintln!("default_dir: {}", default_dir.to_str().unwrap_or_default());
     } else {
-        pile_path.push("assets.pile");
+        pile_path.push("pile.bin");
     }
     eprintln!("pilepath: {}", pile_path.to_str().unwrap_or_default());
 
-    // Open `assets.pile` for writing/reading. create if non-existing
+    // Open `pile.bin` for writing/reading. create if non-existing
     // We cannot use `append` here, since that excludes later partial
     // truncation with `set_len()`, if we have written something, that
     // later shows to be mistakenly written)
@@ -60,11 +60,13 @@ fn main() -> Result<(), Error> {
     // directory containing the `assets.pile` file. Make sure it exists
     #[allow(clippy::redundant_clone)]
     let mut pile_dir = default_dir.clone();
-    pile_dir.push("assets");
-    pile_dir.push("proj-data");
+    pile_dir.push("geodesy");
+    pile_dir.push("pile");
     std::fs::create_dir_all(&pile_dir)?;
 
+    let mut basename;
     for path in &opt.files {
+        basename = path.file_stem().unwrap_or_default().to_str().unwrap_or_default();
         let pos = pile.stream_position()?;
         if "raw" != path.extension().unwrap_or_default() {
             eprintln!(
@@ -115,48 +117,43 @@ fn main() -> Result<(), Error> {
         let mut aux_out = File::create(aux_out_path)?;
 
         // First line of the new aux file defines the pile-offset of the grid
-        let line = format!("Offset: {}\n", pos);
+        let line = format!("<{}>\nOffset: {}\n", basename, pos);
         aux_out.write_all(line.as_bytes())?;
 
-        // The remaining lines are copied verbatim from the original
-        // and supplemented with Geometry and BBox elements
-        let mut bbox: HashMap<String, String> = HashMap::new();
+        // Geometry and geolocation data are restructured. Other information
+        // is copied verbatim to the output.
         for line in aux.lines() {
             let mut line = line.unwrap().clone();
-            let e: Vec<&str> = line.split_whitespace().collect();
+            let mut e: Vec<&str> = line.split_whitespace().collect();
             if e[0] == "Offset:" {
                 continue;
             }
 
             // bbox order: s, w, n, e
             if e[0] == "LoRightY:" {
-                bbox.insert("s".to_string(), e[1].to_string());
+                e[0] = "Bottom";
             }
             if e[0] == "UpLeftX:" {
-                bbox.insert("w".to_string(), e[1].to_string());
+                e[0] = "Left";
             }
             if e[0] == "UpLeftY:" {
-                bbox.insert("n".to_string(), e[1].to_string());
+                e[0] = "Top";
             }
             if e[0] == "LoRightX:" {
-                bbox.insert("e".to_string(), e[1].to_string());
+                e[0] = "Right";
             }
 
             // Make grid geometry easier to read than "RawDefinition: 601 401 1"
             if line.starts_with("RawDefinition:") {
                 assert!(e.len() == 4);
-                let geometry = format!("Geometry: [{}, {}, {}]\n", e[1], e[2], e[3]);
+                let geometry = format!("Columns: {}\nRows: {}\nChannels: {}\n", e[1], e[2], e[3]);
                 aux_out.write_all(geometry.as_bytes())?;
+                continue;
             }
+
             line += "\n";
             aux_out.write_all(line.as_bytes())?;
         }
-        assert!(bbox.len() == 4);
-        let bboxline = format!(
-            "BBox: [{}, {}, {}, {}]\n",
-            bbox["s"], bbox["w"], bbox["n"], bbox["e"]
-        );
-        aux_out.write_all(bboxline.as_bytes())?;
     }
 
     if opt.debug {

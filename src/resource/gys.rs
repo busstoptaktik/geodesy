@@ -287,6 +287,19 @@ impl GysArgs {
         }
         Ok(default)
     }
+
+    pub fn required_numeric(&mut self, key: &str) -> Result<f64, GeodesyError> {
+        return match self.numeric(key, f64::NAN) {
+            Err(result) => Err(result),
+            Ok(result) => {
+                if result.is_nan() {
+                    Err(GeodesyError::NotFound(key.to_string()))
+                } else {
+                    Ok(result)
+                }
+            }
+        };
+    }
 } // impl GysArgs
 
 // --------------------------------------------------------------------------------
