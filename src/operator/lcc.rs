@@ -235,7 +235,7 @@ mod tests {
             C::raw(115005.41456620067765471, 224484.5143763388914522, 0., 0.),
         ];
 
-        assert!(crate::resource::test(
+        assert!(crate::resource::roundtrip(
             &mut rp,
             op,
             0,
@@ -257,7 +257,7 @@ mod tests {
         let mut operands = [C::geo(40., 12., 0., 0.)];
         let mut results = [C::raw(169863.026093938359, 4735925.219292452559, 0., 0.)];
 
-        assert!(crate::resource::test(
+        assert!(crate::resource::roundtrip(
             &mut rp,
             op,
             0,
@@ -278,7 +278,7 @@ mod tests {
         // echo 12 40 0 0 | cct -d12 proj=lcc lat_1=39 lat_0=35 lon_0=10 -- | clip
         let mut operands = [C::geo(40., 12., 0., 0.)];
         let mut results = [C::raw(170800.011728740647, 557172.361112929415, 0., 0.)];
-        assert!(crate::resource::test(
+        assert!(crate::resource::roundtrip(
             &mut rp,
             op,
             0,
@@ -299,7 +299,7 @@ mod tests {
         // echo 12 40 0 0 | cct -d12 proj=lcc lat_1=33 lat_2=45 lat_0=35 lon_0=10 -- | clip
         let mut operands = [C::geo(40., 12., 0., 0.)];
         let mut results = [C::raw(169863.026093938359, 554155.440793916583, 0., 0.)];
-        assert!(crate::resource::test(
+        assert!(crate::resource::roundtrip(
             &mut rp,
             op,
             0,

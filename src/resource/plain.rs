@@ -37,6 +37,8 @@ impl Default for PlainResourceProvider {
     }
 }
 
+// use std::time::Instant;
+
 impl PlainResourceProvider {
     pub fn new(searchlevel: SearchLevel, persistent_builtins: bool) -> PlainResourceProvider {
         let user_defined_operators = BTreeMap::new();
@@ -49,16 +51,24 @@ impl PlainResourceProvider {
             searchlevel, persistent_builtins
         );
 
+        // Memory map the 'pile' of grid files.
+        // let start = Instant::now();
         let f = File::open("geodesy/pile/pile.bin").expect("Error: 'pile.bin' not found");
-        // Create the memory mapped buffer
         let pile = unsafe { memmap::Mmap::map(&f).expect("Error mapping 'pile.bin'")};
+        // let duration = start.elapsed();
+        // **350 us** println!("Time elapsed in file mapping is: {:?}", duration);
+
         dbg!(pile[0]);
         dbg!(pile[1]);
         dbg!(pile[2]);
         dbg!(pile[3]);
         dbg!(&pile);
 
+        // let start = Instant::now();
         let pop: &[f32] = unsafe { std::slice::from_raw_parts(pile.as_ptr() as *const f32, pile.len()/4) };
+        // let duration = start.elapsed();
+        // **500 ns** println!("Time elapsed in slice building is: {:?}", duration);
+
         dbg!(pop[0]);
         dbg!(pop[1]);
 
@@ -73,19 +83,16 @@ impl PlainResourceProvider {
         }
     }
 
-    fn searchlevel(&self) -> SearchLevel {
+    pub fn searchlevel(&self) -> SearchLevel {
         self.searchlevel
     }
 
-    fn persistent_builtins(&self) -> bool {
+    pub fn persistent_builtins(&self) -> bool {
         self.persistent_builtins
     }
 
-    /// workhorse for gys_definition. Move to plain, since we don't actually want this part
-    /// to be user visible. Also, remove methods "searchlevel" and "persistent_builtins",
-    /// since they are related to a specific resource provider (Plain).
-    /// Then introduce the dynamically allocated grid accessor element. (TODO!)
-    pub(crate) fn get_gys_definition_from_level(
+    // Workhorse for gys_definition
+    fn get_gys_definition_from_level(
         &self,
         level: SearchLevel,
         branch: &str,
@@ -346,7 +353,6 @@ mod resourceprovidertests {
         let dn = (bottom - top) / (rows - 1.);
         println!("step: [{} x {}]", de, dn);
 
-        assert!(1 == 0);
         Ok(())
     }
 }

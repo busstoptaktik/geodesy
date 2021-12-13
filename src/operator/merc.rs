@@ -138,7 +138,7 @@ mod tests {
             C::raw(-222638.981586547, -110579.965218249, 0., 0.),
         ];
 
-        assert!(crate::resource::test(
+        assert!(crate::resource::roundtrip(
             &mut rp,
             op,
             0,
@@ -171,7 +171,7 @@ mod tests {
             C::raw(959911.9394764832687, 3214262.9417223907076, 0., 0.),
         ];
 
-        assert!(crate::resource::test(
+        assert!(crate::resource::roundtrip(
             &mut rp,
             op,
             0,

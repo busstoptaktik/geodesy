@@ -202,26 +202,40 @@ mod pipelinetests {
 
     #[test]
     fn gys() -> Result<(), GeodesyError> {
-        let rp = crate::Plain::new(SearchLevel::LocalPatches, true);
-        let foo = rp
-            .get_gys_definition_from_level(SearchLevel::LocalPatches, "macros", "foo")
-            .unwrap();
-        assert_eq!(foo.trim(), "bar");
+
+        // First we test the pipelinebuilder with the `Plain` resource provider
+        let plain = crate::Plain::new(SearchLevel::LocalPatches, true);
 
         // This should be OK, since noop is a builtin
         let res = GysResource::from("noop pip");
-        let p = Pipeline::new(&res, &rp, 0);
+        let p = Pipeline::new(&res, &plain, 0);
         assert!(p.is_ok());
 
         // This should be OK, due to "ignore" resolving to noop
         let res = GysResource::from("ignore pip");
-        let p = Pipeline::new(&res, &rp, 0);
+        let p = Pipeline::new(&res, &plain, 0);
         assert!(p.is_ok());
 
         // This should fail, due to "baz" being undefined
         let res = GysResource::from("ignore pip|baz pop");
-        let p = Pipeline::new(&res, &rp, 0);
+        let p = Pipeline::new(&res, &plain, 0);
         assert!(p.is_err());
+
+        // ---------------------------------------------------------------------------
+
+        // Now do some of the same tests, using the `Minimal` resource provider
+        let minimal = crate::Minimal::new();
+
+        // This should be OK, since noop is a builtin
+        let res = GysResource::from("noop pip");
+        let p = Pipeline::new(&res, &minimal, 0);
+        assert!(p.is_ok());
+
+        // This should fail, since the Minimal provider will not resolve "ignore" to noop
+        let res = GysResource::from("ignore pip");
+        let p = Pipeline::new(&res, &minimal, 0);
+        assert!(p.is_err());
+
         Ok(())
     }
 }

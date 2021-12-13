@@ -146,7 +146,7 @@ fn main() -> Result<(), Error> {
             // Make grid geometry easier to read than "RawDefinition: 601 401 1"
             if line.starts_with("RawDefinition:") {
                 assert!(e.len() == 4);
-                let geometry = format!("Columns: {}\nRows: {}\nChannels: {}\n", e[1], e[2], e[3]);
+                let geometry = format!("Columns: {}\nRows: {}\nBands: {}\n", e[1], e[2], e[3]);
                 aux_out.write_all(geometry.as_bytes())?;
                 continue;
             }

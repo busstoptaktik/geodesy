@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use crate::CoordinateTuple;
 use crate::Ellipsoid;
 use crate::GeodesyError;
@@ -11,6 +9,7 @@ use uuid::Uuid;
 pub mod gys;
 pub mod minimal;
 pub mod plain;
+pub mod grid;
 
 pub trait Provider {
     fn globals(&self) -> &[(String, String)];
@@ -91,7 +90,7 @@ pub trait Provider {
 
 /// Roundtrip test that `operation` yields `results` when given `operands`.
 #[allow(clippy::too_many_arguments)]
-pub fn test(
+pub fn roundtrip(
     rp: &mut dyn Provider,
     operation: &str,
     fwd_metric: u8,

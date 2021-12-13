@@ -189,7 +189,7 @@ mod tests {
             ),
         ];
 
-        assert!(crate::resource::test(
+        assert!(crate::resource::roundtrip(
             &mut rp,
             op,
             3,

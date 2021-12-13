@@ -5,6 +5,18 @@ use crate::GysResource;
 use crate::Provider;
 use log::warn;
 
+// New builtins should be added here, and to the OPERATOR_LIST below
+mod adapt;
+mod cart;
+mod helmert;
+mod lcc;
+mod merc;
+mod molodensky;
+mod nmea;
+mod noop;
+mod pipeline;
+mod tmerc;
+
 pub mod builtins {
     use crate::GeodesyError;
     use crate::OperatorConstructor;
@@ -49,16 +61,6 @@ pub mod builtins {
     }
 }
 
-mod adapt;
-mod cart;
-mod helmert;
-mod lcc;
-mod merc;
-mod molodensky;
-mod nmea;
-mod noop;
-mod pipeline;
-mod tmerc;
 
 // Operator is a newtype around a Boxed trait OperatorCore,
 // in order to be able to define methods on it.

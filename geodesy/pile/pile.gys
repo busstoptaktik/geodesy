@@ -3,7 +3,7 @@ Type: Geoid
 
 Offset: 0
 
-Steps: 1  Levels: 1  Rows: 11  Columns: 21  Channels: 1
+Steps: 1  Levels: 1  Rows: 11  Columns: 21  Bands: 1
 
 Start: 0  End: 0
 Lower: 0  Upper: 0
@@ -22,7 +22,7 @@ Steps: 1
 Levels: 1
 Rows: 11
 Columns: 21
-Channels: 1
+Bands: 1
 
 Start: 0
 End: 0

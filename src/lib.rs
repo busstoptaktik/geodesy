@@ -18,24 +18,26 @@
 //!
 #![doc = include_str!("../README.md")]
 
-// Most details are hidden: Few `pub mod`s below
-mod bibliography;
-mod coordinate;
-mod ellipsoid;
-mod internals;
-mod operator;
-pub mod resource;
+// No public modules,
+pub(crate) mod bibliography;
+pub(crate) mod coordinate;
+pub(crate) mod ellipsoid;
+pub(crate) mod internals;
+pub(crate) mod operator;
+pub(crate) mod resource;
 
-// But we add `pub`-ness to some important `struct`s and traits.
+// But we import and give `pub`-ness to some important `struct`s and traits.
+// In effect this seems to turn use geodesy into use::geodesy::preamble::*,
+// so may reconsider this (a.o. it makes it hard to include the "From" trait
+// implementations)
 pub use coordinate::CoordinateTuple;
 pub use ellipsoid::Ellipsoid;
 pub use resource::gys::{GysArgs, GysResource};
 pub use resource::minimal::MinimalResourceProvider as Minimal;
-pub use resource::plain::PlainResourceProvider as Plain;
-pub use resource::plain::SearchLevel;
+pub use resource::plain::{SearchLevel, PlainResourceProvider as Plain};
 pub use resource::Provider;
 
-// The bibliography needs `pub`-ness in order to be able to build the docs.
+// The bibliography needs `pub`-ness in order to build the docs.
 pub use bibliography::Bibliography;
 
 // These need `pub`-ness in order to support user-defined operators
