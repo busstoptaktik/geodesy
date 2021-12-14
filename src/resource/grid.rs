@@ -5,39 +5,42 @@ use uuid::Uuid;
 
 use super::GysResource;
 // use crate::CoordinateTuple;
-use crate::GeodesyError;
-use crate::Provider;
-// use crate::{Operator, OperatorConstructor, OperatorCore};
+use crate::{GeodesyError, CoordinateTuple};
+// use crate::Provider;
 
 #[derive(Default, Debug)]
-struct GridDescriptor {
+pub struct GridDescriptor {
+    pub id: Uuid,
+
     /// Grid dimensions: Bands, Columns, Rows, Levels, Steps
-    dim: [usize; 5],
+    pub dim: [usize; 5],
 
     /// Distance from the start of each dimensional entity to the
     /// start of its successor, i.e.
     /// `[1, Bands, Bands*Columns, B*C*Rows, B*C*R*Levels]`
-    stride: [usize; 5],
+    pub stride: [usize; 5],
 
     /// The [First, Last] pair comprises the generalized bounding box:
 
     /// Generalized coordinates for the first element of the grid:
     /// First band, leftmost plane coordinate, topmost plane coordinate,
-    /// lower height coordinate, first time step
-    first: [f64; 5],
+    /// lower height coordinate, first time step.
+    /// *The origin of the grid*
+    pub first: [f64; 5],
 
     /// Generalized coordinates for the last element of the grid:
     /// Last band, rightmost plane coordinate, bottommost plane coordinate,
-    /// upper height coordinate, last time step
-    last: [f64; 5],
+    /// upper height coordinate, last time step.
+    /// *The outer boundary of the grid*
+    pub last: [f64; 5],
 
-    delta: [f64; 5],
-    scale: [f64; 8],
-    offset: [f64; 8],
+    pub delta: [f64; 5],
+    pub scale: [f64; 8],
+    pub offset: [f64; 8],
 
     /// `None` if using grid access via ResourceProvider,
     /// `Some(Vec<f32>)` if the grid is internalized
-    grid: Option<Vec<f32>>
+    pub grid: Option<Vec<f32>>
 }
 
 impl GridDescriptor {
@@ -53,34 +56,46 @@ impl GridDescriptor {
         let top = args.numeric("Top", f64::NAN)?;
         let bottom = args.numeric("Bottom", f64::NAN)?;
 
-        let bands = args.numeric("Bands", 1.)?;
-        let cols = args.numeric("Columns", f64::NAN)?;
-        let rows = args.numeric("Rows", f64::NAN)?;
-        let levels = args.numeric("Levels", 1.)?;
-        let steps = args.numeric("Steps", 1.)?;
+        let lower = args.numeric("Lower", f64::NAN)?;
+        let upper = args.numeric("Upper", f64::NAN)?;
 
+        let start = args.numeric("Start", f64::NAN)?;
+        let end = args.numeric("End", f64::NAN)?;
 
+        let bands = args.numeric("Bands", 1.)? as usize;
+        let columns = args.required_numeric("Columns")? as usize;
+        let rows = args.required_numeric("Rows")? as usize;
+        let levels = args.numeric("Levels", 1.)? as usize;
+        let steps = args.numeric("Steps", 1.)? as usize;
 
-        assert!(cols > 1.);
-        assert!(rows > 1.);
-        println!("size: [{} x {}]", cols, rows);
+        let first = [0., left, top, lower, start];
+        let last = [bands as f64 - 1., right, bottom, upper, end];
 
-        // from first to last
-        println!("e interval: [{}; {}]", left, right);
-        println!("n interval: [{}; {}]", top, bottom);
+        let dim = [bands, columns, rows, levels, steps] as [usize; 5];
+        let stride = [1usize, bands, bands*columns, bands*columns*rows, bands*columns*rows*levels];
+        let mut delta = [0f64; 5];
+        for i in 0..5 {
+            delta[i] = if dim[i] < 2 {0.} else {(last[i] - first[i]) / (dim[i] - 1) as f64}
+        }
 
-        // last minus first
-        let de = (right - left) / (cols - 1.);
-        let dn = (bottom - top) / (rows - 1.);
-        println!("step: [{} x {}]", de, dn);
+        let scale = [1f64; 8];
+        let offset = [0f64; 8];
+        let id = Uuid::new_v4();
 
-        Ok(GridDescriptor::default())
+        assert!(columns > 1);
+        assert!(rows > 1);
+        Ok(GridDescriptor{id, dim, stride, first, last, delta, scale, offset, grid: None})
+    }
+
+    pub fn fractional_index(&self, at: CoordinateTuple) -> CoordinateTuple {
+        todo!()
     }
 }
 
 
 #[cfg(test)]
 mod grid_descriptor_tests {
+    use crate::Provider;
     use super::*;
     use crate::GysResource;
     use crate::Plain;
@@ -107,21 +122,44 @@ mod grid_descriptor_tests {
         let top = args.numeric("Top", f64::NAN)?;
         let bottom = args.numeric("Bottom", f64::NAN)?;
 
-        let cols = args.numeric("Columns", f64::NAN)?;
+        let columns = args.numeric("Columns", f64::NAN)?;
         let rows = args.numeric("Rows", f64::NAN)?;
 
-        assert!(cols > 1.);
+
+        let geoid = rp_local.get_resource_definition("pile", "geoid")?;
+        let g = GridDescriptor::new(&geoid)?;
+        dbg!(&g);
+        assert_eq!(g.first[0], 0.);
+        assert_eq!(g.first[1], left);
+        assert_eq!(g.first[2], top);
+
+        let datum = rp_local.get_resource_definition("pile", "datum")?;
+        let g = GridDescriptor::new(&datum)?;
+        dbg!(&g);
+        assert_eq!(g.last[0], 1.);
+        assert_eq!(g.last[1], right);
+        assert_eq!(g.last[2], bottom);
+
+
+        assert!(columns > 1.);
         assert!(rows > 1.);
-        println!("size: [{} x {}]", cols, rows);
+        println!("size: [{} x {}]", columns, rows);
 
         // from first to last
         println!("e interval: [{}; {}]", left, right);
         println!("n interval: [{}; {}]", top, bottom);
 
         // last minus first
-        let de = (right - left) / (cols - 1.);
+        let de = (right - left) / (columns - 1.);
         let dn = (bottom - top) / (rows - 1.);
         println!("step: [{} x {}]", de, dn);
+
+
+        // Fractional index numbers, i.e. the distance from the lower
+        // left grid corner, measured in units of the grid sample distance
+        // (note: grid corner - not coverage corner)
+        // let cc: f64 = (at[0] - (b[0][0] + d[0] / 2.0)) / d[0];
+        // let rr: f64 = (at[1] - (b[0][1] + d[1] / 2.0)) / d[1];
 
         assert!(1 == 0);
         Ok(())

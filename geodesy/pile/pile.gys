@@ -18,25 +18,13 @@ ChanDesc-1: geoid_undulation
 Type: Static_Deformation
 Offset: 924
 
-Steps: 1
-Levels: 1
-Rows: 11
-Columns: 21
-Bands: 1
+Steps: 1  Levels: 1  Rows: 11  Columns: 21  Bands: 2
 
-Start: 0
-End: 0
-
-Lower: 0
-Upper: 0
-
-Top:    60
-Bottom: 50
-
-Left:   0
-Right:  20
+Start: 0  End:     0
+Lower: 0  Upper:   0
+Top:  60  Bottom: 50
+Left:  0  Right:  20
 
 ChanDesc-1: east_velocity
 ChanDesc-2: north_velocity
 ChanDesc-3: up_velocity
-BBox: [63.246875000000, -24.656250000000, 66.753125000000, -13.243750000000]
