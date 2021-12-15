@@ -73,7 +73,7 @@ impl GridDescriptor {
 
         let dim = [bands, columns, rows, levels, steps] as [usize; 5];
         let stride = [1usize, bands, bands*columns, bands*columns*rows, bands*columns*rows*levels];
-        let mut delta = [0f64; 5];
+        let mut delta = [0_f64; 5];
         for i in 0..5 {
             delta[i] = if dim[i] < 2 {0.} else {(last[i] - first[i]) / (dim[i] - 1) as f64}
         }
@@ -88,8 +88,21 @@ impl GridDescriptor {
     }
 
     pub fn fractional_index(&self, at: CoordinateTuple) -> CoordinateTuple {
-        todo!()
+        let mut index = CoordinateTuple::default();
+        for i in 0_usize..4 {
+            index[i] = (at[i] - self.first[i]) / self.delta[i];
+        }
+        index
     }
+
+    pub fn clamped_fractional_index(&self, at: CoordinateTuple) -> CoordinateTuple {
+        let mut index = self.fractional_index(at);
+        for i in 0_usize..4 {
+            index[i] = index[i].clamp(0., (self.dim[i] - 2).max(0) as f64)
+        }
+        index
+    }
+
 }
 
 
@@ -136,10 +149,14 @@ mod grid_descriptor_tests {
         let datum = rp_local.get_resource_definition("pile", "datum")?;
         let g = GridDescriptor::new(&datum)?;
         dbg!(&g);
+
         assert_eq!(g.last[0], 1.);
         assert_eq!(g.last[1], right);
         assert_eq!(g.last[2], bottom);
-
+        let at = CoordinateTuple([0., 1., 59., 0.]);
+        let fi = g.fractional_index(at);
+        dbg!(at);
+        dbg!(fi);
 
         assert!(columns > 1.);
         assert!(rows > 1.);
