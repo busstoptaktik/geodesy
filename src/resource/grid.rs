@@ -90,7 +90,7 @@ impl GridDescriptor {
     pub fn fractional_index(&self, at: CoordinateTuple) -> CoordinateTuple {
         let mut index = CoordinateTuple::default();
         for i in 0_usize..4 {
-            index[i] = (at[i] - self.first[i]) / self.delta[i];
+            index[i] = (at[i] - self.first[i + 1]) / self.delta[i + 1];
         }
         index
     }
@@ -115,16 +115,10 @@ mod grid_descriptor_tests {
     use crate::SearchLevel;
     #[test]
     fn plain() -> Result<(), GeodesyError> {
-        let rp_patch = Plain::new(SearchLevel::LocalPatches, false);
-        let foo = rp_patch.get_resource_definition("macros", "foo")?;
-        assert_eq!(foo, "bar");
-        let rp_local = Plain::new(SearchLevel::Locals, false);
-        let foo = rp_local.get_resource_definition("macros", "foo")?;
-        assert_eq!(foo, "baz");
-
-        let pop = rp_local.get_resource_definition("pile", "geoid")?;
-        println!("POP: {}", pop);
-        let gys = GysResource::new(&pop, &[]);
+        let ctx = Plain::new(SearchLevel::Locals, false);
+        let txt = ctx.get_resource_definition("pile", "geoid")?;
+        println!("TXT: {}", txt);
+        let gys = GysResource::new(&txt, &[]);
         println!("GYS: {:#?}", gys);
         let mut args = gys.to_args(0)?;
         println!("ARGS: {:?}", args);
@@ -139,24 +133,24 @@ mod grid_descriptor_tests {
         let rows = args.numeric("Rows", f64::NAN)?;
 
 
-        let geoid = rp_local.get_resource_definition("pile", "geoid")?;
+        let geoid = ctx.get_resource_definition("pile", "geoid")?;
         let g = GridDescriptor::new(&geoid)?;
         dbg!(&g);
         assert_eq!(g.first[0], 0.);
         assert_eq!(g.first[1], left);
         assert_eq!(g.first[2], top);
 
-        let datum = rp_local.get_resource_definition("pile", "datum")?;
+        let datum = ctx.get_resource_definition("pile", "datum")?;
         let g = GridDescriptor::new(&datum)?;
         dbg!(&g);
 
         assert_eq!(g.last[0], 1.);
         assert_eq!(g.last[1], right);
         assert_eq!(g.last[2], bottom);
-        let at = CoordinateTuple([0., 1., 59., 0.]);
+        let at = CoordinateTuple([2., 59., 0., 0.]);
         let fi = g.fractional_index(at);
-        dbg!(at);
-        dbg!(fi);
+        assert_eq!(fi[0], 2.);
+        assert_eq!(fi[1], 1.);
 
         assert!(columns > 1.);
         assert!(rows > 1.);

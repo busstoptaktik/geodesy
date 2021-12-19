@@ -117,7 +117,7 @@ fn main() -> Result<(), Error> {
         let mut aux_out = File::create(aux_out_path)?;
 
         // First line of the new aux file defines the pile-offset of the grid
-        let line = format!("<{}>\nOffset: {}\n", basename, pos);
+        let line = format!("<{}>\nWhence: {}\n", basename, pos);
         aux_out.write_all(line.as_bytes())?;
 
         // Geometry and geolocation data are restructured. Other information
@@ -125,7 +125,7 @@ fn main() -> Result<(), Error> {
         for line in aux.lines() {
             let mut line = line.unwrap().clone();
             let mut e: Vec<&str> = line.split_whitespace().collect();
-            if e[0] == "Offset:" {
+            if e[0] == "Whence:" {
                 continue;
             }
 

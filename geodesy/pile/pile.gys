@@ -1,7 +1,7 @@
 <geoid>
 Type: Geoid
 
-Offset: 0
+Whence: 0
 
 Steps: 1  Levels: 1  Rows: 11  Columns: 21  Bands: 1
 
@@ -16,7 +16,7 @@ ChanDesc-1: geoid_undulation
 
 <datum>
 Type: Static_Deformation
-Offset: 924
+Whence: 924
 
 Steps: 1  Levels: 1  Rows: 11  Columns: 21  Bands: 2
 

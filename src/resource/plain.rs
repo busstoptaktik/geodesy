@@ -243,7 +243,7 @@ impl Provider for PlainResourceProvider {
         forward: bool,
     ) -> bool {
         if !self.operations.contains_key(&operation) {
-            println!("Lortelort - forkert nøgle!!!");
+            info!("Bad key: {}", operation);
             return false;
         }
         let op = &self.operations[&operation];
@@ -263,7 +263,7 @@ impl Provider for PlainResourceProvider {
         if let Some(op) = self.operations.get(&id) {
             return Ok(op);
         }
-        Err(GeodesyError::General("Unknown operator"))
+        Err(GeodesyError::General("Unknown operation"))
     }
 
     fn register_macro(&mut self, name: &str, definition: &str) -> Result<bool, GeodesyError> {
