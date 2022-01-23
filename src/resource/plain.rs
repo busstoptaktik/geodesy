@@ -162,7 +162,7 @@ impl PlainResourceProvider {
             if line.is_err() {
                 continue;
             }
-            let line = line.ok()?;
+            let line = line.unwrap();
             if skipping && line.trim() == target {
                 skipping = false;
                 definition.clear();

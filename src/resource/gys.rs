@@ -272,6 +272,10 @@ impl GysArgs {
         value.unwrap().unwrap_or_else(|| String::from(default))
     }
 
+
+    // All integers of magnitude up to 9_007_199_254_740_992 are representable as
+    // IEEE754 double precision floats. So we do not bother to provide separate
+    // usize or i64 parsers yet.
     pub fn numeric(&mut self, key: &str, default: f64) -> Result<f64, GeodesyError> {
         if let Some(value) = self.value(key)? {
             // key given, value numeric: return value

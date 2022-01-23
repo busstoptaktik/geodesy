@@ -4,13 +4,16 @@
 use uuid::Uuid;
 
 use super::GysResource;
-// use crate::CoordinateTuple;
-use crate::{GeodesyError, CoordinateTuple};
+use crate::CoordinateTuple;
+use crate::GeodesyError;
 // use crate::Provider;
 
 #[derive(Default, Debug)]
 pub struct GridDescriptor {
     pub id: Uuid,
+
+    /// Offset from start of storage to start of grid
+    pub whence: usize,
 
     /// Grid dimensions: Bands, Columns, Rows, Levels, Steps
     pub dim: [usize; 5],
@@ -50,6 +53,8 @@ impl GridDescriptor {
         let mut args = gys.to_args(0)?;
         println!("ARGS: {:?}", args);
 
+        let whence = args.numeric("Whence", 0.)? as usize;
+
         let left = args.numeric("Left", f64::NAN)?;
         let right = args.numeric("Right", f64::NAN)?;
 
@@ -84,7 +89,7 @@ impl GridDescriptor {
 
         assert!(columns > 1);
         assert!(rows > 1);
-        Ok(GridDescriptor{id, dim, stride, first, last, delta, scale, offset, grid: None})
+        Ok(GridDescriptor{id, whence, dim, stride, first, last, delta, scale, offset, grid: None})
     }
 
     pub fn fractional_index(&self, at: CoordinateTuple) -> CoordinateTuple {
@@ -98,11 +103,32 @@ impl GridDescriptor {
     pub fn clamped_fractional_index(&self, at: CoordinateTuple) -> CoordinateTuple {
         let mut index = self.fractional_index(at);
         for i in 0_usize..4 {
-            index[i] = index[i].clamp(0., (self.dim[i] - 2).max(0) as f64)
+            index[i] = index[i].clamp(0., (self.dim[i] - 1).max(0) as f64)
         }
         index
     }
 
+    pub fn floor_frac_ceil(&self, at: CoordinateTuple) -> ([usize; 4], CoordinateTuple, [usize; 4]) {
+        let mut floor = [0_usize; 4];
+        let mut ceil = [0_usize; 4];
+        let mut frac = CoordinateTuple::origin();
+        let index = self.clamped_fractional_index(at);
+        for i in 0_usize..4 {
+            let f = index[i].floor();
+            floor[i] = f as usize;
+            frac[i] = index[i] - f;
+            ceil[i] = index[i].ceil() as usize;
+        }
+        (floor, frac, ceil)
+    }
+
+    pub fn bilinear_value(&self, at: CoordinateTuple, storage: &[f32]) -> CoordinateTuple {
+        let correction = CoordinateTuple::origin();
+        for i in 3usize..=0 {
+            todo!()
+        }
+        correction
+    }
 }
 
 
@@ -171,8 +197,6 @@ mod grid_descriptor_tests {
         // (note: grid corner - not coverage corner)
         // let cc: f64 = (at[0] - (b[0][0] + d[0] / 2.0)) / d[0];
         // let rr: f64 = (at[1] - (b[0][1] + d[1] / 2.0)) / d[1];
-
-        assert!(1 == 0);
         Ok(())
     }
 }
