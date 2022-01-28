@@ -15,7 +15,7 @@ struct Opt {
 
     /// Verbose mode (-v, -vv, -vvv, etc.)
     #[structopt(short, long, parse(from_occurrences))]
-    verbose: u8,
+    _verbose: u8,
 
     /// Output file, default pile if not present
     #[structopt(short, long, parse(from_os_str))]
@@ -66,7 +66,11 @@ fn main() -> Result<(), Error> {
 
     let mut basename;
     for path in &opt.files {
-        basename = path.file_stem().unwrap_or_default().to_str().unwrap_or_default();
+        basename = path
+            .file_stem()
+            .unwrap_or_default()
+            .to_str()
+            .unwrap_or_default();
         let pos = pile.stream_position()?;
         if "raw" != path.extension().unwrap_or_default() {
             eprintln!(

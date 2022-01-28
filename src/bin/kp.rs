@@ -40,7 +40,7 @@ struct Opt {
 
     /// Output file, stdout if not present
     #[structopt(short, long, parse(from_os_str))]
-    output: Option<PathBuf>,
+    _output: Option<PathBuf>,
 
     /// Operation to apply
     #[structopt(name = "OPERATION", parse(from_str))]
@@ -48,7 +48,7 @@ struct Opt {
 
     /// Files to process
     #[structopt(name = "FILE", parse(from_os_str))]
-    files: Vec<PathBuf>,
+    _files: Vec<PathBuf>,
 }
 
 fn main() -> Result<(), anyhow::Error> {

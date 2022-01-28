@@ -18,12 +18,9 @@ pub struct Lcc {
 
     k_0: f64,
     lon_0: f64,
-    lat_0: f64,
     x_0: f64,
     y_0: f64,
 
-    phi1: f64,
-    phi2: f64,
     n: f64,
     rho0: f64,
     c: f64,
@@ -109,12 +106,9 @@ impl Lcc {
             inverted,
             k_0,
             lon_0,
-            lat_0,
             x_0,
             y_0,
 
-            phi1,
-            phi2,
             n,
             rho0,
             c,

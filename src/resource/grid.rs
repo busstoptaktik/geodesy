@@ -1,3 +1,6 @@
+#![allow(dead_code)]
+#![allow(unused_variables)]
+
 // use log::info;
 /// Plain resource provider. Support for user defined operators
 /// and macros using a text file library
@@ -43,7 +46,7 @@ pub struct GridDescriptor {
 
     /// `None` if using grid access via ResourceProvider,
     /// `Some(Vec<f32>)` if the grid is internalized
-    pub grid: Option<Vec<f32>>
+    pub grid: Option<Vec<f32>>,
 }
 
 impl GridDescriptor {
@@ -77,10 +80,20 @@ impl GridDescriptor {
         let last = [bands as f64 - 1., right, bottom, upper, end];
 
         let dim = [bands, columns, rows, levels, steps] as [usize; 5];
-        let stride = [1usize, bands, bands*columns, bands*columns*rows, bands*columns*rows*levels];
+        let stride = [
+            1usize,
+            bands,
+            bands * columns,
+            bands * columns * rows,
+            bands * columns * rows * levels,
+        ];
         let mut delta = [0_f64; 5];
         for i in 0..5 {
-            delta[i] = if dim[i] < 2 {0.} else {(last[i] - first[i]) / (dim[i] - 1) as f64}
+            delta[i] = if dim[i] < 2 {
+                0.
+            } else {
+                (last[i] - first[i]) / (dim[i] - 1) as f64
+            }
         }
 
         let scale = [1f64; 8];
@@ -89,7 +102,18 @@ impl GridDescriptor {
 
         assert!(columns > 1);
         assert!(rows > 1);
-        Ok(GridDescriptor{id, whence, dim, stride, first, last, delta, scale, offset, grid: None})
+        Ok(GridDescriptor {
+            id,
+            whence,
+            dim,
+            stride,
+            first,
+            last,
+            delta,
+            scale,
+            offset,
+            grid: None,
+        })
     }
 
     pub fn fractional_index(&self, at: CoordinateTuple) -> CoordinateTuple {
@@ -108,7 +132,10 @@ impl GridDescriptor {
         index
     }
 
-    pub fn floor_frac_ceil(&self, at: CoordinateTuple) -> ([usize; 4], CoordinateTuple, [usize; 4]) {
+    pub fn floor_frac_ceil(
+        &self,
+        at: CoordinateTuple,
+    ) -> ([usize; 4], CoordinateTuple, [usize; 4]) {
         let mut floor = [0_usize; 4];
         let mut ceil = [0_usize; 4];
         let mut frac = CoordinateTuple::origin();
@@ -131,13 +158,12 @@ impl GridDescriptor {
     }
 }
 
-
 #[cfg(test)]
 mod grid_descriptor_tests {
-    use crate::Provider;
     use super::*;
     use crate::GysResource;
     use crate::Plain;
+    use crate::Provider;
     use crate::SearchLevel;
     #[test]
     fn plain() -> Result<(), GeodesyError> {
@@ -157,7 +183,6 @@ mod grid_descriptor_tests {
 
         let columns = args.numeric("Columns", f64::NAN)?;
         let rows = args.numeric("Rows", f64::NAN)?;
-
 
         let geoid = ctx.get_resource_definition("pile", "geoid")?;
         let g = GridDescriptor::new(&geoid)?;
@@ -190,7 +215,6 @@ mod grid_descriptor_tests {
         let de = (right - left) / (columns - 1.);
         let dn = (bottom - top) / (rows - 1.);
         println!("step: [{} x {}]", de, dn);
-
 
         // Fractional index numbers, i.e. the distance from the lower
         // left grid corner, measured in units of the grid sample distance

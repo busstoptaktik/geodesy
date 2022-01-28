@@ -15,7 +15,7 @@ use structopt::StructOpt;
 struct Opt {
     /// Inverse
     #[structopt(short, long = "inv")]
-    inverse: bool,
+    _inverse: bool,
 
     /// Activate debug mode
     #[structopt(short, long)]
@@ -23,14 +23,14 @@ struct Opt {
 
     /// Verbose mode (-v, -vv, -vvv, etc.)
     #[structopt(short, long, parse(from_occurrences))]
-    verbose: u8,
+    _verbose: u8,
 
     // Set speed
     //#[structopt(short, long, default_value = "42")]
     //speed: f64,
     /// Output file, stdout if not present
     #[structopt(short, long, parse(from_os_str))]
-    output: Option<PathBuf>,
+    _output: Option<PathBuf>,
 
     // the long option will be translated by default to kebab case,
     // i.e. `--nb-cars`.
@@ -43,7 +43,7 @@ struct Opt {
 
     /// Files to process
     #[structopt(name = "FILE", parse(from_os_str))]
-    files: Vec<PathBuf>,
+    _files: Vec<PathBuf>,
 }
 fn main() -> Result<(), anyhow::Error> {
     // Filter by setting RUST_LOG to one of {Error, Warn, Info, Debug, Trace}

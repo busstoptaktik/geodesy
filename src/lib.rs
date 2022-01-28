@@ -34,9 +34,9 @@ pub use coordinate::CoordinateTuple;
 pub use ellipsoid::Ellipsoid;
 pub use resource::gys::{GysArgs, GysResource};
 pub use resource::minimal::MinimalResourceProvider as Minimal;
-pub use resource::plain::{SearchLevel, PlainResourceProvider as Plain};
-pub use resource::Provider;
+pub use resource::plain::{PlainResourceProvider as Plain, SearchLevel};
 pub use resource::roundtrip;
+pub use resource::Provider;
 
 // The bibliography needs `pub`-ness in order to build the docs.
 pub use bibliography::Bibliography;

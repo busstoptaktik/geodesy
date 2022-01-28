@@ -6,10 +6,10 @@ use crate::Operator;
 use crate::OperatorConstructor;
 use crate::OperatorCore;
 use uuid::Uuid;
+pub mod grid;
 pub mod gys;
 pub mod minimal;
 pub mod plain;
-pub mod grid;
 
 pub trait Provider {
     fn globals(&self) -> &[(String, String)];

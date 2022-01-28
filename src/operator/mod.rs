@@ -61,7 +61,6 @@ pub mod builtins {
     }
 }
 
-
 // Operator is a newtype around a Boxed trait OperatorCore,
 // in order to be able to define methods on it.
 // There's a good description of the crux here:

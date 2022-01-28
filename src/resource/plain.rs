@@ -24,7 +24,7 @@ pub enum SearchLevel {
 pub struct PlainResourceProvider {
     searchlevel: SearchLevel,
     persistent_builtins: bool,
-    pile: memmap::Mmap,
+    _pile: memmap::Mmap,
     user_defined_operators: BTreeMap<String, OperatorConstructor>,
     user_defined_macros: BTreeMap<String, String>,
     operations: BTreeMap<Uuid, Operator>,
@@ -54,7 +54,7 @@ impl PlainResourceProvider {
         // Memory map the 'pile' of grid files.
         // let start = Instant::now();
         let f = File::open("geodesy/pile/pile.bin").expect("Error: 'pile.bin' not found");
-        let pile = unsafe { memmap::Mmap::map(&f).expect("Error mapping 'pile.bin'")};
+        let pile = unsafe { memmap::Mmap::map(&f).expect("Error mapping 'pile.bin'") };
         // let duration = start.elapsed();
         // **350 us** println!("Time elapsed in file mapping is: {:?}", duration);
 
@@ -65,7 +65,8 @@ impl PlainResourceProvider {
         dbg!(&pile);
 
         // let start = Instant::now();
-        let pop: &[f32] = unsafe { std::slice::from_raw_parts(pile.as_ptr() as *const f32, pile.len()/4) };
+        let pop: &[f32] =
+            unsafe { std::slice::from_raw_parts(pile.as_ptr() as *const f32, pile.len() / 4) };
         // let duration = start.elapsed();
         // **500 ns** println!("Time elapsed in slice building is: {:?}", duration);
 
@@ -75,7 +76,7 @@ impl PlainResourceProvider {
         PlainResourceProvider {
             searchlevel,
             persistent_builtins,
-            pile,
+            _pile: pile,
             user_defined_operators,
             user_defined_macros,
             operations,
@@ -279,7 +280,7 @@ impl Provider for PlainResourceProvider {
     ) -> Result<bool, GeodesyError> {
         self.user_defined_operators
             .insert(String::from(name), constructor);
-        dbg!(self.user_defined_operators.keys());
+        dbg!(&self.user_defined_operators.keys());
         Ok(true)
     }
 
@@ -297,7 +298,6 @@ impl Provider for PlainResourceProvider {
         self.apply_operation(operation, operands, false)
     }
 }
-
 
 #[cfg(test)]
 mod resourceprovidertests {

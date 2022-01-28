@@ -202,7 +202,6 @@ mod pipelinetests {
 
     #[test]
     fn gys() -> Result<(), GeodesyError> {
-
         // First we test the pipelinebuilder with the `Plain` resource provider
         let plain = crate::Plain::new(SearchLevel::LocalPatches, true);
 
