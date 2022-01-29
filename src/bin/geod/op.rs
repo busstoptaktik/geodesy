@@ -15,7 +15,7 @@ impl Op {
         operands: &mut [CoordinateTuple],
         direction: Direction,
     ) -> usize {
-        let forward = direction == super::Direction::Fwd;
+        let forward = direction == Direction::Fwd;
         // Short form of (inverted && !forward) || (forward && !inverted)
         if self.base.inverted != forward {
             return self.base.fwd.0(self, ctx, operands);
@@ -96,6 +96,7 @@ mod tests {
             Err(Error::NotFound(_, _))
         ));
 
+        // Check forward and inverse operation
         let op = Op::new("addone", &provider)?;
         let mut data = etc::some_basic_coordinates();
         op.operate(&provider, &mut data, Direction::Fwd);
@@ -104,6 +105,17 @@ mod tests {
         op.operate(&provider, &mut data, Direction::Inv);
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
+
+        // Also for an inverted operator: check forward and inverse operation
+        let op = Op::new("addone inv", &provider)?;
+        let mut data = etc::some_basic_coordinates();
+        op.operate(&provider, &mut data, Direction::Fwd);
+        assert_eq!(data[0][0], 54.);
+        assert_eq!(data[1][0], 58.);
+        op.operate(&provider, &mut data, Direction::Inv);
+        assert_eq!(data[0][0], 55.);
+        assert_eq!(data[1][0], 59.);
+
         Ok(())
     }
 
@@ -125,30 +137,6 @@ mod tests {
         Ok(())
     }
 
-    // A previous version using mock objects. Not necessary now that the
-    // `Minimal` provider supports `register_resource`
-    /*
-    // use crate::geod::provider::Minimal;
-    // use crate::op::provider::MockProvider;
-    #[test]
-    fn nesting() -> Result<(), Error> {
-        let mut mock = MockProvider::new();
-        mock.expect_get_resource()
-            .with(eq("foo:bar"))
-            .returning(|_| Ok("foo:baz".to_string()));
-        mock.expect_get_resource()
-            .with(eq("foo:baz"))
-            .returning(|_| Ok("foo:bar".to_string()));
-        mock.expect_globals().returning(|| BTreeMap::new());
-        assert_eq!("foo:baz".to_string(), mock.get_resource("foo:bar")?);
-        assert_eq!("foo:bar".to_string(), mock.get_resource("foo:baz")?);
-        assert!(matches!(
-            Op::new("foo:baz", &mock),
-            Err(Error::Recursion(_, _))
-        ));
-        Ok(())
-    }
-    */
 
     #[test]
     fn pipeline() -> Result<(), Error> {
