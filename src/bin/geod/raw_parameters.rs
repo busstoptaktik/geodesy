@@ -1,4 +1,4 @@
-use crate::internal::*;
+use super::internal::*;
 
 /// TODO!
 /// impl Chase

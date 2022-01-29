@@ -1,4 +1,4 @@
-use crate::internal::*;
+use super::internal::*;
 
 #[derive(Debug)]
 pub struct Op {
@@ -45,7 +45,7 @@ impl Op {
 
         // A pipeline?
         if etc::is_pipeline(&definition) {
-            return crate::inner_op::pipeline::new(&parameters, provider);
+            return super::inner_op::pipeline::new(&parameters, provider);
         }
 
         // A user defined operator?
@@ -62,11 +62,11 @@ impl Op {
         }
 
         // A built in operator?
-        if let Ok(constructor) = crate::inner_op::builtin(&name) {
+        if let Ok(constructor) = super::inner_op::builtin(&name) {
             return constructor.0(&parameters, provider);
         }
 
-        Err(crate::Error::NotFound(name, ": ".to_string() + &definition))
+        Err(super::Error::NotFound(name, ": ".to_string() + &definition))
     }
 }
 
@@ -75,9 +75,6 @@ impl Op {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::geod::provider::Minimal;
-    // use crate::op::provider::MockProvider;
-    use crate::geod::Op;
 
     // Test the fundamental Op-functionality: That we can actually instantiate
     // an Op, and invoke its forward and backward operational modes
@@ -123,6 +120,8 @@ mod tests {
     // A previous version using mock objects. Not necessary now that the
     // `Minimal` provider supports `register_resource`
     /*
+    // use crate::geod::provider::Minimal;
+    // use crate::op::provider::MockProvider;
     #[test]
     fn nesting() -> Result<(), Error> {
         let mut mock = MockProvider::new();

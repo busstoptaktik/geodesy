@@ -1,4 +1,4 @@
-use crate::internal::*;
+use super::internal::*;
 
 /// The fundamental elements of an operator (i.e. everything but steps and args)
 #[derive(Debug, Default)]

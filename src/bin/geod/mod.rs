@@ -17,22 +17,23 @@ pub mod inner_op_authoring {
     pub use log::error;
     pub use log::warn;
 
-    pub use crate::base::Base;
-    pub use crate::inner_op::InnerOp;
-    pub use crate::geod::etc;
-    pub use crate::geod::Direction;
-    pub use crate::geod::Error;
-    pub use crate::geod::Op;
-    pub use crate::parameter::OpParameter;
-    pub use crate::parsed_parameters::ParsedParameters;
-    pub use crate::provider::Minimal;
-    pub use crate::provider::Provider;
-    pub use crate::raw_parameters::RawParameters;
+    pub use super::Error;
+    pub use super::base::Base;
+    pub use super::inner_op::InnerOp;
+    pub use super::etc;
+    pub use super::Direction;
+    pub use super::op::Op;
+    pub use super::parameter::OpParameter;
+    pub use super::parsed_parameters::ParsedParameters;
+    pub use super::provider::Minimal;
+    pub use super::provider::Provider;
+    pub use super::raw_parameters::RawParameters;
     pub use geodesy::CoordinateTuple;
 }
 
 /// Preamble for crate-internal modules
 pub(crate) mod internal {
+
     pub use std::collections::BTreeMap;
     pub use std::collections::BTreeSet;
 
@@ -40,22 +41,33 @@ pub(crate) mod internal {
     pub use log::warn;
     pub use uuid::Uuid;
 
-    pub use crate::base::Base;
-    pub use crate::inner_op::InnerOp;
-    pub use crate::inner_op::OpConstructor;
-    pub use crate::geod::etc;
-    pub use crate::geod::Direction;
-    pub use crate::geod::Error;
-    pub use crate::parameter::OpParameter;
-    pub use crate::parsed_parameters::ParsedParameters;
-    pub use crate::provider::Minimal;
-    pub use crate::provider::Provider;
-    pub use crate::raw_parameters::RawParameters;
+    pub use super::base::Base;
+    pub use super::inner_op::InnerOp;
+    pub use super::inner_op::OpConstructor;
+    pub use super::etc;
+    pub use super::Direction;
+    pub use super::Error;
+    pub use super::op::Op;
+    pub use super::parameter::OpParameter;
+    pub use super::parsed_parameters::ParsedParameters;
+    pub use super::provider::Minimal;
+    pub use super::provider::Provider;
+    pub use super::raw_parameters::RawParameters;
     pub use geodesy::CoordinateTuple;
     pub use geodesy::Ellipsoid;
 }
 
-pub use op::Op;
+
+/// Preamble for external use
+pub mod preamble {
+    pub use super::Direction;
+    pub use super::Error;
+    pub use super::op::Op;
+    pub use geodesy::CoordinateTuple as C;
+    pub use super::provider::Minimal;
+}
+
+// pub use op::Op;
 
 #[derive(Error, Debug)]
 pub enum Error {

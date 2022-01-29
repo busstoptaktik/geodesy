@@ -1,4 +1,4 @@
-use crate::internal::*;
+use super::internal::*;
 
 // ----- T H E   P R O V I D E R   T R A I T ----------------------------------------
 

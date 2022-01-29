@@ -1,4 +1,4 @@
-use crate::inner_op_authoring::*;
+use super::super::inner_op_authoring::*;
 
 // ----- F O R W A R D --------------------------------------------------------------
 
@@ -47,14 +47,12 @@ pub fn new(parameters: &RawParameters, provider: &dyn Provider) -> Result<Op, Er
 
 #[cfg(test)]
 mod tests {
-    use crate::*;
+    use super::*;
     #[test]
     fn addone() -> Result<(), Error> {
-        let provider = provider::Minimal::default();
+        let provider = Minimal::default();
         let op = Op::new("addone", &provider)?;
-        let copenhagen = C::raw(55., 12., 0., 0.);
-        let stockholm = C::raw(59., 18., 0., 0.);
-        let mut data = [copenhagen, stockholm];
+        let mut data = etc::some_basic_coordinates();
         op.operate(&provider, &mut data, Direction::Fwd);
         assert_eq!(data[0][0], 56.);
         assert_eq!(data[1][0], 60.);

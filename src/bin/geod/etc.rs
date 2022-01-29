@@ -1,6 +1,6 @@
 /// Generally useful free functions, not tied to any specific type or trait,
 /// but mostly related to the interpretation of operator parameters.
-use crate::internal::*;
+use super::internal::*;
 
 pub fn is_pipeline(definition: &str) -> bool {
     definition.contains('|')

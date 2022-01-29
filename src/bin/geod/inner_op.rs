@@ -1,4 +1,4 @@
-use crate::inner_op_authoring::*;
+use super::inner_op_authoring::*;
 
 /// Blueprint for the overall instantiation of an operator.
 /// OpConstructor needs to be a newtype, rather than a type definition,
@@ -24,8 +24,8 @@ pub(super) mod pipeline;
 
 #[rustfmt::skip]
 const BUILTIN_OPERATORS: [(&str, OpConstructor); 2] = [
-    ("pipeline", OpConstructor(crate::inner_op::pipeline::new)),
-    ("addone", OpConstructor(crate::inner_op::addone::new)),
+    ("pipeline", OpConstructor(super::inner_op::pipeline::new)),
+    ("addone", OpConstructor(super::inner_op::addone::new)),
 ];
 // A BTreeMap would have been a better choice for BUILTIN_OPERATORS, except
 // for the annoying fact that it cannot be compile-time const-constructed.
