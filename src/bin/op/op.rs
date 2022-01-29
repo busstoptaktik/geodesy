@@ -32,7 +32,7 @@ impl Op {
     // Instantiate the actual operator, taking into account the relative order
     // of precendence between pipelines, user defined operators, macros, and
     // built-in operators
-    fn op(parameters: RawParameters, provider: &dyn Provider) -> Result<Op, Error> {
+    pub fn op(parameters: RawParameters, provider: &dyn Provider) -> Result<Op, Error> {
         if parameters.nesting_too_deep() {
             return Err(Error::Recursion(
                 parameters.invocation,
@@ -75,9 +75,9 @@ impl Op {
 
 #[cfg(test)]
 mod tests {
-    use crate::internal::*;
+    use super::*;
     use crate::op::provider::Minimal;
-    use crate::op::provider::MockProvider;
+    // use crate::op::provider::MockProvider;
     use crate::Op;
 
     // Test the fundamental Op-functionality: That we can actually instantiate
@@ -108,6 +108,24 @@ mod tests {
     // that the instantiation fails with an `Error::Recursion(...)`
     #[test]
     fn nesting() -> Result<(), Error> {
+        let mut prv = Minimal::default();
+        prv.register_resource("foo:baz", "foo:bar");
+        prv.register_resource("foo:bar", "foo:baz");
+
+        assert_eq!("foo:baz", prv.get_resource("foo:bar")?);
+        assert_eq!("foo:bar", prv.get_resource("foo:baz")?);
+        assert!(matches!(
+            Op::new("foo:baz", &prv),
+            Err(Error::Recursion(_, _))
+        ));
+        Ok(())
+    }
+
+    // A previous version using mock objects. Not necessary now that the
+    // `Minimal` provider supports `register_resource`
+    /*
+    #[test]
+    fn nesting() -> Result<(), Error> {
         let mut mock = MockProvider::new();
         mock.expect_get_resource()
             .with(eq("foo:bar"))
@@ -116,7 +134,6 @@ mod tests {
             .with(eq("foo:baz"))
             .returning(|_| Ok("foo:bar".to_string()));
         mock.expect_globals().returning(|| BTreeMap::new());
-
         assert_eq!("foo:baz".to_string(), mock.get_resource("foo:bar")?);
         assert_eq!("foo:bar".to_string(), mock.get_resource("foo:baz")?);
         assert!(matches!(
@@ -125,9 +142,19 @@ mod tests {
         ));
         Ok(())
     }
+    */
 
     #[test]
     fn pipeline() -> Result<(), Error> {
-        todo!()
+        let provider = Minimal::default();
+        let op = Op::new("addone|addone|addone", &provider)?;
+        let mut data = etc::some_basic_coordinates();
+        op.operate(&provider, &mut data, Direction::Fwd);
+        assert_eq!(data[0][0], 58.);
+        assert_eq!(data[1][0], 62.);
+        op.operate(&provider, &mut data, Direction::Inv);
+        assert_eq!(data[0][0], 55.);
+        assert_eq!(data[1][0], 59.);
+        Ok(())
     }
 }

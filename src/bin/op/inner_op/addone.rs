@@ -1,5 +1,7 @@
 use crate::inner_op_authoring::*;
 
+// ----- F O R W A R D --------------------------------------------------------------
+
 fn addone_fwd(op: &Op, provider: &dyn Provider, operands: &mut [CoordinateTuple]) -> usize {
     let mut n = 0;
     for o in operands {
@@ -8,6 +10,8 @@ fn addone_fwd(op: &Op, provider: &dyn Provider, operands: &mut [CoordinateTuple]
     }
     n
 }
+
+// ----- I N V E R S E --------------------------------------------------------------
 
 fn addone_inv(op: &Op, provider: &dyn Provider, operands: &mut [CoordinateTuple]) -> usize {
     let mut n = 0;
@@ -18,10 +22,10 @@ fn addone_inv(op: &Op, provider: &dyn Provider, operands: &mut [CoordinateTuple]
     n
 }
 
-// --------------------------------------------------------------------------------
+// ----- C O N S T R U C T O R ------------------------------------------------------
 
 #[rustfmt::skip]
-const GAMUT: [OpParameter; 1] = [
+pub const GAMUT: [OpParameter; 1] = [
     OpParameter::Flag { key: "inv" },
 ];
 
@@ -39,7 +43,7 @@ pub fn new(parameters: &RawParameters, provider: &dyn Provider) -> Result<Op, Er
     })
 }
 
-// --------------------------------------------------------------------------------
+// ----- T E S T S ------------------------------------------------------------------
 
 #[cfg(test)]
 mod tests {

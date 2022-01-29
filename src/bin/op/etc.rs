@@ -45,20 +45,9 @@ pub fn split_into_parameters(step: &str) -> BTreeMap<String, String> {
             continue;
         }
 
-        // Flag normalization 1: Leave out flags explicitly set to false
-        // if parts[1].to_lowercase() == "false" {
-        //     continue;
-        // }
-
-        // Flag normalization 2: Remove explicit "true" values from flags
-        // if parts[1].to_lowercase() == "true" {
-        //     parts[1] = "";
-        // }
-
         params.insert(String::from(parts[0]), String::from(parts[1]));
     }
 
-    dbg!(&params);
     params
 }
 
@@ -105,9 +94,11 @@ pub fn split_into_steps(definition: &str) -> (Vec<String>, String) {
     (trimmed_steps, docstring)
 }
 
-
-
-pub fn chase(globals: &BTreeMap<String, String>, locals: &BTreeMap<String, String>, key: &str) -> Result<Option<String>, Error> {
+pub fn chase(
+    globals: &BTreeMap<String, String>,
+    locals: &BTreeMap<String, String>,
+    key: &str,
+) -> Result<Option<String>, Error> {
     // The haystack is a reverse iterator over both lists in series
     let mut haystack = globals.iter().chain(locals.iter()).rev();
 
@@ -161,8 +152,6 @@ pub fn chase(globals: &BTreeMap<String, String>, locals: &BTreeMap<String, Strin
     }
     Ok(Some(value))
 }
-
-
 
 #[cfg(test)]
 pub fn some_basic_coordinates() -> [CoordinateTuple; 2] {

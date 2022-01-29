@@ -32,7 +32,10 @@ pub enum OpParameter {
         default: Option<f64>,
     },
     /// A series of reals (𝐑ⁿ in math terms)
-    Series { key: &'static str, default: Option<&'static str> },
+    Series {
+        key: &'static str,
+        default: Option<&'static str>,
+    },
     /// Any kind of text
     Text {
         key: &'static str,

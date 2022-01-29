@@ -1,6 +1,7 @@
 use crate::internal::*;
 
-#[cfg_attr(test, automock)]
+// ----- T H E   P R O V I D E R   T R A I T ----------------------------------------
+
 pub trait Provider {
     fn globals(&self) -> BTreeMap<String, String>;
     fn register_op(&mut self, name: &str, constructor: OpConstructor);
@@ -9,6 +10,8 @@ pub trait Provider {
     fn get_resource(&self, name: &str) -> Result<String, Error>;
     fn apply(&self, op: Uuid, direction: Direction, operands: &mut [CoordinateTuple]) -> usize;
 }
+
+// ----- T H E   M I N I M A L   P R O V I D E R ------------------------------------
 
 #[derive(Debug, Default)]
 pub struct Minimal {

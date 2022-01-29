@@ -15,9 +15,9 @@ mod op;
 use geodesy::CoordinateTuple as C;
 use log::info;
 use op::etc;
-use op::parsedparameters::ParsedParameters;
+use op::parsed_parameters::ParsedParameters;
 use op::provider;
-use op::rawparameters::RawParameters;
+use op::raw_parameters::RawParameters;
 use op::*;
 
 // -----------------------------------------------------------------------------

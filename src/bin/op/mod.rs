@@ -1,12 +1,12 @@
 pub mod base;
 pub mod inner_op;
 pub mod op;
-pub mod parsedparameters;
+pub mod parsed_parameters;
 
 pub mod etc;
 pub mod parameter;
 pub mod provider;
-pub mod rawparameters;
+pub mod raw_parameters;
 
 use log::error;
 use std::io;
@@ -19,13 +19,15 @@ pub mod inner_op_authoring {
 
     pub use crate::base::Base;
     pub use crate::inner_op::InnerOp;
+    pub use crate::op::etc;
     pub use crate::op::Direction;
     pub use crate::op::Error;
     pub use crate::op::Op;
     pub use crate::parameter::OpParameter;
-    pub use crate::parsedparameters::ParsedParameters;
+    pub use crate::parsed_parameters::ParsedParameters;
+    pub use crate::provider::Minimal;
     pub use crate::provider::Provider;
-    pub use crate::rawparameters::RawParameters;
+    pub use crate::raw_parameters::RawParameters;
     pub use geodesy::CoordinateTuple;
 }
 
@@ -45,16 +47,12 @@ pub(crate) mod internal {
     pub use crate::op::Direction;
     pub use crate::op::Error;
     pub use crate::parameter::OpParameter;
-    pub use crate::parsedparameters::ParsedParameters;
+    pub use crate::parsed_parameters::ParsedParameters;
+    pub use crate::provider::Minimal;
     pub use crate::provider::Provider;
-    pub use crate::rawparameters::RawParameters;
+    pub use crate::raw_parameters::RawParameters;
     pub use geodesy::CoordinateTuple;
     pub use geodesy::Ellipsoid;
-
-    #[cfg(test)]
-    pub use mockall::automock;
-    #[cfg(test)]
-    pub use mockall::predicate::*;
 }
 
 pub use op::Op;
