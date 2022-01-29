@@ -45,29 +45,37 @@ impl Op {
 
         // A pipeline?
         if etc::is_pipeline(&definition) {
-            return super::inner_op::pipeline::new(&parameters, provider);
+            return super::inner_op::pipeline::new(&parameters, provider)?.handle_inversion();
         }
 
         // A user defined operator?
         if !etc::is_resource_name(&name) {
             if let Ok(constructor) = provider.get_op(&name) {
-                return constructor.0(&parameters, provider);
+                return constructor.0(&parameters, provider)?.handle_inversion();
             }
         }
         // A user defined macro?
         else if let Ok(macro_definition) = provider.get_resource(&name) {
             let mut next_param = parameters.next(&definition);
             next_param.definition = macro_definition;
-            return Op::op(next_param, provider);
+            return Op::op(next_param, provider)?.handle_inversion();
         }
 
         // A built in operator?
         if let Ok(constructor) = super::inner_op::builtin(&name) {
-            return constructor.0(&parameters, provider);
+            return constructor.0(&parameters, provider)?.handle_inversion();
         }
 
         Err(super::Error::NotFound(name, ": ".to_string() + &definition))
     }
+
+    fn handle_inversion(mut self) -> Result<Op, Error> {
+        if self.params.boolean("inv") {
+            self.base.inverted = true;
+        }
+        Ok(self)
+    }
+
 }
 
 // --------------------------------------------------------------------------------

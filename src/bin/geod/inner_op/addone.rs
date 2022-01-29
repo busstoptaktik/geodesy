@@ -53,6 +53,8 @@ mod tests {
         let provider = Minimal::default();
         let op = Op::new("addone", &provider)?;
         let mut data = etc::some_basic_coordinates();
+        assert_eq!(data[0][0], 55.);
+        assert_eq!(data[1][0], 59.);
         op.operate(&provider, &mut data, Direction::Fwd);
         assert_eq!(data[0][0], 56.);
         assert_eq!(data[1][0], 60.);
