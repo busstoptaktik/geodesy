@@ -17,17 +17,17 @@ pub mod inner_op_authoring {
     pub use log::error;
     pub use log::warn;
 
-    pub use super::Error;
     pub use super::base::Base;
-    pub use super::inner_op::InnerOp;
     pub use super::etc;
-    pub use super::Direction;
+    pub use super::inner_op::InnerOp;
     pub use super::op::Op;
     pub use super::parameter::OpParameter;
     pub use super::parsed_parameters::ParsedParameters;
     pub use super::provider::Minimal;
     pub use super::provider::Provider;
     pub use super::raw_parameters::RawParameters;
+    pub use super::Direction;
+    pub use super::Error;
     pub use geodesy::CoordinateTuple;
 }
 
@@ -42,29 +42,28 @@ pub(crate) mod internal {
     pub use uuid::Uuid;
 
     pub use super::base::Base;
+    pub use super::etc;
     pub use super::inner_op::InnerOp;
     pub use super::inner_op::OpConstructor;
-    pub use super::etc;
-    pub use super::Direction;
-    pub use super::Error;
     pub use super::op::Op;
     pub use super::parameter::OpParameter;
     pub use super::parsed_parameters::ParsedParameters;
     pub use super::provider::Minimal;
     pub use super::provider::Provider;
     pub use super::raw_parameters::RawParameters;
+    pub use super::Direction;
+    pub use super::Error;
     pub use geodesy::CoordinateTuple;
     pub use geodesy::Ellipsoid;
 }
 
-
 /// Preamble for external use
 pub mod preamble {
+    pub use super::op::Op;
+    pub use super::provider::Minimal;
     pub use super::Direction;
     pub use super::Error;
-    pub use super::op::Op;
     pub use geodesy::CoordinateTuple as C;
-    pub use super::provider::Minimal;
 }
 
 // pub use op::Op;
