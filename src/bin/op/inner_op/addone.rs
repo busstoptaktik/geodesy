@@ -34,7 +34,7 @@ pub fn new(parameters: &RawParameters, provider: &dyn Provider) -> Result<Op, Er
     let params = ParsedParameters::new(parameters, &GAMUT)?;
     let fwd = InnerOp(addone_fwd);
     let inv = InnerOp(addone_inv);
-    let base = Base::new(&def, fwd, Some(inv));
+    let base = Base::new(def, fwd, Some(inv));
     let steps = Vec::<Op>::new();
     Ok(Op {
         base,

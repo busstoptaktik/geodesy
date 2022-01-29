@@ -18,9 +18,9 @@ impl Op {
         let forward = direction == super::Direction::Fwd;
         // Short form of (inverted && !forward) || (forward && !inverted)
         if self.base.inverted != forward {
-            return self.base.fwd.0(&self, ctx, operands);
+            return self.base.fwd.0(self, ctx, operands);
         }
-        self.base.inv.0(&self, ctx, operands)
+        self.base.inv.0(self, ctx, operands)
     }
 
     pub fn new(definition: &str, provider: &dyn Provider) -> Result<Op, Error> {
@@ -54,12 +54,10 @@ impl Op {
             }
         }
         // A user defined macro?
-        else {
-            if let Ok(macro_definition) = provider.get_resource(&name) {
-                let mut next_param = parameters.next(&definition);
-                next_param.definition = macro_definition;
-                return Op::op(next_param, provider);
-            }
+        else if let Ok(macro_definition) = provider.get_resource(&name) {
+            let mut next_param = parameters.next(&definition);
+            next_param.definition = macro_definition;
+            return Op::op(next_param, provider);
         }
 
         // A built in operator?

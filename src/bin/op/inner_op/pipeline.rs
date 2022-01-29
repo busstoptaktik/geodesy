@@ -29,7 +29,7 @@ pub const GAMUT: [OpParameter; 1] = [
 
 pub fn new(parameters: &RawParameters, provider: &dyn Provider) -> Result<Op, Error> {
     let definition = &parameters.definition;
-    let thesteps = etc::split_into_steps(&definition).0;
+    let thesteps = etc::split_into_steps(definition).0;
     let mut steps = Vec::new();
 
     for step in thesteps {
@@ -40,7 +40,7 @@ pub fn new(parameters: &RawParameters, provider: &dyn Provider) -> Result<Op, Er
     let params = ParsedParameters::new(parameters, &GAMUT)?;
     let fwd = InnerOp(pipeline_fwd);
     let inv = InnerOp(pipeline_inv);
-    let base = Base::new(&definition, fwd, Some(inv));
+    let base = Base::new(definition, fwd, Some(inv));
     Ok(Op {
         base,
         params,

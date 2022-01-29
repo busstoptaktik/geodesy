@@ -151,7 +151,7 @@ impl GridDescriptor {
 
     pub fn bilinear_value(&self, at: CoordinateTuple, storage: &[f32]) -> CoordinateTuple {
         let correction = CoordinateTuple::origin();
-        for i in 3usize..=0 {
+        for i in (0..4_usize).rev() {
             todo!()
         }
         correction

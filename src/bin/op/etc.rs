@@ -7,14 +7,14 @@ pub fn is_pipeline(definition: &str) -> bool {
 }
 
 pub fn is_resource_name(definition: &str) -> bool {
-    operator_name(definition, "").contains(":")
+    operator_name(definition, "").contains(':')
 }
 
 pub fn operator_name(definition: &str, default: &str) -> String {
     if is_pipeline(definition) {
         return default.to_string();
     }
-    split_into_parameters(&definition)
+    split_into_parameters(definition)
         .get("name")
         .unwrap_or(&default.to_string())
         .to_string()
