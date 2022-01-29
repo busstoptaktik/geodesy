@@ -11,14 +11,14 @@ parameter: key=value
 
 */
 
-mod op;
+mod geod;
 use geodesy::CoordinateTuple as C;
 use log::info;
-use op::etc;
-use op::parsed_parameters::ParsedParameters;
-use op::provider;
-use op::raw_parameters::RawParameters;
-use op::*;
+use geod::etc;
+use geod::parsed_parameters::ParsedParameters;
+use geod::provider;
+use geod::raw_parameters::RawParameters;
+use geod::*;
 
 // -----------------------------------------------------------------------------
 // UG: An experiment with an *U*ltrasmall *G*eodetic transformation system
@@ -62,7 +62,7 @@ fn main() -> Result<(), anyhow::Error> {
 // -----------------------------------------------------------------------------
 
 /// TODO: Ned som test!
-use op::parameter::OpParameter::*;
+use geod::parameter::OpParameter::*;
 fn an_operator_constructor() -> Result<ParsedParameters, Error> {
     #[rustfmt::skip]
     let gamut = [

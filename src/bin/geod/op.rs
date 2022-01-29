@@ -32,6 +32,7 @@ impl Op {
     // Instantiate the actual operator, taking into account the relative order
     // of precendence between pipelines, user defined operators, macros, and
     // built-in operators
+    #[allow(clippy::self_named_constructors)]
     pub fn op(parameters: RawParameters, provider: &dyn Provider) -> Result<Op, Error> {
         if parameters.nesting_too_deep() {
             return Err(Error::Recursion(
@@ -74,9 +75,9 @@ impl Op {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::op::provider::Minimal;
+    use crate::geod::provider::Minimal;
     // use crate::op::provider::MockProvider;
-    use crate::Op;
+    use crate::geod::Op;
 
     // Test the fundamental Op-functionality: That we can actually instantiate
     // an Op, and invoke its forward and backward operational modes

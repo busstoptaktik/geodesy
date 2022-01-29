@@ -19,10 +19,10 @@ pub mod inner_op_authoring {
 
     pub use crate::base::Base;
     pub use crate::inner_op::InnerOp;
-    pub use crate::op::etc;
-    pub use crate::op::Direction;
-    pub use crate::op::Error;
-    pub use crate::op::Op;
+    pub use crate::geod::etc;
+    pub use crate::geod::Direction;
+    pub use crate::geod::Error;
+    pub use crate::geod::Op;
     pub use crate::parameter::OpParameter;
     pub use crate::parsed_parameters::ParsedParameters;
     pub use crate::provider::Minimal;
@@ -43,9 +43,9 @@ pub(crate) mod internal {
     pub use crate::base::Base;
     pub use crate::inner_op::InnerOp;
     pub use crate::inner_op::OpConstructor;
-    pub use crate::op::etc;
-    pub use crate::op::Direction;
-    pub use crate::op::Error;
+    pub use crate::geod::etc;
+    pub use crate::geod::Direction;
+    pub use crate::geod::Error;
     pub use crate::parameter::OpParameter;
     pub use crate::parsed_parameters::ParsedParameters;
     pub use crate::provider::Minimal;
