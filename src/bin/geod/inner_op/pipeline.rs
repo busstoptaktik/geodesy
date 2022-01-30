@@ -1,26 +1,26 @@
-use super::super::inner_op_authoring::*;
+use super::*;
 
-// ----- F O R W A R D --------------------------------------------------------------
+// ----- F O R W A R D -----------------------------------------------------------------
 
 fn pipeline_fwd(op: &Op, provider: &dyn Provider, operands: &mut [CoordinateTuple]) -> usize {
     let mut n = usize::MAX;
     for step in &op.steps[..] {
-        n = n.min(step.operate(provider, operands, Direction::Fwd));
+        n = n.min(step.apply(provider, operands, Direction::Fwd));
     }
     n
 }
 
-// ----- I N V E R S E --------------------------------------------------------------
+// ----- I N V E R S E -----------------------------------------------------------------
 
 fn pipeline_inv(op: &Op, provider: &dyn Provider, operands: &mut [CoordinateTuple]) -> usize {
     let mut n = usize::MAX;
     for step in op.steps[..].iter().rev() {
-        n = n.min(step.operate(provider, operands, Direction::Inv));
+        n = n.min(step.apply(provider, operands, Direction::Inv));
     }
     n
 }
 
-// ----- C O N S T R U C T O R ------------------------------------------------------
+// ----- C O N S T R U C T O R ---------------------------------------------------------
 
 #[rustfmt::skip]
 pub const GAMUT: [OpParameter; 1] = [
@@ -40,15 +40,15 @@ pub fn new(parameters: &RawParameters, provider: &dyn Provider) -> Result<Op, Er
     let params = ParsedParameters::new(parameters, &GAMUT)?;
     let fwd = InnerOp(pipeline_fwd);
     let inv = InnerOp(pipeline_inv);
-    let base = Base::new(definition, fwd, Some(inv));
+    let descriptor = OpDescriptor::new(definition, fwd, Some(inv));
     Ok(Op {
-        base,
+        descriptor,
         params,
         steps,
     })
 }
 
-// ----- T E S T S ------------------------------------------------------------------
+// ----- T E S T S ---------------------------------------------------------------------
 
 #[cfg(test)]
 mod tests {
@@ -58,10 +58,10 @@ mod tests {
         let provider = Minimal::default();
         let op = Op::new("addone|addone|addone", &provider)?;
         let mut data = etc::some_basic_coordinates();
-        op.operate(&provider, &mut data, Direction::Fwd);
+        op.apply(&provider, &mut data, Direction::Fwd);
         assert_eq!(data[0][0], 58.);
         assert_eq!(data[1][0], 62.);
-        op.operate(&provider, &mut data, Direction::Inv);
+        op.apply(&provider, &mut data, Direction::Inv);
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
 
@@ -70,10 +70,10 @@ mod tests {
         let mut data = etc::some_basic_coordinates();
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
-      op.operate(&provider, &mut data, Direction::Fwd);
+        op.apply(&provider, &mut data, Direction::Fwd);
         assert_eq!(data[0][0], 56.);
         assert_eq!(data[1][0], 60.);
-        op.operate(&provider, &mut data, Direction::Inv);
+        op.apply(&provider, &mut data, Direction::Inv);
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
 

@@ -1,9 +1,5 @@
 use super::internal::*;
 
-/// TODO!
-/// impl Chase
-/// .get() -> .chase()
-
 #[derive(Debug, Default)]
 pub struct RawParameters {
     pub invocation: String,
@@ -80,5 +76,6 @@ impl RawParameters {
     }
 }
 
-// --------------------------------------------------------------------------------
+// ----- T E S T S ---------------------------------------------------------------------
+
 // RawParameters gets its test coverage from the tests in `op.rs`

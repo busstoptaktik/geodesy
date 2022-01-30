@@ -2,14 +2,14 @@ use super::internal::*;
 
 #[derive(Debug)]
 pub struct Op {
-    pub base: Base,
+    pub descriptor: OpDescriptor,
     pub params: ParsedParameters,
     pub steps: Vec<Op>,
 }
 
 impl Op {
     // operate fwd/inv, taking operator inversion into account.
-    pub fn operate(
+    pub fn apply(
         &self,
         ctx: &dyn Provider,
         operands: &mut [CoordinateTuple],
@@ -17,10 +17,10 @@ impl Op {
     ) -> usize {
         let forward = direction == Direction::Fwd;
         // Short form of (inverted && !forward) || (forward && !inverted)
-        if self.base.inverted != forward {
-            return self.base.fwd.0(self, ctx, operands);
+        if self.descriptor.inverted != forward {
+            return self.descriptor.fwd.0(self, ctx, operands);
         }
-        self.base.inv.0(self, ctx, operands)
+        self.descriptor.inv.0(self, ctx, operands)
     }
 
     pub fn new(definition: &str, provider: &dyn Provider) -> Result<Op, Error> {
@@ -71,14 +71,13 @@ impl Op {
 
     fn handle_inversion(mut self) -> Result<Op, Error> {
         if self.params.boolean("inv") {
-            self.base.inverted = true;
+            self.descriptor.inverted = true;
         }
         Ok(self)
     }
-
 }
 
-// --------------------------------------------------------------------------------
+// ----- T E S T S ------------------------------------------------------------------
 
 #[cfg(test)]
 mod tests {
@@ -99,20 +98,20 @@ mod tests {
         // Check forward and inverse operation
         let op = Op::new("addone", &provider)?;
         let mut data = etc::some_basic_coordinates();
-        op.operate(&provider, &mut data, Direction::Fwd);
+        op.apply(&provider, &mut data, Direction::Fwd);
         assert_eq!(data[0][0], 56.);
         assert_eq!(data[1][0], 60.);
-        op.operate(&provider, &mut data, Direction::Inv);
+        op.apply(&provider, &mut data, Direction::Inv);
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
 
         // Also for an inverted operator: check forward and inverse operation
         let op = Op::new("addone inv", &provider)?;
         let mut data = etc::some_basic_coordinates();
-        op.operate(&provider, &mut data, Direction::Fwd);
+        op.apply(&provider, &mut data, Direction::Fwd);
         assert_eq!(data[0][0], 54.);
         assert_eq!(data[1][0], 58.);
-        op.operate(&provider, &mut data, Direction::Inv);
+        op.apply(&provider, &mut data, Direction::Inv);
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
 
@@ -137,18 +136,19 @@ mod tests {
         Ok(())
     }
 
-
     #[test]
     fn pipeline() -> Result<(), Error> {
         let provider = Minimal::default();
         let op = Op::new("addone|addone|addone", &provider)?;
         let mut data = etc::some_basic_coordinates();
-        op.operate(&provider, &mut data, Direction::Fwd);
+        op.apply(&provider, &mut data, Direction::Fwd);
         assert_eq!(data[0][0], 58.);
         assert_eq!(data[1][0], 62.);
-        op.operate(&provider, &mut data, Direction::Inv);
+        op.apply(&provider, &mut data, Direction::Inv);
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
         Ok(())
     }
+
+    // TODO/todo!(): Test macro expansion (likely wrong - check raw_parameters.rs)
 }

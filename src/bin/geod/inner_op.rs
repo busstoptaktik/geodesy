@@ -1,20 +1,6 @@
 use super::inner_op_authoring::*;
 
-/// Blueprint for the overall instantiation of an operator.
-/// OpConstructor needs to be a newtype, rather than a type definition,
-/// since we must implement the Debug-trait for OpConstructor (to make
-/// auto derivin the Debug-trait work for any derived type).
-
-pub struct OpConstructor(pub fn(args: &RawParameters, ctx: &dyn Provider) -> Result<Op, Error>);
-
-// Cannot autoderive the Debug trait
-impl core::fmt::Debug for OpConstructor {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        write!(f, "OpConstructor")
-    }
-}
-
-// ----------------------------------------------------------------------------
+// ----- B U I L T I N   O P E R A T O R S ---------------------------------------------
 
 // Install new builtin operators by adding them in the pub(super) and
 // BUILTIN_OPERATORS blocks below
@@ -25,7 +11,7 @@ pub(super) mod pipeline;
 #[rustfmt::skip]
 const BUILTIN_OPERATORS: [(&str, OpConstructor); 2] = [
     ("pipeline", OpConstructor(super::inner_op::pipeline::new)),
-    ("addone", OpConstructor(super::inner_op::addone::new)),
+    ("addone",   OpConstructor(super::inner_op::addone::new)),
 ];
 // A BTreeMap would have been a better choice for BUILTIN_OPERATORS, except
 // for the annoying fact that it cannot be compile-time const-constructed.
@@ -41,12 +27,29 @@ pub fn builtin(name: &str) -> Result<OpConstructor, Error> {
     Err(Error::NotFound(name.to_string(), String::default()))
 }
 
-// ----------------------------------------------------------------------------
+// ----- S T R U C T   O P C O N S T R U C T O R ---------------------------------------
+
+/// Blueprint for the overall instantiation of an operator.
+/// OpConstructor needs to be a newtype, rather than a type alias,
+/// since we must implement the Debug-trait for OpConstructor (to
+/// make auto derive of the Debug-trait work for any derived type).
+
+pub struct OpConstructor(pub fn(args: &RawParameters, ctx: &dyn Provider) -> Result<Op, Error>);
+
+// Cannot autoderive the Debug trait
+impl core::fmt::Debug for OpConstructor {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "OpConstructor")
+    }
+}
+
+// ----- S T R U C T   I N N E R O P ---------------------------------------------------
 
 /// Blueprint for the functions doing the actual transformation work.
-/// InnerOp needs to be a newtype, rather than a type definition, since
-/// we must implement the Debug-trait for InnerOp (to make auto deriving
-/// the Debug-trait work for any derived type).
+/// InnerOp needs to be a newtype, rather than a type alias, since we
+/// must implement the Debug-trait for InnerOp (to make auto derive
+/// of the Debug-trait work for any derived type).
+
 pub struct InnerOp(pub fn(op: &Op, ctx: &dyn Provider, operands: &mut [CoordinateTuple]) -> usize);
 
 // Cannot autoderive the Debug trait

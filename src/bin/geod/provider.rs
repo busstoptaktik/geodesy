@@ -1,6 +1,6 @@
 use super::internal::*;
 
-// ----- T H E   P R O V I D E R   T R A I T ----------------------------------------
+// ----- T H E   P R O V I D E R   T R A I T -------------------------------------------
 
 pub trait Provider {
     fn globals(&self) -> BTreeMap<String, String>;
@@ -11,7 +11,7 @@ pub trait Provider {
     fn apply(&self, op: Uuid, direction: Direction, operands: &mut [CoordinateTuple]) -> usize;
 }
 
-// ----- T H E   M I N I M A L   P R O V I D E R ------------------------------------
+// ----- T H E   M I N I M A L   P R O V I D E R ---------------------------------------
 
 #[derive(Debug, Default)]
 pub struct Minimal {
@@ -55,7 +55,7 @@ impl Provider for Minimal {
         ))
     }
 
-    fn apply(&self, op: Uuid, direction: Direction, operands: &mut [CoordinateTuple]) -> usize {
+    fn apply(&self, _op: Uuid, _direction: Direction, _operands: &mut [CoordinateTuple]) -> usize {
         todo!()
     }
 }

@@ -1,20 +1,10 @@
-#![allow(dead_code, unused_variables)]
-
 mod geod;
 pub use geod::preamble::*;
 pub use log::info;
-/*
-use geodesy::CoordinateTuple as C;
-use geod::etc;
-use geod::parsed_parameters::ParsedParameters;
-use geod::provider;
-use geod::raw_parameters::RawParameters;
-use geod::*;
-*/
 
-// -----------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------
 // UG: An experiment with an *U*ltrasmall *G*eodetic transformation system
-// -----------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------
 
 fn main() -> Result<(), anyhow::Error> {
     // Filter by setting RUST_LOG to one of {Error, Warn, Info, Debug, Trace}

@@ -1,6 +1,6 @@
-pub mod base;
 pub mod inner_op;
 pub mod op;
+pub mod op_descriptor;
 pub mod parsed_parameters;
 
 pub mod etc;
@@ -17,10 +17,11 @@ pub mod inner_op_authoring {
     pub use log::error;
     pub use log::warn;
 
-    pub use super::base::Base;
     pub use super::etc;
     pub use super::inner_op::InnerOp;
     pub use super::op::Op;
+    pub use super::op::*;
+    pub use super::op_descriptor::OpDescriptor;
     pub use super::parameter::OpParameter;
     pub use super::parsed_parameters::ParsedParameters;
     pub use super::provider::Minimal;
@@ -41,11 +42,11 @@ pub(crate) mod internal {
     pub use log::warn;
     pub use uuid::Uuid;
 
-    pub use super::base::Base;
     pub use super::etc;
     pub use super::inner_op::InnerOp;
     pub use super::inner_op::OpConstructor;
     pub use super::op::Op;
+    pub use super::op_descriptor::OpDescriptor;
     pub use super::parameter::OpParameter;
     pub use super::parsed_parameters::ParsedParameters;
     pub use super::provider::Minimal;
