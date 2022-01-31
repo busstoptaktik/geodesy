@@ -6,12 +6,14 @@ use super::inner_op_authoring::*;
 // BUILTIN_OPERATORS blocks below
 
 pub(super) mod addone;
+pub(super) mod helmert;
 pub(super) mod pipeline;
 
 #[rustfmt::skip]
-const BUILTIN_OPERATORS: [(&str, OpConstructor); 2] = [
-    ("pipeline", OpConstructor(super::inner_op::pipeline::new)),
+const BUILTIN_OPERATORS: [(&str, OpConstructor); 3] = [
     ("addone",   OpConstructor(super::inner_op::addone::new)),
+    ("helmert",  OpConstructor(super::inner_op::helmert::new)),
+    ("pipeline", OpConstructor(super::inner_op::pipeline::new)),
 ];
 // A BTreeMap would have been a better choice for BUILTIN_OPERATORS, except
 // for the annoying fact that it cannot be compile-time const-constructed.

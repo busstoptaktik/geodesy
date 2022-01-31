@@ -5,22 +5,22 @@ pub struct ParsedParameters {
     pub name: String,
 
     // Commonly used options have hard-coded slots
-    ellps: [Ellipsoid; 2],
-    lat: [f64; 4],
-    lon: [f64; 4],
-    x: [f64; 4],
-    y: [f64; 4],
-    k: [f64; 4],
+    pub ellps: [Ellipsoid; 2],
+    pub lat: [f64; 4],
+    pub lon: [f64; 4],
+    pub x: [f64; 4],
+    pub y: [f64; 4],
+    pub k: [f64; 4],
 
     // Op-specific options are stored in B-Trees
-    boolean: BTreeSet<&'static str>,
-    natural: BTreeMap<&'static str, usize>,
-    integer: BTreeMap<&'static str, i64>,
-    real: BTreeMap<&'static str, f64>,
-    series: BTreeMap<&'static str, Vec<f64>>,
-    text: BTreeMap<&'static str, String>,
-    uuid: BTreeMap<&'static str, uuid::Uuid>,
-    ignored: Vec<String>,
+    pub boolean: BTreeSet<&'static str>,
+    pub natural: BTreeMap<&'static str, usize>,
+    pub integer: BTreeMap<&'static str, i64>,
+    pub real: BTreeMap<&'static str, f64>,
+    pub series: BTreeMap<&'static str, Vec<f64>>,
+    pub text: BTreeMap<&'static str, String>,
+    pub uuid: BTreeMap<&'static str, uuid::Uuid>,
+    pub ignored: Vec<String>,
 }
 
 // Accessors

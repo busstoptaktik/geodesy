@@ -28,7 +28,10 @@ pub fn split_into_parameters(step: &str) -> BTreeMap<String, String> {
         .join(" ")
         .replace("= ", "=")
         .replace(": ", ":")
-        .replace(", ", ",");
+        .replace(", ", ",")
+        .replace(" =", "=")
+        .replace(" :", ":")
+        .replace(" ,", ",");
 
     let mut params = BTreeMap::new();
     let elements: Vec<_> = step.split_whitespace().collect();
