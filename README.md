@@ -1,5 +1,7 @@
 # Geodesy
 
+**NOTE:** After a recent dramatic restructuring (and more to come) the *Ruminations* section is not yet in accordance with the actual situation. Take a look in the *Examples* section if anything appears fishy.
+
 *Rust Geodesy* (RG), is a platform for experiments with geodetic software, transformations, and standards. *RG* vaguely resembles the [PROJ](https://proj.org) transformation system, and was built in part on the basis of experiments with alternative data flow models for PROJ. The actual transformation functionality of *RG* is, however, minimal: At time of writing, it includes just a few low level operations, including:
 
 - The three, six, seven, and fourteen-parameter versions of the *Helmert transformation*
