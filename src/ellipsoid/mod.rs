@@ -3,7 +3,7 @@ mod geodesics;
 pub(crate) mod latitudes;
 mod meridians;
 
-use crate::GeodesyError;
+use crate::Error;
 
 // A HashMap would have been a better choice,for the OPERATOR_LIST, except
 // for the annoying fact that it cannot be compile-time constructed
@@ -93,7 +93,7 @@ impl Ellipsoid {
     }
 
     /// Predefined ellipsoid; built-in or defined in asset collections
-    pub fn named(name: &str) -> Result<Ellipsoid, GeodesyError> {
+    pub fn named(name: &str) -> Result<Ellipsoid, Error> {
         // Is it one of the few builtins?
         if let Some(index) = ELLIPSOID_LIST.iter().position(|&ellps| ellps.0 == name) {
             let e = ELLIPSOID_LIST[index];
@@ -104,7 +104,7 @@ impl Ellipsoid {
             return Ok(Ellipsoid::triaxial(ax, ay, f));
         }
         // TODO: Search asset collection
-        Err(GeodesyError::NotFound(String::from(name)))
+        Err(Error::NotFound(String::from(name), String::from("Ellipsoid::named()")))
     }
 
     // ----- Eccentricities --------------------------------------------------------
@@ -225,7 +225,7 @@ impl Ellipsoid {
 mod tests {
     use super::*;
     #[test]
-    fn test_ellipsoid() -> Result<(), GeodesyError> {
+    fn test_ellipsoid() -> Result<(), Error> {
         // Constructors
         let ellps = Ellipsoid::named("intl")?;
         assert_eq!(ellps.flattening(), 1. / 297.);
@@ -243,7 +243,7 @@ mod tests {
     }
 
     #[test]
-    fn shape_and_size() -> Result<(), GeodesyError> {
+    fn shape_and_size() -> Result<(), Error> {
         let ellps = Ellipsoid::named("GRS80")?;
         let ellps = Ellipsoid::new(ellps.semimajor_axis(), ellps.flattening());
         let ellps = Ellipsoid::triaxial(ellps.a, ellps.a - 1., ellps.f);
@@ -274,7 +274,7 @@ mod tests {
     }
 
     #[test]
-    fn curvatures() -> Result<(), GeodesyError> {
+    fn curvatures() -> Result<(), Error> {
         let ellps = Ellipsoid::named("GRS80")?;
         // The curvatures at the North Pole
         assert!(

@@ -1,6 +1,6 @@
 use std::ops::{Index, IndexMut};
-mod conversions;
-mod distances;
+pub mod conversions;
+pub mod distances;
 
 /// Generic 4D coordinate tuple, with no fixed interpretation of the elements
 #[derive(Debug, Default, PartialEq, Copy, Clone)]

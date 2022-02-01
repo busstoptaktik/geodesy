@@ -22,44 +22,88 @@
 pub(crate) mod bibliography;
 pub(crate) mod coordinate;
 pub(crate) mod ellipsoid;
-pub(crate) mod internals;
-pub(crate) mod operator;
-pub(crate) mod resource;
 
-// But we import and give `pub`-ness to some important `struct`s and traits.
-// In effect this seems to turn use geodesy into use::geodesy::preamble::*,
-// so may reconsider this (a.o. it makes it hard to include the "From" trait
-// implementations)
 pub use coordinate::CoordinateTuple;
 pub use ellipsoid::Ellipsoid;
-pub use resource::gys::{GysArgs, GysResource};
-pub use resource::minimal::MinimalResourceProvider as Minimal;
-pub use resource::plain::{PlainResourceProvider as Plain, SearchLevel};
-pub use resource::roundtrip;
-pub use resource::Provider;
+pub use provider::Provider;
+pub use provider::Minimal;
+pub use op::Op;
 
-// The bibliography needs `pub`-ness in order to build the docs.
-pub use bibliography::Bibliography;
+pub mod inner_op;
+pub mod op;
+pub mod op_descriptor;
+pub mod parsed_parameters;
 
-// These need `pub`-ness in order to support user-defined operators
-pub use operator::{Operator, OperatorCore};
-pub type OperatorConstructor =
-    fn(args: &GysResource, provider: &dyn Provider) -> Result<Operator, GeodesyError>;
+pub mod etc;
+pub mod parameter;
+pub mod provider;
+pub mod raw_parameters;
 
-/// Indicate that a two-way operator, function, or method, should run in the *forward* direction.
-pub const FWD: bool = true;
-/// Indicate that a two-way operator, function, or method, should run in the *inverse* direction.
-pub const INV: bool = false;
-
-/// And obviously the GeodesyError enum needs `pub`-ness
+use log::error;
+use std::io;
 use thiserror::Error;
-#[derive(Error, Debug)]
-pub enum GeodesyError {
-    // Convert any std::io::Error to GeodesyError::Io
-    #[error(transparent)]
-    Io(#[from] std::io::Error),
 
-    // General error message
+/// Preamble for InnerOp modules (built-in or user defined)
+pub mod inner_op_authoring {
+    pub use log::error;
+    pub use log::warn;
+
+    pub use crate::etc;
+    pub use crate::inner_op::InnerOp;
+    pub use crate::op::Op;
+    pub use crate::op::*;
+    pub use crate::op_descriptor::OpDescriptor;
+    pub use crate::parameter::OpParameter;
+    pub use crate::parsed_parameters::ParsedParameters;
+    pub use crate::provider::Minimal;
+    pub use crate::provider::Provider;
+    pub use crate::raw_parameters::RawParameters;
+    pub use crate::Direction;
+    pub use crate::Error;
+    pub use crate::CoordinateTuple;
+}
+
+/// Preamble for crate-internal modules
+pub(crate) mod internal {
+    pub use std::collections::BTreeMap;
+    pub use std::collections::BTreeSet;
+
+    pub use log::error;
+    pub use log::warn;
+    pub use uuid::Uuid;
+
+    pub use crate::ellipsoid::Ellipsoid as Ellipsoid;
+    pub use crate::etc;
+    pub use crate::inner_op::InnerOp;
+    pub use crate::inner_op::OpConstructor;
+    pub use crate::op::Op;
+    pub use crate::op_descriptor::OpDescriptor;
+    pub use crate::parameter::OpParameter;
+    pub use crate::parsed_parameters::ParsedParameters;
+    pub use crate::provider::Minimal;
+    pub use crate::provider::Provider;
+    pub use crate::raw_parameters::RawParameters;
+    pub use crate::Direction;
+    pub use crate::Error;
+    pub use crate::coordinate::CoordinateTuple as CoordinateTuple;
+}
+
+/// Preamble for external use
+pub mod preamble {
+    pub use super::op::Op;
+    pub use super::provider::Minimal;
+    pub use super::Direction;
+    pub use super::Error;
+    pub use crate::CoordinateTuple as C;
+}
+
+// pub use op::Op;
+
+#[derive(Error, Debug)]
+pub enum Error {
+    #[error("i/o error")]
+    Io(#[from] io::Error),
+
     #[error("error: {0}")]
     General(&'static str),
 
@@ -71,13 +115,35 @@ pub enum GeodesyError {
 
     #[error("invalid header (expected {expected:?}, found {found:?})")]
     InvalidHeader { expected: String, found: String },
+    #[error("{message:?} (expected {expected:?}, found {found:?})")]
+    Unexpected {
+        message: String,
+        expected: String,
+        found: String,
+    },
 
-    #[error("operator {0} not found")]
-    NotFound(String),
+    #[error("operator {0} not found{1}")]
+    NotFound(String, String),
 
-    #[error("too deep recursion for {0}")]
-    Recursion(String),
+    #[error("recursion too deep for {0}, at {1}")]
+    Recursion(String, String),
+
+    #[error("missing required parameter {0}")]
+    MissingParam(String),
+
+    #[error("malformed value for parameter {0}: {1}")]
+    BadParam(String, String),
 
     #[error("unknown error")]
     Unknown,
+}
+
+/// `Fwd`: Indicate that a two-way operator, function, or method,
+/// should run in the *forward* direction.
+/// `Inv`: Indicate that a two-way operator, function, or method,
+/// should run in the *inverse* direction.
+#[derive(Debug, PartialEq)]
+pub enum Direction {
+    Fwd,
+    Inv,
 }

@@ -1,3 +1,9 @@
+// TODO
+fn main()  {
+
+}
+
+
 // examples/04-rotating_the_earth
 
 // See also 03-user_defined_operators.rs
@@ -26,11 +32,10 @@
 // Also note that since the return-bearing depends on the destination,
 // this operator is **not** directly invertible (although an iterative
 // solution is feasible)
+
+/*
 use geodesy::Ellipsoid;
-use geodesy::GeodesyError;
-use geodesy::GysResource;
-use geodesy::Operator;
-use geodesy::OperatorCore;
+use geodesy::Error;
 use geodesy::{CoordinateTuple, Provider};
 
 pub struct GeodesicShift {
@@ -147,3 +152,4 @@ fn main() -> anyhow::Result<()> {
     assert_eq!(false, ctx.inv(cph_to_vie, &mut data));
     Ok(())
 }
+*/

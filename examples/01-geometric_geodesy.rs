@@ -11,9 +11,9 @@
 
 // Including the `operand` namespace gives us some slightly
 // better support for `CoordinateTuple`s
-use geodesy::{CoordinateTuple, GeodesyError};
+use geodesy::{CoordinateTuple, Error};
 
-fn main() -> Result<(), GeodesyError> {
+fn main() -> Result<(), Error> {
     // In example 00, we saw that the `Context` data structure is the
     // coordinating element for all things related to transformations
     // in Rust Geodesy. For generic geometric geodesy the same can be

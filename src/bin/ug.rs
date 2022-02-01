@@ -1,5 +1,4 @@
-mod geod;
-pub use geod::preamble::*;
+pub use geodesy;
 pub use log::info;
 
 // -------------------------------------------------------------------------------------
@@ -16,7 +15,7 @@ fn main() -> Result<(), anyhow::Error> {
         simple_logger::init_with_env()?;
     }
 
-    let size = std::mem::size_of::<Op>();
+    let size = std::mem::size_of::<geodesy::Op>();
     dbg!(size);
     Ok(())
 }

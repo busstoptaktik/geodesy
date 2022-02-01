@@ -1,6 +1,6 @@
-use crate::ellipsoid::Ellipsoid;
 use crate::CoordinateTuple;
-use crate::FWD;
+use crate::Direction;
+use super::Ellipsoid;
 
 // ----- Geodesics -------------------------------------------------------------
 impl Ellipsoid {
@@ -20,14 +20,14 @@ impl Ellipsoid {
     #[must_use]
     #[allow(non_snake_case)] // make it possible to mimic math notation from original paper
     #[allow(clippy::many_single_char_names)] // ditto
-    pub fn meridional_distance(&self, latitude: f64, forward: bool) -> f64 {
+    pub fn meridional_distance(&self, latitude: f64, direction: Direction) -> f64 {
         let n = self.third_flattening();
         let m = 1. + n * n / 8.;
 
         // Rectifying radius - truncated after the n⁴ term
         let A = self.a * m * m / (1. + n);
 
-        if forward {
+        if direction == Direction::Fwd {
             let B = 9. * (1. - 3. * n * n / 8.0);
             let x = 1. + 13. / 12. * n * (2. * latitude).cos();
             let y = 0. + 13. / 12. * n * (2. * latitude).sin();
@@ -70,7 +70,7 @@ impl Ellipsoid {
         let L1 = from[0];
 
         // The latitude of P1 projected onto the auxiliary sphere
-        let U1 = self.reduced_latitude(B1, FWD);
+        let U1 = self.reduced_latitude(B1, Direction::Fwd);
         let U1cos = U1.cos();
         let U1sin = U1.sin();
 
@@ -160,8 +160,8 @@ impl Ellipsoid {
             return CoordinateTuple::geo(0., 0., 0., 0.);
         }
 
-        let U1 = self.reduced_latitude(B1, FWD);
-        let U2 = self.reduced_latitude(B2, FWD);
+        let U1 = self.reduced_latitude(B1, Direction::Fwd);
+        let U2 = self.reduced_latitude(B2, Direction::Fwd);
 
         let U1cos = U1.cos();
         let U2cos = U2.cos();
@@ -264,11 +264,11 @@ impl Ellipsoid {
 
 #[cfg(test)]
 mod tests {
-    use crate::GeodesyError;
+    use crate::Error;
 
     use super::*;
     #[test]
-    fn geodesics() -> Result<(), GeodesyError> {
+    fn geodesics() -> Result<(), Error> {
         let ellps = Ellipsoid::named("GRS80")?;
 
         // (expected values from Karney: https://geographiclib.sourceforge.io/cgi-bin/GeodSolve)

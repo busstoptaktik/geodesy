@@ -1,4 +1,5 @@
-use crate::CoordinateTuple;
+use crate::Ellipsoid;
+use super::CoordinateTuple;
 
 impl CoordinateTuple {
     /// Euclidean distance between two points in the 2D plane.
@@ -25,7 +26,7 @@ impl CoordinateTuple {
     /// assert_eq!(p0.hypot2(&p1), t.hypot(t));
     /// ```
     #[must_use]
-    pub fn hypot2(&self, other: &CoordinateTuple) -> f64 {
+    pub fn hypot2(&self, other: &Self) -> f64 {
         (self[0] - other[0]).hypot(self[1] - other[1])
     }
 
@@ -54,7 +55,7 @@ impl CoordinateTuple {
     /// assert_eq!(p0.hypot3(&p1), t.hypot(t).hypot(t));
     /// ```
     #[must_use]
-    pub fn hypot3(&self, other: &CoordinateTuple) -> f64 {
+    pub fn hypot3(&self, other: &Self) -> f64 {
         (self[0] - other[0])
             .hypot(self[1] - other[1])
             .hypot(self[2] - other[2])
@@ -62,15 +63,15 @@ impl CoordinateTuple {
 
     /// The 3D distance between two points given as internal angular
     /// coordinates. Mostly a shortcut for test authoring
-    pub fn default_ellps_3d_dist(&self, other: &CoordinateTuple) -> f64 {
-        let e = crate::Ellipsoid::default();
+    pub fn default_ellps_3d_dist(&self, other: &Self) -> f64 {
+        let e = Ellipsoid::default();
         e.cartesian(self).hypot3(&e.cartesian(other))
     }
 
     /// The Geodesic distance on the default ellipsoid. Mostly a shortcut
     /// for test authoring
-    pub fn default_ellps_dist(&self, other: &CoordinateTuple) -> f64 {
-        crate::Ellipsoid::default().distance(self, other)
+    pub fn default_ellps_dist(&self, other: &Self) -> f64 {
+        Ellipsoid::default().distance(self, other)
     }
 }
 

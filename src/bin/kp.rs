@@ -1,5 +1,5 @@
+use geodesy;
 use geodesy::CoordinateTuple as Coord;
-use geodesy::Provider;
 use std::io::BufRead;
 use std::path::PathBuf;
 use std::time;
@@ -54,7 +54,7 @@ struct Opt {
 fn main() -> Result<(), anyhow::Error> {
     let opt = Opt::from_args();
 
-    let mut ctx = geodesy::Plain::new(geodesy::SearchLevel::LocalPatches, false);
+    let ctx = geodesy::Minimal::default();
 
     if opt.inverse && opt.roundtrip {
         eprintln!("Options `inverse` and `roundtrip` are mutually exclusive");
@@ -69,11 +69,11 @@ fn main() -> Result<(), anyhow::Error> {
     }
 
     let start = time::Instant::now();
-    let op = ctx.define_operation(&opt.operation)?;
+    let op = geodesy::Op::new(&opt.operation, &ctx)?;
     if opt.verbose > 2 {
         let duration = start.elapsed();
         println!("Created operation in: {:?}", duration);
-        println!("{:#?}", ctx.get_operation(op)?);
+        println!("{:#?}", op);
     }
 
     let start = time::Instant::now();
@@ -100,14 +100,14 @@ fn main() -> Result<(), anyhow::Error> {
 
         // Transformation - this is the actual geodetic content
         if opt.inverse {
-            ctx.inv(op, &mut data);
+            op.apply(&ctx, &mut data, geodesy::Direction::Inv);
             if opt.roundtrip {
-                ctx.fwd(op, &mut data);
+                op.apply(&ctx, &mut data, geodesy::Direction::Fwd);
             }
         } else {
-            ctx.fwd(op, &mut data);
+            op.apply(&ctx, &mut data, geodesy::Direction::Fwd);
             if opt.roundtrip {
-                ctx.inv(op, &mut data);
+                op.apply(&ctx, &mut data, geodesy::Direction::Inv);
             }
         }
 

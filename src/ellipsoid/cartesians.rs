@@ -1,5 +1,6 @@
 use crate::CoordinateTuple;
-use crate::Ellipsoid;
+use super::Ellipsoid;
+
 use std::f64::consts::FRAC_PI_2;
 
 impl Ellipsoid {
@@ -108,10 +109,10 @@ impl Ellipsoid {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::GeodesyError;
+    use crate::Error;
 
     #[test]
-    fn geo_to_cart() -> Result<(), GeodesyError> {
+    fn geo_to_cart() -> Result<(), Error> {
         let ellps = Ellipsoid::named("GRS80")?;
         // Roundtrip geographic <-> cartesian
         let geo = CoordinateTuple::geo(55., 12., 100., 0.);
