@@ -77,7 +77,7 @@ impl CoordinateTuple {
 
 #[cfg(test)]
 mod tests {
-    use crate::CoordinateTuple;
+    use super::*;
 
     #[test]
     fn distances() {
