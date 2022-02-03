@@ -103,6 +103,21 @@ impl Ellipsoid {
             let f = if rf != 0.0 { 1.0 / rf } else { rf };
             return Ok(Ellipsoid::triaxial(ax, ay, f));
         }
+
+        // The semiminor/reciproque-flattening form, e.g. 6378137/298.3
+        loop {
+            let a_rf = name.split("/").collect::<Vec<_>>();
+            if a_rf.len() != 2_usize {
+                break;
+            }
+            if let Ok(a) = a_rf[0].parse::<f64>() {
+                if let Ok(rf) = a_rf[1].parse::<f64>() {
+                    return Ok(Ellipsoid::new(a, 1./rf));
+                }
+            }
+            break;
+        }
+
         // TODO: Search asset collection
         Err(Error::NotFound(String::from(name), String::from("Ellipsoid::named()")))
     }
@@ -230,8 +245,9 @@ mod tests {
         let ellps = Ellipsoid::named("intl")?;
         assert_eq!(ellps.flattening(), 1. / 297.);
 
-        // let ellps = Ellipsoid::named("APL4.9")?;
-        // assert_eq!(ellps.flattening(), 1. / 298.25);
+        let ellps = Ellipsoid::named("6378137/298.25")?;
+        assert_eq!(ellps.semimajor_axis(), 6378137.0);
+        assert_eq!(ellps.flattening(), 1. / 298.25);
 
         let ellps = Ellipsoid::named("GRS80")?;
         assert_eq!(ellps.semimajor_axis(), 6378137.0);

@@ -1,5 +1,5 @@
-use geodesy;
-use geodesy::CoordinateTuple as Coord;
+use geodesy::preamble::*;
+use CoordinateTuple as Coord;
 use std::io::BufRead;
 use std::path::PathBuf;
 use std::time;
@@ -69,7 +69,7 @@ fn main() -> Result<(), anyhow::Error> {
     }
 
     let start = time::Instant::now();
-    let op = geodesy::Op::new(&opt.operation, &ctx)?;
+    let op = Op::new(&opt.operation, &ctx)?;
     if opt.verbose > 2 {
         let duration = start.elapsed();
         println!("Created operation in: {:?}", duration);

@@ -1,5 +1,5 @@
-pub use geodesy;
-pub use log::info;
+use geodesy::preamble::*;
+use log::info;
 
 // -------------------------------------------------------------------------------------
 // UG: An experiment with an *U*ltrasmall *G*eodetic transformation system
@@ -15,7 +15,7 @@ fn main() -> Result<(), anyhow::Error> {
         simple_logger::init_with_env()?;
     }
 
-    let size = std::mem::size_of::<geodesy::Op>();
+    let size = std::mem::size_of::<Op>();
     dbg!(size);
     Ok(())
 }

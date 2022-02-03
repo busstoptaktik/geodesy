@@ -23,11 +23,11 @@ pub(crate) mod bibliography;
 pub(crate) mod coordinate;
 pub(crate) mod ellipsoid;
 
-pub use coordinate::CoordinateTuple;
-pub use ellipsoid::Ellipsoid;
-pub use provider::Provider;
-pub use provider::Minimal;
-pub use op::Op;
+pub use crate::coordinate::CoordinateTuple;
+pub use crate::ellipsoid::Ellipsoid;
+pub use crate::provider::Provider;
+pub use crate::provider::Minimal;
+pub use crate::op::Op;
 
 pub mod inner_op;
 pub mod op;
@@ -48,19 +48,28 @@ pub mod inner_op_authoring {
     pub use log::error;
     pub use log::warn;
 
-    pub use crate::etc;
-    pub use crate::inner_op::InnerOp;
+    pub use crate::Error;
+    pub use crate::coordinate::CoordinateTuple;
+    pub use crate::ellipsoid::Ellipsoid;
+
+    pub use crate::provider::Provider;
+    pub use crate::provider::Minimal;
+
     pub use crate::op::Op;
-    pub use crate::op::*;
+    pub use crate::inner_op::InnerOp;
     pub use crate::op_descriptor::OpDescriptor;
+    pub use crate::inner_op::OpConstructor;
+
     pub use crate::parameter::OpParameter;
     pub use crate::parsed_parameters::ParsedParameters;
-    pub use crate::provider::Minimal;
-    pub use crate::provider::Provider;
     pub use crate::raw_parameters::RawParameters;
+
     pub use crate::Direction;
-    pub use crate::Error;
-    pub use crate::CoordinateTuple;
+    pub use crate::Direction::Fwd;
+    pub use crate::Direction::Inv;
+
+    pub use crate::etc;
+
 }
 
 /// Preamble for crate-internal modules
@@ -72,32 +81,38 @@ pub(crate) mod internal {
     pub use log::warn;
     pub use uuid::Uuid;
 
-    pub use crate::ellipsoid::Ellipsoid as Ellipsoid;
+    pub use crate::coordinate::CoordinateTuple;
+    pub use crate::ellipsoid::Ellipsoid;
+    pub use crate::provider::Provider;
+    pub use crate::provider::Minimal;
+    pub use crate::op::Op;
+    pub use crate::Error;
+
     pub use crate::etc;
     pub use crate::inner_op::InnerOp;
     pub use crate::inner_op::OpConstructor;
-    pub use crate::op::Op;
+
     pub use crate::op_descriptor::OpDescriptor;
     pub use crate::parameter::OpParameter;
     pub use crate::parsed_parameters::ParsedParameters;
-    pub use crate::provider::Minimal;
-    pub use crate::provider::Provider;
+
+    // pub use crate::provider::Minimal;
     pub use crate::raw_parameters::RawParameters;
     pub use crate::Direction;
-    pub use crate::Error;
-    pub use crate::coordinate::CoordinateTuple as CoordinateTuple;
+    pub use crate::Direction::Fwd;
+    pub use crate::Direction::Inv;
+    // pub use crate::coordinate::CoordinateTuple as CoordinateTuple;
 }
 
 /// Preamble for external use
 pub mod preamble {
-    pub use super::op::Op;
-    pub use super::provider::Minimal;
-    pub use super::Direction;
-    pub use super::Error;
-    pub use crate::CoordinateTuple as C;
+    pub use crate::op::Op as Op;
+    pub use crate::provider::Provider;
+    pub use crate::provider::Minimal as Minimal;
+    pub use crate::Direction;
+    pub use crate::Error;
+    pub use crate::CoordinateTuple;
 }
-
-// pub use op::Op;
 
 #[derive(Error, Debug)]
 pub enum Error {
@@ -147,3 +162,4 @@ pub enum Direction {
     Fwd,
     Inv,
 }
+

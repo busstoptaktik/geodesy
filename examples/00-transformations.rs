@@ -5,12 +5,14 @@
 // cargo run --example 00-transformations
 
 // The CoordinateTuple type is much used, so we give it a very short alias
+use geodesy::preamble::*;
 use geodesy::CoordinateTuple as C;
+
 
 // Use Anyhow for convenient error handling
 fn main() -> anyhow::Result<()> {
     // The context is the entry point to all transformation functionality:
-    let ctx = geodesy::Minimal::default();
+    let ctx = Minimal::default();
     // The concept of a "context data structure" will be well known to
     // PROJ users, where the context plays a somewhat free-flowing role,
     // and only becomes truly visible in multithreaded cases.
@@ -47,7 +49,7 @@ fn main() -> anyhow::Result<()> {
     // geographical coordinates into UTM zone 32 coordinates. Since
     // this may go wrong (e.g. due to syntax errors in the operator
     // definition), use the Rust `?`-operator to handle errors.
-    let utm32 = geodesy::Op::new("utm zone=32", &ctx)?;
+    let utm32 = Op::new("utm zone=32", &ctx)?;
     // Now, let's use the utm32-operator to transform some data
     utm32.apply(&ctx, &mut data, geodesy::Direction::Fwd);
 
@@ -69,7 +71,7 @@ fn main() -> anyhow::Result<()> {
 
     // Here's an example of handling bad syntax:
     println!("Bad syntax example:");
-    let op = geodesy::Op::new("aargh zone=23", &ctx);
+    let op = Op::new("aargh zone=23", &ctx);
     //let op = ctx.define_operation("aargh zone: 23");
     if op.is_err() {
         println!("Deliberate error - {:?}", op);
@@ -88,7 +90,7 @@ fn main() -> anyhow::Result<()> {
     // coordinates to cartesian, and back. Hence, we need a pipeline
     // of 3 steps:
     let pipeline = "cart ellps=intl | helmert x=-87 y=-96 z=-120 | cart inv=true ellps=GRS80";
-    let ed50_wgs84 = geodesy::Op::new(pipeline, &ctx)?;
+    let ed50_wgs84 = Op::new(pipeline, &ctx)?;
 
     // Since the forward transformation goes *from* ed50 to wgs84, we use
     // the inverse method to take us the other way, back in time to ED50

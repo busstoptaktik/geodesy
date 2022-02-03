@@ -3,12 +3,13 @@ use super::internal::*;
 // ----- T H E   P R O V I D E R   T R A I T -------------------------------------------
 
 pub trait Provider {
+    fn op(&mut self, definition: &str) -> Result<Uuid, Error>;
+    fn apply(&self, op: Uuid, direction: Direction, operands: &mut [CoordinateTuple]) -> Result<usize, Error>;
     fn globals(&self) -> BTreeMap<String, String>;
     fn register_op(&mut self, name: &str, constructor: OpConstructor);
     fn get_op(&self, name: &str) -> Result<OpConstructor, Error>;
     fn register_resource(&mut self, name: &str, definition: &str);
     fn get_resource(&self, name: &str) -> Result<String, Error>;
-    fn apply(&self, op: Uuid, direction: Direction, operands: &mut [CoordinateTuple]) -> usize;
 }
 
 // ----- T H E   M I N I M A L   P R O V I D E R ---------------------------------------
@@ -17,9 +18,26 @@ pub trait Provider {
 pub struct Minimal {
     constructors: BTreeMap<String, OpConstructor>,
     resources: BTreeMap<String, String>,
+    operators: BTreeMap<Uuid, Op>
 }
 
 impl Provider for Minimal {
+    fn op(&mut self, definition: &str) -> Result<Uuid, Error> {
+        let op = Op::new(definition, self)?;
+        let id = Uuid::new_v4();
+        self.operators.insert(id, op);
+        assert!(self.operators.contains_key(&id));
+        Ok(id)
+    }
+    // Op::new("foo:baz", &prv),
+    // prv.op("foo.baz"),
+
+    fn apply(&self, op: Uuid, direction: Direction, operands: &mut [CoordinateTuple]) -> Result<usize, Error> {
+        const BAD_ID_MESSAGE: Error = Error::General("Minimal: Unknown operator id");
+        let op = self.operators.get(&op).ok_or(BAD_ID_MESSAGE)?;
+        Ok(op.apply(self, operands, direction))
+    }
+
     fn globals(&self) -> BTreeMap<String, String> {
         BTreeMap::from([("ellps".to_string(), "GRS80".to_string())])
     }
@@ -53,9 +71,5 @@ impl Provider for Minimal {
             name.to_string(),
             ": User defined resource".to_string(),
         ))
-    }
-
-    fn apply(&self, _op: Uuid, _direction: Direction, _operands: &mut [CoordinateTuple]) -> usize {
-        todo!()
     }
 }

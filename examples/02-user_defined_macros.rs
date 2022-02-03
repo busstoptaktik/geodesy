@@ -5,13 +5,14 @@
 // cargo run --example 02-user_defined_macros
 
 // The CoordinateTuple type is much used, so we give it a very short alias
-use geodesy::{CoordinateTuple as C, Provider};
+use geodesy::preamble::*;
+use geodesy::CoordinateTuple as C;
 
 // Let Anyhow and GeodesyError play together for convenient error handling
 use geodesy;
 
 fn main() -> anyhow::Result<()> {
-    let mut ctx = geodesy::Minimal::default();
+    let mut ctx = Minimal::default();
 
     // Same test coordinates as in example 00.
     let cph = C::gis(12., 55., 0., 0.); // Copenhagen
@@ -43,7 +44,7 @@ fn main() -> anyhow::Result<()> {
 
     // Now let's see whether it works - instantiate the macro, using the same
     // parameters as used in example 00.
-    let ed50_wgs84 = geodesy::Op::new("geohelmert left=intl right=GRS80 x=-87 y=-96 z=-120", &ctx)?;
+    let ed50_wgs84 = Op::new("geohelmert left=intl right=GRS80 x=-87 y=-96 z=-120", &ctx)?;
     // ... and do the same transformation as in example 00
     ed50_wgs84.apply(&ctx, &mut data, geodesy::Direction::Fwd);
 

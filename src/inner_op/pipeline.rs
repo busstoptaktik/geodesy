@@ -55,31 +55,34 @@ mod tests {
     use super::*;
     #[test]
     fn pipeline() -> Result<(), Error> {
-        let provider = Minimal::default();
-        let op = Op::new("addone|addone|addone", &provider)?;
+        let mut prv = Minimal::default();
+        let op = prv.op("addone|addone|addone")?;
         let mut data = etc::some_basic_coordinates();
-        op.apply(&provider, &mut data, Direction::Fwd);
+
+        prv.apply(op, Fwd, &mut data)?;
         assert_eq!(data[0][0], 58.);
         assert_eq!(data[1][0], 62.);
-        op.apply(&provider, &mut data, Direction::Inv);
+
+        prv.apply(op, Inv, &mut data)?;
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
 
-        let op = Op::new("addone|addone inv|addone", &provider)?;
-        dbg!(&op);
+        let op = prv.op("addone|addone inv|addone")?;
         let mut data = etc::some_basic_coordinates();
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
-        op.apply(&provider, &mut data, Direction::Fwd);
+
+        prv.apply(op, Fwd, &mut data)?;
         assert_eq!(data[0][0], 56.);
         assert_eq!(data[1][0], 60.);
-        op.apply(&provider, &mut data, Direction::Inv);
+
+        prv.apply(op, Inv, &mut data)?;
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
 
         // Try to invoke garbage as a pipeline step
         assert!(matches!(
-            Op::new("addone|addone|_garbage", &provider),
+            prv.op("addone|addone|_garbage"),
             Err(Error::NotFound(_, _))
         ));
 

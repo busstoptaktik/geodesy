@@ -9,6 +9,9 @@ use super::*;
 
 // ----- C O M M O N -------------------------------------------------------------------
 
+// The forward and inverse implementations are virtually identical, so we combine them
+// into one, with the functionality selected from the "direction" parameter.
+
 fn helmert_common(
     op: &Op,
     _prv: &dyn Provider,
@@ -417,11 +420,11 @@ mod tests {
         // The forward transformation should hit closeer than 40 um
         let mut operands = [ITRF2014];
         op.apply(&provider, &mut operands, Direction::Fwd);
-        assert!(dbg!(GDA2020B.hypot3(&operands[0])) < 40e-6);
+        assert!(GDA2020B.hypot3(&operands[0]) < 40e-6);
 
         // ... and even closer on the way back
         op.apply(&provider, &mut operands, Direction::Inv);
-        assert!(dbg!(ITRF2014.hypot3(&operands[0])) < 40e-8);
+        assert!(ITRF2014.hypot3(&operands[0]) < 40e-8);
 
         Ok(())
     }

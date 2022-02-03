@@ -87,7 +87,7 @@ mod tests {
     // an Op, and invoke its forward and backward operational modes
     #[test]
     fn basic() -> Result<(), Error> {
-        let provider = Minimal::default();
+        let mut provider = Minimal::default();
 
         // Try to invoke garbage as a user defined Op
         assert!(matches!(
@@ -96,22 +96,24 @@ mod tests {
         ));
 
         // Check forward and inverse operation
-        let op = Op::new("addone", &provider)?;
+        // let op = Op::new("addone", &provider)?;
+        let op = provider.op("addone")?;
         let mut data = etc::some_basic_coordinates();
-        op.apply(&provider, &mut data, Direction::Fwd);
+        provider.apply(op, Fwd, &mut data)?;
         assert_eq!(data[0][0], 56.);
         assert_eq!(data[1][0], 60.);
-        op.apply(&provider, &mut data, Direction::Inv);
+        provider.apply(op, Inv, &mut data)?;
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
 
         // Also for an inverted operator: check forward and inverse operation
-        let op = Op::new("addone inv", &provider)?;
+        let op = provider.op("addone inv")?;
+        // let op = Op::new("addone inv", &provider)?;
         let mut data = etc::some_basic_coordinates();
-        op.apply(&provider, &mut data, Direction::Fwd);
+        provider.apply(op, Fwd, &mut data)?;
         assert_eq!(data[0][0], 54.);
         assert_eq!(data[1][0], 58.);
-        op.apply(&provider, &mut data, Direction::Inv);
+        provider.apply(op, Inv, &mut data)?;
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
 
@@ -129,8 +131,9 @@ mod tests {
 
         assert_eq!("foo:baz", prv.get_resource("foo:bar")?);
         assert_eq!("foo:bar", prv.get_resource("foo:baz")?);
+
         assert!(matches!(
-            Op::new("foo:baz", &prv),
+            prv.op("foo:baz"),
             Err(Error::Recursion(_, _))
         ));
         Ok(())
@@ -138,15 +141,18 @@ mod tests {
 
     #[test]
     fn pipeline() -> Result<(), Error> {
-        let provider = Minimal::default();
-        let op = Op::new("addone|addone|addone", &provider)?;
         let mut data = etc::some_basic_coordinates();
-        op.apply(&provider, &mut data, Direction::Fwd);
+        let mut prv = Minimal::default();
+        let op = prv.op("addone|addone|addone")?;
+
+        prv.apply(op, Fwd, &mut data)?;
         assert_eq!(data[0][0], 58.);
         assert_eq!(data[1][0], 62.);
-        op.apply(&provider, &mut data, Direction::Inv);
+
+        prv.apply(op, Inv, &mut data)?;
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
+
         Ok(())
     }
 

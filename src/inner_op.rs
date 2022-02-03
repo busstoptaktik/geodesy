@@ -5,9 +5,9 @@ use super::inner_op_authoring::*;
 // Install new builtin operators by adding them in the pub(super) and
 // BUILTIN_OPERATORS blocks below
 
-pub(super) mod addone;
-pub(super) mod helmert;
-pub(super) mod pipeline;
+mod addone;
+mod helmert;
+pub(crate) mod pipeline;
 
 #[rustfmt::skip]
 const BUILTIN_OPERATORS: [(&str, OpConstructor); 3] = [
@@ -35,7 +35,6 @@ pub fn builtin(name: &str) -> Result<OpConstructor, Error> {
 /// OpConstructor needs to be a newtype, rather than a type alias,
 /// since we must implement the Debug-trait for OpConstructor (to
 /// make auto derive of the Debug-trait work for any derived type).
-
 pub struct OpConstructor(pub fn(args: &RawParameters, ctx: &dyn Provider) -> Result<Op, Error>);
 
 // Cannot autoderive the Debug trait
@@ -51,7 +50,6 @@ impl core::fmt::Debug for OpConstructor {
 /// InnerOp needs to be a newtype, rather than a type alias, since we
 /// must implement the Debug-trait for InnerOp (to make auto derive
 /// of the Debug-trait work for any derived type).
-
 pub struct InnerOp(pub fn(op: &Op, ctx: &dyn Provider, operands: &mut [CoordinateTuple]) -> usize);
 
 // Cannot autoderive the Debug trait

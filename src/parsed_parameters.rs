@@ -187,7 +187,6 @@ impl ParsedParameters {
                     return Err(Error::MissingParam(key.to_string()));
                 }
 
-                // TODO! (only reads first element of the series, and puts it into the Real store)
                 OpParameter::Series { key, default } => {
                     let mut elements = Vec::<f64>::new();
                     if let Some(value) = etc::chase(globals, &locals, key)? {
@@ -250,12 +249,56 @@ impl ParsedParameters {
             };
         }
 
-        let ellps = [Ellipsoid::default(), Ellipsoid::default()];
-        let lat = [0.; 4];
-        let lon = [0.; 4];
-        let x = [0.; 4];
-        let y = [0.; 4];
-        let k = [0.; 4];
+        // Now handle the commonly used options with the hard-coded slots
+
+        let mut ellps = [Ellipsoid::default(), Ellipsoid::default()];
+        let mut lat = [0.; 4];
+        let mut lon = [0.; 4];
+        let mut x = [0.; 4];
+        let mut y = [0.; 4];
+        let mut k = [0.; 4];
+
+        // ellps_{n}
+        for i in 0..2 {
+            let key = format!("ellps_{}", i);
+            if let Some(e) = text.get(&key[..]) {
+                ellps[i] = Ellipsoid::named(e)?;
+            }
+        }
+        // But `ellps` trumps `ellps_0`
+        if let Some(e) = text.get("ellps") {
+            ellps[0] = Ellipsoid::named(e)?;
+        }
+
+        // lat_{n}
+        for i in 0..4 {
+            let key = format!("lat_{}", i);
+            lat[i] = *real.get(&key[..]).unwrap_or(&0.);
+        }
+
+        // lon_{n}
+        for i in 0..4 {
+            let key = format!("lon_{}", i);
+            lon[i] = *real.get(&key[..]).unwrap_or(&0.);
+        }
+
+        // x_{n}
+        for i in 0..4 {
+            let key = format!("x_{}", i);
+            x[i] = *real.get(&key[..]).unwrap_or(&0.);
+        }
+
+        // y_{n}
+        for i in 0..4 {
+            let key = format!("y_{}", i);
+            y[i] = *real.get(&key[..]).unwrap_or(&0.);
+        }
+
+        // k_{n}
+        for i in 0..4 {
+            let key = format!("k_{}", i);
+            k[i] = *real.get(&key[..]).unwrap_or(&0.);
+        }
 
         let name = locals
             .get("name")
@@ -293,18 +336,19 @@ mod tests {
     use super::*;
 
     #[rustfmt::skip]
-    const GAMUT: [OpParameter; 6] = [
+    const GAMUT: [OpParameter; 7] = [
         OpParameter::Flag    { key: "flag" },
         OpParameter::Natural { key: "natural",  default: Some(0) },
         OpParameter::Integer { key: "integer",  default: Some(-1)},
         OpParameter::Real    { key: "real",     default: Some(1.25) },
         OpParameter::Series  { key: "series",   default: Some("1,2,3,4") },
         OpParameter::Text    { key: "text",     default: Some("text") },
+        OpParameter::Text    { key: "ellps_0",  default: Some("6400000/300") },
     ];
 
     #[test]
     fn basic() -> Result<(), Error> {
-        let invocation = String::from("cucumber flag");
+        let invocation = String::from("cucumber flag ellps_0=123/456");
         let globals = BTreeMap::<String, String>::new();
         let raw = RawParameters::new(&invocation, &globals);
         let p = ParsedParameters::new(&raw, &GAMUT)?;
@@ -332,6 +376,8 @@ mod tests {
         assert_eq!(*p.natural.get("natural").unwrap(), 0_usize);
         assert_eq!(*p.integer.get("integer").unwrap(), -1);
         assert_eq!(*p.text.get("text").unwrap(), "text");
+
+        assert_eq!(p.ellps[0].semimajor_axis(), Ellipsoid::new(123., 1./456.).semimajor_axis());
 
         Ok(())
     }
