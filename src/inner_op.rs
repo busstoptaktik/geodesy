@@ -9,14 +9,16 @@ mod adapt;
 mod addone;
 mod cart;
 mod helmert;
+mod noop;
 pub(crate) mod pipeline;
 
 #[rustfmt::skip]
-const BUILTIN_OPERATORS: [(&str, OpConstructor); 5] = [
+const BUILTIN_OPERATORS: [(&str, OpConstructor); 6] = [
     ("adapt",    OpConstructor(super::inner_op::adapt::new)),
     ("addone",   OpConstructor(super::inner_op::addone::new)),
     ("cart",     OpConstructor(super::inner_op::cart::new)),
     ("helmert",  OpConstructor(super::inner_op::helmert::new)),
+    ("noop",     OpConstructor(super::inner_op::noop::new)),
     ("pipeline", OpConstructor(super::inner_op::pipeline::new)),
 ];
 // A BTreeMap would have been a better choice for BUILTIN_OPERATORS, except
