@@ -6,12 +6,14 @@ use super::inner_op_authoring::*;
 // BUILTIN_OPERATORS blocks below
 
 mod addone;
+mod cart;
 mod helmert;
 pub(crate) mod pipeline;
 
 #[rustfmt::skip]
-const BUILTIN_OPERATORS: [(&str, OpConstructor); 3] = [
+const BUILTIN_OPERATORS: [(&str, OpConstructor); 4] = [
     ("addone",   OpConstructor(super::inner_op::addone::new)),
+    ("cart",     OpConstructor(super::inner_op::cart::new)),
     ("helmert",  OpConstructor(super::inner_op::helmert::new)),
     ("pipeline", OpConstructor(super::inner_op::pipeline::new)),
 ];
