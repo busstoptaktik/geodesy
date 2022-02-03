@@ -3,7 +3,7 @@ use super::*;
 
 // ----- C O M M O N -------------------------------------------------------------------
 
-fn template_common(
+fn common(
     op: &Op,
     prv: &dyn Provider,
     operands: &mut [CoordinateTuple],
@@ -34,7 +34,7 @@ pub const GAMUT: [OpParameter; 19] = [
     OpParameter::Text { key: "convention", default: Some("") },
 ];
 
-pub fn new(parameters: &RawParameters, _provider: &dyn Provider) -> Result<Op, Error> {
+pub fn new(parameters: &RawParameters, provider: &dyn Provider) -> Result<Op, Error> {
     Op::plain(parameters, InnerOp(fwd), InnerOp(inv), &GAMUT, provider)
 }
 
