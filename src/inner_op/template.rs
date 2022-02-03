@@ -1,4 +1,3 @@
-#![allow(non_snake_case)]
 /// Template for implementation of operators
 use super::*;
 
@@ -15,13 +14,13 @@ fn template_common(
 
 // ----- F O R W A R D --------------------------------------------------------------
 
-fn template_fwd(op: &Op, prv: &dyn Provider, operands: &mut [CoordinateTuple]) -> usize {
+fn fwd(op: &Op, prv: &dyn Provider, operands: &mut [CoordinateTuple]) -> usize {
     todo!();
 }
 
 // ----- I N V E R S E --------------------------------------------------------------
 
-fn template_inv(op: &Op, prv: &dyn Provider, operands: &mut [CoordinateTuple]) -> usize {
+fn inv(op: &Op, prv: &dyn Provider, operands: &mut [CoordinateTuple]) -> usize {
     todo!();
 }
 
@@ -36,21 +35,7 @@ pub const GAMUT: [OpParameter; 19] = [
 ];
 
 pub fn new(parameters: &RawParameters, _provider: &dyn Provider) -> Result<Op, Error> {
-    let def = &parameters.definition;
-    let mut params = ParsedParameters::new(parameters, &GAMUT)?;
-
-    // Handle parameters here
-    let x = params.real("x")?;
-
-    let fwd = InnerOp(helmert_fwd);
-    let inv = InnerOp(helmert_inv);
-    let descriptor = OpDescriptor::new(def, fwd, Some(inv));
-    let steps = Vec::<Op>::new();
-    Ok(Op {
-        descriptor,
-        params,
-        steps,
-    })
+    Op::plain(parameters, InnerOp(fwd), InnerOp(inv), &GAMUT, provider)
 }
 
 // ----- A N C I L L A R Y   F U N C T I O N S   G O   H E R E -------------------------
