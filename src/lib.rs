@@ -25,9 +25,9 @@ pub(crate) mod ellipsoid;
 
 pub use crate::coordinate::CoordinateTuple;
 pub use crate::ellipsoid::Ellipsoid;
-pub use crate::provider::Provider;
-pub use crate::provider::Minimal;
 pub use crate::op::Op;
+pub use crate::provider::Minimal;
+pub use crate::provider::Provider;
 
 pub mod inner_op;
 pub mod op;
@@ -48,17 +48,17 @@ pub mod inner_op_authoring {
     pub use log::error;
     pub use log::warn;
 
-    pub use crate::Error;
     pub use crate::coordinate::CoordinateTuple;
     pub use crate::ellipsoid::Ellipsoid;
+    pub use crate::Error;
 
-    pub use crate::provider::Provider;
     pub use crate::provider::Minimal;
+    pub use crate::provider::Provider;
 
-    pub use crate::op::Op;
     pub use crate::inner_op::InnerOp;
-    pub use crate::op_descriptor::OpDescriptor;
     pub use crate::inner_op::OpConstructor;
+    pub use crate::op::Op;
+    pub use crate::op_descriptor::OpDescriptor;
 
     pub use crate::parameter::OpParameter;
     pub use crate::parsed_parameters::ParsedParameters;
@@ -69,7 +69,6 @@ pub mod inner_op_authoring {
     pub use crate::Direction::Inv;
 
     pub use crate::etc;
-
 }
 
 /// Preamble for crate-internal modules
@@ -83,9 +82,9 @@ pub(crate) mod internal {
 
     pub use crate::coordinate::CoordinateTuple;
     pub use crate::ellipsoid::Ellipsoid;
-    pub use crate::provider::Provider;
-    pub use crate::provider::Minimal;
     pub use crate::op::Op;
+    pub use crate::provider::Minimal;
+    pub use crate::provider::Provider;
     pub use crate::Error;
 
     pub use crate::etc;
@@ -106,12 +105,12 @@ pub(crate) mod internal {
 
 /// Preamble for external use
 pub mod preamble {
-    pub use crate::op::Op as Op;
+    pub use crate::op::Op;
+    pub use crate::provider::Minimal;
     pub use crate::provider::Provider;
-    pub use crate::provider::Minimal as Minimal;
+    pub use crate::CoordinateTuple;
     pub use crate::Direction;
     pub use crate::Error;
-    pub use crate::CoordinateTuple;
 }
 
 #[derive(Error, Debug)]
@@ -162,4 +161,3 @@ pub enum Direction {
     Fwd,
     Inv,
 }
-

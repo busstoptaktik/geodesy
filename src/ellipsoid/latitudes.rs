@@ -39,10 +39,10 @@ impl Ellipsoid {
 
 #[cfg(test)]
 mod tests {
-    use crate::Error;
-    use super::*;
     use super::Direction::Fwd;
     use super::Direction::Inv;
+    use super::*;
+    use crate::Error;
 
     use std::f64::consts::FRAC_PI_2;
     #[test]

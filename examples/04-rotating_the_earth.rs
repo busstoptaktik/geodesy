@@ -1,8 +1,5 @@
 // TODO
-fn main()  {
-
-}
-
+fn main() {}
 
 // examples/04-rotating_the_earth
 

@@ -87,7 +87,6 @@ fn fwd(op: &Op, _prv: &dyn Provider, operands: &mut [CoordinateTuple]) -> usize 
     n
 }
 
-
 // ----- I N V E R S E --------------------------------------------------------------
 
 fn inv(op: &Op, _prv: &dyn Provider, operands: &mut [CoordinateTuple]) -> usize {
@@ -105,12 +104,7 @@ fn inv(op: &Op, _prv: &dyn Provider, operands: &mut [CoordinateTuple]) -> usize 
     ];
 
     let mult = op.params.series("mult").unwrap_or(&MULT_DEFAULT);
-    let mult = [
-        1. / mult[0],
-        1. / mult[1],
-        1. / mult[2],
-        1. / mult[3],
-    ];
+    let mult = [1. / mult[0], 1. / mult[1], 1. / mult[2], 1. / mult[3]];
 
     for o in operands {
         let mut c = CoordinateTuple::default();
@@ -164,7 +158,7 @@ pub fn new(parameters: &RawParameters, _provider: &dyn Provider) -> Result<Op, E
         give.post[0] as f64,
         give.post[1] as f64,
         give.post[2] as f64,
-        give.post[3] as f64
+        give.post[3] as f64,
     ];
     params.series.insert("post", Vec::from(post));
     params.series.insert("mult", Vec::from(give.mult));
@@ -177,7 +171,6 @@ pub fn new(parameters: &RawParameters, _provider: &dyn Provider) -> Result<Op, E
 }
 
 // ----- A N C I L L A R Y   F U N C T I O N S   G O   H E R E -------------------------
-
 
 #[derive(Debug, Default, Clone)]
 struct CoordinateOrderDescriptor {

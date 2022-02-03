@@ -377,7 +377,10 @@ mod tests {
         assert_eq!(*p.integer.get("integer").unwrap(), -1);
         assert_eq!(*p.text.get("text").unwrap(), "text");
 
-        assert_eq!(p.ellps[0].semimajor_axis(), Ellipsoid::new(123., 1./456.).semimajor_axis());
+        assert_eq!(
+            p.ellps[0].semimajor_axis(),
+            Ellipsoid::new(123., 1. / 456.).semimajor_axis()
+        );
 
         Ok(())
     }

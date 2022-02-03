@@ -1,7 +1,5 @@
 // TODO
-fn main()  {
-
-}
+fn main() {}
 
 /*
 

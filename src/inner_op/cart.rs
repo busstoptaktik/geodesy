@@ -97,7 +97,13 @@ pub const GAMUT: [OpParameter; 2] = [
 ];
 
 pub fn new(parameters: &RawParameters, provider: &dyn Provider) -> Result<Op, Error> {
-    Op::plain(parameters, InnerOp(cart_fwd), InnerOp(cart_inv), &GAMUT, provider)
+    Op::plain(
+        parameters,
+        InnerOp(cart_fwd),
+        InnerOp(cart_inv),
+        &GAMUT,
+        provider,
+    )
 }
 
 // ----- T E S T S ------------------------------------------------------------------
@@ -122,12 +128,7 @@ mod tests {
         ];
 
         let cart = [
-            CoordinateTuple::raw(
-                566462.633537476765923,
-                0.0,
-                6432020.33369012735784,
-                0.0
-            ),
+            CoordinateTuple::raw(566462.633537476765923, 0.0, 6432020.33369012735784, 0.0),
             CoordinateTuple::raw(
                 3554403.47587193036451,
                 626737.23312017065473,
@@ -140,17 +141,12 @@ mod tests {
                 2679074.46287727775052,
                 0.,
             ),
+            CoordinateTuple::raw(5993488.27326157130301, -2181451.33089075051248, 0., 0.),
             CoordinateTuple::raw(
-            5993488.27326157130301,
-            -2181451.33089075051248,
-            0.,
-           0.
-            ),
-            CoordinateTuple::raw(
-            5435203.89865261223167,
-            1978252.43627716740593,
-            -2679078.68905989499763,
-            0.,
+                5435203.89865261223167,
+                1978252.43627716740593,
+                -2679078.68905989499763,
+                0.,
             ),
             CoordinateTuple::raw(
                 5435203.89865261223167,

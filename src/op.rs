@@ -29,12 +29,17 @@ impl Op {
         Self::op(parameters, provider)
     }
 
-
     // Helper for implementation of `InnerOp`s: Instantiate an `Op` for the simple
     // (and common) case, where the `InnerOp` constructor does mot need to set any
     // additional parameters than the ones defined by the instantiation parameter
     // arguments.
-    pub fn plain(parameters: &RawParameters, fwd: InnerOp, inv: InnerOp, gamut: &[OpParameter], _provider: &dyn Provider) -> Result<Op, Error> {
+    pub fn plain(
+        parameters: &RawParameters,
+        fwd: InnerOp,
+        inv: InnerOp,
+        gamut: &[OpParameter],
+        _provider: &dyn Provider,
+    ) -> Result<Op, Error> {
         let def = &parameters.definition;
         let params = ParsedParameters::new(parameters, &gamut)?;
         let descriptor = OpDescriptor::new(def, fwd, Some(inv));
@@ -149,10 +154,7 @@ mod tests {
         assert_eq!("foo:baz", prv.get_resource("foo:bar")?);
         assert_eq!("foo:bar", prv.get_resource("foo:baz")?);
 
-        assert!(matches!(
-            prv.op("foo:baz"),
-            Err(Error::Recursion(_, _))
-        ));
+        assert!(matches!(prv.op("foo:baz"), Err(Error::Recursion(_, _))));
         Ok(())
     }
 

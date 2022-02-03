@@ -8,7 +8,6 @@
 use geodesy::preamble::*;
 use geodesy::CoordinateTuple as C;
 
-
 // Use Anyhow for convenient error handling
 fn main() -> anyhow::Result<()> {
     // The context is the entry point to all transformation functionality:

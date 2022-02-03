@@ -58,11 +58,7 @@ fn helmert_common(
                 TT[1] += dt * DT[1];
                 TT[2] += dt * DT[2];
                 if rotated {
-                    let RR = [
-                        R[0] + dt * DR[0],
-                        R[1] + dt * DR[1],
-                        R[2] + dt * DR[2]
-                    ];
+                    let RR = [R[0] + dt * DR[0], R[1] + dt * DR[1], R[2] + dt * DR[2]];
                     ROT = rotation_matrix(&RR, exact, position_vector);
                 }
                 SS = S + dt * DS;

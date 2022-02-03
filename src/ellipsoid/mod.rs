@@ -112,14 +112,17 @@ impl Ellipsoid {
             }
             if let Ok(a) = a_rf[0].parse::<f64>() {
                 if let Ok(rf) = a_rf[1].parse::<f64>() {
-                    return Ok(Ellipsoid::new(a, 1./rf));
+                    return Ok(Ellipsoid::new(a, 1. / rf));
                 }
             }
             break;
         }
 
         // TODO: Search asset collection
-        Err(Error::NotFound(String::from(name), String::from("Ellipsoid::named()")))
+        Err(Error::NotFound(
+            String::from(name),
+            String::from("Ellipsoid::named()"),
+        ))
     }
 
     // ----- Eccentricities --------------------------------------------------------

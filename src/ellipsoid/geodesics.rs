@@ -1,6 +1,6 @@
+use super::Ellipsoid;
 use crate::CoordinateTuple;
 use crate::Direction;
-use super::Ellipsoid;
 
 // ----- Geodesics -------------------------------------------------------------
 impl Ellipsoid {

@@ -156,7 +156,6 @@ pub fn chase(
     Ok(Some(value))
 }
 
-
 // Rust Geodesy internals - i.e. functions that are needed in more
 // than one module and hence belongs naturally in neither of them.
 
@@ -252,9 +251,6 @@ pub(crate) fn sinhpsi_to_tanphi(taup: f64, e: f64) -> f64 {
     }
     f64::NAN
 }
-
-
-
 
 #[cfg(test)]
 pub fn some_basic_coordinates() -> [CoordinateTuple; 2] {

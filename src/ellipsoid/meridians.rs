@@ -45,9 +45,9 @@ impl Ellipsoid {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Error;
     use crate::Direction::Fwd;
     use crate::Direction::Inv;
+    use crate::Error;
 
     #[test]
     fn meridional_distance() -> Result<(), Error> {

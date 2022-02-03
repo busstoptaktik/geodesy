@@ -1,5 +1,5 @@
-use crate::Ellipsoid;
 use super::CoordinateTuple;
+use crate::Ellipsoid;
 
 impl CoordinateTuple {
     /// Euclidean distance between two points in the 2D plane.

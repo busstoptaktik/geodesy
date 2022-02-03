@@ -1,9 +1,9 @@
 use geodesy::preamble::*;
-use CoordinateTuple as Coord;
 use std::io::BufRead;
 use std::path::PathBuf;
 use std::time;
 use structopt::StructOpt;
+use CoordinateTuple as Coord;
 
 /// KP: The Rust Geodesy "Coordinate Processing" program. Called `kp` in honor
 /// of Knud Poder (1925-2019), the nestor of computational geodesy, who would

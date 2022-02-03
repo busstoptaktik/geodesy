@@ -4,7 +4,12 @@ use super::internal::*;
 
 pub trait Provider {
     fn op(&mut self, definition: &str) -> Result<Uuid, Error>;
-    fn apply(&self, op: Uuid, direction: Direction, operands: &mut [CoordinateTuple]) -> Result<usize, Error>;
+    fn apply(
+        &self,
+        op: Uuid,
+        direction: Direction,
+        operands: &mut [CoordinateTuple],
+    ) -> Result<usize, Error>;
     fn globals(&self) -> BTreeMap<String, String>;
     fn register_op(&mut self, name: &str, constructor: OpConstructor);
     fn get_op(&self, name: &str) -> Result<OpConstructor, Error>;
@@ -18,7 +23,7 @@ pub trait Provider {
 pub struct Minimal {
     constructors: BTreeMap<String, OpConstructor>,
     resources: BTreeMap<String, String>,
-    operators: BTreeMap<Uuid, Op>
+    operators: BTreeMap<Uuid, Op>,
 }
 
 impl Provider for Minimal {
@@ -32,7 +37,12 @@ impl Provider for Minimal {
     // Op::new("foo:baz", &prv),
     // prv.op("foo.baz"),
 
-    fn apply(&self, op: Uuid, direction: Direction, operands: &mut [CoordinateTuple]) -> Result<usize, Error> {
+    fn apply(
+        &self,
+        op: Uuid,
+        direction: Direction,
+        operands: &mut [CoordinateTuple],
+    ) -> Result<usize, Error> {
         const BAD_ID_MESSAGE: Error = Error::General("Minimal: Unknown operator id");
         let op = self.operators.get(&op).ok_or(BAD_ID_MESSAGE)?;
         Ok(op.apply(self, operands, direction))
