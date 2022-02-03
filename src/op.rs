@@ -29,6 +29,23 @@ impl Op {
         Self::op(parameters, provider)
     }
 
+
+    // Helper for implementation of `InnerOp`s: Instantiate an `Op` for the simple
+    // (and common) case, where the `InnerOp` constructor does mot need to set any
+    // additional parameters than the ones defined by the instantiation parameter
+    // arguments.
+    pub fn plain(parameters: &RawParameters, fwd: InnerOp, inv: InnerOp, gamut: &[OpParameter], _provider: &dyn Provider) -> Result<Op, Error> {
+        let def = &parameters.definition;
+        let params = ParsedParameters::new(parameters, &gamut)?;
+        let descriptor = OpDescriptor::new(def, fwd, Some(inv));
+        let steps = Vec::<Op>::new();
+        Ok(Op {
+            descriptor,
+            params,
+            steps,
+        })
+    }
+
     // Instantiate the actual operator, taking into account the relative order
     // of precendence between pipelines, user defined operators, macros, and
     // built-in operators
