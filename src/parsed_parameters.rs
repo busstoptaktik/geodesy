@@ -343,12 +343,12 @@ mod tests {
         OpParameter::Real    { key: "real",     default: Some(1.25) },
         OpParameter::Series  { key: "series",   default: Some("1,2,3,4") },
         OpParameter::Text    { key: "text",     default: Some("text") },
-        OpParameter::Text    { key: "ellps_0",  default: Some("6400000/300") },
+        OpParameter::Text    { key: "ellps_0",  default: Some("6400000, 300") },
     ];
 
     #[test]
     fn basic() -> Result<(), Error> {
-        let invocation = String::from("cucumber flag ellps_0=123/456");
+        let invocation = String::from("cucumber flag ellps_0=123 , 456");
         let globals = BTreeMap::<String, String>::new();
         let raw = RawParameters::new(&invocation, &globals);
         let p = ParsedParameters::new(&raw, &GAMUT)?;

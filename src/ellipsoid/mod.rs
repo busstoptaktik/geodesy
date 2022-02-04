@@ -104,14 +104,14 @@ impl Ellipsoid {
             return Ok(Ellipsoid::triaxial(ax, ay, f));
         }
 
-        // The semiminor/reciproque-flattening form, e.g. 6378137/298.3
+        // The "semiminor, reciproque-flattening" form, e.g. "6378137, 298.3"
         loop {
-            let a_rf = name.split("/").collect::<Vec<_>>();
+            let a_rf = name.split(',').collect::<Vec<_>>();
             if a_rf.len() != 2_usize {
                 break;
             }
-            if let Ok(a) = a_rf[0].parse::<f64>() {
-                if let Ok(rf) = a_rf[1].parse::<f64>() {
+            if let Ok(a) = a_rf[0].trim().parse::<f64>() {
+                if let Ok(rf) = a_rf[1].trim().parse::<f64>() {
                     return Ok(Ellipsoid::new(a, 1. / rf));
                 }
             }
@@ -248,7 +248,7 @@ mod tests {
         let ellps = Ellipsoid::named("intl")?;
         assert_eq!(ellps.flattening(), 1. / 297.);
 
-        let ellps = Ellipsoid::named("6378137/298.25")?;
+        let ellps = Ellipsoid::named("6378137, 298.25")?;
         assert_eq!(ellps.semimajor_axis(), 6378137.0);
         assert_eq!(ellps.flattening(), 1. / 298.25);
 
