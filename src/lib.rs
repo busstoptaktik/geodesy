@@ -1,7 +1,5 @@
 #![doc = include_str!("../README.md")]
 
-pub mod etc;
-
 pub(crate) mod bibliography;
 pub(crate) mod coordinate;
 pub(crate) mod ellipsoid;
@@ -36,7 +34,6 @@ pub mod preamble {
 
 /// Preamble for InnerOp modules (built-in or user defined)
 pub mod inner_op_authoring {
-    pub use crate::etc;
     pub use crate::preamble::*;
     pub use log::error;
     pub use log::info;
