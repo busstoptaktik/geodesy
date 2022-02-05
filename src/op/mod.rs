@@ -10,6 +10,7 @@ pub use parameter::OpParameter;
 pub use parsed_parameters::ParsedParameters;
 pub use raw_parameters::RawParameters;
 
+/// The defining parameters and functions for an operator
 #[derive(Debug)]
 pub struct Op {
     pub descriptor: OpDescriptor,

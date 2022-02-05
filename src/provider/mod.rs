@@ -2,6 +2,9 @@ use super::internal::*;
 
 // ----- T H E   P R O V I D E R   T R A I T -------------------------------------------
 
+/// The `Provider` trait defines the mode of communication between *Rust Geodesy* internals
+/// and the external context (i.e. typically resources like grids, transformation definitions,
+/// or ellipsoid parameters).
 pub trait Provider {
     fn op(&mut self, definition: &str) -> Result<Uuid, Error>;
     fn apply(
@@ -19,6 +22,8 @@ pub trait Provider {
 
 // ----- T H E   M I N I M A L   P R O V I D E R ---------------------------------------
 
+/// A minimalistic context provider, supporting only built in and run-time defined operators.
+/// Usually sufficient for cartographic uses, and for internal test authoring.
 #[derive(Debug, Default)]
 pub struct Minimal {
     constructors: BTreeMap<String, OpConstructor>,

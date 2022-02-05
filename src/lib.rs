@@ -1,21 +1,3 @@
-//! *A playground for experimentation with alternative models for geodetic
-//! data flow and coordinate representation*.
-//!
-//! Geodesy
-//! =======
-//!
-//! A crate designed to facilitate development of new geodetic transformations,
-//! and to investigate potential solutions to identified/perceived/suspected
-//! shortcomings in the [PROJ](https://proj.org) data flow, and the
-//! [ISO-19111](https://www.iso.org/standard/74039.html)
-//! model for referencing by coordinates.
-//!
-//! Et cetera
-//! ---------
-//!
-//! Copyright by Thomas Knudsen, knudsen.thomas@gmail.com, 2020/2021
-//!
-//!
 #![doc = include_str!("../README.md")]
 
 pub mod etc;
@@ -23,6 +5,9 @@ pub mod etc;
 pub(crate) mod bibliography;
 pub(crate) mod coordinate;
 pub(crate) mod ellipsoid;
+
+#[cfg(doc)]
+pub use crate::bibliography::Bibliography;
 
 mod inner_op;
 mod op;
@@ -51,12 +36,12 @@ pub mod preamble {
 
 /// Preamble for InnerOp modules (built-in or user defined)
 pub mod inner_op_authoring {
+    pub use crate::etc;
+    pub use crate::preamble::*;
     pub use log::error;
-    pub use log::warn;
     pub use log::info;
     pub use log::trace;
-    pub use crate::preamble::*;
-    pub use crate::etc;
+    pub use log::warn;
 
     pub use crate::inner_op::InnerOp;
     pub use crate::inner_op::OpConstructor;
@@ -76,7 +61,7 @@ pub(crate) mod internal {
 }
 
 use thiserror::Error;
-
+/// The *Rust Geodesy* errror messaging enumeration. Badly needs reconsideration
 #[derive(Error, Debug)]
 pub enum Error {
     #[error("i/o error")]

@@ -1,5 +1,5 @@
-/// Generally useful free functions, not tied to any specific type or trait,
-/// but mostly related to the interpretation of operator parameters.
+//! Generally useful free functions, not tied to any specific type or trait,
+//! but mostly related to the interpretation of operator parameters.
 use super::internal::*;
 
 pub fn is_pipeline(definition: &str) -> bool {
@@ -159,7 +159,7 @@ pub fn chase(
 // Rust Geodesy internals - i.e. functions that are needed in more
 // than one module and hence belongs naturally in neither of them.
 
-// pj_tsfn is the equivalent of Charles karney's PROJ function of the
+// pj_tsfn is the equivalent of Charles Karney's PROJ function of the
 // same name, which determines the function ts(phi) as defined in
 // Snyder (1987), Eq. (7-10)
 //
