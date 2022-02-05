@@ -29,7 +29,7 @@ pub const GAMUT: [OpParameter; 1] = [
 
 pub fn new(parameters: &RawParameters, provider: &dyn Provider) -> Result<Op, Error> {
     let definition = &parameters.definition;
-    let thesteps = etc::split_into_steps(definition).0;
+    let thesteps = split_into_steps(definition).0;
     let mut steps = Vec::new();
 
     for step in thesteps {
@@ -48,6 +48,52 @@ pub fn new(parameters: &RawParameters, provider: &dyn Provider) -> Result<Op, Er
     })
 }
 
+
+pub fn split_into_steps(definition: &str) -> (Vec<String>, String) {
+    let all = definition.replace("\r", "\n").trim().to_string();
+
+    // Collect docstrings and remove plain comments
+    let mut trimmed = Vec::<String>::new();
+    let mut docstring = Vec::<String>::new();
+    for line in all.lines() {
+        let line = line.trim();
+
+        // Collect docstrings
+        if line.starts_with("##") {
+            docstring.push((line.to_string() + "    ")[3..].trim_end().to_string());
+            continue;
+        }
+
+        // Remove comments
+        let line: Vec<&str> = line.trim().split('#').collect();
+        if line[0].starts_with('#') {
+            continue;
+        }
+        trimmed.push(line[0].trim().to_string());
+    }
+
+    // Finalize the docstring
+    let docstring = docstring.join("\n").trim().to_string();
+
+    // Remove superfluous newlines in the comment-trimmed text
+    let trimmed = trimmed.join(" ").replace("\n", " ");
+
+    // Generate trimmed steps with elements spearated by a single space,
+    // and key-value pairs glued by '=' as in 'key=value'
+    let steps: Vec<_> = trimmed.split('|').collect();
+    let mut trimmed_steps = Vec::<String>::new();
+    for mut step in steps {
+        step = step.trim();
+        let elements: Vec<_> = step.split_whitespace().collect();
+        let joined = elements.join(" ").replace("= ", "=");
+        trimmed_steps.push(joined);
+    }
+    let trimmed_steps = trimmed_steps;
+    (trimmed_steps, docstring)
+}
+
+
+
 // ----- T E S T S ---------------------------------------------------------------------
 
 #[cfg(test)]
@@ -57,7 +103,7 @@ mod tests {
     fn pipeline() -> Result<(), Error> {
         let mut prv = Minimal::default();
         let op = prv.op("addone|addone|addone")?;
-        let mut data = etc::some_basic_coordinates();
+        let mut data = some_basic_coordinates();
 
         prv.apply(op, Fwd, &mut data)?;
         assert_eq!(data[0][0], 58.);
@@ -68,7 +114,7 @@ mod tests {
         assert_eq!(data[1][0], 59.);
 
         let op = prv.op("addone|addone inv|addone")?;
-        let mut data = etc::some_basic_coordinates();
+        let mut data = some_basic_coordinates();
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
 

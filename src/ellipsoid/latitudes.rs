@@ -30,7 +30,7 @@ impl Ellipsoid {
         if direction == Direction::Fwd {
             return latitude.tan().asinh() - (e * latitude.sin()).atanh() * e;
         }
-        crate::etc::sinhpsi_to_tanphi(latitude.sinh(), e).atan()
+        crate::inner_op::sinhpsi_to_tanphi(latitude.sinh(), e).atan()
     }
 }
 

@@ -74,15 +74,15 @@ impl Op {
             ));
         }
         let definition = parameters.definition.clone();
-        let name = etc::operator_name(&definition, "");
+        let name = operator_name(&definition, "");
 
         // A pipeline?
-        if etc::is_pipeline(&definition) {
+        if is_pipeline(&definition) {
             return super::inner_op::pipeline::new(&parameters, provider)?.handle_inversion();
         }
 
         // A user defined operator?
-        if !etc::is_resource_name(&name) {
+        if !is_resource_name(&name) {
             if let Ok(constructor) = provider.get_op(&name) {
                 return constructor.0(&parameters, provider)?.handle_inversion();
             }
@@ -110,6 +110,67 @@ impl Op {
     }
 }
 
+// ----- A N C I L L A R Y   F U N C T I O N S -----------------------------------------
+
+pub fn is_pipeline(definition: &str) -> bool {
+    definition.contains('|')
+}
+
+
+pub fn is_resource_name(definition: &str) -> bool {
+    operator_name(definition, "").contains(':')
+}
+
+
+pub fn operator_name(definition: &str, default: &str) -> String {
+    if is_pipeline(definition) {
+        return default.to_string();
+    }
+    split_into_parameters(definition)
+        .get("name")
+        .unwrap_or(&default.to_string())
+        .to_string()
+}
+
+
+pub fn split_into_parameters(step: &str) -> BTreeMap<String, String> {
+    // Conflate contiguous whitespace, then remove whitespace after {"=",  ":",  ","}
+    let step = step.trim().to_string();
+    let elements: Vec<_> = step.split_whitespace().collect();
+    let step = elements
+        .join(" ")
+        .replace("= ", "=")
+        .replace(": ", ":")
+        .replace(", ", ",")
+        .replace(" =", "=")
+        .replace(" :", ":")
+        .replace(" ,", ",");
+
+    let mut params = BTreeMap::new();
+    let elements: Vec<_> = step.split_whitespace().collect();
+    for element in elements {
+        // Split a key=value-pair into key and value parts
+        let mut parts: Vec<&str> = element.trim().split('=').collect();
+        // Add an empty part, to make sure we have a value, even for flags
+        parts.push("");
+        assert!(parts.len() > 1);
+
+        // If the first arg is a key-without-value, it is the name of the operator
+        if params.is_empty() && parts.len() == 2 {
+            params.insert(String::from("name"), String::from(parts[0]));
+            continue;
+        }
+
+        params.insert(String::from(parts[0]), String::from(parts[1]));
+    }
+
+    params
+}
+
+
+
+
+
 // ----- T E S T S ------------------------------------------------------------------
 
 #[cfg(test)]
@@ -131,7 +192,7 @@ mod tests {
         // Check forward and inverse operation
         // let op = Op::new("addone", &provider)?;
         let op = provider.op("addone")?;
-        let mut data = etc::some_basic_coordinates();
+        let mut data = some_basic_coordinates();
         provider.apply(op, Fwd, &mut data)?;
         assert_eq!(data[0][0], 56.);
         assert_eq!(data[1][0], 60.);
@@ -142,7 +203,7 @@ mod tests {
         // Also for an inverted operator: check forward and inverse operation
         let op = provider.op("addone inv")?;
         // let op = Op::new("addone inv", &provider)?;
-        let mut data = etc::some_basic_coordinates();
+        let mut data = some_basic_coordinates();
         provider.apply(op, Fwd, &mut data)?;
         assert_eq!(data[0][0], 54.);
         assert_eq!(data[1][0], 58.);
@@ -171,7 +232,7 @@ mod tests {
 
     #[test]
     fn pipeline() -> Result<(), Error> {
-        let mut data = etc::some_basic_coordinates();
+        let mut data = some_basic_coordinates();
         let mut prv = Minimal::default();
         let op = prv.op("addone|addone|addone")?;
 

@@ -50,6 +50,9 @@ pub mod inner_op_authoring {
     pub use crate::op::OpParameter;
     pub use crate::op::ParsedParameters;
     pub use crate::op::RawParameters;
+
+    #[cfg(test)]
+    pub use crate::some_basic_coordinates;
 }
 
 /// Preamble for crate-internal modules
@@ -109,4 +112,11 @@ pub enum Error {
 pub enum Direction {
     Fwd,
     Inv,
+}
+
+#[cfg(test)]
+pub fn some_basic_coordinates() -> [CoordinateTuple; 2] {
+    let copenhagen = CoordinateTuple::raw(55., 12., 0., 0.);
+    let stockholm = CoordinateTuple::raw(59., 18., 0., 0.);
+    [copenhagen, stockholm]
 }

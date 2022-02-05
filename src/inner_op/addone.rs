@@ -52,7 +52,7 @@ mod tests {
     fn addone() -> Result<(), Error> {
         let provider = Minimal::default();
         let op = Op::new("addone", &provider)?;
-        let mut data = etc::some_basic_coordinates();
+        let mut data = crate::some_basic_coordinates();
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
         op.apply(&provider, &mut data, Direction::Fwd);

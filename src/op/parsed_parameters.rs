@@ -92,7 +92,7 @@ impl ParsedParameters {
         parameters: &RawParameters,
         gamut: &[OpParameter],
     ) -> Result<ParsedParameters, Error> {
-        let locals = etc::split_into_parameters(&parameters.definition);
+        let locals = super::split_into_parameters(&parameters.definition);
         let globals = &parameters.globals;
         let mut boolean = BTreeSet::<&'static str>::new();
         let mut natural = BTreeMap::<&'static str, usize>::new();
@@ -108,7 +108,7 @@ impl ParsedParameters {
         for p in gamut {
             match *p {
                 OpParameter::Flag { key } => {
-                    if let Some(value) = etc::chase(globals, &locals, key)? {
+                    if let Some(value) = chase(globals, &locals, key)? {
                         if value.is_empty() || value.to_lowercase() == "true" {
                             boolean.insert(key);
                             continue;
@@ -122,7 +122,7 @@ impl ParsedParameters {
                 }
 
                 OpParameter::Natural { key, default } => {
-                    if let Some(value) = etc::chase(globals, &locals, key)? {
+                    if let Some(value) = chase(globals, &locals, key)? {
                         if let Ok(v) = value.parse::<usize>() {
                             natural.insert(key, v);
                             continue;
@@ -142,7 +142,7 @@ impl ParsedParameters {
                 }
 
                 OpParameter::Integer { key, default } => {
-                    if let Some(value) = etc::chase(globals, &locals, key)? {
+                    if let Some(value) = chase(globals, &locals, key)? {
                         if let Ok(v) = value.parse::<i64>() {
                             integer.insert(key, v);
                             continue;
@@ -165,7 +165,7 @@ impl ParsedParameters {
                 }
 
                 OpParameter::Real { key, default } => {
-                    if let Some(value) = etc::chase(globals, &locals, key)? {
+                    if let Some(value) = chase(globals, &locals, key)? {
                         if let Ok(v) = value.parse::<f64>() {
                             real.insert(key, v);
                             continue;
@@ -189,7 +189,7 @@ impl ParsedParameters {
 
                 OpParameter::Series { key, default } => {
                     let mut elements = Vec::<f64>::new();
-                    if let Some(value) = etc::chase(globals, &locals, key)? {
+                    if let Some(value) = chase(globals, &locals, key)? {
                         for element in value.split(',') {
                             if let Ok(v) = element.parse::<f64>() {
                                 elements.push(v);
@@ -228,7 +228,7 @@ impl ParsedParameters {
                 }
 
                 OpParameter::Text { key, default } => {
-                    if let Some(value) = etc::chase(globals, &locals, key)? {
+                    if let Some(value) = chase(globals, &locals, key)? {
                         // should chase!
                         text.insert(key, value.to_string());
                         continue;
@@ -328,6 +328,68 @@ impl ParsedParameters {
         })
     }
 }
+
+// ----- A N C I L L A R Y   F U N C T I O N S -----------------------------------------
+
+pub fn chase(
+    globals: &BTreeMap<String, String>,
+    locals: &BTreeMap<String, String>,
+    key: &str,
+) -> Result<Option<String>, Error> {
+    // The haystack is a reverse iterator over both lists in series
+    let mut haystack = globals.iter().chain(locals.iter()).rev();
+
+    // Find the needle in the haystack, recursively chasing look-ups ('^')
+    // and handling defaults ('*')
+    let key = key.trim();
+    if key.is_empty() {
+        return Err(Error::Syntax(String::from("Empty key")));
+    }
+
+    let mut default = "";
+    let mut needle = key;
+    let mut chasing = false;
+    let value;
+
+    loop {
+        let found = haystack.find(|&x| x.0 == needle);
+        if found.is_none() {
+            if !default.is_empty() {
+                return Ok(Some(String::from(default)));
+            }
+            if chasing {
+                return Err(Error::Syntax(format!(
+                    "Incomplete definition for '{}'",
+                    key
+                )));
+            }
+            return Ok(None);
+        }
+        let thevalue = found.unwrap().1.trim();
+
+        // If the value is a(nother) lookup, we continue the search in the same iterator,
+        // now using a *new search key*, as specified by the current value
+        if let Some(stripped) = thevalue.strip_prefix('^') {
+            chasing = true;
+            needle = stripped;
+            continue;
+        }
+
+        // If the value is a default, we continue the search using the *same key*
+        if let Some(stripped) = thevalue.strip_prefix('*') {
+            chasing = true;
+            needle = key;
+            default = stripped;
+            continue;
+        }
+
+        // Otherwise we have the proper result
+        value = String::from(thevalue.trim());
+        break;
+    }
+    Ok(Some(value))
+}
+
 
 // ----- T E S T S ------------------------------------------------------------------
 

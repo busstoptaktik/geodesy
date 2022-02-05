@@ -16,7 +16,7 @@ impl RawParameters {
         let definition = invocation.clone();
 
         // Direct invocation of a pipeline: "foo | bar baz | bonk"
-        if etc::is_pipeline(&invocation) {
+        if super::is_pipeline(&invocation) {
             return RawParameters {
                 invocation,
                 definition,
@@ -26,7 +26,7 @@ impl RawParameters {
         }
 
         // Direct invocation of a primitive operation: "foo bar=baz bonk"
-        if !etc::is_resource_name(&invocation) {
+        if !super::is_resource_name(&invocation) {
             return RawParameters {
                 invocation,
                 definition,
@@ -55,10 +55,10 @@ impl RawParameters {
     pub fn next(&self, definition: &str) -> RawParameters {
         let mut recursion_level = self.recursion_level + 1;
         let mut globals = self.globals.clone();
-        if etc::is_resource_name(definition) {
+        if super::is_resource_name(definition) {
             globals.remove("name");
             globals.remove("inv");
-            globals.extend(etc::split_into_parameters(definition).into_iter());
+            globals.extend(super::split_into_parameters(definition).into_iter());
             recursion_level += 1;
         }
         let invocation = self.invocation.clone();
