@@ -1,4 +1,4 @@
-use super::internal::*;
+use super::*;
 
 /// The fundamental elements of an operator (i.e. everything but steps and args)
 #[derive(Debug, Default)]

@@ -18,105 +18,69 @@
 //!
 #![doc = include_str!("../README.md")]
 
-// No public modules,
+pub mod etc;
+
 pub(crate) mod bibliography;
 pub(crate) mod coordinate;
 pub(crate) mod ellipsoid;
 
+mod inner_op;
+mod op;
+mod provider;
+
+// The bread-and-butter
 pub use crate::coordinate::CoordinateTuple;
 pub use crate::ellipsoid::Ellipsoid;
 pub use crate::op::Op;
 pub use crate::provider::Minimal;
 pub use crate::provider::Provider;
 
-pub mod inner_op;
-pub mod op;
-pub mod op_descriptor;
-pub mod parsed_parameters;
-
-pub mod etc;
-pub mod parameter;
-pub mod provider;
-pub mod raw_parameters;
-
-use log::error;
-use std::io;
-use thiserror::Error;
+/// The bread-and-butter, shrink-wrapped for external use
+pub mod preamble {
+    pub use crate::CoordinateTuple;
+    pub use crate::CoordinateTuple as Coord;
+    pub use crate::Direction;
+    pub use crate::Direction::Fwd;
+    pub use crate::Direction::Inv;
+    pub use crate::Ellipsoid;
+    pub use crate::Error;
+    pub use crate::Minimal;
+    pub use crate::Op;
+    pub use crate::Provider;
+}
 
 /// Preamble for InnerOp modules (built-in or user defined)
 pub mod inner_op_authoring {
     pub use log::error;
     pub use log::warn;
-
-    pub use crate::coordinate::CoordinateTuple;
-    pub use crate::ellipsoid::Ellipsoid;
-    pub use crate::Error;
-
-    pub use crate::provider::Minimal;
-    pub use crate::provider::Provider;
+    pub use log::info;
+    pub use log::trace;
+    pub use crate::preamble::*;
+    pub use crate::etc;
 
     pub use crate::inner_op::InnerOp;
     pub use crate::inner_op::OpConstructor;
-    pub use crate::op::Op;
-    pub use crate::op_descriptor::OpDescriptor;
 
-    pub use crate::parameter::OpParameter;
-    pub use crate::parsed_parameters::ParsedParameters;
-    pub use crate::raw_parameters::RawParameters;
-
-    pub use crate::Direction;
-    pub use crate::Direction::Fwd;
-    pub use crate::Direction::Inv;
-
-    pub use crate::etc;
+    pub use crate::op::OpDescriptor;
+    pub use crate::op::OpParameter;
+    pub use crate::op::ParsedParameters;
+    pub use crate::op::RawParameters;
 }
 
 /// Preamble for crate-internal modules
 pub(crate) mod internal {
+    pub use crate::inner_op_authoring::*;
     pub use std::collections::BTreeMap;
     pub use std::collections::BTreeSet;
-
-    pub use log::error;
-    pub use log::warn;
     pub use uuid::Uuid;
-
-    pub use crate::coordinate::CoordinateTuple;
-    pub use crate::ellipsoid::Ellipsoid;
-    pub use crate::op::Op;
-    pub use crate::provider::Minimal;
-    pub use crate::provider::Provider;
-    pub use crate::Error;
-
-    pub use crate::etc;
-    pub use crate::inner_op::InnerOp;
-    pub use crate::inner_op::OpConstructor;
-
-    pub use crate::op_descriptor::OpDescriptor;
-    pub use crate::parameter::OpParameter;
-    pub use crate::parsed_parameters::ParsedParameters;
-
-    // pub use crate::provider::Minimal;
-    pub use crate::raw_parameters::RawParameters;
-    pub use crate::Direction;
-    pub use crate::Direction::Fwd;
-    pub use crate::Direction::Inv;
-    // pub use crate::coordinate::CoordinateTuple as CoordinateTuple;
 }
 
-/// Preamble for external use
-pub mod preamble {
-    pub use crate::op::Op;
-    pub use crate::provider::Minimal;
-    pub use crate::provider::Provider;
-    pub use crate::CoordinateTuple;
-    pub use crate::Direction;
-    pub use crate::Error;
-}
+use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum Error {
     #[error("i/o error")]
-    Io(#[from] io::Error),
+    Io(#[from] std::io::Error),
 
     #[error("error: {0}")]
     General(&'static str),

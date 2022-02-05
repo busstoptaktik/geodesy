@@ -1,7 +1,6 @@
 /// The no-operation. Does nothing, and is good at it
 use super::*;
 
-
 // ----- F O R W A R D --------------------------------------------------------------
 
 fn fwd(_op: &Op, _prv: &dyn Provider, operands: &mut [CoordinateTuple]) -> usize {

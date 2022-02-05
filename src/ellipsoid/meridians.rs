@@ -1,4 +1,4 @@
-use crate::Ellipsoid;
+use super::*;
 use std::f64::consts::FRAC_PI_2;
 
 // ----- Meridian geometry -----------------------------------------------------

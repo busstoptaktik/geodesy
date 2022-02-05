@@ -1,6 +1,8 @@
-use std::ops::{Index, IndexMut};
 pub mod conversions;
 pub mod distances;
+
+use super::internal::*;
+use std::ops::{Index, IndexMut};
 
 /// Generic 4D coordinate tuple, with no fixed interpretation of the elements
 #[derive(Debug, Default, PartialEq, Copy, Clone)]
@@ -101,7 +103,7 @@ impl CoordinateTuple {
 
 #[cfg(test)]
 mod tests {
-    use crate::CoordinateTuple;
+    use super::*;
 
     #[test]
     fn coordinatetuple() {

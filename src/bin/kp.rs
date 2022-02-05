@@ -3,7 +3,7 @@ use std::io::BufRead;
 use std::path::PathBuf;
 use std::time;
 use structopt::StructOpt;
-use CoordinateTuple as Coord;
+type C = CoordinateTuple;
 
 /// KP: The Rust Geodesy "Coordinate Processing" program. Called `kp` in honor
 /// of Knud Poder (1925-2019), the nestor of computational geodesy, who would
@@ -54,7 +54,7 @@ struct Opt {
 fn main() -> Result<(), anyhow::Error> {
     let opt = Opt::from_args();
 
-    let ctx = geodesy::Minimal::default();
+    let ctx = Minimal::default();
 
     if opt.inverse && opt.roundtrip {
         eprintln!("Options `inverse` and `roundtrip` are mutually exclusive");
@@ -95,19 +95,19 @@ fn main() -> Result<(), anyhow::Error> {
         for e in args {
             b.push(e.parse().unwrap_or(std::f64::NAN))
         }
-        let coord = Coord([b[0], b[1], b[2], b[3]]);
+        let coord = C::raw(b[0], b[1], b[2], b[3]);
         let mut data = [coord];
 
         // Transformation - this is the actual geodetic content
         if opt.inverse {
-            op.apply(&ctx, &mut data, geodesy::Direction::Inv);
+            op.apply(&ctx, &mut data, Inv);
             if opt.roundtrip {
-                op.apply(&ctx, &mut data, geodesy::Direction::Fwd);
+                op.apply(&ctx, &mut data, Fwd);
             }
         } else {
-            op.apply(&ctx, &mut data, geodesy::Direction::Fwd);
+            op.apply(&ctx, &mut data, Fwd);
             if opt.roundtrip {
-                op.apply(&ctx, &mut data, geodesy::Direction::Inv);
+                op.apply(&ctx, &mut data, Inv);
             }
         }
 
@@ -142,16 +142,21 @@ fn main() -> Result<(), anyhow::Error> {
 }
 
 /// Distance between input and output after a forward-inverse roundtrip
-fn roundtrip_distance(op: &str, dim: usize, mut input: Coord, mut result: Coord) -> f64 {
+fn roundtrip_distance(
+    op: &str,
+    dim: usize,
+    mut input: CoordinateTuple,
+    mut result: CoordinateTuple,
+) -> f64 {
     // Try to figure out what kind of coordinates we're working with
     if op.starts_with("geo") {
         // Latitude, longitude...
-        input = Coord::geo(input[0], input[1], input[2], input[3]);
-        result = Coord::geo(result[0], result[1], result[2], result[3]);
+        input = C::geo(input[0], input[1], input[2], input[3]);
+        result = C::geo(result[0], result[1], result[2], result[3]);
     } else if op.starts_with("gis") {
         // Longitude, latitude...
-        input = Coord::gis(input[0], input[1], input[2], input[3]);
-        result = Coord::gis(result[0], result[1], result[2], result[3]);
+        input = C::gis(input[0], input[1], input[2], input[3]);
+        result = C::gis(result[0], result[1], result[2], result[3]);
     } else if dim < 3 {
         // 2D linear
         return input.hypot2(&result);

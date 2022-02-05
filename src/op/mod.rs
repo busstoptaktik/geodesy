@@ -1,5 +1,15 @@
 use super::internal::*;
 
+mod op_descriptor;
+mod parameter;
+mod parsed_parameters;
+mod raw_parameters;
+
+pub use op_descriptor::OpDescriptor;
+pub use parameter::OpParameter;
+pub use parsed_parameters::ParsedParameters;
+pub use raw_parameters::RawParameters;
+
 #[derive(Debug)]
 pub struct Op {
     pub descriptor: OpDescriptor,

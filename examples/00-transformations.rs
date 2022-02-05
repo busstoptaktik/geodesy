@@ -6,11 +6,11 @@
 
 // The CoordinateTuple type is much used, so we give it a very short alias
 use geodesy::preamble::*;
-use geodesy::CoordinateTuple as C;
+type C = CoordinateTuple;
 
 // Use Anyhow for convenient error handling
 fn main() -> anyhow::Result<()> {
-    // The context is the entry point to all transformation functionality:
+    // The context provider is the entry point to all transformation functionality:
     let ctx = Minimal::default();
     // The concept of a "context data structure" will be well known to
     // PROJ users, where the context plays a somewhat free-flowing role,
@@ -32,8 +32,8 @@ fn main() -> anyhow::Result<()> {
     // from raw numbers, in case your point coordinates are already given in
     // radians. But since a coordinate tuple is really just an array of 4
     // double precision numbers, you may also generate it directly using plain
-    // Rust syntax:
-    let cph_raw = C([12_f64.to_radians(), 55_f64.to_radians(), 0., 0.0]);
+    // Rust syntax.
+    let cph_raw = C::raw(12_f64.to_radians(), 55_f64.to_radians(), 0., 0.0);
 
     // The two versions of Copenhagen coordinates should be identical.
     assert_eq!(cph, cph_raw);
@@ -50,7 +50,7 @@ fn main() -> anyhow::Result<()> {
     // definition), use the Rust `?`-operator to handle errors.
     let utm32 = Op::new("utm zone=32", &ctx)?;
     // Now, let's use the utm32-operator to transform some data
-    utm32.apply(&ctx, &mut data, geodesy::Direction::Fwd);
+    utm32.apply(&ctx, &mut data, Fwd);
 
     println!("utm32:");
     for coord in data {
@@ -58,7 +58,7 @@ fn main() -> anyhow::Result<()> {
     }
 
     // The inv() method takes us back to geographic coordinates
-    utm32.apply(&ctx, &mut data, geodesy::Direction::Inv);
+    utm32.apply(&ctx, &mut data, Inv);
 
     // The output is in radians, so we use this convenience function:
     C::degrees_all(&mut data);
@@ -93,7 +93,7 @@ fn main() -> anyhow::Result<()> {
 
     // Since the forward transformation goes *from* ed50 to wgs84, we use
     // the inverse method to take us the other way, back in time to ED50
-    ed50_wgs84.apply(&ctx, &mut data, geodesy::Direction::Inv);
+    ed50_wgs84.apply(&ctx, &mut data, Inv);
     // Convert the internal lon/lat-in-radians format to the more human
     // readable lat/lon-in-degrees - then print
     C::geo_all(&mut data);

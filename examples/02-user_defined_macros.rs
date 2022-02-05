@@ -4,12 +4,10 @@
 // Run with:
 // cargo run --example 02-user_defined_macros
 
-// The CoordinateTuple type is much used, so we give it a very short alias
-use geodesy::preamble::*;
-use geodesy::CoordinateTuple as C;
-
 // Let Anyhow and GeodesyError play together for convenient error handling
-use geodesy;
+use geodesy::preamble::*;
+// The CoordinateTuple type is much used, so we give it a very short alias
+type C = CoordinateTuple;
 
 fn main() -> anyhow::Result<()> {
     let mut ctx = Minimal::default();

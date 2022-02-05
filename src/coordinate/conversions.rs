@@ -1,4 +1,4 @@
-use crate::CoordinateTuple;
+use super::CoordinateTuple;
 
 impl CoordinateTuple {
     /// Transform the first two elements of a `CoordinateTuple` from degrees to radians
@@ -108,7 +108,7 @@ impl CoordinateTuple {
 
 #[cfg(test)]
 mod tests {
-    use crate::CoordinateTuple;
+    use super::*;
 
     #[test]
     fn conversions() {

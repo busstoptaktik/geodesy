@@ -3,7 +3,7 @@ mod geodesics;
 pub(crate) mod latitudes;
 mod meridians;
 
-use crate::Error;
+use super::internal::*;
 
 // A HashMap would have been a better choice,for the OPERATOR_LIST, except
 // for the annoying fact that it cannot be compile-time constructed

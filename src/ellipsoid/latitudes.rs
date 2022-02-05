@@ -1,5 +1,4 @@
-use crate::Direction;
-use crate::Ellipsoid;
+use super::*;
 
 // ----- Latitudes -------------------------------------------------------------
 impl Ellipsoid {
@@ -39,10 +38,7 @@ impl Ellipsoid {
 
 #[cfg(test)]
 mod tests {
-    use super::Direction::Fwd;
-    use super::Direction::Inv;
     use super::*;
-    use crate::Error;
 
     use std::f64::consts::FRAC_PI_2;
     #[test]

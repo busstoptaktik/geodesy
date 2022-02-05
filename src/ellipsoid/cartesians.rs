@@ -1,5 +1,4 @@
-use super::Ellipsoid;
-use crate::CoordinateTuple;
+use super::*;
 
 use std::f64::consts::FRAC_PI_2;
 
