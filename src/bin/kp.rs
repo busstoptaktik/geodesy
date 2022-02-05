@@ -3,7 +3,6 @@ use std::io::BufRead;
 use std::path::PathBuf;
 use std::time;
 use structopt::StructOpt;
-type C = Coord;
 
 /// KP: The Rust Geodesy "Coordinate Processing" program. Called `kp` in honor
 /// of Knud Poder (1925-2019), the nestor of computational geodesy, who would
@@ -95,7 +94,7 @@ fn main() -> Result<(), anyhow::Error> {
         for e in args {
             b.push(e.parse().unwrap_or(std::f64::NAN))
         }
-        let coord = C::raw(b[0], b[1], b[2], b[3]);
+        let coord = Coord::raw(b[0], b[1], b[2], b[3]);
         let mut data = [coord];
 
         // Transformation - this is the actual geodetic content
@@ -146,12 +145,12 @@ fn roundtrip_distance(op: &str, dim: usize, mut input: Coord, mut result: Coord)
     // Try to figure out what kind of coordinates we're working with
     if op.starts_with("geo") {
         // Latitude, longitude...
-        input = C::geo(input[0], input[1], input[2], input[3]);
-        result = C::geo(result[0], result[1], result[2], result[3]);
+        input = Coord::geo(input[0], input[1], input[2], input[3]);
+        result = Coord::geo(result[0], result[1], result[2], result[3]);
     } else if op.starts_with("gis") {
         // Longitude, latitude...
-        input = C::gis(input[0], input[1], input[2], input[3]);
-        result = C::gis(result[0], result[1], result[2], result[3]);
+        input = Coord::gis(input[0], input[1], input[2], input[3]);
+        result = Coord::gis(result[0], result[1], result[2], result[3]);
     } else if dim < 3 {
         // 2D linear
         return input.hypot2(&result);

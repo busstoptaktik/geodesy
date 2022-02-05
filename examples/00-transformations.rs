@@ -4,9 +4,7 @@
 // Run with:
 // cargo run --example 00-transformations
 
-// The CoordinateTuple type is much used, so we give it a very short alias
 use geodesy::preamble::*;
-type C = Coord;
 
 // Use Anyhow for convenient error handling
 fn main() -> anyhow::Result<()> {
@@ -23,17 +21,17 @@ fn main() -> anyhow::Result<()> {
     // `gis` and `geo` produces a 4D coordinate tuple and automatically handles
     // conversion of the angular parts to radians, and geographical coordinates
     // in latitude/longitude order, to the GIS convention of longitude/latitude.
-    let cph = C::gis(12., 55., 0., 0.); // Copenhagen
-    let osl = C::gis(10., 60., 0., 0.); // Oslo
-    let sth = C::geo(59., 18., 0., 0.); // Stockholm
-    let hel = C::geo(60., 25., 0., 0.); // Helsinki
+    let cph = Coord::gis(12., 55., 0., 0.); // Copenhagen
+    let osl = Coord::gis(10., 60., 0., 0.); // Oslo
+    let sth = Coord::geo(59., 18., 0., 0.); // Stockholm
+    let hel = Coord::geo(60., 25., 0., 0.); // Helsinki
 
     // `gis` and `geo` have a sibling `raw` which generates coordinate tuples
     // from raw numbers, in case your point coordinates are already given in
     // radians. But since a coordinate tuple is really just an array of 4
     // double precision numbers, you may also generate it directly using plain
     // Rust syntax.
-    let cph_raw = C::raw(12_f64.to_radians(), 55_f64.to_radians(), 0., 0.0);
+    let cph_raw = Coord::raw(12_f64.to_radians(), 55_f64.to_radians(), 0., 0.0);
 
     // The two versions of Copenhagen coordinates should be identical.
     assert_eq!(cph, cph_raw);
@@ -61,7 +59,7 @@ fn main() -> anyhow::Result<()> {
     utm32.apply(&ctx, &mut data, Inv);
 
     // The output is in radians, so we use this convenience function:
-    C::degrees_all(&mut data);
+    Coord::degrees_all(&mut data);
 
     println!("Roundtrip to geo:");
     for coord in data {
@@ -96,7 +94,7 @@ fn main() -> anyhow::Result<()> {
     ed50_wgs84.apply(&ctx, &mut data, Inv);
     // Convert the internal lon/lat-in-radians format to the more human
     // readable lat/lon-in-degrees - then print
-    C::geo_all(&mut data);
+    Coord::geo_all(&mut data);
     println!("ed50:");
     for coord in data {
         println!("    {:?}", coord);

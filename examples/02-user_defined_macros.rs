@@ -6,17 +6,15 @@
 
 // Let Anyhow and GeodesyError play together for convenient error handling
 use geodesy::preamble::*;
-// The CoordinateTuple type is much used, so we give it a very short alias
-type C = Coord;
 
 fn main() -> anyhow::Result<()> {
     let mut ctx = Minimal::default();
 
     // Same test coordinates as in example 00.
-    let cph = C::gis(12., 55., 0., 0.); // Copenhagen
-    let osl = C::gis(10., 60., 0., 0.); // Oslo
-    let sth = C::geo(59., 18., 0., 0.); // Stockholm
-    let hel = C::geo(60., 25., 0., 0.); // Helsinki
+    let cph = Coord::gis(12., 55., 0., 0.); // Copenhagen
+    let osl = Coord::gis(10., 60., 0., 0.); // Oslo
+    let sth = Coord::geo(59., 18., 0., 0.); // Stockholm
+    let hel = Coord::geo(60., 25., 0., 0.); // Helsinki
 
     let mut data = [osl, cph, sth, hel];
 
@@ -48,7 +46,7 @@ fn main() -> anyhow::Result<()> {
 
     // geo_all(data) transforms all elements in data from the internal GIS
     // format (lon/lat in radians) to lat/lon in degrees.
-    C::geo_all(&mut data);
+    Coord::geo_all(&mut data);
     println!("ed50:");
     for coord in data {
         println!("    {:?}", coord);
