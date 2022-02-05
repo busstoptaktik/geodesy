@@ -320,10 +320,7 @@ mod tests {
         let mut ctx = Minimal::default();
         let gonify = ctx.op("adapt from = neut_deg   to = enut_gon")?;
 
-        let mut operands = [
-            Coord::raw(90., 180., 0., 0.),
-            Coord::raw(45., 90., 0., 0.),
-        ];
+        let mut operands = [Coord::raw(90., 180., 0., 0.), Coord::raw(45., 90., 0., 0.)];
 
         assert_eq!(ctx.apply(gonify, Fwd, &mut operands)?, 2);
         assert!((operands[0][0] - 200.0).abs() < 1e-10);

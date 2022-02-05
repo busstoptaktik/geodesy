@@ -20,12 +20,7 @@ pub struct Op {
 
 impl Op {
     // operate fwd/inv, taking operator inversion into account.
-    pub fn apply(
-        &self,
-        ctx: &dyn Provider,
-        operands: &mut [Coord],
-        direction: Direction,
-    ) -> usize {
+    pub fn apply(&self, ctx: &dyn Provider, operands: &mut [Coord], direction: Direction) -> usize {
         let forward = direction == Direction::Fwd;
         // Short form of (inverted && !forward) || (forward && !inverted)
         if self.descriptor.inverted != forward {
@@ -116,11 +111,9 @@ pub fn is_pipeline(definition: &str) -> bool {
     definition.contains('|')
 }
 
-
 pub fn is_resource_name(definition: &str) -> bool {
     operator_name(definition, "").contains(':')
 }
-
 
 pub fn operator_name(definition: &str, default: &str) -> String {
     if is_pipeline(definition) {
@@ -131,7 +124,6 @@ pub fn operator_name(definition: &str, default: &str) -> String {
         .unwrap_or(&default.to_string())
         .to_string()
 }
-
 
 pub fn split_into_parameters(step: &str) -> BTreeMap<String, String> {
     // Conflate contiguous whitespace, then remove whitespace after {"=",  ":",  ","}
@@ -166,10 +158,6 @@ pub fn split_into_parameters(step: &str) -> BTreeMap<String, String> {
 
     params
 }
-
-
-
-
 
 // ----- T E S T S ------------------------------------------------------------------
 

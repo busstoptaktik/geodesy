@@ -7,12 +7,8 @@ use super::internal::*;
 /// or ellipsoid parameters).
 pub trait Provider {
     fn op(&mut self, definition: &str) -> Result<Uuid, Error>;
-    fn apply(
-        &self,
-        op: Uuid,
-        direction: Direction,
-        operands: &mut [Coord],
-    ) -> Result<usize, Error>;
+    fn apply(&self, op: Uuid, direction: Direction, operands: &mut [Coord])
+        -> Result<usize, Error>;
     fn globals(&self) -> BTreeMap<String, String>;
     fn register_op(&mut self, name: &str, constructor: OpConstructor);
     fn get_op(&self, name: &str) -> Result<OpConstructor, Error>;

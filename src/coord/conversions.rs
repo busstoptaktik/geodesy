@@ -134,10 +134,7 @@ mod tests {
 
         assert_eq!(Coord::nmea_to_dd(5500.), 55.);
         assert_eq!(Coord::nmea_to_dd(-5500.), -55.);
-        assert_eq!(
-            Coord::nmea_to_dd(5530.60),
-            -Coord::nmea_to_dd(-5530.60)
-        );
+        assert_eq!(Coord::nmea_to_dd(5530.60), -Coord::nmea_to_dd(-5530.60));
         assert_eq!(
             Coord::nmeass_to_dd(553036.),
             -Coord::nmeass_to_dd(-553036.00)

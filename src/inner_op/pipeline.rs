@@ -48,7 +48,6 @@ pub fn new(parameters: &RawParameters, provider: &dyn Provider) -> Result<Op, Er
     })
 }
 
-
 pub fn split_into_steps(definition: &str) -> (Vec<String>, String) {
     let all = definition.replace("\r", "\n").trim().to_string();
 
@@ -91,8 +90,6 @@ pub fn split_into_steps(definition: &str) -> (Vec<String>, String) {
     let trimmed_steps = trimmed_steps;
     (trimmed_steps, docstring)
 }
-
-
 
 // ----- T E S T S ---------------------------------------------------------------------
 

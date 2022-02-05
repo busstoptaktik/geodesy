@@ -72,11 +72,7 @@ impl Default for InnerOp {
     }
 }
 
-fn noop_placeholder(
-    _params: &Op,
-    _provider: &dyn Provider,
-    _operands: &mut [Coord],
-) -> usize {
+fn noop_placeholder(_params: &Op, _provider: &dyn Provider, _operands: &mut [Coord]) -> usize {
     0
 }
 

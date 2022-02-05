@@ -8,7 +8,7 @@ impl Coord {
     /// the actual distance in the real world.
     ///
     /// The distance is computed in the subspace spanned by the first and
-    /// second coordinate of the `CoordinateTuple`s
+    /// second coordinate of the `Coord`s
     ///
     /// # See also:
     ///
@@ -37,11 +37,11 @@ impl Coord {
     /// in the real world.
     ///
     /// The distance is computed in the subspace spanned by the first,
-    /// second and third coordinate of the `CoordinateTuple`s
+    /// second and third coordinate of the `Coord`s
     ///
     /// # See also:
     ///
-    /// [`hypot2`](CoordinateTuple::hypot2),
+    /// [`hypot2`](Coord::hypot2),
     /// [`distance`](crate::ellipsoid::Ellipsoid::distance)
     ///
     /// # Examples
