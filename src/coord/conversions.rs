@@ -1,40 +1,40 @@
-use super::CoordinateTuple;
+use super::Coord;
 
-impl CoordinateTuple {
+impl Coord {
     /// Transform the first two elements of a `CoordinateTuple` from degrees to radians
     #[must_use]
-    pub fn to_radians(self) -> CoordinateTuple {
-        CoordinateTuple([self[0].to_radians(), self[1].to_radians(), self[2], self[3]])
+    pub fn to_radians(self) -> Coord {
+        Coord([self[0].to_radians(), self[1].to_radians(), self[2], self[3]])
     }
 
     /// Transform the first two elements of a `CoordinateTuple` from radians to degrees
     #[must_use]
-    pub fn to_degrees(self) -> CoordinateTuple {
-        CoordinateTuple([self[0].to_degrees(), self[1].to_degrees(), self[2], self[3]])
+    pub fn to_degrees(self) -> Coord {
+        Coord([self[0].to_degrees(), self[1].to_degrees(), self[2], self[3]])
     }
 
     /// Transform the internal lon/lat/h/t-in-radians to lat/lon/h/t-in-degrees
     #[must_use]
-    pub fn to_geo(self) -> CoordinateTuple {
-        CoordinateTuple([self[1].to_degrees(), self[0].to_degrees(), self[2], self[3]])
+    pub fn to_geo(self) -> Coord {
+        Coord([self[1].to_degrees(), self[0].to_degrees(), self[2], self[3]])
     }
 
     /// For an entire data set: Transform the internal lon/lat/h/t-in-radians to lat/lon/h/t-in-degrees
-    pub fn geo_all(operands: &mut [CoordinateTuple]) {
+    pub fn geo_all(operands: &mut [Coord]) {
         for coord in operands {
             *coord = coord.to_geo();
         }
     }
 
     /// For an entire data set: Transform the first two elements of a `CoordinateTuple` from radians to degrees
-    pub fn degrees_all(operands: &mut [CoordinateTuple]) {
+    pub fn degrees_all(operands: &mut [Coord]) {
         for coord in operands {
             *coord = coord.to_degrees();
         }
     }
 
     /// For an entire data set: Transform the first two elements of a `CoordinateTuple` from degrees to radians
-    pub fn radians_all(operands: &mut [CoordinateTuple]) {
+    pub fn radians_all(operands: &mut [Coord]) {
         for coord in operands {
             *coord = coord.to_radians();
         }
@@ -112,35 +112,35 @@ mod tests {
 
     #[test]
     fn conversions() {
-        let c = CoordinateTuple::raw(12., 55., 100., 0.).to_radians();
-        let d = CoordinateTuple::gis(12., 55., 100., 0.);
+        let c = Coord::raw(12., 55., 100., 0.).to_radians();
+        let d = Coord::gis(12., 55., 100., 0.);
         assert_eq!(c, d);
         assert_eq!(d[0], 12f64.to_radians());
         let e = d.to_degrees();
         assert_eq!(e[0], c.to_degrees()[0]);
 
-        assert_eq!(CoordinateTuple::dms_to_dd(55, 30, 36.), 55.51);
-        assert_eq!(CoordinateTuple::dm_to_dd(55, 30.60), 55.51);
+        assert_eq!(Coord::dms_to_dd(55, 30, 36.), 55.51);
+        assert_eq!(Coord::dm_to_dd(55, 30.60), 55.51);
 
         // nmea + nmeass
-        assert!((CoordinateTuple::nmea_to_dd(5530.60) - 55.51).abs() < 1e-10);
-        assert!((CoordinateTuple::nmea_to_dd(15530.60) - 155.51).abs() < 1e-10);
-        assert!((CoordinateTuple::nmea_to_dd(-15530.60) + 155.51).abs() < 1e-10);
-        assert!((CoordinateTuple::nmeass_to_dd(553036.0) - 55.51).abs() < 1e-10);
-        assert_eq!(CoordinateTuple::dd_to_nmea(55.5025), 5530.15);
-        assert_eq!(CoordinateTuple::dd_to_nmea(-55.5025), -5530.15);
-        assert_eq!(CoordinateTuple::dd_to_nmeass(55.5025), 553009.);
-        assert_eq!(CoordinateTuple::dd_to_nmeass(-55.51), -553036.);
+        assert!((Coord::nmea_to_dd(5530.60) - 55.51).abs() < 1e-10);
+        assert!((Coord::nmea_to_dd(15530.60) - 155.51).abs() < 1e-10);
+        assert!((Coord::nmea_to_dd(-15530.60) + 155.51).abs() < 1e-10);
+        assert!((Coord::nmeass_to_dd(553036.0) - 55.51).abs() < 1e-10);
+        assert_eq!(Coord::dd_to_nmea(55.5025), 5530.15);
+        assert_eq!(Coord::dd_to_nmea(-55.5025), -5530.15);
+        assert_eq!(Coord::dd_to_nmeass(55.5025), 553009.);
+        assert_eq!(Coord::dd_to_nmeass(-55.51), -553036.);
 
-        assert_eq!(CoordinateTuple::nmea_to_dd(5500.), 55.);
-        assert_eq!(CoordinateTuple::nmea_to_dd(-5500.), -55.);
+        assert_eq!(Coord::nmea_to_dd(5500.), 55.);
+        assert_eq!(Coord::nmea_to_dd(-5500.), -55.);
         assert_eq!(
-            CoordinateTuple::nmea_to_dd(5530.60),
-            -CoordinateTuple::nmea_to_dd(-5530.60)
+            Coord::nmea_to_dd(5530.60),
+            -Coord::nmea_to_dd(-5530.60)
         );
         assert_eq!(
-            CoordinateTuple::nmeass_to_dd(553036.),
-            -CoordinateTuple::nmeass_to_dd(-553036.00)
+            Coord::nmeass_to_dd(553036.),
+            -Coord::nmeass_to_dd(-553036.00)
         );
     }
 }

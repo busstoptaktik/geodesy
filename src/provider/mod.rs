@@ -11,7 +11,7 @@ pub trait Provider {
         &self,
         op: Uuid,
         direction: Direction,
-        operands: &mut [CoordinateTuple],
+        operands: &mut [Coord],
     ) -> Result<usize, Error>;
     fn globals(&self) -> BTreeMap<String, String>;
     fn register_op(&mut self, name: &str, constructor: OpConstructor);
@@ -46,7 +46,7 @@ impl Provider for Minimal {
         &self,
         op: Uuid,
         direction: Direction,
-        operands: &mut [CoordinateTuple],
+        operands: &mut [Coord],
     ) -> Result<usize, Error> {
         const BAD_ID_MESSAGE: Error = Error::General("Minimal: Unknown operator id");
         let op = self.operators.get(&op).ok_or(BAD_ID_MESSAGE)?;

@@ -59,10 +59,10 @@ impl Ellipsoid {
     #[allow(non_snake_case)]
     pub fn geodesic_fwd(
         &self,
-        from: &CoordinateTuple,
+        from: &Coord,
         azimuth: f64,
         distance: f64,
-    ) -> CoordinateTuple {
+    ) -> Coord {
         // Coordinates of the point of origin, P1
         let B1 = from[1];
         let L1 = from[0];
@@ -138,13 +138,13 @@ impl Ellipsoid {
         // Return azimuth
         let aa2 = aasin.atan2(U1cos * sscos * azicos - U1sin * sssin);
 
-        CoordinateTuple::raw(L2, B2, aa2, f64::from(i))
+        Coord::raw(L2, B2, aa2, f64::from(i))
     }
 
     /// See [`geodesic_fwd`](crate::Ellipsoid::geodesic_fwd)
     #[must_use]
     #[allow(non_snake_case)] // allow math-like notation
-    pub fn geodesic_inv(&self, from: &CoordinateTuple, to: &CoordinateTuple) -> CoordinateTuple {
+    pub fn geodesic_inv(&self, from: &Coord, to: &Coord) -> Coord {
         let B1 = from[1];
         let B2 = to[1];
         let B = B2 - B1;
@@ -155,7 +155,7 @@ impl Ellipsoid {
 
         // Below the micrometer level, we don't care about directions
         if L.hypot(B) < 1e-15 {
-            return CoordinateTuple::geo(0., 0., 0., 0.);
+            return Coord::geo(0., 0., 0., 0.);
         }
 
         let U1 = self.reduced_latitude(B1, Direction::Fwd);
@@ -228,7 +228,7 @@ impl Ellipsoid {
         let s = self.semiminor_axis() * A * (ss - dss);
         let a1 = (U2cos * llsin).atan2(U1cos * U2sin - U1sin * U2cos * llcos);
         let a2 = (U1cos * llsin).atan2(-U1sin * U2cos + U1cos * U2sin * llcos);
-        CoordinateTuple::raw(a1, a2, s, f64::from(i))
+        Coord::raw(a1, a2, s, f64::from(i))
     }
 
     /// Geodesic distance between two points. Assumes the first coordinate
@@ -236,24 +236,24 @@ impl Ellipsoid {
     ///
     /// # See also:
     ///
-    /// [`hypot2`](crate::coordinate::CoordinateTuple::hypot2),
-    /// [`hypot3`](crate::coordinate::CoordinateTuple::hypot3)
+    /// [`hypot2`](crate::coordinate::Coord::hypot2),
+    /// [`hypot3`](crate::coordinate::Coord::hypot3)
     ///
     /// # Examples
     ///
     /// ```rust
     /// // Compute the distance between Copenhagen and Paris
     /// use geodesy::Ellipsoid;
-    /// use geodesy::CoordinateTuple;
+    /// use geodesy::Coord;
     /// if let Ok(ellps) = Ellipsoid::named("GRS80") {
-    ///     let p0 = CoordinateTuple::geo(55., 12., 0., 0.);
-    ///     let p1 = CoordinateTuple::geo(49., 2., 0., 0.);
+    ///     let p0 = Coord::geo(55., 12., 0., 0.);
+    ///     let p1 = Coord::geo(49., 2., 0., 0.);
     ///     let d = ellps.distance(&p0, &p1);
     ///     assert!((d - 956_066.231_959).abs() < 1e-5);
     /// }
     /// ```
     #[must_use]
-    pub fn distance(&self, from: &CoordinateTuple, to: &CoordinateTuple) -> f64 {
+    pub fn distance(&self, from: &Coord, to: &Coord) -> f64 {
         self.geodesic_inv(from, to)[2]
     }
 }
@@ -273,8 +273,8 @@ mod tests {
 
         // Copenhagen (Denmark)--Paris (France)
         // Expect distance good to 0.01 mm, azimuths to a nanodegree
-        let p1 = CoordinateTuple::gis(12., 55., 0., 0.);
-        let p2 = CoordinateTuple::gis(2., 49., 0., 0.);
+        let p1 = Coord::gis(12., 55., 0., 0.);
+        let p2 = Coord::gis(2., 49., 0., 0.);
 
         let d = ellps.geodesic_inv(&p1, &p2);
         assert!((d[0].to_degrees() - (-130.15406042072)).abs() < 1e-9);
@@ -288,7 +288,7 @@ mod tests {
 
         // Copenhagen (Denmark)--Rabat (Morocco)
         // Expect distance good to 0.1 mm, azimuths to a nanodegree
-        let p2 = CoordinateTuple::gis(7., 34., 0., 0.);
+        let p2 = Coord::gis(7., 34., 0., 0.);
 
         let d = ellps.geodesic_inv(&p1, &p2);
         assert!((d[0].to_degrees() - (-168.48914418666)).abs() < 1e-9);

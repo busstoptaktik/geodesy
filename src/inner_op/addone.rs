@@ -2,7 +2,7 @@ use super::*;
 
 // ----- F O R W A R D -----------------------------------------------------------------
 
-fn addone_fwd(_op: &Op, _provider: &dyn Provider, operands: &mut [CoordinateTuple]) -> usize {
+fn addone_fwd(_op: &Op, _provider: &dyn Provider, operands: &mut [Coord]) -> usize {
     let mut n = 0;
     for o in operands {
         o[0] += 1.;
@@ -13,7 +13,7 @@ fn addone_fwd(_op: &Op, _provider: &dyn Provider, operands: &mut [CoordinateTupl
 
 // ----- I N V E R S E -----------------------------------------------------------------
 
-fn addone_inv(_op: &Op, _provider: &dyn Provider, operands: &mut [CoordinateTuple]) -> usize {
+fn addone_inv(_op: &Op, _provider: &dyn Provider, operands: &mut [Coord]) -> usize {
     let mut n = 0;
     for o in operands {
         o[0] -= 1.;

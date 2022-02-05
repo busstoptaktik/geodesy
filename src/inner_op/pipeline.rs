@@ -2,7 +2,7 @@ use super::*;
 
 // ----- F O R W A R D -----------------------------------------------------------------
 
-fn pipeline_fwd(op: &Op, provider: &dyn Provider, operands: &mut [CoordinateTuple]) -> usize {
+fn pipeline_fwd(op: &Op, provider: &dyn Provider, operands: &mut [Coord]) -> usize {
     let mut n = usize::MAX;
     for step in &op.steps[..] {
         n = n.min(step.apply(provider, operands, Direction::Fwd));
@@ -12,7 +12,7 @@ fn pipeline_fwd(op: &Op, provider: &dyn Provider, operands: &mut [CoordinateTupl
 
 // ----- I N V E R S E -----------------------------------------------------------------
 
-fn pipeline_inv(op: &Op, provider: &dyn Provider, operands: &mut [CoordinateTuple]) -> usize {
+fn pipeline_inv(op: &Op, provider: &dyn Provider, operands: &mut [Coord]) -> usize {
     let mut n = usize::MAX;
     for step in op.steps[..].iter().rev() {
         n = n.min(step.apply(provider, operands, Direction::Inv));

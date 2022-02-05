@@ -56,7 +56,7 @@ impl core::fmt::Debug for OpConstructor {
 /// InnerOp needs to be a newtype, rather than a type alias, since we
 /// must implement the Debug-trait for InnerOp (to make auto derive
 /// of the Debug-trait work for any derived type).
-pub struct InnerOp(pub fn(op: &Op, ctx: &dyn Provider, operands: &mut [CoordinateTuple]) -> usize);
+pub struct InnerOp(pub fn(op: &Op, ctx: &dyn Provider, operands: &mut [Coord]) -> usize);
 
 // Cannot autoderive the Debug trait
 impl core::fmt::Debug for InnerOp {
@@ -75,7 +75,7 @@ impl Default for InnerOp {
 fn noop_placeholder(
     _params: &Op,
     _provider: &dyn Provider,
-    _operands: &mut [CoordinateTuple],
+    _operands: &mut [Coord],
 ) -> usize {
     0
 }

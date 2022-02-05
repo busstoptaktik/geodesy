@@ -3,7 +3,7 @@ use std::io::BufRead;
 use std::path::PathBuf;
 use std::time;
 use structopt::StructOpt;
-type C = CoordinateTuple;
+type C = Coord;
 
 /// KP: The Rust Geodesy "Coordinate Processing" program. Called `kp` in honor
 /// of Knud Poder (1925-2019), the nestor of computational geodesy, who would
@@ -145,8 +145,8 @@ fn main() -> Result<(), anyhow::Error> {
 fn roundtrip_distance(
     op: &str,
     dim: usize,
-    mut input: CoordinateTuple,
-    mut result: CoordinateTuple,
+    mut input: Coord,
+    mut result: Coord,
 ) -> f64 {
     // Try to figure out what kind of coordinates we're working with
     if op.starts_with("geo") {

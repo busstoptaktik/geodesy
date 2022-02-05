@@ -3,13 +3,13 @@ use super::*;
 
 // ----- F O R W A R D --------------------------------------------------------------
 
-fn fwd(_op: &Op, _prv: &dyn Provider, operands: &mut [CoordinateTuple]) -> usize {
+fn fwd(_op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> usize {
     operands.len()
 }
 
 // ----- I N V E R S E --------------------------------------------------------------
 
-fn inv(_op: &Op, _prv: &dyn Provider, operands: &mut [CoordinateTuple]) -> usize {
+fn inv(_op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> usize {
     operands.len()
 }
 
@@ -29,8 +29,8 @@ pub fn new(parameters: &RawParameters, provider: &dyn Provider) -> Result<Op, Er
 #[cfg(test)]
 mod tests {
     use super::*;
-    const GDA94: CoordinateTuple =
-        CoordinateTuple([-4052051.7643, 4212836.2017, -2545106.0245, 0.0]);
+    const GDA94: Coord =
+        Coord([-4052051.7643, 4212836.2017, -2545106.0245, 0.0]);
 
     #[test]
     fn no_change() -> Result<(), Error> {

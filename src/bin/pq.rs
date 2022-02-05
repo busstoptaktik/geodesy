@@ -59,7 +59,7 @@ fn main() -> Result<(), anyhow::Error> {
     trace!("trace message 1");
 
     // use std::env;
-    use geodesy::CoordinateTuple as C;
+    use geodesy::Coord as C;
     let _ctx = geodesy::Minimal::default();
     trace!("trace message 2");
     debug!("debug message 2");

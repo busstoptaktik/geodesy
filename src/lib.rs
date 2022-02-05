@@ -1,7 +1,7 @@
 #![doc = include_str!("../README.md")]
 
 pub(crate) mod bibliography;
-pub(crate) mod coordinate;
+pub(crate) mod coord;
 pub(crate) mod ellipsoid;
 
 #[cfg(doc)]
@@ -12,7 +12,7 @@ mod op;
 mod provider;
 
 // The bread-and-butter
-pub use crate::coordinate::CoordinateTuple;
+pub use crate::coord::Coord;
 pub use crate::ellipsoid::Ellipsoid;
 pub use crate::op::Op;
 pub use crate::provider::Minimal;
@@ -20,8 +20,7 @@ pub use crate::provider::Provider;
 
 /// The bread-and-butter, shrink-wrapped for external use
 pub mod preamble {
-    pub use crate::CoordinateTuple;
-    pub use crate::CoordinateTuple as Coord;
+    pub use crate::Coord;
     pub use crate::Direction;
     pub use crate::Direction::Fwd;
     pub use crate::Direction::Inv;
@@ -112,8 +111,8 @@ pub enum Direction {
 }
 
 #[cfg(test)]
-pub fn some_basic_coordinates() -> [CoordinateTuple; 2] {
-    let copenhagen = CoordinateTuple::raw(55., 12., 0., 0.);
-    let stockholm = CoordinateTuple::raw(59., 18., 0., 0.);
+pub fn some_basic_coordinates() -> [Coord; 2] {
+    let copenhagen = Coord::raw(55., 12., 0., 0.);
+    let stockholm = Coord::raw(59., 18., 0., 0.);
     [copenhagen, stockholm]
 }

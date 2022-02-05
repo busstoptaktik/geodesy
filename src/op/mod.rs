@@ -23,7 +23,7 @@ impl Op {
     pub fn apply(
         &self,
         ctx: &dyn Provider,
-        operands: &mut [CoordinateTuple],
+        operands: &mut [Coord],
         direction: Direction,
     ) -> usize {
         let forward = direction == Direction::Fwd;

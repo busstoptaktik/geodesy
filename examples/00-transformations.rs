@@ -6,7 +6,7 @@
 
 // The CoordinateTuple type is much used, so we give it a very short alias
 use geodesy::preamble::*;
-type C = CoordinateTuple;
+type C = Coord;
 
 // Use Anyhow for convenient error handling
 fn main() -> anyhow::Result<()> {

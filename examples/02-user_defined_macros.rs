@@ -7,7 +7,7 @@
 // Let Anyhow and GeodesyError play together for convenient error handling
 use geodesy::preamble::*;
 // The CoordinateTuple type is much used, so we give it a very short alias
-type C = CoordinateTuple;
+type C = Coord;
 
 fn main() -> anyhow::Result<()> {
     let mut ctx = Minimal::default();

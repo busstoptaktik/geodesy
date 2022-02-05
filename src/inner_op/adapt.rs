@@ -62,7 +62,7 @@ const MULT_DEFAULT: [f64; 4] = [1., 1., 1., 1.];
 
 // ----- F O R W A R D --------------------------------------------------------------
 
-fn fwd(op: &Op, _prv: &dyn Provider, operands: &mut [CoordinateTuple]) -> usize {
+fn fwd(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> usize {
     let n = operands.len();
     if op.params.boolean("noop") {
         return n;
@@ -77,7 +77,7 @@ fn fwd(op: &Op, _prv: &dyn Provider, operands: &mut [CoordinateTuple]) -> usize 
     ];
     let mult = op.params.series("mult").unwrap_or(&MULT_DEFAULT);
     for o in operands {
-        *o = CoordinateTuple([
+        *o = Coord([
             o[post[0]] * mult[0],
             o[post[1]] * mult[1],
             o[post[2]] * mult[2],
@@ -89,7 +89,7 @@ fn fwd(op: &Op, _prv: &dyn Provider, operands: &mut [CoordinateTuple]) -> usize 
 
 // ----- I N V E R S E --------------------------------------------------------------
 
-fn inv(op: &Op, _prv: &dyn Provider, operands: &mut [CoordinateTuple]) -> usize {
+fn inv(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> usize {
     let n = operands.len();
     if op.params.boolean("noop") {
         return n;
@@ -107,7 +107,7 @@ fn inv(op: &Op, _prv: &dyn Provider, operands: &mut [CoordinateTuple]) -> usize 
     let mult = [1. / mult[0], 1. / mult[1], 1. / mult[2], 1. / mult[3]];
 
     for o in operands {
-        let mut c = CoordinateTuple::default();
+        let mut c = Coord::default();
         for i in 0..4_usize {
             c[post[i]] = o[i] * mult[post[i]];
         }
@@ -321,8 +321,8 @@ mod tests {
         let gonify = ctx.op("adapt from = neut_deg   to = enut_gon")?;
 
         let mut operands = [
-            CoordinateTuple::raw(90., 180., 0., 0.),
-            CoordinateTuple::raw(45., 90., 0., 0.),
+            Coord::raw(90., 180., 0., 0.),
+            Coord::raw(45., 90., 0., 0.),
         ];
 
         assert_eq!(ctx.apply(gonify, Fwd, &mut operands)?, 2);
@@ -350,8 +350,8 @@ mod tests {
         let degify = ctx.op("adapt inv from = neut_deg   to = enut_gon")?;
 
         let mut operands = [
-            CoordinateTuple::raw(200., 100., 0., 0.),
-            CoordinateTuple::raw(100., 50., 0., 0.),
+            Coord::raw(200., 100., 0., 0.),
+            Coord::raw(100., 50., 0., 0.),
         ];
 
         assert_eq!(ctx.apply(degify, Fwd, &mut operands)?, 2);

@@ -1,6 +1,6 @@
 use super::*;
 
-impl CoordinateTuple {
+impl Coord {
     /// Euclidean distance between two points in the 2D plane.
     ///
     /// Primarily used to compute the distance between two projected points
@@ -12,13 +12,13 @@ impl CoordinateTuple {
     ///
     /// # See also:
     ///
-    /// [`hypot3`](CoordinateTuple::hypot3),
+    /// [`hypot3`](Coord::hypot3),
     /// [`distance`](crate::ellipsoid::Ellipsoid::distance)
     ///
     /// # Examples
     ///
     /// ```rust
-    /// use geodesy::CoordinateTuple as Coord;
+    /// use geodesy::Coord;
     /// let t = 1000 as f64;
     /// let p0 = Coord::origin();
     /// let p1 = Coord::raw(t, t, 0., 0.);
@@ -47,7 +47,7 @@ impl CoordinateTuple {
     /// # Examples
     ///
     /// ```rust
-    /// use geodesy::CoordinateTuple as Coord;
+    /// use geodesy::Coord;
     /// let t = 1000 as f64;
     /// let p0 = Coord::origin();
     /// let p1 = Coord::raw(t, t, t, 0.);
@@ -80,10 +80,10 @@ mod tests {
 
     #[test]
     fn distances() {
-        let lat = CoordinateTuple::dms_to_dd(55, 30, 36.);
-        let lon = CoordinateTuple::dms_to_dd(12, 45, 36.);
-        let dms = CoordinateTuple::geo(lat, lon, 0., 2020.);
-        let geo = CoordinateTuple::geo(55.51, 12.76, 0., 2020.);
+        let lat = Coord::dms_to_dd(55, 30, 36.);
+        let lon = Coord::dms_to_dd(12, 45, 36.);
+        let dms = Coord::geo(lat, lon, 0., 2020.);
+        let geo = Coord::geo(55.51, 12.76, 0., 2020.);
         assert!(geo.default_ellps_dist(&dms) < 1e-10);
     }
 }
