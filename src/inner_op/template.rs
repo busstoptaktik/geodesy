@@ -14,13 +14,13 @@ fn common(
 
 // ----- F O R W A R D -----------------------------------------------------------------
 
-fn fwd(op: &Op, prv: &dyn Provider, operands: &mut [CoordinateTuple]) -> usize {
+fn fwd(op: &Op, prv: &dyn Provider, operands: &mut [CoordinateTuple]) -> Result<usize, Error> {
     todo!();
 }
 
 // ----- I N V E R S E -----------------------------------------------------------------
 
-fn inv(op: &Op, prv: &dyn Provider, operands: &mut [CoordinateTuple]) -> usize {
+fn inv(op: &Op, prv: &dyn Provider, operands: &mut [CoordinateTuple]) -> Result<usize, Error> {
     todo!();
 }
 
@@ -47,6 +47,7 @@ fn rotation_matrix(r: Vec<f64>, exact: bool, position_vector: bool) -> [[f64; 3]
 // ----- T E S T S ---------------------------------------------------------------------
 
 #[cfg(test)]
+use super::*;
 mod tests {
     use super::*;
     const GDA94: CoordinateTuple =
@@ -67,13 +68,13 @@ mod tests {
         let mut operands = [CoordinateTuple::origin()];
 
         // Forward
-        op.apply(&provider, &mut operands, Direction::Fwd);
+        op.apply(&provider, &mut operands, Fwd)?;
         assert_eq!(operands[0].first(), -87.);
         assert_eq!(operands[0].second(), -96.);
         assert_eq!(operands[0].third(), -120.);
 
         // Inverse + roundtrip
-        op.apply(&provider, &mut operands, Direction::Inv);
+        op.apply(&provider, &mut operands, Inv)?;
         assert_eq!(operands[0].first(), 0.);
         assert_eq!(operands[0].second(), 0.);
         assert_eq!(operands[0].third(), 0.);

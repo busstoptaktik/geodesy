@@ -99,14 +99,14 @@ fn main() -> Result<(), anyhow::Error> {
 
         // Transformation - this is the actual geodetic content
         if opt.inverse {
-            op.apply(&ctx, &mut data, Inv);
+            op.apply(&ctx, &mut data, Inv)?;
             if opt.roundtrip {
-                op.apply(&ctx, &mut data, Fwd);
+                op.apply(&ctx, &mut data, Fwd)?;
             }
         } else {
-            op.apply(&ctx, &mut data, Fwd);
+            op.apply(&ctx, &mut data, Fwd)?;
             if opt.roundtrip {
-                op.apply(&ctx, &mut data, Inv);
+                op.apply(&ctx, &mut data, Inv)?;
             }
         }
 

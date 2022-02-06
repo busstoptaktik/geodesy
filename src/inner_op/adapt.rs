@@ -62,10 +62,10 @@ const MULT_DEFAULT: [f64; 4] = [1., 1., 1., 1.];
 
 // ----- F O R W A R D --------------------------------------------------------------
 
-fn fwd(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> usize {
+fn fwd(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
     let n = operands.len();
     if op.params.boolean("noop") {
-        return n;
+        return Ok(n);
     }
 
     let post = op.params.series("post").unwrap_or(&POST_DEFAULT);
@@ -84,15 +84,15 @@ fn fwd(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> usize {
             o[post[3]] * mult[3],
         ]);
     }
-    n
+    Ok(n)
 }
 
 // ----- I N V E R S E --------------------------------------------------------------
 
-fn inv(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> usize {
+fn inv(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
     let n = operands.len();
     if op.params.boolean("noop") {
-        return n;
+        return Ok(n);
     }
 
     let post = op.params.series("post").unwrap_or(&POST_DEFAULT);
@@ -114,7 +114,7 @@ fn inv(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> usize {
         *o = c;
     }
 
-    n
+    Ok(n)
 }
 
 // ----- C O N S T R U C T O R ------------------------------------------------------

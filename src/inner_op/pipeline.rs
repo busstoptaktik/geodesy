@@ -2,22 +2,22 @@ use super::*;
 
 // ----- F O R W A R D -----------------------------------------------------------------
 
-fn pipeline_fwd(op: &Op, provider: &dyn Provider, operands: &mut [Coord]) -> usize {
+fn pipeline_fwd(op: &Op, provider: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
     let mut n = usize::MAX;
     for step in &op.steps[..] {
-        n = n.min(step.apply(provider, operands, Direction::Fwd));
+        n = n.min(step.apply(provider, operands, Direction::Fwd)?);
     }
-    n
+    Ok(n)
 }
 
 // ----- I N V E R S E -----------------------------------------------------------------
 
-fn pipeline_inv(op: &Op, provider: &dyn Provider, operands: &mut [Coord]) -> usize {
+fn pipeline_inv(op: &Op, provider: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
     let mut n = usize::MAX;
     for step in op.steps[..].iter().rev() {
-        n = n.min(step.apply(provider, operands, Direction::Inv));
+        n = n.min(step.apply(provider, operands, Direction::Inv)?);
     }
-    n
+    Ok(n)
 }
 
 // ----- C O N S T R U C T O R ---------------------------------------------------------

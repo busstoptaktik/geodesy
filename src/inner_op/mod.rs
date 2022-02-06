@@ -56,7 +56,7 @@ impl core::fmt::Debug for OpConstructor {
 /// InnerOp needs to be a newtype, rather than a type alias, since we
 /// must implement the Debug-trait for InnerOp (to make auto derive
 /// of the Debug-trait work for any derived type).
-pub struct InnerOp(pub fn(op: &Op, ctx: &dyn Provider, operands: &mut [Coord]) -> usize);
+pub struct InnerOp(pub fn(op: &Op, ctx: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error>);
 
 // Cannot autoderive the Debug trait
 impl core::fmt::Debug for InnerOp {
@@ -72,8 +72,10 @@ impl Default for InnerOp {
     }
 }
 
-fn noop_placeholder(_params: &Op, _provider: &dyn Provider, _operands: &mut [Coord]) -> usize {
-    0
+fn noop_placeholder(_params: &Op, _provider: &dyn Provider, _operands: &mut [Coord]) -> Result<usize, Error> {
+    // Consider whether this should return an Err-value if used as a placeholder for a
+    // non-existing or non-implemented inverse operation
+    Ok(0)
 }
 
 // ----- A N C I L L A R Y   F U N C T I O N S -----------------------------------------

@@ -48,7 +48,7 @@ fn main() -> anyhow::Result<()> {
     // definition), use the Rust `?`-operator to handle errors.
     let utm32 = Op::new("utm zone=32", &ctx)?;
     // Now, let's use the utm32-operator to transform some data
-    utm32.apply(&ctx, &mut data, Fwd);
+    utm32.apply(&ctx, &mut data, Fwd)?;
 
     println!("utm32:");
     for coord in data {
@@ -56,7 +56,7 @@ fn main() -> anyhow::Result<()> {
     }
 
     // The inv() method takes us back to geographic coordinates
-    utm32.apply(&ctx, &mut data, Inv);
+    utm32.apply(&ctx, &mut data, Inv)?;
 
     // The output is in radians, so we use this convenience function:
     Coord::degrees_all(&mut data);
@@ -91,7 +91,7 @@ fn main() -> anyhow::Result<()> {
 
     // Since the forward transformation goes *from* ed50 to wgs84, we use
     // the inverse method to take us the other way, back in time to ED50
-    ed50_wgs84.apply(&ctx, &mut data, Inv);
+    ed50_wgs84.apply(&ctx, &mut data, Inv)?;
     // Convert the internal lon/lat-in-radians format to the more human
     // readable lat/lon-in-degrees - then print
     Coord::geo_all(&mut data);

@@ -111,14 +111,14 @@ fn helmert_common(
 
 // ----- F O R W A R D --------------------------------------------------------------
 
-fn helmert_fwd(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> usize {
-    return helmert_common(op, _prv, operands, Direction::Fwd);
+fn helmert_fwd(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
+    Ok(helmert_common(op, _prv, operands, Direction::Fwd))
 }
 
 // ----- I N V E R S E --------------------------------------------------------------
 
-fn helmert_inv(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> usize {
-    return helmert_common(op, _prv, operands, Direction::Inv);
+fn helmert_inv(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
+    Ok(helmert_common(op, _prv, operands, Direction::Inv))
 }
 
 // ----- C O N S T R U C T O R ------------------------------------------------------
@@ -357,12 +357,12 @@ mod tests {
         // EPSG:1134 - 3 parameter, ED50/WGS84, s = sqrt(27) m
         let mut operands = [Coord::origin()];
 
-        op.apply(&provider, &mut operands, Direction::Fwd);
+        op.apply(&provider, &mut operands, Direction::Fwd)?;
         assert_eq!(operands[0].first(), -87.);
         assert_eq!(operands[0].second(), -96.);
         assert_eq!(operands[0].third(), -120.);
 
-        op.apply(&provider, &mut operands, Direction::Inv);
+        op.apply(&provider, &mut operands, Direction::Inv)?;
         assert_eq!(operands[0].first(), 0.);
         assert_eq!(operands[0].second(), 0.);
         assert_eq!(operands[0].third(), 0.);
@@ -387,11 +387,11 @@ mod tests {
 
         // The forward transformation should hit closer than 75 um
         let mut operands = [GDA94];
-        op.apply(&provider, &mut operands, Direction::Fwd);
+        op.apply(&provider, &mut operands, Direction::Fwd)?;
         assert!(GDA2020A.hypot3(&operands[0]) < 75e-6);
 
         // ... and an even better roundtrip
-        op.apply(&provider, &mut operands, Direction::Inv);
+        op.apply(&provider, &mut operands, Direction::Inv)?;
         assert!(GDA94.hypot3(&operands[0]) < 75e-7);
 
         Ok(())
@@ -411,11 +411,11 @@ mod tests {
 
         // The forward transformation should hit closeer than 40 um
         let mut operands = [ITRF2014];
-        op.apply(&provider, &mut operands, Direction::Fwd);
+        op.apply(&provider, &mut operands, Direction::Fwd)?;
         assert!(GDA2020B.hypot3(&operands[0]) < 40e-6);
 
         // ... and even closer on the way back
-        op.apply(&provider, &mut operands, Direction::Inv);
+        op.apply(&provider, &mut operands, Direction::Inv)?;
         assert!(ITRF2014.hypot3(&operands[0]) < 40e-8);
 
         Ok(())
@@ -434,9 +434,9 @@ mod tests {
         operands[0][3] = 2030.;
 
         let op = Op::new(definition, &provider)?;
-        op.apply(&provider, &mut operands, Direction::Fwd);
+        op.apply(&provider, &mut operands, Direction::Fwd)?;
         assert!(GDA2020B.hypot3(&operands[0]) < 40e-6);
-        op.apply(&provider, &mut operands, Direction::Inv);
+        op.apply(&provider, &mut operands, Direction::Inv)?;
         assert!(ITRF2014.hypot3(&operands[0]) < 40e-8);
 
         Ok(())

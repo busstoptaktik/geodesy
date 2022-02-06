@@ -3,14 +3,14 @@ use super::*;
 
 // ----- F O R W A R D --------------------------------------------------------------
 
-fn fwd(_op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> usize {
-    operands.len()
+fn fwd(_op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
+    Ok(operands.len())
 }
 
 // ----- I N V E R S E --------------------------------------------------------------
 
-fn inv(_op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> usize {
-    operands.len()
+fn inv(_op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
+    Ok(operands.len())
 }
 
 // ----- C O N S T R U C T O R ------------------------------------------------------
@@ -40,11 +40,11 @@ mod tests {
         let mut operands = [GDA94];
 
         // Forward
-        op.apply(&provider, &mut operands, Fwd);
+        op.apply(&provider, &mut operands, Fwd)?;
         assert_eq!(operands[0], GDA94);
 
         // Inverse + roundtrip
-        op.apply(&provider, &mut operands, Inv);
+        op.apply(&provider, &mut operands, Inv)?;
         assert_eq!(operands[0], GDA94);
         Ok(())
     }
