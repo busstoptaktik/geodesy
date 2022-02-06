@@ -6,14 +6,28 @@ use super::*;
 
 // ----- F O R W A R D -----------------------------------------------------------------
 
-fn fwd(op: &Op, prv: &dyn Provider, operands: &mut [CoordinateTuple]) -> Result<usize, Error> {
+fn fwd(op: &Op, _prv: &dyn Provider, operands: &mut [CoordinateTuple]) -> Result<usize, Error> {
     todo!();
+    let mut successes = 0_usize;
+    for coord in operands {
+
+        successes += 1;
+    }
+
+    Ok(successes)
 }
 
 // ----- I N V E R S E -----------------------------------------------------------------
 
-fn inv(op: &Op, prv: &dyn Provider, operands: &mut [CoordinateTuple]) -> Result<usize, Error> {
+fn inv(op: &Op, _prv: &dyn Provider, operands: &mut [CoordinateTuple]) -> Result<usize, Error> {
     todo!();
+    let mut successes = 0_usize;
+    for coord in operands {
+
+        successes += 1;
+    }
+
+    Ok(successes)
 }
 
 // ----- C O N S T R U C T O R ---------------------------------------------------------
@@ -36,17 +50,8 @@ pub fn new(parameters: &RawParameters, provider: &dyn Provider) -> Result<Op, Er
 // ----- T E S T S ---------------------------------------------------------------------
 
 #[cfg(test)]
-use super::*;
 mod tests {
     use super::*;
-    const GDA94: CoordinateTuple =
-        CoordinateTuple([-4052051.7643, 4212836.2017, -2545106.0245, 0.0]);
-    const GDA2020A: CoordinateTuple =
-        CoordinateTuple([-4052052.7379, 4212835.9897, -2545104.5898, 0.0]);
-    const GDA2020B: CoordinateTuple =
-        CoordinateTuple([-4052052.7373, 4212835.9835, -2545104.5867, 2020.0]);
-    const ITRF2014: CoordinateTuple =
-        CoordinateTuple([-4052052.6588, 4212835.9938, -2545104.6946, 2018.0]);
 
     #[test]
     fn translation() -> Result<(), Error> {
@@ -54,7 +59,7 @@ mod tests {
         let op = Op::new("helmert x=-87 y=-96 z=-120", &provider)?;
 
         // EPSG:1134 - 3 parameter, ED50/WGS84, s = sqrt(27) m
-        let mut operands = [CoordinateTuple::origin()];
+        let mut operands = [Coord::origin()];
 
         // Forward
         op.apply(&provider, &mut operands, Fwd)?;
