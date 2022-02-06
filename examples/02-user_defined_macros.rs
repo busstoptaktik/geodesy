@@ -3,8 +3,6 @@
 // See also 00-transformations.rs
 // Run with:
 // cargo run --example 02-user_defined_macros
-
-// Let Anyhow and GeodesyError play together for convenient error handling
 use geodesy::preamble::*;
 
 fn main() -> anyhow::Result<()> {
@@ -31,7 +29,7 @@ fn main() -> anyhow::Result<()> {
     // clear in a moment...
 
     // First we need to register our macro in the resource provider ("context")
-    ctx.register_resource("geohelmert", geohelmert_macro_text);
+    ctx.register_resource(":geohelmert", geohelmert_macro_text);
     // if !ctx.register_macro("geohelmert", geohelmert_macro_text) {
     //         return Err(Error::General(
     //         "Awful error: Couldn't register macro 'geohelmert'",
@@ -39,15 +37,28 @@ fn main() -> anyhow::Result<()> {
     // };
 
     // Now let's see whether it works - instantiate the macro, using the same
-    // parameters as used in example 00.
-    let ed50_wgs84 = Op::new("geohelmert left=intl right=GRS80 x=-87 y=-96 z=-120", &ctx)?;
+    // parameters as used in example 00. The ':' in the operator name invokes
+    // the macro expansion machinery.
+    let ed50_wgs84 = ctx.op(":geohelmert left=intl right=GRS80 x=-87 y=-96 z=-120")?;
     // ... and do the same transformation as in example 00
-    ed50_wgs84.apply(&ctx, &mut data, geodesy::Direction::Fwd);
+    ctx.apply(ed50_wgs84, Fwd, &mut data)?;
+    ctx.apply(ed50_wgs84, Inv, &mut data)?;
+
+    // geo_all(data) transforms all elements in data from the internal GIS
+    // format (lon/lat in radians) to lat/lon in degrees.
+    let mut etrs89 = data.clone();
+    Coord::geo_all(&mut etrs89);
+    println!("etrs89:");
+    for coord in data {
+        println!("    {:?}", coord);
+    }
+
+    ctx.apply(ed50_wgs84, Inv, &mut data)?;
 
     // geo_all(data) transforms all elements in data from the internal GIS
     // format (lon/lat in radians) to lat/lon in degrees.
     Coord::geo_all(&mut data);
-    println!("ed50:");
+    println!("Back to ed50:");
     for coord in data {
         println!("    {:?}", coord);
     }
