@@ -3,14 +3,6 @@ use super::*;
 
 // ----- C O M M O N -------------------------------------------------------------------
 
-fn common(
-    op: &Op,
-    prv: &dyn Provider,
-    operands: &mut [CoordinateTuple],
-    direction: Direction,
-) -> usize {
-    todo!();
-}
 
 // ----- F O R W A R D -----------------------------------------------------------------
 
@@ -28,7 +20,7 @@ fn inv(op: &Op, prv: &dyn Provider, operands: &mut [CoordinateTuple]) -> Result<
 
 // Example...
 #[rustfmt::skip]
-pub const GAMUT: [OpParameter; 19] = [
+pub const GAMUT: [OpParameter; 3] = [
     OpParameter::Flag { key: "inv" },
     OpParameter::Real { key: "x", default: Some(0f64) },
     OpParameter::Text { key: "convention", default: Some("") },
@@ -40,9 +32,6 @@ pub fn new(parameters: &RawParameters, provider: &dyn Provider) -> Result<Op, Er
 
 // ----- A N C I L L A R Y   F U N C T I O N S -----------------------------------------
 
-fn rotation_matrix(r: Vec<f64>, exact: bool, position_vector: bool) -> [[f64; 3]; 3] {
-    todo!()
-}
 
 // ----- T E S T S ---------------------------------------------------------------------
 
