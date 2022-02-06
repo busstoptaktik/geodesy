@@ -9,17 +9,19 @@ mod adapt;
 mod addone;
 mod cart;
 mod helmert;
+mod lcc;
 mod noop;
 pub(crate) mod pipeline;
 
 #[rustfmt::skip]
-const BUILTIN_OPERATORS: [(&str, OpConstructor); 6] = [
-    ("adapt",    OpConstructor(super::inner_op::adapt::new)),
-    ("addone",   OpConstructor(super::inner_op::addone::new)),
-    ("cart",     OpConstructor(super::inner_op::cart::new)),
-    ("helmert",  OpConstructor(super::inner_op::helmert::new)),
-    ("noop",     OpConstructor(super::inner_op::noop::new)),
-    ("pipeline", OpConstructor(super::inner_op::pipeline::new)),
+const BUILTIN_OPERATORS: [(&str, OpConstructor); 7] = [
+    ("adapt",    OpConstructor(adapt::new)),
+    ("addone",   OpConstructor(addone::new)),
+    ("cart",     OpConstructor(cart::new)),
+    ("helmert",  OpConstructor(helmert::new)),
+    ("lcc",      OpConstructor(lcc::new)),
+    ("noop",     OpConstructor(noop::new)),
+    ("pipeline", OpConstructor(pipeline::new)),
 ];
 // A BTreeMap would have been a better choice for BUILTIN_OPERATORS, except
 // for the annoying fact that it cannot be compile-time const-constructed.
@@ -56,7 +58,9 @@ impl core::fmt::Debug for OpConstructor {
 /// InnerOp needs to be a newtype, rather than a type alias, since we
 /// must implement the Debug-trait for InnerOp (to make auto derive
 /// of the Debug-trait work for any derived type).
-pub struct InnerOp(pub fn(op: &Op, ctx: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error>);
+pub struct InnerOp(
+    pub fn(op: &Op, ctx: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error>,
+);
 
 // Cannot autoderive the Debug trait
 impl core::fmt::Debug for InnerOp {
@@ -72,7 +76,11 @@ impl Default for InnerOp {
     }
 }
 
-fn noop_placeholder(_params: &Op, _provider: &dyn Provider, _operands: &mut [Coord]) -> Result<usize, Error> {
+fn noop_placeholder(
+    _params: &Op,
+    _provider: &dyn Provider,
+    _operands: &mut [Coord],
+) -> Result<usize, Error> {
     // Consider whether this should return an Err-value if used as a placeholder for a
     // non-existing or non-implemented inverse operation
     Ok(0)

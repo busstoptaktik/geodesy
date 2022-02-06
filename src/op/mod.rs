@@ -20,7 +20,12 @@ pub struct Op {
 
 impl Op {
     // operate fwd/inv, taking operator inversion into account.
-    pub fn apply(&self, ctx: &dyn Provider, operands: &mut [Coord], direction: Direction) -> Result<usize, Error> {
+    pub fn apply(
+        &self,
+        ctx: &dyn Provider,
+        operands: &mut [Coord],
+        direction: Direction,
+    ) -> Result<usize, Error> {
         let forward = direction == Direction::Fwd;
         // Short form of (inverted && !forward) || (forward && !inverted)
         if self.descriptor.inverted != forward {

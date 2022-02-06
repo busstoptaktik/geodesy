@@ -273,13 +273,13 @@ impl ParsedParameters {
         // lat_{n}
         for i in 0..4 {
             let key = format!("lat_{}", i);
-            lat[i] = *real.get(&key[..]).unwrap_or(&0.);
+            lat[i] = (*real.get(&key[..]).unwrap_or(&0.)).to_radians();
         }
 
         // lon_{n}
         for i in 0..4 {
             let key = format!("lon_{}", i);
-            lon[i] = *real.get(&key[..]).unwrap_or(&0.);
+            lon[i] = (*real.get(&key[..]).unwrap_or(&0.)).to_radians();
         }
 
         // x_{n}
@@ -305,6 +305,7 @@ impl ParsedParameters {
             .unwrap_or(&"unknown".to_string())
             .to_string();
 
+        // TODO:
         // Params explicitly set to the default value
         // let mut redundant = BTreeSet::<String>::new();
         // Params specified, but not used
