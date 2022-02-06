@@ -12,19 +12,19 @@ fn common(
     todo!();
 }
 
-// ----- F O R W A R D --------------------------------------------------------------
+// ----- F O R W A R D -----------------------------------------------------------------
 
 fn fwd(op: &Op, prv: &dyn Provider, operands: &mut [CoordinateTuple]) -> usize {
     todo!();
 }
 
-// ----- I N V E R S E --------------------------------------------------------------
+// ----- I N V E R S E -----------------------------------------------------------------
 
 fn inv(op: &Op, prv: &dyn Provider, operands: &mut [CoordinateTuple]) -> usize {
     todo!();
 }
 
-// ----- C O N S T R U C T O R ------------------------------------------------------
+// ----- C O N S T R U C T O R ---------------------------------------------------------
 
 // Example...
 #[rustfmt::skip]
@@ -38,13 +38,13 @@ pub fn new(parameters: &RawParameters, provider: &dyn Provider) -> Result<Op, Er
     Op::plain(parameters, InnerOp(fwd), InnerOp(inv), &GAMUT, provider)
 }
 
-// ----- A N C I L L A R Y   F U N C T I O N S   G O   H E R E -------------------------
+// ----- A N C I L L A R Y   F U N C T I O N S -----------------------------------------
 
 fn rotation_matrix(r: Vec<f64>, exact: bool, position_vector: bool) -> [[f64; 3]; 3] {
     todo!()
 }
 
-// ----- T E S T S ------------------------------------------------------------------
+// ----- T E S T S ---------------------------------------------------------------------
 
 #[cfg(test)]
 mod tests {

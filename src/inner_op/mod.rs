@@ -78,9 +78,6 @@ fn noop_placeholder(_params: &Op, _provider: &dyn Provider, _operands: &mut [Coo
 
 // ----- A N C I L L A R Y   F U N C T I O N S -----------------------------------------
 
-// Rust Geodesy internals - i.e. functions that are needed in more
-// than one module and hence belongs naturally in neither of them.
-
 // pj_tsfn is the equivalent of Charles Karney's PROJ function of the
 // same name, which determines the function ts(phi) as defined in
 // Snyder (1987), Eq. (7-10)
@@ -105,7 +102,7 @@ fn noop_placeholder(_params: &Op, _provider: &dyn Provider, _operands: &mut [Coo
 //       = asinh(tan(chi))
 //   chi = conformal latitude
 #[allow(dead_code)]
-pub(crate) fn pj_tsfn(sincos: (f64, f64), e: f64) -> f64 {
+fn pj_tsfn(sincos: (f64, f64), e: f64) -> f64 {
     // exp(-asinh(tan(phi)))
     //    = 1 / (tan(phi) + sec(phi))
     //    = cos(phi) / (1 + sin(phi))  good for phi > 0
@@ -120,19 +117,20 @@ pub(crate) fn pj_tsfn(sincos: (f64, f64), e: f64) -> f64 {
 
 // Snyder (1982) eq. 12-15, PROJ's pj_msfn()
 #[allow(dead_code)]
-pub(crate) fn pj_msfn(sincos: (f64, f64), es: f64) -> f64 {
+fn pj_msfn(sincos: (f64, f64), es: f64) -> f64 {
     sincos.1 / (1. - sincos.0 * sincos.0 * es).sqrt()
 }
 
 // Equivalent to the PROJ pj_phi2 function
 #[allow(dead_code)]
-pub(crate) fn pj_phi2(ts0: f64, e: f64) -> f64 {
+fn pj_phi2(ts0: f64, e: f64) -> f64 {
     sinhpsi_to_tanphi((1. / ts0 - ts0) / 2., e).atan()
 }
 
-// Ancillary function for computing the inverse isometric latitude.
-// Follows [Karney, 2011](crate::Bibliography::Kar11), and the PROJ
-// implementation in proj/src/phi2.cpp
+// Ancillary function for computing the inverse isometric latitude. Follows
+// [Karney, 2011](crate::Bibliography::Kar11), and the PROJ implementation
+// in proj/src/phi2.cpp.
+// Needs crate-visibility as it is also used in crate::ellipsoid::latitudes
 pub(crate) fn sinhpsi_to_tanphi(taup: f64, e: f64) -> f64 {
     // min iterations = 1, max iterations = 2; mean = 1.954
     const MAX_ITER: usize = 5;
