@@ -76,7 +76,6 @@ fn cart_inv(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> usize {
         let CC = ar * C1;
 
         let phi = S1.atan2(CC);
-        dbg!(phi);
         let h = (p * CC.abs() + Z.abs() * S1.abs() - a * CC.hypot(ar * S1)) / CC.hypot(S1);
         // Bowring's height formula works better close to the ellipsoid, but requires a (sin, cos)-pair
         *coord = Coord::raw(lam, phi, h, t);
@@ -173,8 +172,7 @@ mod tests {
         //let mut operands = cart.clone();
         op.apply(&provider, &mut operands, Inv);
         for i in 0..5 {
-            dbg!(operands[i].to_degrees());
-            assert!(dbg!(operands[i].default_ellps_3d_dist(&geo[i])) < 10e-9);
+            assert!(operands[i].default_ellps_3d_dist(&geo[i]) < 10e-9);
         }
 
         Ok(())
