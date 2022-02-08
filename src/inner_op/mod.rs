@@ -10,17 +10,19 @@ mod addone;
 mod cart;
 mod helmert;
 mod lcc;
+mod nmea;
 mod noop;
 pub(crate) mod pipeline;
 mod tmerc;
 
 #[rustfmt::skip]
-const BUILTIN_OPERATORS: [(&str, OpConstructor); 9] = [
+const BUILTIN_OPERATORS: [(&str, OpConstructor); 10] = [
     ("adapt",    OpConstructor(adapt::new)),
     ("addone",   OpConstructor(addone::new)),
     ("cart",     OpConstructor(cart::new)),
     ("helmert",  OpConstructor(helmert::new)),
     ("lcc",      OpConstructor(lcc::new)),
+    ("nmea",     OpConstructor(nmea::new)),
     ("noop",     OpConstructor(noop::new)),
     ("tmerc",    OpConstructor(tmerc::new)),
     ("utm",      OpConstructor(tmerc::utm)),
