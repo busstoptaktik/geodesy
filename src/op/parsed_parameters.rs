@@ -21,6 +21,7 @@ pub struct ParsedParameters {
     pub text: BTreeMap<&'static str, String>,
     pub uuid: BTreeMap<&'static str, uuid::Uuid>,
     pub ignored: Vec<String>,
+    pub given: BTreeMap<String, String>,
 }
 
 // Accessors
@@ -309,6 +310,7 @@ impl ParsedParameters {
         // Params explicitly set to the default value
         // let mut redundant = BTreeSet::<String>::new();
         // Params specified, but not used
+        let given = locals.clone();
         let ignored: Vec<String> = locals.into_keys().collect();
         Ok(ParsedParameters {
             ellps,
@@ -326,6 +328,7 @@ impl ParsedParameters {
             text,
             uuid,
             ignored,
+            given,
         })
     }
 }

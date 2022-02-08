@@ -11,24 +11,26 @@ mod cart;
 mod helmert;
 mod lcc;
 mod merc;
+mod molodensky;
 mod nmea;
 mod noop;
 pub(crate) mod pipeline;
 mod tmerc;
 
 #[rustfmt::skip]
-const BUILTIN_OPERATORS: [(&str, OpConstructor); 11] = [
-    ("adapt",    OpConstructor(adapt::new)),
-    ("addone",   OpConstructor(addone::new)),
-    ("cart",     OpConstructor(cart::new)),
-    ("helmert",  OpConstructor(helmert::new)),
-    ("lcc",      OpConstructor(lcc::new)),
-    ("merc",     OpConstructor(merc::new)),
-    ("nmea",     OpConstructor(nmea::new)),
-    ("noop",     OpConstructor(noop::new)),
-    ("tmerc",    OpConstructor(tmerc::new)),
-    ("utm",      OpConstructor(tmerc::utm)),
-    ("pipeline", OpConstructor(pipeline::new)),
+const BUILTIN_OPERATORS: [(&str, OpConstructor); 12] = [
+    ("adapt",      OpConstructor(adapt::new)),
+    ("addone",     OpConstructor(addone::new)),
+    ("cart",       OpConstructor(cart::new)),
+    ("helmert",    OpConstructor(helmert::new)),
+    ("lcc",        OpConstructor(lcc::new)),
+    ("merc",       OpConstructor(merc::new)),
+    ("molodensky", OpConstructor(molodensky::new)),
+    ("nmea",       OpConstructor(nmea::new)),
+    ("noop",       OpConstructor(noop::new)),
+    ("tmerc",      OpConstructor(tmerc::new)),
+    ("utm",        OpConstructor(tmerc::utm)),
+    ("pipeline",   OpConstructor(pipeline::new)),
 ];
 // A BTreeMap would have been a better choice for BUILTIN_OPERATORS, except
 // for the annoying fact that it cannot be compile-time const-constructed.

@@ -59,7 +59,7 @@ const ELLIPSOID_LIST: [(&str, &str, &str, &str, &str); 47] = [
 ];
 
 /// Representation of a (potentially triaxial) ellipsoid.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Ellipsoid {
     a: f64,
     ay: f64,
