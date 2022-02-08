@@ -132,14 +132,13 @@ mod tests {
         let mut operands = geo.clone();
         op.apply(&prv, &mut operands, Fwd)?;
         for i in 0..operands.len() {
-            assert!(dbg!(operands[i].hypot2(&projected[i])) < 20e-9);
+            assert!(operands[i].hypot2(&projected[i]) < 20e-9);
         }
 
         // Roundtrip
         op.apply(&prv, &mut operands, Inv)?;
         for i in 0..operands.len() {
-            dbg!(operands[i].to_degrees());
-            assert!(dbg!(operands[i].hypot2(&geo[i])) < 20e-9);
+            assert!(operands[i].hypot2(&geo[i]) < 20e-9);
         }
 
         Ok(())

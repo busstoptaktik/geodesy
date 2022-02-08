@@ -184,12 +184,12 @@ mod tests {
         let mut operands = geo.clone();
         op.apply(&prv, &mut operands, Fwd)?;
         for i in 0..operands.len() {
-            assert!(dbg!(operands[i].hypot2(&projected[i])) < 5e-3);
+            assert!(operands[i].hypot2(&projected[i]) < 5e-3);
         }
 
         op.apply(&prv, &mut operands, Inv)?;
         for i in 0..operands.len() {
-            assert!(dbg!(operands[i].hypot2(&geo[i])) < 10e-8);
+            assert!(operands[i].hypot2(&geo[i]) < 10e-8);
         }
         Ok(())
     }
@@ -221,12 +221,12 @@ mod tests {
         let mut operands = geo.clone();
         op.apply(&prv, &mut operands, Fwd)?;
         for i in 0..operands.len() {
-            assert!(dbg!(operands[i].hypot2(&projected[i])) < 5e-3);
+            assert!(operands[i].hypot2(&projected[i]) < 5e-3);
         }
 
         op.apply(&prv, &mut operands, Inv)?;
         for i in 0..operands.len() {
-            assert!(dbg!(operands[i].hypot2(&geo[i])) < 10e-8);
+            assert!(operands[i].hypot2(&geo[i]) < 10e-8);
         }
         Ok(())
     }
