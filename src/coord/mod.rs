@@ -22,25 +22,25 @@ impl IndexMut<usize> for Coord {
 }
 
 impl Coord {
-    /// A `CoordinateTuple` from latitude/longitude/height/time, with the angular input in degrees
+    /// A `Coord` from latitude/longitude/height/time, with the angular input in degrees
     #[must_use]
     pub fn geo(latitude: f64, longitude: f64, height: f64, time: f64) -> Coord {
         Coord([longitude, latitude, height, time]).to_radians()
     }
 
-    /// A `CoordinateTuple` from longitude/latitude/height/time, with the angular input in degrees
+    /// A `Coord` from longitude/latitude/height/time, with the angular input in degrees
     #[must_use]
     pub fn gis(longitude: f64, latitude: f64, height: f64, time: f64) -> Coord {
         Coord([longitude, latitude, height, time]).to_radians()
     }
 
-    /// A `CoordinateTuple` from longitude/latitude/height/time, with the angular input in radians
+    /// A `Coord` from longitude/latitude/height/time, with the angular input in radians
     #[must_use]
     pub fn raw(first: f64, second: f64, third: f64, fourth: f64) -> Coord {
         Coord([first, second, third, fourth])
     }
 
-    /// A `CoordinateTuple` from latitude/longitude/height/time,
+    /// A `Coord` from latitude/longitude/height/time,
     /// with the angular input in NMEA format: DDDMM.mmmmm
     #[must_use]
     pub fn nmea(latitude: f64, longitude: f64, height: f64, time: f64) -> Coord {
@@ -49,7 +49,7 @@ impl Coord {
         Coord([longitude, latitude, height, time]).to_radians()
     }
 
-    /// A `CoordinateTuple` from latitude/longitude/height/time, with
+    /// A `Coord` from latitude/longitude/height/time, with
     /// the angular input in extended NMEA format: DDDMMSS.sssss
     #[must_use]
     pub fn nmeass(latitude: f64, longitude: f64, height: f64, time: f64) -> Coord {
@@ -58,43 +58,43 @@ impl Coord {
         Coord::geo(latitude, longitude, height, time)
     }
 
-    /// A `CoordinateTuple` consisting of 4 `NaN`s
+    /// A `Coord` consisting of 4 `NaN`s
     #[must_use]
     pub fn nan() -> Coord {
         Coord([f64::NAN, f64::NAN, f64::NAN, f64::NAN])
     }
 
-    /// A `CoordinateTuple` consisting of 4 `0`s
+    /// A `Coord` consisting of 4 `0`s
     #[must_use]
     pub fn origin() -> Coord {
         Coord([0., 0., 0., 0.])
     }
 
-    /// A `CoordinateTuple` consisting of 4 `1`s
+    /// A `Coord` consisting of 4 `1`s
     #[must_use]
     pub fn ones() -> Coord {
         Coord([1., 1., 1., 1.])
     }
 
-    /// First coordinate of the `CoordinateTuple`
+    /// First coordinate of the `Coord`
     #[must_use]
     pub fn first(&self) -> f64 {
         self[0]
     }
 
-    /// Second coordinate of the `CoordinateTuple`
+    /// Second coordinate of the `Coord`
     #[must_use]
     pub fn second(&self) -> f64 {
         self[1]
     }
 
-    /// Third coordinate of the `CoordinateTuple`
+    /// Third coordinate of the `Coord`
     #[must_use]
     pub fn third(&self) -> f64 {
         self[2]
     }
 
-    /// Fourth coordinate of the `CoordinateTuple`
+    /// Fourth coordinate of the `Coord`
     #[must_use]
     pub fn fourth(&self) -> f64 {
         self[3]
@@ -106,7 +106,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn coordinatetuple() {
+    fn coord() {
         let c = Coord::raw(12., 55., 100., 0.).to_radians();
         let d = Coord::gis(12., 55., 100., 0.);
         assert_eq!(c, d);

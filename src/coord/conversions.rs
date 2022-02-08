@@ -1,13 +1,13 @@
 use super::Coord;
 
 impl Coord {
-    /// Transform the first two elements of a `CoordinateTuple` from degrees to radians
+    /// Transform the first two elements of a `Coord` from degrees to radians
     #[must_use]
     pub fn to_radians(self) -> Coord {
         Coord([self[0].to_radians(), self[1].to_radians(), self[2], self[3]])
     }
 
-    /// Transform the first two elements of a `CoordinateTuple` from radians to degrees
+    /// Transform the first two elements of a `Coord` from radians to degrees
     #[must_use]
     pub fn to_degrees(self) -> Coord {
         Coord([self[0].to_degrees(), self[1].to_degrees(), self[2], self[3]])
@@ -26,14 +26,14 @@ impl Coord {
         }
     }
 
-    /// For an entire data set: Transform the first two elements of a `CoordinateTuple` from radians to degrees
+    /// For an entire data set: Transform the first two elements of a `Coord` from radians to degrees
     pub fn degrees_all(operands: &mut [Coord]) {
         for coord in operands {
             *coord = coord.to_degrees();
         }
     }
 
-    /// For an entire data set: Transform the first two elements of a `CoordinateTuple` from degrees to radians
+    /// For an entire data set: Transform the first two elements of a `Coord` from degrees to radians
     pub fn radians_all(operands: &mut [Coord]) {
         for coord in operands {
             *coord = coord.to_radians();
