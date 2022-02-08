@@ -11,11 +11,11 @@ mod cart;
 mod helmert;
 mod lcc;
 mod noop;
-mod tmerc;
 pub(crate) mod pipeline;
+mod tmerc;
 
 #[rustfmt::skip]
-const BUILTIN_OPERATORS: [(&str, OpConstructor); 8] = [
+const BUILTIN_OPERATORS: [(&str, OpConstructor); 9] = [
     ("adapt",    OpConstructor(adapt::new)),
     ("addone",   OpConstructor(addone::new)),
     ("cart",     OpConstructor(cart::new)),
@@ -23,6 +23,7 @@ const BUILTIN_OPERATORS: [(&str, OpConstructor); 8] = [
     ("lcc",      OpConstructor(lcc::new)),
     ("noop",     OpConstructor(noop::new)),
     ("tmerc",    OpConstructor(tmerc::new)),
+    ("utm",      OpConstructor(tmerc::utm)),
     ("pipeline", OpConstructor(pipeline::new)),
 ];
 // A BTreeMap would have been a better choice for BUILTIN_OPERATORS, except
