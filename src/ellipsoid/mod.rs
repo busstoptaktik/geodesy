@@ -105,17 +105,13 @@ impl Ellipsoid {
         }
 
         // The "semiminor, reciproque-flattening" form, e.g. "6378137, 298.3"
-        loop {
-            let a_rf = name.split(',').collect::<Vec<_>>();
-            if a_rf.len() != 2_usize {
-                break;
-            }
-            if let Ok(a) = a_rf[0].trim().parse::<f64>() {
-                if let Ok(rf) = a_rf[1].trim().parse::<f64>() {
+        let a_and_rf = name.split(',').collect::<Vec<_>>();
+        if a_and_rf.len() == 2_usize {
+            if let Ok(a) = a_and_rf[0].trim().parse::<f64>() {
+                if let Ok(rf) = a_and_rf[1].trim().parse::<f64>() {
                     return Ok(Ellipsoid::new(a, 1. / rf));
                 }
             }
-            break;
         }
 
         // TODO: Search asset collection

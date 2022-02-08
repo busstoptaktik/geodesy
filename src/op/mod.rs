@@ -52,7 +52,7 @@ impl Op {
         _provider: &dyn Provider,
     ) -> Result<Op, Error> {
         let def = &parameters.definition;
-        let params = ParsedParameters::new(parameters, &gamut)?;
+        let params = ParsedParameters::new(parameters, gamut)?;
         let descriptor = OpDescriptor::new(def, fwd, Some(inv));
         let steps = Vec::<Op>::new();
         Ok(Op {

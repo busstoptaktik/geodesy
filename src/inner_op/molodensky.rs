@@ -19,8 +19,12 @@ use super::*;
 
 // ----- C O M M O N -------------------------------------------------------------------
 
-
-fn common(op: &Op, _prv: &dyn Provider, operands: &mut [Coord], direction: Direction) -> Result<usize, Error> {
+fn common(
+    op: &Op,
+    _prv: &dyn Provider,
+    operands: &mut [Coord],
+    direction: Direction,
+) -> Result<usize, Error> {
     let ellps = op.params.ellps[0];
     let a = ellps.semimajor_axis();
     let f = ellps.flattening();
@@ -63,7 +67,6 @@ fn common(op: &Op, _prv: &dyn Provider, operands: &mut [Coord], direction: Direc
 
     Ok(n)
 }
-
 
 // ----- F O R W A R D -----------------------------------------------------------------
 fn fwd(op: &Op, prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
@@ -180,7 +183,8 @@ fn calc_molodensky_params(op: &Molodensky, coord: &Coord) -> Coord {
     let dlam = (op.dy * clam - op.dx * slam) / dlam_denom;
 
     // delta h
-    let dh = fac * cphi + op.dz * sphi - (op.a / N) * op.da + N * (1.0 - op.f) * op.df * sphi * sphi;
+    let dh =
+        fac * cphi + op.dz * sphi - (op.a / N) * op.da + N * (1.0 - op.f) * op.df * sphi * sphi;
 
     Coord::raw(dlam, dphi, dh, 0.)
 }

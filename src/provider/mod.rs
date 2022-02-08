@@ -46,7 +46,7 @@ impl Provider for Minimal {
     ) -> Result<usize, Error> {
         const BAD_ID_MESSAGE: Error = Error::General("Minimal: Unknown operator id");
         let op = self.operators.get(&op).ok_or(BAD_ID_MESSAGE)?;
-        Ok(op.apply(self, operands, direction)?)
+        op.apply(self, operands, direction)
     }
 
     fn globals(&self) -> BTreeMap<String, String> {

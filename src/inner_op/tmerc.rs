@@ -120,7 +120,7 @@ pub fn utm(parameters: &RawParameters, _prv: &dyn Provider) -> Result<Op, Error>
 
     // The UTM zone should be an integer between 1 and 60
     let zone = params.natural("zone")?;
-    if zone < 1 || zone > 60 {
+    if !(1..61).contains(&zone) {
         return Err(Error::General(
             "UTM: 'zone' must be an integer in the interval 1..60",
         ));
