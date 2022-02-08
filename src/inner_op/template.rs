@@ -6,7 +6,7 @@ use super::*;
 
 // ----- F O R W A R D -----------------------------------------------------------------
 
-fn fwd(op: &Op, _prv: &dyn Provider, operands: &mut [CoordinateTuple]) -> Result<usize, Error> {
+fn fwd(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
     todo!();
     let mut successes = 0_usize;
     for coord in operands {
@@ -19,7 +19,7 @@ fn fwd(op: &Op, _prv: &dyn Provider, operands: &mut [CoordinateTuple]) -> Result
 
 // ----- I N V E R S E -----------------------------------------------------------------
 
-fn inv(op: &Op, _prv: &dyn Provider, operands: &mut [CoordinateTuple]) -> Result<usize, Error> {
+fn inv(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
     todo!();
     let mut successes = 0_usize;
     for coord in operands {
@@ -54,7 +54,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn translation() -> Result<(), Error> {
+    fn template() -> Result<(), Error> {
         let provider = Minimal::default();
         let op = Op::new("helmert x=-87 y=-96 z=-120", &provider)?;
 
