@@ -14,7 +14,8 @@ While this is sufficient to test the architecture, it is very far from enough to
 
 Hence, viewing *RG* as *another PROJ*, or *PROJ [RiiR](https://acronyms.thefreedictionary.com/RIIR)*, will lead to bad disappointment. At best, you may catch a weak mirage of a *potential* [shape of jazz to come](https://en.wikipedia.org/wiki/The_Shape_of_Jazz_to_Come) for the PROJ internal dataflow.
 
-But dataflow experimentation is just one aspect of *RG*. Overall, the aims are fourfold:
+## Aims
+Dataflow experimentation is just one aspect of *RG*. Overall, the aims are fourfold:
 
 1. Support experiments for evolution of geodetic standards.
 2. Support development of geodetic transformations.
@@ -31,7 +32,7 @@ The documentation is currently limited, but take a look at:
 - The [description of `kp`](/ruminations/003-rumination.md), the *Rust Geodesy* coordinate processing program
 - This essayistic [rumination](/ruminations/000-rumination.md), outlining the overall philosophy and architecture of *Rust Geodesy*.
 - The API documentation at [Docs.rs](https://docs.rs/geodesy)
-- The [examples](examples)
+- The `examples`
 - The tests embedded in the [source code](/src/)
 
 ## License

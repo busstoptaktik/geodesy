@@ -2,24 +2,24 @@ use super::*;
 
 // ----- F O R W A R D -----------------------------------------------------------------
 
-fn addone_fwd(_op: &Op, _provider: &dyn Provider, operands: &mut [CoordinateTuple]) -> usize {
+fn addone_fwd(_op: &Op, _provider: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
     let mut n = 0;
     for o in operands {
         o[0] += 1.;
         n += 1;
     }
-    n
+    Ok(n)
 }
 
 // ----- I N V E R S E -----------------------------------------------------------------
 
-fn addone_inv(_op: &Op, _provider: &dyn Provider, operands: &mut [CoordinateTuple]) -> usize {
+fn addone_inv(_op: &Op, _provider: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
     let mut n = 0;
     for o in operands {
         o[0] -= 1.;
         n += 1;
     }
-    n
+    Ok(n)
 }
 
 // ----- C O N S T R U C T O R ---------------------------------------------------------
@@ -52,13 +52,13 @@ mod tests {
     fn addone() -> Result<(), Error> {
         let provider = Minimal::default();
         let op = Op::new("addone", &provider)?;
-        let mut data = etc::some_basic_coordinates();
+        let mut data = crate::some_basic_coordinates();
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
-        op.apply(&provider, &mut data, Direction::Fwd);
+        op.apply(&provider, &mut data, Direction::Fwd)?;
         assert_eq!(data[0][0], 56.);
         assert_eq!(data[1][0], 60.);
-        op.apply(&provider, &mut data, Direction::Inv);
+        op.apply(&provider, &mut data, Direction::Inv)?;
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
         Ok(())

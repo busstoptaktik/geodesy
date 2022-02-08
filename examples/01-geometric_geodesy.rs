@@ -11,9 +11,9 @@
 
 // Including the `operand` namespace gives us some slightly
 // better support for `CoordinateTuple`s
-use geodesy::{CoordinateTuple, GeodesyError};
+use geodesy::{Coord, Error};
 
-fn main() -> Result<(), GeodesyError> {
+fn main() -> Result<(), Error> {
     // In example 00, we saw that the `Context` data structure is the
     // coordinating element for all things related to transformations
     // in Rust Geodesy. For generic geometric geodesy the same can be
@@ -48,8 +48,8 @@ fn main() -> Result<(), GeodesyError> {
     // surface of the ellipsoid. Let's compute the distance and
     // azimuth between the approximate locations of the airports
     // of Copenhagen (CPH) and Paris (CDG).
-    let CPH = CoordinateTuple::geo(55., 12., 0., 0.);
-    let CDG = CoordinateTuple::geo(49., 2., 0., 0.);
+    let CPH = Coord::geo(55., 12., 0., 0.);
+    let CDG = Coord::geo(49., 2., 0., 0.);
 
     // By historical convention the "from A to B" situation is considered
     // the inverse sense of the geodesic problem - hence `geodesic_inv`:

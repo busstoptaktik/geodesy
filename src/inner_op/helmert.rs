@@ -9,10 +9,13 @@ use super::*;
 
 // ----- C O M M O N -------------------------------------------------------------------
 
+// The forward and inverse implementations are virtually identical, so we combine them
+// into one, with the functionality selected from the "direction" parameter.
+
 fn helmert_common(
     op: &Op,
     _prv: &dyn Provider,
-    operands: &mut [CoordinateTuple],
+    operands: &mut [Coord],
     direction: Direction,
 ) -> usize {
     // Translation, Rotation, Scale
@@ -55,11 +58,7 @@ fn helmert_common(
                 TT[1] += dt * DT[1];
                 TT[2] += dt * DT[2];
                 if rotated {
-                    let RR = [
-                        R[0] + dt * DR[0],
-                        R[1] + dt * DR[1],
-                        R[2] + dt * DR[2]
-                    ];
+                    let RR = [R[0] + dt * DR[0], R[1] + dt * DR[1], R[2] + dt * DR[2]];
                     ROT = rotation_matrix(&RR, exact, position_vector);
                 }
                 SS = S + dt * DS;
@@ -112,14 +111,14 @@ fn helmert_common(
 
 // ----- F O R W A R D --------------------------------------------------------------
 
-fn helmert_fwd(op: &Op, _prv: &dyn Provider, operands: &mut [CoordinateTuple]) -> usize {
-    return helmert_common(op, _prv, operands, Direction::Fwd);
+fn helmert_fwd(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
+    Ok(helmert_common(op, _prv, operands, Direction::Fwd))
 }
 
 // ----- I N V E R S E --------------------------------------------------------------
 
-fn helmert_inv(op: &Op, _prv: &dyn Provider, operands: &mut [CoordinateTuple]) -> usize {
-    return helmert_common(op, _prv, operands, Direction::Inv);
+fn helmert_inv(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
+    Ok(helmert_common(op, _prv, operands, Direction::Inv))
 }
 
 // ----- C O N S T R U C T O R ------------------------------------------------------
@@ -345,14 +344,10 @@ fn rotation_matrix(r: &[f64], exact: bool, position_vector: bool) -> [[f64; 3]; 
 #[cfg(test)]
 mod tests {
     use super::*;
-    const GDA94: CoordinateTuple =
-        CoordinateTuple([-4052051.7643, 4212836.2017, -2545106.0245, 0.0]);
-    const GDA2020A: CoordinateTuple =
-        CoordinateTuple([-4052052.7379, 4212835.9897, -2545104.5898, 0.0]);
-    const GDA2020B: CoordinateTuple =
-        CoordinateTuple([-4052052.7373, 4212835.9835, -2545104.5867, 2020.0]);
-    const ITRF2014: CoordinateTuple =
-        CoordinateTuple([-4052052.6588, 4212835.9938, -2545104.6946, 2018.0]);
+    const GDA94: Coord = Coord([-4052051.7643, 4212836.2017, -2545106.0245, 0.0]);
+    const GDA2020A: Coord = Coord([-4052052.7379, 4212835.9897, -2545104.5898, 0.0]);
+    const GDA2020B: Coord = Coord([-4052052.7373, 4212835.9835, -2545104.5867, 2020.0]);
+    const ITRF2014: Coord = Coord([-4052052.6588, 4212835.9938, -2545104.6946, 2018.0]);
 
     #[test]
     fn translation() -> Result<(), Error> {
@@ -360,14 +355,14 @@ mod tests {
         let op = Op::new("helmert x=-87 y=-96 z=-120", &provider)?;
 
         // EPSG:1134 - 3 parameter, ED50/WGS84, s = sqrt(27) m
-        let mut operands = [CoordinateTuple::origin()];
+        let mut operands = [Coord::origin()];
 
-        op.apply(&provider, &mut operands, Direction::Fwd);
+        op.apply(&provider, &mut operands, Direction::Fwd)?;
         assert_eq!(operands[0].first(), -87.);
         assert_eq!(operands[0].second(), -96.);
         assert_eq!(operands[0].third(), -120.);
 
-        op.apply(&provider, &mut operands, Direction::Inv);
+        op.apply(&provider, &mut operands, Direction::Inv)?;
         assert_eq!(operands[0].first(), 0.);
         assert_eq!(operands[0].second(), 0.);
         assert_eq!(operands[0].third(), 0.);
@@ -392,11 +387,11 @@ mod tests {
 
         // The forward transformation should hit closer than 75 um
         let mut operands = [GDA94];
-        op.apply(&provider, &mut operands, Direction::Fwd);
+        op.apply(&provider, &mut operands, Direction::Fwd)?;
         assert!(GDA2020A.hypot3(&operands[0]) < 75e-6);
 
         // ... and an even better roundtrip
-        op.apply(&provider, &mut operands, Direction::Inv);
+        op.apply(&provider, &mut operands, Direction::Inv)?;
         assert!(GDA94.hypot3(&operands[0]) < 75e-7);
 
         Ok(())
@@ -416,12 +411,12 @@ mod tests {
 
         // The forward transformation should hit closeer than 40 um
         let mut operands = [ITRF2014];
-        op.apply(&provider, &mut operands, Direction::Fwd);
-        assert!(dbg!(GDA2020B.hypot3(&operands[0])) < 40e-6);
+        op.apply(&provider, &mut operands, Direction::Fwd)?;
+        assert!(GDA2020B.hypot3(&operands[0]) < 40e-6);
 
         // ... and even closer on the way back
-        op.apply(&provider, &mut operands, Direction::Inv);
-        assert!(dbg!(ITRF2014.hypot3(&operands[0])) < 40e-8);
+        op.apply(&provider, &mut operands, Direction::Inv)?;
+        assert!(ITRF2014.hypot3(&operands[0]) < 40e-8);
 
         Ok(())
     }
@@ -439,9 +434,9 @@ mod tests {
         operands[0][3] = 2030.;
 
         let op = Op::new(definition, &provider)?;
-        op.apply(&provider, &mut operands, Direction::Fwd);
+        op.apply(&provider, &mut operands, Direction::Fwd)?;
         assert!(GDA2020B.hypot3(&operands[0]) < 40e-6);
-        op.apply(&provider, &mut operands, Direction::Inv);
+        op.apply(&provider, &mut operands, Direction::Inv)?;
         assert!(ITRF2014.hypot3(&operands[0]) < 40e-8);
 
         Ok(())

@@ -55,21 +55,122 @@ geo | cart ... | helmert ... | cart inv ... | geo inv
 
 !*/
 
-use crate::CoordinateTuple;
-use crate::GeodesyError;
-use crate::GysResource;
-use crate::Operator;
-use crate::OperatorCore;
-use crate::Provider;
+use super::*;
 
-#[derive(Debug, Default, Clone)]
-pub struct Adapt {
-    args: Vec<(String, String)>,
-    inverted: bool,
-    post: [usize; 4],
-    mult: [f64; 4],
-    noop: bool,
+const POST_DEFAULT: [f64; 4] = [0., 1., 2., 3.];
+const MULT_DEFAULT: [f64; 4] = [1., 1., 1., 1.];
+
+// ----- F O R W A R D --------------------------------------------------------------
+
+fn fwd(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
+    let n = operands.len();
+    if op.params.boolean("noop") {
+        return Ok(n);
+    }
+
+    let post = op.params.series("post").unwrap_or(&POST_DEFAULT);
+    let post = [
+        post[0] as usize,
+        post[1] as usize,
+        post[2] as usize,
+        post[3] as usize,
+    ];
+    let mult = op.params.series("mult").unwrap_or(&MULT_DEFAULT);
+    for o in operands {
+        *o = Coord([
+            o[post[0]] * mult[0],
+            o[post[1]] * mult[1],
+            o[post[2]] * mult[2],
+            o[post[3]] * mult[3],
+        ]);
+    }
+    Ok(n)
 }
+
+// ----- I N V E R S E --------------------------------------------------------------
+
+fn inv(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
+    let n = operands.len();
+    if op.params.boolean("noop") {
+        return Ok(n);
+    }
+
+    let post = op.params.series("post").unwrap_or(&POST_DEFAULT);
+    let post = [
+        post[0] as usize,
+        post[1] as usize,
+        post[2] as usize,
+        post[3] as usize,
+    ];
+
+    let mult = op.params.series("mult").unwrap_or(&MULT_DEFAULT);
+    let mult = [1. / mult[0], 1. / mult[1], 1. / mult[2], 1. / mult[3]];
+
+    for o in operands {
+        let mut c = Coord::default();
+        for i in 0..4_usize {
+            c[post[i]] = o[i] * mult[post[i]];
+        }
+        *o = c;
+    }
+
+    Ok(n)
+}
+
+// ----- C O N S T R U C T O R ------------------------------------------------------
+
+// Example...
+#[rustfmt::skip]
+pub const GAMUT: [OpParameter; 3] = [
+    OpParameter::Flag { key: "inv" },
+    OpParameter::Text { key: "from", default: Some("enut") },
+    OpParameter::Text { key: "to", default: Some("enut") },
+];
+
+pub fn new(parameters: &RawParameters, _provider: &dyn Provider) -> Result<Op, Error> {
+    let mut params = ParsedParameters::new(parameters, &GAMUT)?;
+    let descriptor = OpDescriptor::new(&parameters.definition, InnerOp(fwd), Some(InnerOp(inv)));
+    let steps = Vec::<Op>::new();
+
+    // What we go `from` and what we go `to` both defaults to the internal
+    // representation - i.e. "do nothing", neither on in- nor output.
+    let from = params.text("from")?;
+    let to = params.text("to")?;
+
+    let desc = coordinate_order_descriptor(&from);
+    if desc.is_none() {
+        return Err(Error::Operator("Adapt", "Bad value for 'from'"));
+    }
+    let from = desc.unwrap();
+
+    let desc = coordinate_order_descriptor(&to);
+    if desc.is_none() {
+        return Err(Error::Operator("Adapt", "Bad value for 'to'"));
+    }
+    let to = desc.unwrap();
+
+    // Eliminate redundancy for over-specified cases.
+    let give = combine_descriptors(&from, &to);
+    if give.noop {
+        params.boolean.insert("noop");
+    }
+    let post = [
+        give.post[0] as f64,
+        give.post[1] as f64,
+        give.post[2] as f64,
+        give.post[3] as f64,
+    ];
+    params.series.insert("post", Vec::from(post));
+    params.series.insert("mult", Vec::from(give.mult));
+
+    Ok(Op {
+        descriptor,
+        params,
+        steps,
+    })
+}
+
+// ----- A N C I L L A R Y   F U N C T I O N S   G O   H E R E -------------------------
 
 #[derive(Debug, Default, Clone)]
 struct CoordinateOrderDescriptor {
@@ -79,7 +180,7 @@ struct CoordinateOrderDescriptor {
 }
 
 #[allow(clippy::float_cmp)]
-fn descriptor(desc: &str) -> Option<CoordinateOrderDescriptor> {
+fn coordinate_order_descriptor(desc: &str) -> Option<CoordinateOrderDescriptor> {
     let mut post = [0_usize, 1, 2, 3];
     let mut mult = [1_f64, 1., 1., 1.];
     if desc == "pass" {
@@ -170,127 +271,15 @@ fn combine_descriptors(
     give
 }
 
-impl Adapt {
-    pub fn new(res: &GysResource) -> Result<Adapt, GeodesyError> {
-        let mut args = res.to_args(0)?;
-        let inverted = args.flag("inv");
-
-        // What we go `from` and what we go `to` both defaults to the internal
-        // representation - i.e. "do nothing", neither on in- or output.
-        let mut from = args.string("from", "enut");
-        let mut to = args.string("to", "enut");
-
-        // forward and inverse give very slightly different results, due to the
-        // roundoff difference betweeen multiplication and division. We avoid
-        // that by swapping the "from" and "to" descriptors instead, and handling
-        // the unconventional calling logic by overwriting the default `operate`
-        // method below.
-        if inverted {
-            std::mem::swap(&mut to, &mut from);
-        }
-
-        let desc = descriptor(&from);
-        if desc.is_none() {
-            return Err(GeodesyError::Operator("Adapt", "Bad value for 'from'"));
-        }
-        let from = desc.unwrap();
-
-        let desc = descriptor(&to);
-        if desc.is_none() {
-            return Err(GeodesyError::Operator("Adapt", "Bad value for 'to'"));
-        }
-        let to = desc.unwrap();
-
-        // Eliminate redundancy for over-specified cases.
-        let give = combine_descriptors(&from, &to);
-
-        Ok(Adapt {
-            args: args.used,
-            inverted,
-            post: give.post,
-            mult: give.mult,
-            noop: give.noop,
-        })
-    }
-
-    pub(crate) fn operator(
-        args: &GysResource,
-        _rp: &dyn Provider,
-    ) -> Result<Operator, GeodesyError> {
-        let op = crate::operator::adapt::Adapt::new(args)?;
-        Ok(Operator(Box::new(op)))
-    }
-}
-
-impl OperatorCore for Adapt {
-    fn fwd(&self, _ctx: &dyn Provider, operands: &mut [CoordinateTuple]) -> bool {
-        if self.noop {
-            return true;
-        }
-        for o in operands {
-            *o = CoordinateTuple([
-                o[self.post[0]] * self.mult[0],
-                o[self.post[1]] * self.mult[1],
-                o[self.post[2]] * self.mult[2],
-                o[self.post[3]] * self.mult[3],
-            ]);
-        }
-        true
-    }
-
-    fn inv(&self, _ctx: &dyn Provider, operands: &mut [CoordinateTuple]) -> bool {
-        if self.noop {
-            return true;
-        }
-        for o in operands {
-            let mut c = CoordinateTuple::default();
-            for i in 0..4_usize {
-                c[self.post[i]] = o[i] / self.mult[self.post[i]];
-            }
-            *o = c;
-        }
-        true
-    }
-
-    // We overwrite the default `operate` in order to handle the trick above,
-    // where we swap `from` and `to`, rather than letting `operate` call the
-    // complementary method.
-    fn operate(&self, ctx: &dyn Provider, operands: &mut [CoordinateTuple], forward: bool) -> bool {
-        if forward {
-            return self.fwd(ctx, operands);
-        }
-        self.inv(ctx, operands)
-    }
-
-    fn name(&self) -> &'static str {
-        "adapt"
-    }
-
-    fn debug(&self) -> String {
-        format!("{:#?}", self)
-    }
-
-    fn is_noop(&self) -> bool {
-        self.noop
-    }
-
-    fn is_inverted(&self) -> bool {
-        self.inverted
-    }
-
-    fn args(&self, _step: usize) -> &[(String, String)] {
-        &self.args
-    }
-}
+// ----- T E S T S ------------------------------------------------------------------
 
 #[cfg(test)]
 mod tests {
-    use crate::GeodesyError;
-    use crate::Provider;
+    use super::*;
     #[test]
     fn descriptor() {
         use super::combine_descriptors;
-        use super::descriptor;
+        use super::coordinate_order_descriptor as descriptor;
 
         // Axis swap n<->e
         assert_eq!([1usize, 0, 2, 3], descriptor("neut").unwrap().post);
@@ -327,32 +316,56 @@ mod tests {
     }
 
     #[test]
-    fn adapt() -> Result<(), GeodesyError> {
-        use crate::CoordinateTuple;
-        let mut ctx = crate::resource::plain::PlainResourceProvider::default();
+    fn adapt() -> Result<(), Error> {
+        let mut ctx = Minimal::default();
+        let gonify = ctx.op("adapt from = neut_deg   to = enut_gon")?;
 
-        let gonify = ctx.define_operation("adapt from:neut_deg   to:enut_gon")?;
-        dbg!(gonify);
-        let op = ctx.get_operation(gonify)?;
-        dbg!(op);
-        let mut operands = [
-            CoordinateTuple::raw(90., 180., 0., 0.),
-            CoordinateTuple::raw(45., 90., 0., 0.),
-        ];
+        let mut operands = [Coord::raw(90., 180., 0., 0.), Coord::raw(45., 90., 0., 0.)];
 
-        dbg!(operands);
-        assert_eq!(ctx.fwd(gonify, &mut operands), true);
-        dbg!(operands);
+        assert_eq!(ctx.apply(gonify, Fwd, &mut operands)?, 2);
         assert!((operands[0][0] - 200.0).abs() < 1e-10);
         assert!((operands[0][1] - 100.0).abs() < 1e-10);
+
         assert!((operands[1][0] - 100.0).abs() < 1e-10);
         assert!((operands[1][1] - 50.0).abs() < 1e-10);
 
-        ctx.inv(gonify, &mut operands);
+        assert_eq!(operands[1][2], 0.);
+        assert_eq!(operands[1][3], 0.);
+
+        assert_eq!(ctx.apply(gonify, Inv, &mut operands)?, 2);
         assert!((operands[0][0] - 90.0).abs() < 1e-10);
         assert!((operands[0][1] - 180.0).abs() < 1e-10);
         assert!((operands[1][0] - 45.0).abs() < 1e-10);
         assert!((operands[1][1] - 90.0).abs() < 1e-10);
+
+        Ok(())
+    }
+
+    #[test]
+    fn adapt_inv() -> Result<(), Error> {
+        let mut ctx = Minimal::default();
+        let degify = ctx.op("adapt inv from = neut_deg   to = enut_gon")?;
+
+        let mut operands = [
+            Coord::raw(200., 100., 0., 0.),
+            Coord::raw(100., 50., 0., 0.),
+        ];
+
+        assert_eq!(ctx.apply(degify, Fwd, &mut operands)?, 2);
+        assert!((operands[0][0] - 90.0).abs() < 1e-10);
+        assert!((operands[0][1] - 180.0).abs() < 1e-10);
+
+        assert!((operands[1][0] - 45.0).abs() < 1e-10);
+        assert!((operands[1][1] - 90.0).abs() < 1e-10);
+
+        assert_eq!(operands[1][2], 0.);
+        assert_eq!(operands[1][3], 0.);
+
+        assert_eq!(ctx.apply(degify, Inv, &mut operands)?, 2);
+        assert!((operands[0][0] - 200.0).abs() < 1e-10);
+        assert!((operands[0][1] - 100.0).abs() < 1e-10);
+        assert!((operands[1][0] - 100.0).abs() < 1e-10);
+        assert!((operands[1][1] - 50.0).abs() < 1e-10);
 
         Ok(())
     }

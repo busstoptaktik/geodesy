@@ -34,6 +34,10 @@ clean-check:
     cargo clean
     just check
 
+# Tree of modules and data types
+tree:
+    cargo modules generate tree --lib --with-types
+
 # Build and install assets
 assets:
     zip -r assets.zip assets

@@ -1,6 +1,5 @@
-mod geod;
-pub use geod::preamble::*;
-pub use log::info;
+use geodesy::preamble::*;
+use log::info;
 
 // -------------------------------------------------------------------------------------
 // UG: An experiment with an *U*ltrasmall *G*eodetic transformation system

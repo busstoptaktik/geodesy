@@ -1,4 +1,4 @@
-use super::internal::*;
+use super::*;
 
 #[derive(Debug)]
 pub struct ParsedParameters {
@@ -21,6 +21,7 @@ pub struct ParsedParameters {
     pub text: BTreeMap<&'static str, String>,
     pub uuid: BTreeMap<&'static str, uuid::Uuid>,
     pub ignored: Vec<String>,
+    pub given: BTreeMap<String, String>,
 }
 
 // Accessors
@@ -92,7 +93,7 @@ impl ParsedParameters {
         parameters: &RawParameters,
         gamut: &[OpParameter],
     ) -> Result<ParsedParameters, Error> {
-        let locals = etc::split_into_parameters(&parameters.definition);
+        let locals = super::split_into_parameters(&parameters.definition);
         let globals = &parameters.globals;
         let mut boolean = BTreeSet::<&'static str>::new();
         let mut natural = BTreeMap::<&'static str, usize>::new();
@@ -108,7 +109,7 @@ impl ParsedParameters {
         for p in gamut {
             match *p {
                 OpParameter::Flag { key } => {
-                    if let Some(value) = etc::chase(globals, &locals, key)? {
+                    if let Some(value) = chase(globals, &locals, key)? {
                         if value.is_empty() || value.to_lowercase() == "true" {
                             boolean.insert(key);
                             continue;
@@ -122,7 +123,7 @@ impl ParsedParameters {
                 }
 
                 OpParameter::Natural { key, default } => {
-                    if let Some(value) = etc::chase(globals, &locals, key)? {
+                    if let Some(value) = chase(globals, &locals, key)? {
                         if let Ok(v) = value.parse::<usize>() {
                             natural.insert(key, v);
                             continue;
@@ -142,7 +143,7 @@ impl ParsedParameters {
                 }
 
                 OpParameter::Integer { key, default } => {
-                    if let Some(value) = etc::chase(globals, &locals, key)? {
+                    if let Some(value) = chase(globals, &locals, key)? {
                         if let Ok(v) = value.parse::<i64>() {
                             integer.insert(key, v);
                             continue;
@@ -165,7 +166,7 @@ impl ParsedParameters {
                 }
 
                 OpParameter::Real { key, default } => {
-                    if let Some(value) = etc::chase(globals, &locals, key)? {
+                    if let Some(value) = chase(globals, &locals, key)? {
                         if let Ok(v) = value.parse::<f64>() {
                             real.insert(key, v);
                             continue;
@@ -187,10 +188,9 @@ impl ParsedParameters {
                     return Err(Error::MissingParam(key.to_string()));
                 }
 
-                // TODO! (only reads first element of the series, and puts it into the Real store)
                 OpParameter::Series { key, default } => {
                     let mut elements = Vec::<f64>::new();
-                    if let Some(value) = etc::chase(globals, &locals, key)? {
+                    if let Some(value) = chase(globals, &locals, key)? {
                         for element in value.split(',') {
                             if let Ok(v) = element.parse::<f64>() {
                                 elements.push(v);
@@ -229,7 +229,7 @@ impl ParsedParameters {
                 }
 
                 OpParameter::Text { key, default } => {
-                    if let Some(value) = etc::chase(globals, &locals, key)? {
+                    if let Some(value) = chase(globals, &locals, key)? {
                         // should chase!
                         text.insert(key, value.to_string());
                         continue;
@@ -250,21 +250,67 @@ impl ParsedParameters {
             };
         }
 
-        let ellps = [Ellipsoid::default(), Ellipsoid::default()];
-        let lat = [0.; 4];
-        let lon = [0.; 4];
-        let x = [0.; 4];
-        let y = [0.; 4];
-        let k = [0.; 4];
+        // Now handle the commonly used options with the hard-coded slots
+
+        let mut ellps = [Ellipsoid::default(), Ellipsoid::default()];
+        let mut lat = [0.; 4];
+        let mut lon = [0.; 4];
+        let mut x = [0.; 4];
+        let mut y = [0.; 4];
+        let mut k = [0.; 4];
+
+        // ellps_{n}
+        for i in 0..2 {
+            let key = format!("ellps_{}", i);
+            if let Some(e) = text.get(&key[..]) {
+                ellps[i] = Ellipsoid::named(e)?;
+            }
+        }
+        // But `ellps` trumps `ellps_0`
+        if let Some(e) = text.get("ellps") {
+            ellps[0] = Ellipsoid::named(e)?;
+        }
+
+        // lat_{n}
+        for i in 0..4 {
+            let key = format!("lat_{}", i);
+            lat[i] = (*real.get(&key[..]).unwrap_or(&0.)).to_radians();
+        }
+
+        // lon_{n}
+        for i in 0..4 {
+            let key = format!("lon_{}", i);
+            lon[i] = (*real.get(&key[..]).unwrap_or(&0.)).to_radians();
+        }
+
+        // x_{n}
+        for i in 0..4 {
+            let key = format!("x_{}", i);
+            x[i] = *real.get(&key[..]).unwrap_or(&0.);
+        }
+
+        // y_{n}
+        for i in 0..4 {
+            let key = format!("y_{}", i);
+            y[i] = *real.get(&key[..]).unwrap_or(&0.);
+        }
+
+        // k_{n}
+        for i in 0..4 {
+            let key = format!("k_{}", i);
+            k[i] = *real.get(&key[..]).unwrap_or(&0.);
+        }
 
         let name = locals
             .get("name")
             .unwrap_or(&"unknown".to_string())
             .to_string();
 
+        // TODO:
         // Params explicitly set to the default value
         // let mut redundant = BTreeSet::<String>::new();
         // Params specified, but not used
+        let given = locals.clone();
         let ignored: Vec<String> = locals.into_keys().collect();
         Ok(ParsedParameters {
             ellps,
@@ -282,8 +328,70 @@ impl ParsedParameters {
             text,
             uuid,
             ignored,
+            given,
         })
     }
+}
+
+// ----- A N C I L L A R Y   F U N C T I O N S -----------------------------------------
+
+pub fn chase(
+    globals: &BTreeMap<String, String>,
+    locals: &BTreeMap<String, String>,
+    key: &str,
+) -> Result<Option<String>, Error> {
+    // The haystack is a reverse iterator over both lists in series
+    let mut haystack = globals.iter().chain(locals.iter()).rev();
+
+    // Find the needle in the haystack, recursively chasing look-ups ('^')
+    // and handling defaults ('*')
+    let key = key.trim();
+    if key.is_empty() {
+        return Err(Error::Syntax(String::from("Empty key")));
+    }
+
+    let mut default = "";
+    let mut needle = key;
+    let mut chasing = false;
+    let value;
+
+    loop {
+        let found = haystack.find(|&x| x.0 == needle);
+        if found.is_none() {
+            if !default.is_empty() {
+                return Ok(Some(String::from(default)));
+            }
+            if chasing {
+                return Err(Error::Syntax(format!(
+                    "Incomplete definition for '{}'",
+                    key
+                )));
+            }
+            return Ok(None);
+        }
+        let thevalue = found.unwrap().1.trim();
+
+        // If the value is a(nother) lookup, we continue the search in the same iterator,
+        // now using a *new search key*, as specified by the current value
+        if let Some(stripped) = thevalue.strip_prefix('^') {
+            chasing = true;
+            needle = stripped;
+            continue;
+        }
+
+        // If the value is a default, we continue the search using the *same key*
+        if let Some(stripped) = thevalue.strip_prefix('*') {
+            chasing = true;
+            needle = key;
+            default = stripped;
+            continue;
+        }
+
+        // Otherwise we have the proper result
+        value = String::from(thevalue.trim());
+        break;
+    }
+    Ok(Some(value))
 }
 
 // ----- T E S T S ------------------------------------------------------------------
@@ -293,18 +401,19 @@ mod tests {
     use super::*;
 
     #[rustfmt::skip]
-    const GAMUT: [OpParameter; 6] = [
+    const GAMUT: [OpParameter; 7] = [
         OpParameter::Flag    { key: "flag" },
         OpParameter::Natural { key: "natural",  default: Some(0) },
         OpParameter::Integer { key: "integer",  default: Some(-1)},
         OpParameter::Real    { key: "real",     default: Some(1.25) },
         OpParameter::Series  { key: "series",   default: Some("1,2,3,4") },
         OpParameter::Text    { key: "text",     default: Some("text") },
+        OpParameter::Text    { key: "ellps_0",  default: Some("6400000, 300") },
     ];
 
     #[test]
     fn basic() -> Result<(), Error> {
-        let invocation = String::from("cucumber flag");
+        let invocation = String::from("cucumber flag ellps_0=123 , 456");
         let globals = BTreeMap::<String, String>::new();
         let raw = RawParameters::new(&invocation, &globals);
         let p = ParsedParameters::new(&raw, &GAMUT)?;
@@ -332,6 +441,11 @@ mod tests {
         assert_eq!(*p.natural.get("natural").unwrap(), 0_usize);
         assert_eq!(*p.integer.get("integer").unwrap(), -1);
         assert_eq!(*p.text.get("text").unwrap(), "text");
+
+        assert_eq!(
+            p.ellps[0].semimajor_axis(),
+            Ellipsoid::new(123., 1. / 456.).semimajor_axis()
+        );
 
         Ok(())
     }

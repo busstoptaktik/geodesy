@@ -4,14 +4,12 @@
 // Run with:
 // cargo run --example 00-transformations
 
-// The CoordinateTuple type is much used, so we give it a very short alias
-use geodesy::CoordinateTuple as C;
-use geodesy::Provider;
+use geodesy::preamble::*;
 
 // Use Anyhow for convenient error handling
 fn main() -> anyhow::Result<()> {
-    // The context is the entry point to all transformation functionality:
-    let mut ctx = geodesy::Plain::default();
+    // The context provider is the entry point to all transformation functionality:
+    let ctx = Minimal::default();
     // The concept of a "context data structure" will be well known to
     // PROJ users, where the context plays a somewhat free-flowing role,
     // and only becomes truly visible in multithreaded cases.
@@ -23,17 +21,17 @@ fn main() -> anyhow::Result<()> {
     // `gis` and `geo` produces a 4D coordinate tuple and automatically handles
     // conversion of the angular parts to radians, and geographical coordinates
     // in latitude/longitude order, to the GIS convention of longitude/latitude.
-    let cph = C::gis(12., 55., 0., 0.); // Copenhagen
-    let osl = C::gis(10., 60., 0., 0.); // Oslo
-    let sth = C::geo(59., 18., 0., 0.); // Stockholm
-    let hel = C::geo(60., 25., 0., 0.); // Helsinki
+    let cph = Coord::gis(12., 55., 0., 0.); // Copenhagen
+    let osl = Coord::gis(10., 60., 0., 0.); // Oslo
+    let sth = Coord::geo(59., 18., 0., 0.); // Stockholm
+    let hel = Coord::geo(60., 25., 0., 0.); // Helsinki
 
     // `gis` and `geo` have a sibling `raw` which generates coordinate tuples
     // from raw numbers, in case your point coordinates are already given in
     // radians. But since a coordinate tuple is really just an array of 4
     // double precision numbers, you may also generate it directly using plain
-    // Rust syntax:
-    let cph_raw = C([12_f64.to_radians(), 55_f64.to_radians(), 0., 0.0]);
+    // Rust syntax.
+    let cph_raw = Coord::raw(12_f64.to_radians(), 55_f64.to_radians(), 0., 0.0);
 
     // The two versions of Copenhagen coordinates should be identical.
     assert_eq!(cph, cph_raw);
@@ -48,9 +46,9 @@ fn main() -> anyhow::Result<()> {
     // geographical coordinates into UTM zone 32 coordinates. Since
     // this may go wrong (e.g. due to syntax errors in the operator
     // definition), use the Rust `?`-operator to handle errors.
-    let utm32 = ctx.define_operation("utm zone: 32")?;
+    let utm32 = Op::new("utm zone=32", &ctx)?;
     // Now, let's use the utm32-operator to transform some data
-    ctx.fwd(utm32, &mut data);
+    utm32.apply(&ctx, &mut data, Fwd)?;
 
     println!("utm32:");
     for coord in data {
@@ -58,10 +56,10 @@ fn main() -> anyhow::Result<()> {
     }
 
     // The inv() method takes us back to geographic coordinates
-    ctx.inv(utm32, &mut data);
+    utm32.apply(&ctx, &mut data, Inv)?;
 
     // The output is in radians, so we use this convenience function:
-    C::degrees_all(&mut data);
+    Coord::degrees_all(&mut data);
 
     println!("Roundtrip to geo:");
     for coord in data {
@@ -70,7 +68,8 @@ fn main() -> anyhow::Result<()> {
 
     // Here's an example of handling bad syntax:
     println!("Bad syntax example:");
-    let op = ctx.define_operation("aargh zone: 23");
+    let op = Op::new("aargh zone=23", &ctx);
+    //let op = ctx.define_operation("aargh zone: 23");
     if op.is_err() {
         println!("Deliberate error - {:?}", op);
     }
@@ -87,15 +86,15 @@ fn main() -> anyhow::Result<()> {
     // pre- and post-processing steps, taking us from geographical
     // coordinates to cartesian, and back. Hence, we need a pipeline
     // of 3 steps:
-    let pipeline = "cart ellps: intl | helmert x: -87 y: -96 z: -120 | cart inv: true ellps: GRS80";
-    let ed50_wgs84 = ctx.define_operation(pipeline)?;
+    let pipeline = "cart ellps=intl | helmert x=-87 y=-96 z=-120 | cart inv=true ellps=GRS80";
+    let ed50_wgs84 = Op::new(pipeline, &ctx)?;
 
     // Since the forward transformation goes *from* ed50 to wgs84, we use
     // the inverse method to take us the other way, back in time to ED50
-    ctx.inv(ed50_wgs84, &mut data);
+    ed50_wgs84.apply(&ctx, &mut data, Inv)?;
     // Convert the internal lon/lat-in-radians format to the more human
     // readable lat/lon-in-degrees - then print
-    C::geo_all(&mut data);
+    Coord::geo_all(&mut data);
     println!("ed50:");
     for coord in data {
         println!("    {:?}", coord);
