@@ -2,7 +2,7 @@ use super::*;
 
 // ----- F O R W A R D -----------------------------------------------------------------
 
-fn addone_fwd(_op: &Op, _provider: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
+fn fwd(_op: &Op, _provider: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
     let mut n = 0;
     for o in operands {
         o[0] += 1.;
@@ -13,7 +13,7 @@ fn addone_fwd(_op: &Op, _provider: &dyn Provider, operands: &mut [Coord]) -> Res
 
 // ----- I N V E R S E -----------------------------------------------------------------
 
-fn addone_inv(_op: &Op, _provider: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
+fn inv(_op: &Op, _provider: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
     let mut n = 0;
     for o in operands {
         o[0] -= 1.;
@@ -29,18 +29,8 @@ pub const GAMUT: [OpParameter; 1] = [
     OpParameter::Flag { key: "inv" },
 ];
 
-pub fn new(parameters: &RawParameters, _provider: &dyn Provider) -> Result<Op, Error> {
-    let def = &parameters.definition;
-    let params = ParsedParameters::new(parameters, &GAMUT)?;
-    let fwd = InnerOp(addone_fwd);
-    let inv = InnerOp(addone_inv);
-    let descriptor = OpDescriptor::new(def, fwd, Some(inv));
-    let steps = Vec::<Op>::new();
-    Ok(Op {
-        descriptor,
-        params,
-        steps,
-    })
+pub fn new(parameters: &RawParameters, provider: &dyn Provider) -> Result<Op, Error> {
+    Op::plain(parameters, InnerOp(fwd), InnerOp(inv), &GAMUT, provider)
 }
 
 // ----- T E S T S ---------------------------------------------------------------------

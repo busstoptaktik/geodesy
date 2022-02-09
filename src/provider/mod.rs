@@ -1,5 +1,7 @@
 use super::internal::*;
 
+mod local;
+
 // ----- T H E   P R O V I D E R   T R A I T -------------------------------------------
 
 /// The `Provider` trait defines the mode of communication between *Rust Geodesy* internals
@@ -30,7 +32,7 @@ pub struct Minimal {
 impl Provider for Minimal {
     fn op(&mut self, definition: &str) -> Result<Uuid, Error> {
         let op = Op::new(definition, self)?;
-        let id = Uuid::new_v4();
+        let id = op.id;
         self.operators.insert(id, op);
         assert!(self.operators.contains_key(&id));
         Ok(id)

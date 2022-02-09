@@ -41,10 +41,12 @@ pub fn new(parameters: &RawParameters, provider: &dyn Provider) -> Result<Op, Er
     let fwd = InnerOp(pipeline_fwd);
     let inv = InnerOp(pipeline_inv);
     let descriptor = OpDescriptor::new(definition, fwd, Some(inv));
+    let id = Uuid::new_v4();
     Ok(Op {
         descriptor,
         params,
         steps,
+        id,
     })
 }
 

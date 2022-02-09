@@ -38,6 +38,7 @@ pub mod inner_op_authoring {
     pub use log::info;
     pub use log::trace;
     pub use log::warn;
+    pub use uuid::Uuid;
 
     pub use crate::inner_op::InnerOp;
     pub use crate::inner_op::OpConstructor;
