@@ -22,6 +22,8 @@ impl IndexMut<usize> for Coord {
 }
 
 impl Coord {
+    /// Constructors
+
     /// A `Coord` from latitude/longitude/height/time, with the angular input in degrees
     #[must_use]
     pub fn geo(latitude: f64, longitude: f64, height: f64, time: f64) -> Coord {
@@ -76,6 +78,8 @@ impl Coord {
         Coord([1., 1., 1., 1.])
     }
 
+    /// Accessors
+
     /// First coordinate of the `Coord`
     #[must_use]
     pub fn first(&self) -> f64 {
@@ -99,6 +103,68 @@ impl Coord {
     pub fn fourth(&self) -> f64 {
         self[3]
     }
+
+    /// Arithmetic
+
+    /// Elementwise addition
+    #[must_use]
+    pub fn add(&self, other: Coord) -> Coord {
+        let mut result = Coord::nan();
+        for i in 0..4 {
+            result[i] = self[i] + other[i];
+        }
+        result
+    }
+
+    /// Elementwise subtraction
+    #[must_use]
+    pub fn sub(&self, other: Coord) -> Coord {
+        let mut result = Coord::nan();
+        for i in 0..4 {
+            result[i] = self[i] - other[i];
+        }
+        result
+    }
+
+    /// Elementwise multiplication
+    #[must_use]
+    pub fn mul(&self, other: Coord) -> Coord {
+        let mut result = Coord::nan();
+        for i in 0..4 {
+            result[i] = self[i] * other[i];
+        }
+        result
+    }
+
+    /// Elementwise division
+    #[must_use]
+    pub fn div(&self, other: Coord) -> Coord {
+        let mut result = Coord::nan();
+        for i in 0..4 {
+            result[i] = self[i] / other[i];
+        }
+        result
+    }
+
+    /// Multiply by a scalar
+    #[must_use]
+    pub fn scale(&self, factor: f64) -> Coord {
+        let mut result = Coord::nan();
+        for i in 0..4 {
+            result[i] = self[i] * factor;
+        }
+        result
+    }
+
+    /// Scalar product
+    #[must_use]
+    pub fn dot(&self, other: Coord) -> f64 {
+        let mut result = 0_f64;
+        for i in 0..4 {
+            result += self[i] * other[i];
+        }
+        result
+    }
 }
 
 #[cfg(test)]
@@ -120,5 +186,24 @@ mod tests {
         let b = Coord::raw(7., 8., 9., 10.);
         let c = [b[0], b[1], b[2], b[3], f64::NAN, f64::NAN];
         assert_eq!(b[0], c[0]);
+    }
+
+    #[test]
+    fn arithmetic() {
+        let a = Coord([1.,2.,3.,4.]);
+        let b = Coord([4.,3.,2.,1.]);
+        let t = Coord([12., 12., 12., 12.]);
+
+        let c = a.add(b);
+        assert_eq!(c, Coord([5.,5.,5.,5.]));
+
+        let d = c.scale(2.);
+        assert_eq!(d, Coord([10.,10.,10.,10.]));
+
+        let e = t.div(b);
+        assert_eq!(e, Coord([3.,4.,6.,12.]));
+
+        assert_eq!(e.mul(b), t);
+        assert_eq!(a.dot(b), 20.)
     }
 }
