@@ -1,12 +1,14 @@
+use super::internal::*;
+use std::ops::{Add, Div, Index, IndexMut, Mul, Sub};
+
 pub mod conversions;
 pub mod distances;
-
-use super::internal::*;
-use std::ops::{Index, IndexMut};
 
 /// Generic 4D coordinate tuple, with no fixed interpretation of the elements
 #[derive(Debug, Default, PartialEq, Copy, Clone)]
 pub struct Coord(pub [f64; 4]);
+
+// ----- O P E R A T O R   T R A I T S -------------------------------------------------
 
 impl Index<usize> for Coord {
     type Output = f64;
@@ -18,6 +20,66 @@ impl Index<usize> for Coord {
 impl IndexMut<usize> for Coord {
     fn index_mut(&mut self, i: usize) -> &mut Self::Output {
         &mut self.0[i]
+    }
+}
+
+impl Add for Coord {
+    type Output = Self;
+    fn add(self, other: Self) -> Self {
+        Coord([
+            self.0[0] + other.0[0],
+            self.0[1] + other.0[1],
+            self.0[2] + other.0[2],
+            self.0[3] + other.0[3],
+        ])
+    }
+}
+
+impl Add<&Coord> for Coord {
+    type Output = Self;
+    fn add(self, other: &Self) -> Self {
+        Coord([
+            self.0[0] + other.0[0],
+            self.0[1] + other.0[1],
+            self.0[2] + other.0[2],
+            self.0[3] + other.0[3],
+        ])
+    }
+}
+
+impl Sub for Coord {
+    type Output = Self;
+    fn sub(self, other: Self) -> Self {
+        Coord([
+            self.0[0] - other.0[0],
+            self.0[1] - other.0[1],
+            self.0[2] - other.0[2],
+            self.0[3] - other.0[3],
+        ])
+    }
+}
+
+impl Mul for Coord {
+    type Output = Self;
+    fn mul(self, other: Self) -> Self {
+        Coord([
+            self.0[0] * other.0[0],
+            self.0[1] * other.0[1],
+            self.0[2] * other.0[2],
+            self.0[3] * other.0[3],
+        ])
+    }
+}
+
+impl Div for Coord {
+    type Output = Self;
+    fn div(self, other: Self) -> Self {
+        Coord([
+            self.0[0] / other.0[0],
+            self.0[1] / other.0[1],
+            self.0[2] / other.0[2],
+            self.0[3] / other.0[3],
+        ])
     }
 }
 
@@ -104,47 +166,7 @@ impl Coord {
         self[3]
     }
 
-    /// Arithmetic
-
-    /// Elementwise addition
-    #[must_use]
-    pub fn add(&self, other: Coord) -> Coord {
-        let mut result = Coord::nan();
-        for i in 0..4 {
-            result[i] = self[i] + other[i];
-        }
-        result
-    }
-
-    /// Elementwise subtraction
-    #[must_use]
-    pub fn sub(&self, other: Coord) -> Coord {
-        let mut result = Coord::nan();
-        for i in 0..4 {
-            result[i] = self[i] - other[i];
-        }
-        result
-    }
-
-    /// Elementwise multiplication
-    #[must_use]
-    pub fn mul(&self, other: Coord) -> Coord {
-        let mut result = Coord::nan();
-        for i in 0..4 {
-            result[i] = self[i] * other[i];
-        }
-        result
-    }
-
-    /// Elementwise division
-    #[must_use]
-    pub fn div(&self, other: Coord) -> Coord {
-        let mut result = Coord::nan();
-        for i in 0..4 {
-            result[i] = self[i] / other[i];
-        }
-        result
-    }
+    /// Arithmetic (also see the operator trait implementations `add, sub, mul, div`)
 
     /// Multiply by a scalar
     #[must_use]
@@ -190,18 +212,18 @@ mod tests {
 
     #[test]
     fn arithmetic() {
-        let a = Coord([1.,2.,3.,4.]);
-        let b = Coord([4.,3.,2.,1.]);
+        let a = Coord([1., 2., 3., 4.]);
+        let b = Coord([4., 3., 2., 1.]);
         let t = Coord([12., 12., 12., 12.]);
 
         let c = a.add(b);
-        assert_eq!(c, Coord([5.,5.,5.,5.]));
+        assert_eq!(c, Coord([5., 5., 5., 5.]));
 
         let d = c.scale(2.);
-        assert_eq!(d, Coord([10.,10.,10.,10.]));
+        assert_eq!(d, Coord([10., 10., 10., 10.]));
 
         let e = t.div(b);
-        assert_eq!(e, Coord([3.,4.,6.,12.]));
+        assert_eq!(e, Coord([3., 4., 6., 12.]));
 
         assert_eq!(e.mul(b), t);
         assert_eq!(a.dot(b), 20.)

@@ -2,12 +2,13 @@ use super::inner_op_authoring::*;
 
 // ----- B U I L T I N   O P E R A T O R S ---------------------------------------------
 
-// Install new builtin operators by adding them in the pub(super) and
-// BUILTIN_OPERATORS blocks below
+// Install new builtin operators by adding them in the `mod` and
+// `BUILTIN_OPERATORS` blocks below
 
 mod adapt;
 mod addone;
 mod cart;
+pub mod gravsoft;
 mod helmert;
 mod lcc;
 mod merc;
@@ -120,7 +121,6 @@ fn noop_placeholder(
 //       = asinh(tan(phi)) - e * atanh(e * sin(phi))
 //       = asinh(tan(chi))
 //   chi = conformal latitude
-#[allow(dead_code)]
 fn pj_tsfn(sincos: (f64, f64), e: f64) -> f64 {
     // exp(-asinh(tan(phi)))
     //    = 1 / (tan(phi) + sec(phi))
@@ -135,13 +135,11 @@ fn pj_tsfn(sincos: (f64, f64), e: f64) -> f64 {
 }
 
 // Snyder (1982) eq. 12-15, PROJ's pj_msfn()
-#[allow(dead_code)]
 fn pj_msfn(sincos: (f64, f64), es: f64) -> f64 {
     sincos.1 / (1. - sincos.0 * sincos.0 * es).sqrt()
 }
 
 // Equivalent to the PROJ pj_phi2 function
-#[allow(dead_code)]
 fn pj_phi2(ts0: f64, e: f64) -> f64 {
     sinhpsi_to_tanphi((1. / ts0 - ts0) / 2., e).atan()
 }
