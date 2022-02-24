@@ -1,4 +1,5 @@
 use super::*;
+use std::path::PathBuf;
 
 // ----- T H E   M I N I M A L   P R O V I D E R ---------------------------------------
 
@@ -69,5 +70,11 @@ impl Provider for Minimal {
             name.to_string(),
             ": User defined resource".to_string(),
         ))
+    }
+
+    fn access(&self, name: &str) -> Result<Vec<u8>, Error> {
+        let mut path = PathBuf::from("geodesy");
+        path.push(&name);
+        Ok(std::fs::read(path)?)
     }
 }

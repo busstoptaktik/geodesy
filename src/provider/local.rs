@@ -90,4 +90,10 @@ impl Provider for Local {
             ": User defined resource".to_string(),
         ))
     }
+
+    fn access(&self, name: &str) -> Result<Vec<u8>, Error> {
+        let mut path = PathBuf::from("geodesy");
+        path.push(&name);
+        Ok(std::fs::read(path)?)
+    }
 }

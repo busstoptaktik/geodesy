@@ -8,7 +8,7 @@ use super::inner_op_authoring::*;
 mod adapt;
 mod addone;
 mod cart;
-pub mod gravsoft;
+mod gravsoft;
 mod helmert;
 mod lcc;
 mod merc;

@@ -30,4 +30,5 @@ pub trait Provider {
     fn get_op(&self, name: &str) -> Result<OpConstructor, Error>;
     /// Helper for the `Op` instantiation logic in `Op::op(...)`
     fn get_resource(&self, name: &str) -> Result<String, Error>;
+    fn access(&self, name: &str) -> Result<Vec<u8>, Error>;
 }

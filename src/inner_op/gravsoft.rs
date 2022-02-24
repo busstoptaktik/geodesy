@@ -1,9 +1,11 @@
 use super::*;
 use std::collections::BTreeMap;
+use crate::Provider;
+use std::io::BufRead;
 
 #[allow(dead_code)]
 #[rustfmt::skip]
-pub const GAMUT: [OpParameter; 14] = [
+pub const GAMUT: [OpParameter; 15] = [
     OpParameter::Real { key: "Left", default: None },
     OpParameter::Real { key: "Right", default: None },
 
@@ -23,6 +25,7 @@ pub const GAMUT: [OpParameter; 14] = [
     OpParameter::Natural { key: "Steps", default: Some(1) },
 
     OpParameter::Natural { key: "Whence", default: Some(0) },
+    OpParameter::Text { key: "name", default: Some("") },
 ];
 
 #[derive(Default, Debug)]
@@ -66,11 +69,35 @@ pub struct Grid {
     pub grid: Option<Vec<f32>>,
 }
 
+fn gravsoft_grid_reader(name: &str, provider: &dyn Provider) -> Result<Grid, Error> {
+    let buf = provider.access(name)?;
+    let all = std::io::BufReader::new(buf.as_slice());
+
+    // Split the contents into a vector of tokens
+    let mut tokens = String::default();
+    for line in all.lines() {
+        let mut line = line?.clone();
+        // Throw away comments
+        let line = line.split('#').collect::<Vec<_>>()[0];
+        let line = line.split_whitespace().collect::<Vec<_>>().join(" ");
+        tokens += &line;
+        tokens += " ";
+    }
+    let tokens = tokens.trim().split_whitespace().collect::<Vec<_>>();
+
+    Grid::new("", None)
+}
+
+
 impl Grid {
     pub fn new(description: &str, grid: Option<Vec<f32>>) -> Result<Grid, Error> {
         let globals = BTreeMap::new();
         let raw = RawParameters::new(description, &globals);
         let params = ParsedParameters::new(&raw, &GAMUT)?;
+        if description.starts_with("grid") {
+            let p = Minimal::default();
+            return gravsoft_grid_reader(description, &p);
+        }
 
         let whence = params.natural("Whence")? as usize;
 
@@ -138,7 +165,7 @@ impl Grid {
     }
 
     // The coordinate of a point given in units of the grid sample distance
-    pub fn fractional_index(&self, at: Coord) -> Coord {
+    fn fractional_index(&self, at: Coord) -> Coord {
         let mut index = Coord::default();
         for i in 0_usize..4 {
             index[i] = (at[i] - self.first[i + 1]) / self.delta[i + 1];
@@ -147,7 +174,7 @@ impl Grid {
     }
 
     // The index-coordinate of the grid point north-west of the point `at`
-    pub fn cell_index(&self, at: Coord) -> [usize; 4] {
+    fn cell_index(&self, at: Coord) -> [usize; 4] {
         let mut index = [0_usize; 4];
         for i in 0_usize..4 {
             index[i] = at[i].floor().max(0.).min(self.max[i] as f64) as usize;
