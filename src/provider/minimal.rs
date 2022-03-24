@@ -12,23 +12,21 @@ pub struct Minimal {
     /// User defined resources (macros)
     resources: BTreeMap<String, String>,
     /// Instantiations of operators
-    operators: BTreeMap<Uuid, Op>,
+    operators: BTreeMap<OpHandle, Op>,
 }
 
 impl Provider for Minimal {
-    fn op(&mut self, definition: &str) -> Result<Uuid, Error> {
+    fn op(&mut self, definition: &str) -> Result<OpHandle, Error> {
         let op = Op::new(definition, self)?;
         let id = op.id;
         self.operators.insert(id, op);
         assert!(self.operators.contains_key(&id));
         Ok(id)
     }
-    // Op::new("foo:baz", &prv),
-    // prv.op("foo.baz"),
 
     fn apply(
         &self,
-        op: Uuid,
+        op: OpHandle,
         direction: Direction,
         operands: &mut [Coord],
     ) -> Result<usize, Error> {
@@ -72,7 +70,7 @@ impl Provider for Minimal {
         ))
     }
 
-    fn access(&self, name: &str) -> Result<Vec<u8>, Error> {
+    fn get_blob(&self, name: &str) -> Result<Vec<u8>, Error> {
         let mut path = PathBuf::from("geodesy");
         path.push(&name);
         Ok(std::fs::read(path)?)

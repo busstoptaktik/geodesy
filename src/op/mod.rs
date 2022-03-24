@@ -16,7 +16,7 @@ pub struct Op {
     pub descriptor: OpDescriptor,
     pub params: ParsedParameters,
     pub steps: Vec<Op>,
-    pub id: uuid::Uuid,
+    pub id: OpHandle,
 }
 
 impl Op {
@@ -56,7 +56,7 @@ impl Op {
         let params = ParsedParameters::new(parameters, gamut)?;
         let descriptor = OpDescriptor::new(def, fwd, Some(inv));
         let steps = Vec::<Op>::new();
-        let id = Uuid::new_v4();
+        let id = OpHandle::default();
 
         Ok(Op {
             descriptor,

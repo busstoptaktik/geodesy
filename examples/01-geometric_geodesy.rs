@@ -9,12 +9,10 @@
 // snake case warnings of for this entire file.
 #![allow(non_snake_case)]
 
-// Including the `operand` namespace gives us some slightly
-// better support for `CoordinateTuple`s
 use geodesy::{Coord, Error};
 
 fn main() -> Result<(), Error> {
-    // In example 00, we saw that the `Context` data structure is the
+    // In example 00, we saw that the `Provider` data structure is the
     // coordinating element for all things related to transformations
     // in Rust Geodesy. For generic geometric geodesy the same can be
     // said about the `Ellipsoid`. So to do anything, we must first
@@ -55,7 +53,7 @@ fn main() -> Result<(), Error> {
     // the inverse sense of the geodesic problem - hence `geodesic_inv`:
     let d = GRS80.geodesic_inv(&CPH, &CDG);
     let dd = d.to_degrees();
-    // Note the '.to_degrees()' above: This CoordinateTuple method attacks
+    // Note the '.to_degrees()' above: This Coord method attacks
     // the first two elements of the coordinate only. The output from the
     // geodesic routines is organized to fit this pattern.
 
@@ -87,7 +85,7 @@ fn main() -> Result<(), Error> {
 
     let d = GRS80.geodesic_inv(&CDG, &CPH);
     let dd = d.to_degrees();
-    // Note the '.to_degrees()' above: This CoordinateTuple method attacks
+    // Note the '.to_degrees()' above: This Coord method attacks
     // the first two elements of the coordinate only. The output from the
     // geodesic routines is organized to fit this pattern.
     println!("GRS80 - Paris->Copenhagen");

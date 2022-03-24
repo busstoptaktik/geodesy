@@ -13,9 +13,9 @@ use super::internal::*;
 /// or ellipsoid parameters).
 pub trait Provider {
     /// Instantiate the operation given by `definition`
-    fn op(&mut self, definition: &str) -> Result<Uuid, Error>;
+    fn op(&mut self, definition: &str) -> Result<OpHandle, Error>;
     /// Apply operation `op` to `operands`
-    fn apply(&self, op: Uuid, direction: Direction, operands: &mut [Coord])
+    fn apply(&self, op: OpHandle, direction: Direction, operands: &mut [Coord])
         -> Result<usize, Error>;
 
     /// Globally defined default values (typically just `ellps=GRS80`)
@@ -30,5 +30,7 @@ pub trait Provider {
     fn get_op(&self, name: &str) -> Result<OpConstructor, Error>;
     /// Helper for the `Op` instantiation logic in `Op::op(...)`
     fn get_resource(&self, name: &str) -> Result<String, Error>;
-    fn access(&self, name: &str) -> Result<Vec<u8>, Error>;
+
+    /// Access `blob`-like resources by identifier
+    fn get_blob(&self, name: &str) -> Result<Vec<u8>, Error>;
 }

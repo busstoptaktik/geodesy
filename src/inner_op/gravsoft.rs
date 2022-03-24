@@ -30,7 +30,7 @@ pub const GAMUT: [OpParameter; 15] = [
 
 #[derive(Default, Debug)]
 pub struct Grid {
-    pub id: Uuid,
+    pub id: OpHandle,
 
     /// Offset from start of storage to start of grid
     pub whence: usize,
@@ -70,20 +70,24 @@ pub struct Grid {
 }
 
 fn gravsoft_grid_reader(name: &str, provider: &dyn Provider) -> Result<Grid, Error> {
-    let buf = provider.access(name)?;
+    let buf = provider.get_blob(name)?;
     let all = std::io::BufReader::new(buf.as_slice());
 
     // Split the contents into a vector of tokens
     let mut tokens = String::default();
     for line in all.lines() {
-        let mut line = line?.clone();
-        // Throw away comments
+        // Remove comments
+        let line = line?;
         let line = line.split('#').collect::<Vec<_>>()[0];
+        // Conflate sequences of whitespace to a single space
         let line = line.split_whitespace().collect::<Vec<_>>().join(" ");
         tokens += &line;
         tokens += " ";
     }
     let tokens = tokens.trim().split_whitespace().collect::<Vec<_>>();
+    if tokens.len() < 6 {
+        return Err(Error::General("Bad or missing Gravsoft header"))
+    }
 
     Grid::new("", None)
 }
@@ -145,7 +149,7 @@ impl Grid {
 
         let scale = [1f64; 8];
         let offset = [0f64; 8];
-        let id = Uuid::new_v4();
+        let id = OpHandle::default();
 
         assert!(columns > 1);
         assert!(rows > 1);

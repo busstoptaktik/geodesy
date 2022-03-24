@@ -9,7 +9,7 @@ use std::path::PathBuf;
 pub struct Local {
     constructors: BTreeMap<String, OpConstructor>,
     resources: BTreeMap<String, String>,
-    operators: BTreeMap<Uuid, Op>,
+    operators: BTreeMap<OpHandle, Op>,
     paths: Vec<std::path::PathBuf>,
 }
 
@@ -37,7 +37,7 @@ impl Default for Local {
 }
 
 impl Provider for Local {
-    fn op(&mut self, definition: &str) -> Result<Uuid, Error> {
+    fn op(&mut self, definition: &str) -> Result<OpHandle, Error> {
         let op = Op::new(definition, self)?;
         let id = op.id;
         self.operators.insert(id, op);
@@ -47,7 +47,7 @@ impl Provider for Local {
 
     fn apply(
         &self,
-        op: Uuid,
+        op: OpHandle,
         direction: Direction,
         operands: &mut [Coord],
     ) -> Result<usize, Error> {
@@ -91,7 +91,7 @@ impl Provider for Local {
         ))
     }
 
-    fn access(&self, name: &str) -> Result<Vec<u8>, Error> {
+    fn get_blob(&self, name: &str) -> Result<Vec<u8>, Error> {
         let mut path = PathBuf::from("geodesy");
         path.push(&name);
         Ok(std::fs::read(path)?)

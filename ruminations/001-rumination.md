@@ -4,14 +4,13 @@
 
 Thomas Knudsen <knudsen.thomas@gmail.com>
 
-2021-08-11. Last [revision](#document-history) 2021-08-11
+2021-08-11. Last [revision](#document-history) 2022-03-24
 
 ### Abstract
 
 ```js
-origin of | cart ellps:intl | helmert x:-87 y:-96 z:-120 | cart inv
+origin of | cart ellps=intl | helmert x=-87 y=-96 z=-120 | cart inv
 ```
-
 
 ---
 
@@ -20,7 +19,7 @@ origin of | cart ellps:intl | helmert x:-87 y:-96 z:-120 | cart inv
 In the Rust Geodesy source code, test cases, and documentation, you will often encounter this transformation pipeline:
 
 ```js
-cart ellps:intl | helmert x:-87 y:-96 z:-120 | cart inv ellps:GRS80
+cart ellps=intl | helmert x=-87 y=-96 z=-120 | cart inv ellps=GRS80
 ```
 
 It was selected as the *go to* example because it is only marginally more complex than the identity operator, `noop`, while still doing real geodetic work. So by implementing just two operators, `cart` and `helmert` we can already:
@@ -43,22 +42,23 @@ For these reasons, `cart` and `helmert` were the first two operators implemented
 
 From end-to-end:
 
-1. The `cart` step takes geographical coordinates given on the *international ellipsoid* (`ellps:intl`) and converts them to earth-centered cartesian coordinates
+1. The `cart` step takes geographical coordinates given on the *international ellipsoid* (`ellps=intl`) and converts them to earth-centered cartesian coordinates
 2. The `helmert` step shifts the cartesian coordinates to a new origin `[x,y,z]`
-3. Finally, the inverse `cart` step converts the cartesian coordinates back to geographical coordinates. This time on the *GRS80 ellipsoid* (`ellps:GRS80`)
+3. Finally, the inverse `cart` step converts the cartesian coordinates back to geographical coordinates. This time on the *GRS80 ellipsoid* (`ellps=GRS80`)
 
 ### What does it mean?
 
-All-in-all, this amounts to a *datum shift* from the older "European Datum, 1950", *ED50*, to the current "European Terrestrial Reference Frame 1989", *ETRS89*.
+All-in-all, this amounts to a *datum shift* from the older "European Datum, 1950", *ED50*, to the current "European Terrestrial Reference System 1989", *ETRS89*.
 
 It is not a particularly good datum shift, but it is sufficient in many cases: The expected transformation error is on the order of 5 m, whereas one will get an error of around 200 m if not transforming at all. In other words, this simple transformation reduces the coordinate error from "a few blocks down the road" to "the wrong side of the road".
 
 ### Where did it come from?
 
-The pipeline described above is actually the [GYS](/ruminations/000-rumination.md#gys-the-geodetic-yaml-shorthand) representation of datum transformation number [1134](https://epsg.org/transformation_1134/ED50-to-WGS-84-2.html) in the [EPSG](https://epsg.org/home.html) geodetic registry, where it is described as *EPSG:1134 - ED50 to WGS 84*. In RG contexts we refer to it as *ED50 to ETRS89* since, at the level of accuracy of EPSG:1134, ETRS89 and WGS84 are equivalent.
+The pipeline described above is actually the RG representation of datum transformation number [1134](https://epsg.org/transformation_1134/ED50-to-WGS-84-2.html) in the [EPSG](https://epsg.org/home.html) geodetic registry, where it is described as *EPSG:1134 - ED50 to WGS 84*. In RG contexts we refer to it as *ED50 to ETRS89* since, at the level of accuracy of EPSG:1134, ETRS89 and WGS84 are equivalent.
 
 ### Document History
 
 Major revisions and additions:
 
 - 2021-08-11: First version
+- 2022-03-24: Update for current realities

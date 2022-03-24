@@ -29,17 +29,12 @@ fn main() -> anyhow::Result<()> {
     // clear in a moment...
 
     // First we need to register our macro in the resource provider ("context")
-    ctx.register_resource(":geohelmert", geohelmert_macro_text);
-    // if !ctx.register_macro("geohelmert", geohelmert_macro_text) {
-    //         return Err(Error::General(
-    //         "Awful error: Couldn't register macro 'geohelmert'",
-    //     ));
-    // };
+    ctx.register_resource("geo:helmert", geohelmert_macro_text);
 
     // Now let's see whether it works - instantiate the macro, using the same
     // parameters as used in example 00. The ':' in the operator name invokes
     // the macro expansion machinery.
-    let ed50_wgs84 = ctx.op(":geohelmert left=intl right=GRS80 x=-87 y=-96 z=-120")?;
+    let ed50_wgs84 = ctx.op("geo:helmert left=intl right=GRS80 x=-87 y=-96 z=-120")?;
     // ... and do the same transformation as in example 00
     ctx.apply(ed50_wgs84, Fwd, &mut data)?;
     ctx.apply(ed50_wgs84, Inv, &mut data)?;

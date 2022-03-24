@@ -78,4 +78,4 @@ impl RawParameters {
 
 // ----- T E S T S ---------------------------------------------------------------------
 
-// RawParameters gets its test coverage from the tests in `op.rs`
+// RawParameters gets its test coverage from the tests in `op/mod.rs`

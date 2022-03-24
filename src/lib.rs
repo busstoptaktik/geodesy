@@ -17,7 +17,11 @@ pub use crate::ellipsoid::Ellipsoid;
 pub use crate::op::Op;
 pub use crate::provider::Minimal;
 pub use crate::provider::Provider;
-
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Copy, Clone)]
+pub struct OpHandle(uuid::Uuid);
+impl Default for OpHandle {
+    fn default() -> Self {OpHandle(uuid::Uuid::new_v4())}
+}
 /// The bread-and-butter, shrink-wrapped for external use
 pub mod preamble {
     pub use crate::Coord;
@@ -28,6 +32,7 @@ pub mod preamble {
     pub use crate::Error;
     pub use crate::Minimal;
     pub use crate::Op;
+    pub use crate::OpHandle;
     pub use crate::Provider;
 }
 
@@ -38,7 +43,6 @@ pub mod inner_op_authoring {
     pub use log::info;
     pub use log::trace;
     pub use log::warn;
-    pub use uuid::Uuid;
 
     pub use crate::inner_op::InnerOp;
     pub use crate::inner_op::OpConstructor;
