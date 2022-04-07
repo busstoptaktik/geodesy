@@ -296,22 +296,9 @@ fn rotation_matrix(r: &[f64], exact: bool, position_vector: bool) -> [[f64; 3]; 
     // Leave out the second order infinitesimals in the rotation
     // matrix elements, when using small-angle approximations
     if exact {
-        // Rust destructuring assignments are still unstable - otherwise
-        // this entire if-block would be a concise 3 line incantation:
-        //    let (sx, cx) = rx.sin_cos();
-        //    let (sy, cy) = ry.sin_cos();
-        //    let (sz, cz) = rz.sin_cos();
-        let scx = rx.sin_cos();
-        let scy = ry.sin_cos();
-        let scz = rz.sin_cos();
-
-        sx = scx.0;
-        sy = scy.0;
-        sz = scz.0;
-
-        cx = scx.1;
-        cy = scy.1;
-        cz = scz.1;
+        (sx, cx) = rx.sin_cos();
+        (sy, cy) = ry.sin_cos();
+        (sz, cz) = rz.sin_cos();
     }
 
     let r11 = cy * cz;
