@@ -43,7 +43,7 @@ impl Op {
 
     // Helper for implementation of `InnerOp`s: Instantiate an `Op` for the simple
     // (and common) case, where the `InnerOp` constructor does mot need to set any
-    // additional parameters than the ones defined by the instantiation parameter
+    // other parameters than the ones defined by the instantiation parameter
     // arguments.
     pub fn plain(
         parameters: &RawParameters,
@@ -77,39 +77,56 @@ impl Op {
                 parameters.definition,
             ));
         }
-        let definition = parameters.definition.clone();
-        let name = operator_name(&definition, "");
+
+        let name = operator_name(&parameters.definition, "");
 
         // A pipeline?
-        if is_pipeline(&definition) {
-            return super::inner_op::pipeline::new(&parameters, provider)?.handle_inversion();
+        if is_pipeline(&parameters.definition) {
+            return super::inner_op::pipeline::new(&parameters, provider);
         }
 
         // A user defined operator?
         if !is_resource_name(&name) {
             if let Ok(constructor) = provider.get_op(&name) {
-                return constructor.0(&parameters, provider)?.handle_inversion();
+                return constructor.0(&parameters, provider)?.handle_op_inversion();
             }
         }
+
         // A user defined macro?
         else if let Ok(macro_definition) = provider.get_resource(&name) {
-            let mut next_param = parameters.next(&definition);
+            // The " " sentinel simplifies search for "inv", by allowing us to search
+            // for " inv " instead, avoiding matching words *containing* inv
+            let inverted = (parameters.definition.clone() + " ").contains(" inv ");
+            let mut next_param = parameters.next(&parameters.definition);
             next_param.definition = macro_definition;
-            return Op::op(next_param, provider)?.handle_inversion();
+
+            return Op::op(next_param, provider)?.handle_inversion(inverted);
         }
 
         // A built in operator?
         if let Ok(constructor) = super::inner_op::builtin(&name) {
-            return constructor.0(&parameters, provider)?.handle_inversion();
+            return constructor.0(&parameters, provider)?.handle_op_inversion();
         }
 
-        Err(super::Error::NotFound(name, ": ".to_string() + &definition))
+        Err(super::Error::NotFound(name, ": ".to_string() + &parameters.definition))
     }
 
-    fn handle_inversion(mut self) -> Result<Op, Error> {
-        if self.params.boolean("inv") {
-            self.descriptor.inverted = true;
+    fn handle_op_inversion(self) -> Result<Op, Error> {
+        let inverted = self.params.boolean("inv");
+        self.handle_inversion(inverted)
+    }
+
+    fn handle_inversion(mut self, inverted: bool) -> Result<Op, Error> {
+        if self.descriptor.invertible {
+            if inverted {
+                self.descriptor.inverted = !self.descriptor.inverted;
+            }
+            return Ok(self)
         }
+        if inverted {
+            return Err(Error::NonInvertible(self.descriptor.definition));
+        }
+
         Ok(self)
     }
 }
@@ -244,5 +261,66 @@ mod tests {
         Ok(())
     }
 
-    // TODO/todo!(): Test macro expansion (likely wrong - check raw_parameters.rs)
+    #[test]
+    fn macro_expansion() -> Result<(), Error> {
+        let mut data = some_basic_coordinates();
+        let mut prv = Minimal::default();
+        prv.register_resource("sub:one", "addone inv");
+        let op = prv.op("addone|sub:one|addone")?;
+
+        prv.apply(op, Fwd, &mut data)?;
+        assert_eq!(data[0][0], 56.);
+        assert_eq!(data[1][0], 60.);
+
+        prv.apply(op, Inv, &mut data)?;
+        assert_eq!(data[0][0], 55.);
+        assert_eq!(data[1][0], 59.);
+
+        Ok(())
+    }
+
+    #[test]
+    fn macro_expansion_inverted() -> Result<(), Error> {
+        let mut data = some_basic_coordinates();
+        let mut prv = Minimal::default();
+        prv.register_resource("sub:one", "addone inv");
+        let op = prv.op("addone|sub:one inv|addone")?;
+
+        prv.apply(op, Fwd, &mut data)?;
+        assert_eq!(data[0][0], 58.);
+        assert_eq!(data[1][0], 62.);
+
+        prv.apply(op, Inv, &mut data)?;
+        assert_eq!(data[0][0], 55.);
+        assert_eq!(data[1][0], 59.);
+
+        Ok(())
+    }
+
+    #[test]
+    fn macro_expansion_with_embedded_pipeline() -> Result<(), Error> {
+        let mut data = some_basic_coordinates();
+        let mut prv = Minimal::default();
+        prv.register_resource("sub:three", "addone inv|addone inv|addone inv");
+        let op = prv.op("addone|sub:three|addone")?;
+
+        prv.apply(op, Fwd, &mut data)?;
+        assert_eq!(data[0][0], 54.);
+        assert_eq!(data[1][0], 58.);
+
+        prv.apply(op, Inv, &mut data)?;
+        assert_eq!(data[0][0], 55.);
+        assert_eq!(data[1][0], 59.);
+
+        let op = prv.op("addone|sub:three inv|addone")?;
+        prv.apply(op, Fwd, &mut data)?;
+        assert_eq!(data[0][0], 60.);
+        assert_eq!(data[1][0], 64.);
+
+        prv.apply(op, Inv, &mut data)?;
+        assert_eq!(data[0][0], 55.);
+        assert_eq!(data[1][0], 59.);
+
+        Ok(())
+    }
 }

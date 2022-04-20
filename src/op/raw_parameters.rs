@@ -62,7 +62,7 @@ impl RawParameters {
             recursion_level += 1;
         }
         let invocation = self.invocation.clone();
-        let definition = definition.to_string();
+        let definition = definition.trim().to_string();
         RawParameters {
             invocation,
             definition,

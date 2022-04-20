@@ -95,6 +95,9 @@ pub enum Error {
     #[error("recursion too deep for {0}, at {1}")]
     Recursion(String, String),
 
+    #[error("attempt to invert a non-invertible item: {0}")]
+    NonInvertible(String),
+
     #[error("missing required parameter {0}")]
     MissingParam(String),
 
