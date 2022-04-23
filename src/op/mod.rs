@@ -323,4 +323,51 @@ mod tests {
 
         Ok(())
     }
+
+    #[test]
+    fn macro_expansion_with_defaults_provided() -> Result<(), Error> {
+        let mut data = some_basic_coordinates();
+        let mut prv = Minimal::default();
+
+        // A macro providing a default value of 1 for the x parameter
+        prv.register_resource("helmert:one", "helmert x=*1");
+
+        // Instantiating the macro without parameters - getting the default
+        let op = prv.op("helmert:one")?;
+
+        prv.apply(op, Fwd, &mut data)?;
+        assert_eq!(data[0][0], 56.);
+        assert_eq!(data[1][0], 60.);
+
+        prv.apply(op, Inv, &mut data)?;
+        assert_eq!(data[0][0], 55.);
+        assert_eq!(data[1][0], 59.);
+
+        // Instantiating the macro with parameters - overwriting the default
+        // For good measure, check that it also works inside a pipeline
+        let op = prv.op("addone|helmert:one x=2")?;
+
+        prv.apply(op, Fwd, &mut data)?;
+        assert_eq!(data[0][0], 58.);
+        assert_eq!(data[1][0], 62.);
+
+        prv.apply(op, Inv, &mut data)?;
+        assert_eq!(data[0][0], 55.);
+        assert_eq!(data[1][0], 59.);
+
+        // Overwrite the default, and provide additional args
+        let op = prv.op("addone|helmert:one x=2 inv=true")?;
+
+        prv.apply(op, Fwd, &mut data)?;
+        assert_eq!(data[0][0], 54.);
+        assert_eq!(data[1][0], 58.);
+
+        prv.apply(op, Inv, &mut data)?;
+        assert_eq!(data[0][0], 55.);
+        assert_eq!(data[1][0], 59.);
+
+
+        Ok(())
+    }
+
 }

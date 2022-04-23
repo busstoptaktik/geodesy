@@ -380,7 +380,9 @@ pub fn chase(
             continue;
         }
 
-        // If the value is a default, we continue the search using the *same key*
+        // If the value is a provided default, we continue the search using the *same key*,
+        // in case a proper value is provided.
+        // cf. the test `macro_expansion_with_defaults_provided()` in `./mod.rs`
         if let Some(stripped) = thevalue.strip_prefix('*') {
             chasing = true;
             needle = key;
