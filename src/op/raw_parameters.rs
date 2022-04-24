@@ -57,8 +57,8 @@ impl RawParameters {
         let mut globals = self.globals.clone();
         if super::is_resource_name(definition) {
             globals.remove("name");
-            globals.remove("inv");
             globals.extend(super::split_into_parameters(definition).into_iter());
+            globals.remove("inv");
             recursion_level += 1;
         }
         let invocation = self.invocation.clone();

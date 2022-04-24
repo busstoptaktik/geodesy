@@ -16,8 +16,8 @@ impl OpDescriptor {
     pub fn new(definition: &str, fwd: InnerOp, inv: Option<InnerOp>) -> OpDescriptor {
         let definition = definition.to_string();
         let invertible = inv.is_some();
-        let inverted = false; // TODO
-        let invocation = "".to_string(); // TODO
+        let inverted = false; // Handled higher up in the call hierarchy
+        let invocation = "".to_string(); // Handled higher up in the call hierarchy
         let inv = inv.unwrap_or_default();
         let uuid = OpHandle(uuid::Uuid::new_v4());
         OpDescriptor {

@@ -96,10 +96,10 @@ impl Op {
         else if let Ok(macro_definition) = provider.get_resource(&name) {
             // The " " sentinel simplifies search for "inv", by allowing us to search
             // for " inv " instead, avoiding matching words *containing* inv
-            let inverted = (parameters.definition.clone() + " ").contains(" inv ");
+            let def = parameters.definition.clone() + " ";
+            let inverted = def.contains(" inv ");
             let mut next_param = parameters.next(&parameters.definition);
             next_param.definition = macro_definition;
-
             return Op::op(next_param, provider)?.handle_inversion(inverted);
         }
 
@@ -169,8 +169,9 @@ pub fn split_into_parameters(step: &str) -> BTreeMap<String, String> {
     for element in elements {
         // Split a key=value-pair into key and value parts
         let mut parts: Vec<&str> = element.trim().split('=').collect();
-        // Add an empty part, to make sure we have a value, even for flags
-        parts.push("");
+        // Add a boolean true part, to make sure we have a value, even for flags
+        // (flags are booleans that are true when specified, false when not)
+        parts.push("true");
         assert!(parts.len() > 1);
 
         // If the first arg is a key-without-value, it is the name of the operator
@@ -302,20 +303,20 @@ mod tests {
         let mut data = some_basic_coordinates();
         let mut prv = Minimal::default();
         prv.register_resource("sub:three", "addone inv|addone inv|addone inv");
-        let op = prv.op("addone|sub:three|addone")?;
+        let op = prv.op("addone|sub:three")?;
 
         prv.apply(op, Fwd, &mut data)?;
-        assert_eq!(data[0][0], 54.);
-        assert_eq!(data[1][0], 58.);
+        assert_eq!(data[0][0], 53.);
+        assert_eq!(data[1][0], 57.);
 
         prv.apply(op, Inv, &mut data)?;
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
 
-        let op = prv.op("addone|sub:three inv|addone")?;
+        let op = prv.op("addone|sub:three inv")?;
         prv.apply(op, Fwd, &mut data)?;
-        assert_eq!(data[0][0], 60.);
-        assert_eq!(data[1][0], 64.);
+        assert_eq!(data[0][0], 59.);
+        assert_eq!(data[1][0], 63.);
 
         prv.apply(op, Inv, &mut data)?;
         assert_eq!(data[0][0], 55.);
@@ -356,7 +357,18 @@ mod tests {
         assert_eq!(data[1][0], 59.);
 
         // Overwrite the default, and provide additional args
-        let op = prv.op("addone|helmert:one x=2 inv=true")?;
+        let op = prv.op("helmert:one x=2 inv")?;
+
+        prv.apply(op, Fwd, &mut data)?;
+        assert_eq!(data[0][0], 53.);
+        assert_eq!(data[1][0], 57.);
+
+        prv.apply(op, Inv, &mut data)?;
+        assert_eq!(data[0][0], 55.);
+        assert_eq!(data[1][0], 59.);
+
+        // Overwrite the default, and provide additional args
+        let op = prv.op("addone|helmert:one inv x=2")?;
 
         prv.apply(op, Fwd, &mut data)?;
         assert_eq!(data[0][0], 54.);
