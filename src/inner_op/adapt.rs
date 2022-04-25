@@ -2,8 +2,8 @@
 
 Example:
 
-```js
-adapt from: neut_deg  to: enut_rad
+```sh
+adapt from=neut_deg  to=enut_rad
 ```
 
 We introduce the coordinate type designations *eastish, northish, upish, timish*,
@@ -21,7 +21,7 @@ Also, we introduce the 3 common angular representations "degrees, gradians, radi
 conveniently abbrevieated as "deg", "gon" and "rad".
 
 The Rust Geodesy internal format of a four dimensional coordinate tuple is e, n, u, t,
-and the internal unit of measure for anglular coordinates is radians. In `adapt`, terms,
+and the internal unit of measure for angular coordinates is radians. In `adapt`, terms,
 this is described as `enut_rad`.
 
 `adapt` covers the same ground as the `PROJ` operator `axisswap`, but using a somewhat
@@ -35,22 +35,24 @@ converted to an output coordinate in radians and with latitude and longitude swa
 That output format is identical to the default internal format, so it can actually
 be left out, and the order be written as:
 
-```gys
-adapt from: neut_deg
+```sh
+adapt from=neut_deg
 ```
 
 Typically, `adapt` is used in both ends of a pipeline, to match data between the
 RG internal representation and the requirements of the embedding system:
 
-```gys
-adapt from: neut_deg | cart ... | helmert ... | cart inv ... | adapt to: neut_deg
+```sh
+adapt from=neut_deg | cart ... | helmert ... | cart inv ... | adapt to=neut_deg
 ```
 
-Note that `adapt to: ...` and `adapt inv from: ...` are equivalent. The latter
-form is useful when using RG's predefined symbolic definitions, as in:
+Note that `adapt to=...` and `adapt inv from=...` are equivalent.
 
-```gys
-geo | cart ... | helmert ... | cart inv ... | geo inv
+Some RG context providers supply predefined symbolic coordinate handling macros,
+as in:
+
+```sh
+geo:in | cart ... | helmert ... | cart inv ... | geo:out
 ```
 
 !*/
@@ -62,8 +64,8 @@ const MULT_DEFAULT: [f64; 4] = [1., 1., 1., 1.];
 
 // ----- F O R W A R D --------------------------------------------------------------
 
-fn fwd(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
-    let n = operands.len();
+fn fwd(op: &Op, _prv: &dyn Provider, data: &mut [Coord]) -> Result<usize, Error> {
+    let n = data.len();
     if op.params.boolean("noop") {
         return Ok(n);
     }
@@ -76,7 +78,7 @@ fn fwd(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Er
         post[3] as usize,
     ];
     let mult = op.params.series("mult").unwrap_or(&MULT_DEFAULT);
-    for o in operands {
+    for o in data {
         *o = Coord([
             o[post[0]] * mult[0],
             o[post[1]] * mult[1],
@@ -89,8 +91,8 @@ fn fwd(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Er
 
 // ----- I N V E R S E --------------------------------------------------------------
 
-fn inv(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
-    let n = operands.len();
+fn inv(op: &Op, _prv: &dyn Provider, data: &mut [Coord]) -> Result<usize, Error> {
+    let n = data.len();
     if op.params.boolean("noop") {
         return Ok(n);
     }
@@ -106,7 +108,7 @@ fn inv(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Er
     let mult = op.params.series("mult").unwrap_or(&MULT_DEFAULT);
     let mult = [1. / mult[0], 1. / mult[1], 1. / mult[2], 1. / mult[3]];
 
-    for o in operands {
+    for o in data {
         let mut c = Coord::default();
         for i in 0..4_usize {
             c[post[i]] = o[i] * mult[post[i]];
@@ -278,6 +280,8 @@ fn combine_descriptors(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // Test that the underlying descriptor-functionality works
     #[test]
     fn descriptor() {
         use super::combine_descriptors;
@@ -317,57 +321,121 @@ mod tests {
         assert!(give.noop == false);
     }
 
+
+    // Test the basic adapt functionality
     #[test]
     fn adapt() -> Result<(), Error> {
         let mut ctx = Minimal::default();
         let gonify = ctx.op("adapt from = neut_deg   to = enut_gon")?;
 
-        let mut operands = [Coord::raw(90., 180., 0., 0.), Coord::raw(45., 90., 0., 0.)];
+        let mut data = [Coord::raw(90., 180., 0., 0.), Coord::raw(45., 90., 0., 0.)];
 
-        assert_eq!(ctx.apply(gonify, Fwd, &mut operands)?, 2);
-        assert!((operands[0][0] - 200.0).abs() < 1e-10);
-        assert!((operands[0][1] - 100.0).abs() < 1e-10);
+        assert_eq!(ctx.apply(gonify, Fwd, &mut data)?, 2);
+        assert!((data[0][0] - 200.0).abs() < 1e-10);
+        assert!((data[0][1] - 100.0).abs() < 1e-10);
 
-        assert!((operands[1][0] - 100.0).abs() < 1e-10);
-        assert!((operands[1][1] - 50.0).abs() < 1e-10);
+        assert!((data[1][0] - 100.0).abs() < 1e-10);
+        assert!((data[1][1] - 50.0).abs() < 1e-10);
 
-        assert_eq!(operands[1][2], 0.);
-        assert_eq!(operands[1][3], 0.);
+        assert_eq!(data[1][2], 0.);
+        assert_eq!(data[1][3], 0.);
 
-        assert_eq!(ctx.apply(gonify, Inv, &mut operands)?, 2);
-        assert!((operands[0][0] - 90.0).abs() < 1e-10);
-        assert!((operands[0][1] - 180.0).abs() < 1e-10);
-        assert!((operands[1][0] - 45.0).abs() < 1e-10);
-        assert!((operands[1][1] - 90.0).abs() < 1e-10);
+        assert_eq!(ctx.apply(gonify, Inv, &mut data)?, 2);
+        assert!((data[0][0] - 90.0).abs() < 1e-10);
+        assert!((data[0][1] - 180.0).abs() < 1e-10);
+        assert!((data[1][0] - 45.0).abs() < 1e-10);
+        assert!((data[1][1] - 90.0).abs() < 1e-10);
 
         Ok(())
     }
 
+
+    // Test that 'inv' behaves as if 'from' and 'to' were swapped
     #[test]
     fn adapt_inv() -> Result<(), Error> {
-        let mut ctx = Minimal::default();
-        let degify = ctx.op("adapt inv from = neut_deg   to = enut_gon")?;
+        let mut prv = Minimal::default();
+        let degify = prv.op("adapt inv from = neut_deg   to = enut_gon")?;
 
-        let mut operands = [
+        let mut data = [
             Coord::raw(200., 100., 0., 0.),
             Coord::raw(100., 50., 0., 0.),
         ];
 
-        assert_eq!(ctx.apply(degify, Fwd, &mut operands)?, 2);
-        assert!((operands[0][0] - 90.0).abs() < 1e-10);
-        assert!((operands[0][1] - 180.0).abs() < 1e-10);
+        assert_eq!(prv.apply(degify, Fwd, &mut data)?, 2);
+        assert!((data[0][0] - 90.0).abs() < 1e-10);
+        assert!((data[0][1] - 180.0).abs() < 1e-10);
 
-        assert!((operands[1][0] - 45.0).abs() < 1e-10);
-        assert!((operands[1][1] - 90.0).abs() < 1e-10);
+        assert!((data[1][0] - 45.0).abs() < 1e-10);
+        assert!((data[1][1] - 90.0).abs() < 1e-10);
 
-        assert_eq!(operands[1][2], 0.);
-        assert_eq!(operands[1][3], 0.);
+        assert_eq!(data[1][2], 0.);
+        assert_eq!(data[1][3], 0.);
 
-        assert_eq!(ctx.apply(degify, Inv, &mut operands)?, 2);
-        assert!((operands[0][0] - 200.0).abs() < 1e-10);
-        assert!((operands[0][1] - 100.0).abs() < 1e-10);
-        assert!((operands[1][0] - 100.0).abs() < 1e-10);
-        assert!((operands[1][1] - 50.0).abs() < 1e-10);
+        assert_eq!(prv.apply(degify, Inv, &mut data)?, 2);
+        assert!((data[0][0] - 200.0).abs() < 1e-10);
+        assert!((data[0][1] - 100.0).abs() < 1e-10);
+        assert!((data[1][0] - 100.0).abs() < 1e-10);
+        assert!((data[1][1] - 50.0).abs() < 1e-10);
+
+        Ok(())
+    }
+
+
+    // Test that operation without unit conversion works as expected
+    #[test]
+    fn no_unit_conversion() -> Result<(), Error> {
+        let mut prv = Minimal::default();
+
+        // Swap data by reading them as geo, writing them as gis
+        let mut data = some_basic_coordinates();
+        let swap = prv.op("adapt from=neut")?;
+        assert_eq!(prv.apply(swap, Fwd, &mut data)?, 2);
+        assert_eq!(data[0][0], 12.0);
+        assert_eq!(data[0][1], 55.0);
+
+        Ok(())
+    }
+
+
+    // Test invocation through the geo:* and gis:* macros
+    #[test]
+    fn geo_gis_and_all_that() -> Result<(), Error> {
+        let mut prv = Minimal::default();
+
+        // Separate :in- and :out-versions, for better readability
+        prv.register_resource("geo:in", "adapt from = neut_deg");
+        prv.register_resource("geo:out", "geo:in inv");
+        prv.register_resource("gis:in", "adapt from = enut_deg");
+        prv.register_resource("gis:out", "gis:in inv");
+
+        let utm = prv.op("geo:in | utm zone=32")?;
+        let geo = prv.op("utm zone=32 inv | geo:out")?;
+
+        // Roundtrip geo->utm->geo, using separate ops for fwd and inv
+        let mut data = some_basic_coordinates();
+        assert_eq!(prv.apply(utm, Fwd, &mut data)?, 2);
+        assert!((data[0][0] - 691875.6321403517).abs() < 1e-9);
+        assert!((data[0][1] - 6098907.825001632).abs() < 1e-9);
+        assert_eq!(prv.apply(geo, Fwd, &mut data)?, 2);
+        assert!((data[0][0] - 55.0).abs() < 1e-9);
+        assert!((data[0][1] - 12.0).abs() < 1e-9);
+
+        // Same, but using a plain Inv invocation for the return trip
+        let mut data = some_basic_coordinates();
+        assert_eq!(prv.apply(utm, Fwd, &mut data)?, 2);
+        assert!((data[0][0] - 691875.6321403517).abs() < 1e-9);
+        assert!((data[0][1] - 6098907.825001632).abs() < 1e-9);
+        assert_eq!(prv.apply(utm, Inv, &mut data)?, 2);
+        dbg!(data);
+        assert!((data[0][0] - 55.0).abs() < 1e-9);
+        assert!((data[0][1] - 12.0).abs() < 1e-9);
+
+        // Swap data by reading them as geo, writing them as gis
+        let mut data = some_basic_coordinates();
+        let swap = prv.op("geo:in | gis:out")?;
+        assert_eq!(prv.apply(swap, Fwd, &mut data)?, 2);
+        assert!((data[0][0] - 12.0).abs() < 1e-9);
+        assert!((data[0][1] - 55.0).abs() < 1e-9);
 
         Ok(())
     }
