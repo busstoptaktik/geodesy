@@ -385,14 +385,11 @@ mod tests {
     #[test]
     fn no_unit_conversion() -> Result<(), Error> {
         let mut prv = Minimal::default();
-
-        // Swap data by reading them as geo, writing them as gis
         let mut data = some_basic_coordinates();
         let swap = prv.op("adapt from=neut")?;
         assert_eq!(prv.apply(swap, Fwd, &mut data)?, 2);
         assert_eq!(data[0][0], 12.0);
         assert_eq!(data[0][1], 55.0);
-
         Ok(())
     }
 
