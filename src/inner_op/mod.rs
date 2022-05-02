@@ -8,7 +8,6 @@ use super::inner_op_authoring::*;
 mod adapt;
 mod addone;
 mod cart;
-mod gravsoft;
 mod gridshift;
 mod helmert;
 mod lcc;

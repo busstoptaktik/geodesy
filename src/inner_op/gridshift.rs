@@ -155,15 +155,17 @@ impl GridHeader {
         // Interpolate
         let mut left = Coord::origin();
         for i in 0..self.bands {
-            left[i] = (1. - rlat) * grid[ll + i] + (0. + rlat) * grid[ul + i];
+            left[i] = (1. - rlat) * grid[ll + i] + rlat * grid[ul + i];
         }
         let mut right = Coord::origin();
         for i in 0..self.bands {
-            right[i] = (1. - rlat) * grid[lr + i] + (0. + rlat) * grid[ur + i];
+            right[i] = (1. - rlat) * grid[lr + i] + rlat * grid[ur + i];
         }
+        dbg!(left);
+        dbg!(right);
         let mut result = Coord::origin();
         for i in 0..self.bands {
-            result[i] = (1. - rlon) * left[i] + (0. + rlon) * right[i];
+            result[i] = (1. - rlon) * left[i] + rlon * right[i];
         }
         result
     }
@@ -172,9 +174,55 @@ impl GridHeader {
 
 // ----- T E S T S ------------------------------------------------------------------
 
+
 #[cfg(test)]
-mod tests {
+mod test {
     use super::*;
+
+    const HEADER: [f64; 6] = [54., 58., 8., 16., 1., 1.];
+
+    #[rustfmt::skip]
+    const GEOID: [f64; 5*9] = [
+        58.08, 58.09, 58.10, 58.11, 58.12, 58.13, 58.14, 58.15, 58.16,
+        57.08, 57.09, 57.10, 57.11, 57.12, 57.13, 57.14, 57.15, 57.16,
+        56.08, 56.09, 56.10, 56.11, 56.12, 56.13, 56.14, 56.15, 56.16,
+        55.08, 55.09, 55.10, 55.11, 55.12, 55.13, 55.14, 55.15, 55.16,
+        54.08, 54.09, 54.10, 54.11, 54.12, 54.13, 54.14, 54.15, 54.16,
+    ];
+
+    #[allow(dead_code)]
+    #[rustfmt::skip]
+    const DATUM: [f64; 5*2*9] = [
+        58., 08., 58., 09., 58., 10., 58., 11., 58., 12., 58., 13., 58., 14., 58., 15., 58., 16.,
+        57., 08., 57., 09., 57., 10., 57., 11., 57., 12., 57., 13., 57., 14., 57., 15., 57., 16.,
+        56., 08., 56., 09., 56., 10., 56., 11., 56., 12., 56., 13., 56., 14., 56., 15., 56., 16.,
+        55., 08., 55., 09., 55., 10., 55., 11., 55., 12., 55., 13., 55., 14., 55., 15., 55., 16.,
+        54., 08., 54., 09., 54., 10., 54., 11., 54., 12., 54., 13., 54., 14., 54., 15., 54., 16.,
+    ];
+
+    #[test]
+    fn grid_header() -> Result<(), Error> {
+        let mut datumgrid = Vec::from(HEADER);
+        datumgrid.extend_from_slice(&DATUM[..]);
+        let datum = GridHeader::gravsoft(&datumgrid)?;
+        dbg!(&datum);
+
+        let mut geoidgrid = Vec::from(HEADER);
+        geoidgrid.extend_from_slice(&GEOID[..]);
+        let geoid = GridHeader::gravsoft(&geoidgrid)?;
+        dbg!(&geoid);
+
+        let c = Coord::raw(08.25, 58.75, 0., 0.);
+
+        let d = datum.interpolation(c, &datumgrid);
+        dbg!(d);
+
+        let n = geoid.interpolation(c, &geoidgrid);
+        dbg!(n);
+        assert_eq!(1, 0);
+        Ok(())
+    }
+
     #[test]
     fn gravsoft() -> Result<(), Error> {
         let mut prv = Minimal::default();
@@ -208,47 +256,6 @@ mod tests {
             Err(Error::NotFound(_, _))
         ));
 
-        Ok(())
-    }
-}
-
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[allow(dead_code)]
-    const HEADER: [f64; 6] = [54., 58., 8., 16., 1., 1.];
-
-    #[rustfmt::skip]
-    const GEOID: [f64; 5*9] = [
-        58.08, 58.09, 58.10, 58.11, 58.12, 58.13, 58.14, 58.15, 58.16,
-        57.08, 57.09, 57.10, 57.11, 57.12, 57.13, 57.14, 57.15, 57.16,
-        56.08, 56.09, 56.10, 56.11, 56.12, 56.13, 56.14, 56.15, 56.16,
-        55.08, 55.09, 55.10, 55.11, 55.12, 55.13, 55.14, 55.15, 55.16,
-        54.08, 54.09, 54.10, 54.11, 54.12, 54.13, 54.14, 54.15, 54.16,
-    ];
-
-    #[allow(dead_code)]
-    #[rustfmt::skip]
-    const DATUM: [f64; 5*2*9] = [
-        58., 08., 58., 09., 58., 10., 58., 11., 58., 12., 58., 13., 58., 14., 58., 15., 58., 16.,
-        57., 08., 57., 09., 57., 10., 57., 11., 57., 12., 57., 13., 57., 14., 57., 15., 57., 16.,
-        56., 08., 56., 09., 56., 10., 56., 11., 56., 12., 56., 13., 56., 14., 56., 15., 56., 16.,
-        55., 08., 55., 09., 55., 10., 55., 11., 55., 12., 55., 13., 55., 14., 55., 15., 55., 16.,
-        54., 08., 54., 09., 54., 10., 54., 11., 54., 12., 54., 13., 54., 14., 54., 15., 54., 16.,
-    ];
-
-    #[test]
-    fn geoid_grid() -> Result<(), Error> {
-        let mut grid = Vec::from(HEADER);
-        grid.extend_from_slice(&GEOID[..]);
-        let header = GridHeader::gravsoft(&grid)?;
-        dbg!(&header);
-        let c = Coord::raw(08., 58., 0., 0.);
-        let n = header.interpolation(c, &grid);
-        dbg!(n);
-        assert_eq!(1, 0);
         Ok(())
     }
 
