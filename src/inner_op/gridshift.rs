@@ -46,6 +46,35 @@ pub fn new(parameters: &RawParameters, provider: &dyn Provider) -> Result<Op, Er
 }
 
 
+// If the Gravsoft grid appears to be in angular units, convert to radians
+fn normalize_gravsoft_grid_values(grid: &mut [f64])  {
+    // if any boundary is outside of [-720; 720], the grid must (by a wide margin) be
+    // in projected coordinates and the correction in meters, so we simply return.
+    for i in 0..4 {
+        if grid[i].abs() > 720. {
+            return;
+        }
+    }
+
+    // The header values are in decimal degrees
+    for i in 0..6 {
+        grid[i] = grid[i].to_radians();
+    }
+
+    // If we're handling a geoid grid, we're done: Grid values are in meters
+    let h = GridHeader::gravsoft(grid).unwrap_or_default();
+    if h.bands < 2 {
+        return;
+    }
+    dbg!("DATUMGRID");
+
+    // The grid values are in minutes-of-arc
+    // TODO: handle 3-D data with 3rd coordinate in meters
+    for i in 6..grid.len() {
+        grid[i] = (grid[i] / 3600.0).to_radians()
+    }
+}
+
 fn gravsoft_grid_reader(name: &str, provider: &dyn Provider) -> Result<Vec::<f64>, Error> {
     let buf = provider.get_blob(name)?;
     let all = std::io::BufReader::new(buf.as_slice());
@@ -60,6 +89,12 @@ fn gravsoft_grid_reader(name: &str, provider: &dyn Provider) -> Result<Vec::<f64
             grid.push(item.parse::<f64>().unwrap_or(0.));
         }
     }
+    if grid.len() < 6 {
+        return Err(Error::General("Incomplete grid"));
+    }
+
+    // Handle linear/angular conversions
+    normalize_gravsoft_grid_values(&mut grid);
     Ok(grid)
 }
 
@@ -106,7 +141,7 @@ impl GridHeader {
 
         let elements = rows*cols*bands;
         if elements==0 || elements + header_length > grid.len() || bands < 1 {
-            return Err(Error::General("Incomplete grid"))
+            return Err(Error::General("Incomplete grid"));
         }
 
         Ok(GridHeader{
@@ -122,6 +157,33 @@ impl GridHeader {
             header_length,
             last_valid_record_start
         })
+    }
+
+    pub fn to_degrees(&self) -> Self {
+        let lat_0 = self.lat_0.to_degrees();
+        let lat_1 = self.lat_1.to_degrees();
+        let lon_0 = self.lon_0.to_degrees();
+        let lon_1 = self.lon_1.to_degrees();
+        let dlat = self.dlat.to_degrees();
+        let dlon = self.dlon.to_degrees();
+        let rows = self.rows;
+        let cols = self.cols;
+        let bands = self.bands;
+        let header_length  = self.header_length;
+        let last_valid_record_start = self.last_valid_record_start;
+        Self{
+            lat_0,
+            lat_1,
+            lon_0,
+            lon_1,
+            dlat,
+            dlon,
+            rows,
+            cols,
+            bands,
+            header_length,
+            last_valid_record_start
+        }
     }
 
     // Since we store the entire grid+header in a single vector, the interpolation
@@ -161,8 +223,10 @@ impl GridHeader {
         for i in 0..self.bands {
             right[i] = (1. - rlat) * grid[lr + i] + rlat * grid[ur + i];
         }
-        dbg!(left);
-        dbg!(right);
+
+        let to_arcsec = Coord::raw(3600.,3600.,3600.,3600.);
+        dbg!((left).to_geo() / to_arcsec);
+        dbg!((right).to_geo() / to_arcsec);
         let mut result = Coord::origin();
         for i in 0..self.bands {
             result[i] = (1. - rlon) * left[i] + rlon * right[i];
@@ -204,18 +268,21 @@ mod test {
     fn grid_header() -> Result<(), Error> {
         let mut datumgrid = Vec::from(HEADER);
         datumgrid.extend_from_slice(&DATUM[..]);
+        normalize_gravsoft_grid_values(&mut datumgrid);
         let datum = GridHeader::gravsoft(&datumgrid)?;
-        dbg!(&datum);
+        dbg!(&datum.to_degrees());
 
         let mut geoidgrid = Vec::from(HEADER);
         geoidgrid.extend_from_slice(&GEOID[..]);
+        normalize_gravsoft_grid_values(&mut geoidgrid);
         let geoid = GridHeader::gravsoft(&geoidgrid)?;
-        dbg!(&geoid);
 
-        let c = Coord::raw(08.25, 58.75, 0., 0.);
+        dbg!(&geoid.to_degrees());
+
+        let c = Coord::geo(58.75, 08.25, 0., 0.);
 
         let d = datum.interpolation(c, &datumgrid);
-        dbg!(d);
+        dbg!(d.to_geo());
 
         let n = geoid.interpolation(c, &geoidgrid);
         dbg!(n);
