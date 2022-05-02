@@ -9,6 +9,7 @@ mod adapt;
 mod addone;
 mod cart;
 mod gravsoft;
+mod gridshift;
 mod helmert;
 mod lcc;
 mod merc;

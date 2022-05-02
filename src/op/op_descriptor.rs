@@ -9,7 +9,7 @@ pub struct OpDescriptor {
     pub inverted: bool,
     pub fwd: InnerOp,
     pub inv: InnerOp,
-    pub uuid: OpHandle,
+    pub id: OpHandle,
 }
 
 impl OpDescriptor {
@@ -19,7 +19,7 @@ impl OpDescriptor {
         let inverted = false; // Handled higher up in the call hierarchy
         let invocation = "".to_string(); // Handled higher up in the call hierarchy
         let inv = inv.unwrap_or_default();
-        let uuid = OpHandle(uuid::Uuid::new_v4());
+        let id = OpHandle::default();
         OpDescriptor {
             invocation,
             definition,
@@ -27,7 +27,7 @@ impl OpDescriptor {
             inverted,
             fwd,
             inv,
-            uuid,
+            id,
         }
     }
 }
