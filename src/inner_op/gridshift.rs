@@ -355,14 +355,14 @@ mod test {
     fn gravsoft() -> Result<(), Error> {
         let mut prv = Minimal::default();
         let op = prv.op("gridshift grids=test.datum")?;
-        let cph = Coord::geo(55.,12.,0.,0.);
+        let cph = Coord::geo(55., 12., 0., 0.);
         let mut data = [cph];
 
         prv.apply(op, Fwd, &mut data)?;
         let res = data[0].to_geo();
         dbg!(res);
-        assert!((res[0] - 55.0 * ( 1. + 1./3600.)).abs() < 1e-10);
-        assert!((res[1] - 12.0 * ( 1. + 1./3600.)).abs() < 1e-10);
+        assert!((res[0] - 55.0 * (1. + 1. / 3600.)).abs() < 1e-10);
+        assert!((res[1] - 12.0 * (1. + 1. / 3600.)).abs() < 1e-10);
 
         prv.apply(op, Inv, &mut data)?;
         dbg!(data[0].to_degrees());
