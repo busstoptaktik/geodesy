@@ -8,6 +8,18 @@ fn fwd(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Er
     let grid = &op.params.series["grid"];
     let h = GridHeader::gravsoft(grid)?;
     let mut successes = 0_usize;
+
+    // Geoid
+    if h.bands == 1 {
+        for coord in operands {
+            let d = h.interpolation(coord, grid);
+            coord[2] -= d[0];
+            successes += 1;
+        }
+        return Ok(successes);
+    }
+
+    // Datum shift
     for coord in operands {
         let d = h.interpolation(coord, grid);
         if h.bands == 1 {
@@ -38,14 +50,14 @@ fn inv(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Er
         return Ok(successes);
     }
 
-    // Datum shift
+    // Datum shift - here we need to iterate in the inverse case
     for coord in operands {
         let mut t = *coord - h.interpolation(coord, grid);
 
         for _ in 0..5 {
             let d = t - *coord + h.interpolation(&t, grid);
             t = t - d;
-            if d.dot(d).sqrt() < 1e-12 {
+            if d.dot(d).sqrt() < 1e-10 {
                 break;
             }
         }
@@ -318,14 +330,11 @@ mod test {
         datumgrid.extend_from_slice(&DATUM[..]);
         normalize_gravsoft_grid_values(&mut datumgrid);
         let datum = GridHeader::gravsoft(&datumgrid)?;
-        dbg!(&datum.to_degrees());
 
         let mut geoidgrid = Vec::from(HEADER);
         geoidgrid.extend_from_slice(&GEOID[..]);
         normalize_gravsoft_grid_values(&mut geoidgrid);
         let geoid = GridHeader::gravsoft(&geoidgrid)?;
-
-        dbg!(&geoid.to_degrees());
 
         let c = Coord::geo(58.75, 08.25, 0., 0.);
 
@@ -357,8 +366,8 @@ mod test {
 
         prv.apply(op, Inv, &mut data)?;
         dbg!(data[0].to_degrees());
-        assert!((data[0][0] - cph[0]).abs() < 1e-8);
-        assert!((data[0][1] - cph[1]).abs() < 1e-8);
+        assert!((data[0][0] - cph[0]).abs() < 1e-10);
+        assert!((data[0][1] - cph[1]).abs() < 1e-10);
 
         Ok(())
     }
