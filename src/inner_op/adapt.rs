@@ -321,7 +321,6 @@ mod tests {
         assert!(give.noop == false);
     }
 
-
     // Test the basic adapt functionality
     #[test]
     fn adapt() -> Result<(), Error> {
@@ -348,7 +347,6 @@ mod tests {
 
         Ok(())
     }
-
 
     // Test that 'inv' behaves as if 'from' and 'to' were swapped
     #[test]
@@ -380,7 +378,6 @@ mod tests {
         Ok(())
     }
 
-
     // Test that operation without unit conversion works as expected
     #[test]
     fn no_unit_conversion() -> Result<(), Error> {
@@ -392,7 +389,6 @@ mod tests {
         assert_eq!(data[0][1], 55.0);
         Ok(())
     }
-
 
     // Test invocation through the geo:* and gis:* macros
     #[test]

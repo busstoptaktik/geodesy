@@ -17,7 +17,12 @@ impl Coord {
     /// of arc.
     #[must_use]
     pub fn to_arcsec(self) -> Coord {
-        Coord([self[0].to_degrees()*3600., self[1].to_degrees()*3600., self[2], self[3]])
+        Coord([
+            self[0].to_degrees() * 3600.,
+            self[1].to_degrees() * 3600.,
+            self[2],
+            self[3],
+        ])
     }
 
     /// Transform the internal lon/lat/h/t-in-radians to lat/lon/h/t-in-degrees

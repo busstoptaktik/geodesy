@@ -21,9 +21,11 @@ fn main() -> anyhow::Result<()> {
     // `gis` and `geo` produce 4D coordinate tuples and automatically handle
     // conversion of the angular parts to radians, and geographical coordinates
     // in latitude/longitude order, to the GIS convention of longitude/latitude.
+
     // Here using the GIS convention - longitude before latitude
     let cph = Coord::gis(12., 55., 0., 0.); // Copenhagen
     let osl = Coord::gis(10., 60., 0., 0.); // Oslo
+
     // And here using the geodesy/navigation convention - latitude before longitude
     let sth = Coord::geo(59., 18., 0., 0.); // Stockholm
     let hel = Coord::geo(60., 25., 0., 0.); // Helsinki
@@ -102,7 +104,6 @@ fn main() -> anyhow::Result<()> {
     if op.is_err() {
         println!("Deliberate error - {:?}", op);
     }
-
 
     // ------------------------------------------------------------------------------
     // Don't do this!

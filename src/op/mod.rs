@@ -91,7 +91,6 @@ impl Op {
                 return constructor.0(&parameters, provider)?.handle_op_inversion();
             }
         }
-
         // A user defined macro?
         else if let Ok(macro_definition) = provider.get_resource(&name) {
             // The " " sentinel simplifies search for "inv", by allowing us to search
@@ -108,7 +107,10 @@ impl Op {
             return constructor.0(&parameters, provider)?.handle_op_inversion();
         }
 
-        Err(super::Error::NotFound(name, ": ".to_string() + &parameters.definition))
+        Err(super::Error::NotFound(
+            name,
+            ": ".to_string() + &parameters.definition,
+        ))
     }
 
     fn handle_op_inversion(self) -> Result<Op, Error> {
@@ -121,7 +123,7 @@ impl Op {
             if inverted {
                 self.descriptor.inverted = !self.descriptor.inverted;
             }
-            return Ok(self)
+            return Ok(self);
         }
         if inverted {
             return Err(Error::NonInvertible(self.descriptor.definition));
@@ -378,8 +380,6 @@ mod tests {
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
 
-
         Ok(())
     }
-
 }

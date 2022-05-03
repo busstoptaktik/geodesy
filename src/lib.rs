@@ -20,7 +20,9 @@ pub use crate::provider::Provider;
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Copy, Clone)]
 pub struct OpHandle(uuid::Uuid);
 impl Default for OpHandle {
-    fn default() -> Self {OpHandle(uuid::Uuid::new_v4())}
+    fn default() -> Self {
+        OpHandle(uuid::Uuid::new_v4())
+    }
 }
 /// The bread-and-butter, shrink-wrapped for external use
 pub mod preamble {

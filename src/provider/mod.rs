@@ -15,8 +15,12 @@ pub trait Provider {
     /// Instantiate the operation given by `definition`
     fn op(&mut self, definition: &str) -> Result<OpHandle, Error>;
     /// Apply operation `op` to `operands`
-    fn apply(&self, op: OpHandle, direction: Direction, operands: &mut [Coord])
-        -> Result<usize, Error>;
+    fn apply(
+        &self,
+        op: OpHandle,
+        direction: Direction,
+        operands: &mut [Coord],
+    ) -> Result<usize, Error>;
 
     /// Globally defined default values (typically just `ellps=GRS80`)
     fn globals(&self) -> BTreeMap<String, String>;

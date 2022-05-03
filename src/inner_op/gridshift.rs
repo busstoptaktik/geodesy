@@ -2,7 +2,6 @@ use super::*;
 use crate::Provider;
 use std::io::BufRead;
 
-
 // ----- F O R W A R D --------------------------------------------------------------
 
 fn fwd(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
@@ -28,7 +27,6 @@ fn inv(_op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, E
     Ok(operands.len())
 }
 
-
 // ----- C O N S T R U C T O R ------------------------------------------------------
 
 // Example...
@@ -38,7 +36,6 @@ pub const GAMUT: [OpParameter; 3] = [
     OpParameter::Text { key: "grids", default: None },
     OpParameter::Real { key: "padding", default: Some(0.5) },
 ];
-
 
 pub fn new(parameters: &RawParameters, provider: &dyn Provider) -> Result<Op, Error> {
     let def = &parameters.definition;
@@ -62,9 +59,8 @@ pub fn new(parameters: &RawParameters, provider: &dyn Provider) -> Result<Op, Er
     })
 }
 
-
 // If the Gravsoft grid appears to be in angular units, convert it to radians
-fn normalize_gravsoft_grid_values(grid: &mut [f64])  {
+fn normalize_gravsoft_grid_values(grid: &mut [f64]) {
     // If any boundary is outside of [-720; 720], the grid must (by a wide margin) be
     // in projected coordinates and the correction in meters, so we simply return.
     for i in 0..4 {
@@ -90,16 +86,13 @@ fn normalize_gravsoft_grid_values(grid: &mut [f64])  {
     for i in 6..grid.len() {
         grid[i] = (grid[i] / 3600.0).to_radians();
         if i % 2 == 1 {
-            let swap = grid[i];
-            grid[i] = grid[i - 1];
-            grid[i - 1] = swap;
+            grid.swap(i, i - 1);
         }
     }
 }
 
-
 // Read a gravsoft grid. Discard '#'-style comments. Return everything as a single Vec
-fn gravsoft_grid_reader(name: &str, provider: &dyn Provider) -> Result<Vec::<f64>, Error> {
+fn gravsoft_grid_reader(name: &str, provider: &dyn Provider) -> Result<Vec<f64>, Error> {
     let buf = provider.get_blob(name)?;
     let all = std::io::BufReader::new(buf.as_slice());
     let mut grid = Vec::<f64>::new();
@@ -122,10 +115,11 @@ fn gravsoft_grid_reader(name: &str, provider: &dyn Provider) -> Result<Vec::<f64
     Ok(grid)
 }
 
-
 // Clamp input to range min..max
-fn clamp<T> (input: T, min: T, max: T) -> T
-where T: PartialOrd<T>  {
+fn clamp<T>(input: T, min: T, max: T) -> T
+where
+    T: PartialOrd<T>,
+{
     if input < min {
         return min;
     }
@@ -135,22 +129,20 @@ where T: PartialOrd<T>  {
     input
 }
 
-
 #[derive(Debug, Default)]
 struct GridHeader {
-    lat_0: f64,  /// Latitude of the first (typically northernmost) row of the grid
-    lat_1: f64,  /// Latitude of the last (typically southernmost) row of the grid
-    lon_0: f64,  /// Longitude of the first (typically westernmost) column of each row
-    lon_1: f64,  /// Longitude of the last (typically easternmost) column of each row
-    dlat: f64,   /// Signed distance between two consecutive rows
-    dlon: f64,   /// Signed distance between two consecutive columns
+    lat_0: f64, // Latitude of the first (typically northernmost) row of the grid
+    lat_1: f64, // Latitude of the last (typically southernmost) row of the grid
+    lon_0: f64, // Longitude of the first (typically westernmost) column of each row
+    lon_1: f64, // Longitude of the last (typically easternmost) column of each row
+    dlat: f64,  // Signed distance between two consecutive rows
+    dlon: f64,  // Signed distance between two consecutive columns
     rows: usize,
     cols: usize,
     bands: usize,
     header_length: usize,
-    last_valid_record_start: usize
+    last_valid_record_start: usize,
 }
-
 
 impl GridHeader {
     fn gravsoft(grid: &[f64]) -> Result<Self, Error> {
@@ -160,18 +152,18 @@ impl GridHeader {
         let lon_1 = grid[3];
         let dlat = -grid[4];
         let dlon = grid[5];
-        let rows = ((lat_1 - lat_0)/dlat + 1.5).floor() as usize;
-        let cols = ((lon_1 - lon_0)/dlon + 1.5).floor() as usize;
-        let bands = (grid.len() - 6_usize) / (rows*cols);
+        let rows = ((lat_1 - lat_0) / dlat + 1.5).floor() as usize;
+        let cols = ((lon_1 - lon_0) / dlon + 1.5).floor() as usize;
+        let bands = (grid.len() - 6_usize) / (rows * cols);
         let header_length = 6;
         let last_valid_record_start = header_length + (rows * cols - 1) * bands;
 
-        let elements = rows*cols*bands;
-        if elements==0 || elements + header_length > grid.len() || bands < 1 {
+        let elements = rows * cols * bands;
+        if elements == 0 || elements + header_length > grid.len() || bands < 1 {
             return Err(Error::General("Incomplete grid"));
         }
 
-        Ok(GridHeader{
+        Ok(GridHeader {
             lat_0,
             lat_1,
             lon_0,
@@ -182,7 +174,7 @@ impl GridHeader {
             cols,
             bands,
             header_length,
-            last_valid_record_start
+            last_valid_record_start,
         })
     }
 
@@ -197,9 +189,9 @@ impl GridHeader {
         let rows = self.rows;
         let cols = self.cols;
         let bands = self.bands;
-        let header_length  = self.header_length;
+        let header_length = self.header_length;
         let last_valid_record_start = self.last_valid_record_start;
-        Self{
+        Self {
             lat_0,
             lat_1,
             lon_0,
@@ -210,10 +202,9 @@ impl GridHeader {
             cols,
             bands,
             header_length,
-            last_valid_record_start
+            last_valid_record_start,
         }
     }
-
 
     // Since we store the entire grid+header in a single vector, the interpolation
     // routine here looks strongly like a case of "writing Fortran 77 in Rust".
@@ -234,15 +225,17 @@ impl GridHeader {
         let row = clamp(row, 1_i64, (self.rows - 1) as i64) as usize;
 
         // Index of the first band element of each corner value
-        let ll = self.header_length + ((row + 0) * self.cols + col + 0) * self.bands;
-        let lr = self.header_length + ((row + 0) * self.cols + col + 1) * self.bands;
-        let ur = self.header_length + ((row - 1) * self.cols + col + 1) * self.bands;
-        let ul = self.header_length + ((row - 1) * self.cols + col + 0) * self.bands;
+        #[rustfmt::skip]
+        let (ll, lr, ur, ul) = (
+            self.header_length + self.bands * (self.cols *  row      + col    ),
+            self.header_length + self.bands * (self.cols *  row      + col + 1),
+            self.header_length + self.bands * (self.cols * (row - 1) + col + 1),
+            self.header_length + self.bands * (self.cols * (row - 1) + col    ),
+        );
 
         // Cell relative, cell unit coordinates in a right handed CS (hence .abs())
         let rlon = (coord[0] - (self.lon_0 + col as f64 * self.dlon)) / self.dlon.abs();
         let rlat = (coord[1] - (self.lat_0 + row as f64 * self.dlat)) / self.dlat.abs();
-        dbg!((rlat, rlon));
 
         // Interpolate
         let mut left = Coord::origin();
@@ -263,7 +256,6 @@ impl GridHeader {
 }
 
 // ----- T E S T S ------------------------------------------------------------------
-
 
 #[cfg(test)]
 mod test {
@@ -355,5 +347,4 @@ mod test {
 
         Ok(())
     }
-
 }
