@@ -23,8 +23,38 @@ fn fwd(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Er
 
 // ----- I N V E R S E --------------------------------------------------------------
 
-fn inv(_op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
-    Ok(operands.len())
+fn inv(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
+    let grid = &op.params.series["grid"];
+    let h = GridHeader::gravsoft(grid)?;
+    let mut successes = 0_usize;
+
+    // Geoid
+    if h.bands == 1 {
+        for coord in operands {
+            let t = h.interpolation(coord, grid);
+            coord[2] += t[0];
+            successes += 1;
+        }
+        return Ok(successes);
+    }
+
+    // Datum shift
+    for coord in operands {
+        let mut t = *coord - h.interpolation(coord, grid);
+
+        for _ in 0..5 {
+            let d = t - *coord + h.interpolation(&t, grid);
+            t = t - d;
+            if d.dot(d).sqrt() < 1e-12 {
+                break;
+            }
+        }
+
+        *coord = t;
+        successes += 1;
+    }
+
+    Ok(successes)
 }
 
 // ----- C O N S T R U C T O R ------------------------------------------------------
@@ -315,35 +345,20 @@ mod test {
     #[test]
     fn gravsoft() -> Result<(), Error> {
         let mut prv = Minimal::default();
-        let op = prv.op("addone|addone|addone")?;
-        let mut data = some_basic_coordinates();
+        let op = prv.op("gridshift grids=test.datum")?;
+        let cph = Coord::geo(55.,12.,0.,0.);
+        let mut data = [cph];
 
         prv.apply(op, Fwd, &mut data)?;
-        assert_eq!(data[0][0], 58.);
-        assert_eq!(data[1][0], 62.);
+        let res = data[0].to_geo();
+        dbg!(res);
+        assert!((res[0] - 55.0 * ( 1. + 1./3600.)).abs() < 1e-10);
+        assert!((res[1] - 12.0 * ( 1. + 1./3600.)).abs() < 1e-10);
 
         prv.apply(op, Inv, &mut data)?;
-        assert_eq!(data[0][0], 55.);
-        assert_eq!(data[1][0], 59.);
-
-        let op = prv.op("addone|addone inv|addone")?;
-        let mut data = some_basic_coordinates();
-        assert_eq!(data[0][0], 55.);
-        assert_eq!(data[1][0], 59.);
-
-        prv.apply(op, Fwd, &mut data)?;
-        assert_eq!(data[0][0], 56.);
-        assert_eq!(data[1][0], 60.);
-
-        prv.apply(op, Inv, &mut data)?;
-        assert_eq!(data[0][0], 55.);
-        assert_eq!(data[1][0], 59.);
-
-        // Try to invoke garbage as a pipeline step
-        assert!(matches!(
-            prv.op("addone|addone|_garbage"),
-            Err(Error::NotFound(_, _))
-        ));
+        dbg!(data[0].to_degrees());
+        assert!((data[0][0] - cph[0]).abs() < 1e-8);
+        assert!((data[0][1] - cph[1]).abs() < 1e-8);
 
         Ok(())
     }
