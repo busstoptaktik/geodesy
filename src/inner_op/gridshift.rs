@@ -5,8 +5,21 @@ use std::io::BufRead;
 
 // ----- F O R W A R D --------------------------------------------------------------
 
-fn fwd(_op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
-    Ok(operands.len())
+fn fwd(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
+    let grid = &op.params.series["grid"];
+    let h = GridHeader::gravsoft(grid)?;
+    let mut successes = 0_usize;
+    for coord in operands {
+        let d = h.interpolation(coord, grid);
+        if h.bands == 1 {
+            coord[2] -= d[0];
+            continue;
+        }
+        coord[0] += d[0];
+        coord[1] += d[1];
+        successes += 1;
+    }
+    Ok(successes)
 }
 
 // ----- I N V E R S E --------------------------------------------------------------
@@ -26,10 +39,14 @@ pub const GAMUT: [OpParameter; 3] = [
     OpParameter::Real { key: "padding", default: Some(0.5) },
 ];
 
+
 pub fn new(parameters: &RawParameters, provider: &dyn Provider) -> Result<Op, Error> {
     let def = &parameters.definition;
     let mut params = ParsedParameters::new(parameters, &GAMUT)?;
+
     let grid_file_name = params.text("grids")?;
+    let grid = gravsoft_grid_reader(&grid_file_name, provider)?;
+    params.series.insert("grid", grid);
 
     let fwd = InnerOp(fwd);
     let inv = InnerOp(inv);
@@ -46,7 +63,7 @@ pub fn new(parameters: &RawParameters, provider: &dyn Provider) -> Result<Op, Er
 }
 
 
-// If the Gravsoft grid appears to be in angular units, convert to radians
+// If the Gravsoft grid appears to be in angular units, convert it to radians
 fn normalize_gravsoft_grid_values(grid: &mut [f64])  {
     // If any boundary is outside of [-720; 720], the grid must (by a wide margin) be
     // in projected coordinates and the correction in meters, so we simply return.
@@ -66,14 +83,13 @@ fn normalize_gravsoft_grid_values(grid: &mut [f64])  {
     if h.bands < 2 {
         return;
     }
-    dbg!("DATUMGRID");
 
-    // The grid values are in minutes-of-arc and in latitude/longitude orde.
+    // The grid values are in minutes-of-arc and in latitude/longitude order.
     // Swap them and convert into radians.
     // TODO: handle 3-D data with 3rd coordinate in meters
     for i in 6..grid.len() {
         grid[i] = (grid[i] / 3600.0).to_radians();
-        if i%2 == 1 {
+        if i % 2 == 1 {
             let swap = grid[i];
             grid[i] = grid[i - 1];
             grid[i - 1] = swap;
@@ -82,6 +98,7 @@ fn normalize_gravsoft_grid_values(grid: &mut [f64])  {
 }
 
 
+// Read a gravsoft grid. Discard '#'-style comments. Return everything as a single Vec
 fn gravsoft_grid_reader(name: &str, provider: &dyn Provider) -> Result<Vec::<f64>, Error> {
     let buf = provider.get_blob(name)?;
     let all = std::io::BufReader::new(buf.as_slice());
@@ -105,6 +122,7 @@ fn gravsoft_grid_reader(name: &str, provider: &dyn Provider) -> Result<Vec::<f64
     Ok(grid)
 }
 
+
 // Clamp input to range min..max
 fn clamp<T> (input: T, min: T, max: T) -> T
 where T: PartialOrd<T>  {
@@ -116,6 +134,7 @@ where T: PartialOrd<T>  {
     }
     input
 }
+
 
 #[derive(Debug, Default)]
 struct GridHeader {
@@ -131,6 +150,7 @@ struct GridHeader {
     header_length: usize,
     last_valid_record_start: usize
 }
+
 
 impl GridHeader {
     fn gravsoft(grid: &[f64]) -> Result<Self, Error> {
@@ -166,6 +186,7 @@ impl GridHeader {
         })
     }
 
+    #[allow(dead_code)]
     pub fn to_degrees(&self) -> Self {
         let lat_0 = self.lat_0.to_degrees();
         let lat_1 = self.lat_1.to_degrees();
@@ -193,9 +214,13 @@ impl GridHeader {
         }
     }
 
+
     // Since we store the entire grid+header in a single vector, the interpolation
-    // routine here looks strongly like a case of "writing Fortran 77 in Rust"
-    pub fn interpolation(&self, coord: Coord, grid: &[f64]) -> Coord {
+    // routine here looks strongly like a case of "writing Fortran 77 in Rust".
+    // It is, however, one of the cases where a more extensive use of abstractions
+    // leads to a significantly larger code base, much harder to maintain and
+    // comprehend.
+    pub fn interpolation(&self, coord: &Coord, grid: &[f64]) -> Coord {
         // The interpolation coordinate relative to the grid origin
         let rlon = coord[0] - self.lon_0;
         let rlat = coord[1] - self.lat_0;
@@ -229,15 +254,12 @@ impl GridHeader {
             right[i] = (1. - rlat) * grid[lr + i] + rlat * grid[ur + i];
         }
 
-        // dbg!(left);
-        // dbg!(right);
         let mut result = Coord::origin();
         for i in 0..self.bands {
             result[i] = (1. - rlon) * left[i] + rlon * right[i];
         }
         result
     }
-
 }
 
 // ----- T E S T S ------------------------------------------------------------------
@@ -284,17 +306,17 @@ mod test {
         dbg!(&geoid.to_degrees());
 
         let c = Coord::geo(58.75, 08.25, 0., 0.);
-        let d = datum.interpolation(c, &datumgrid);
-        dbg!(d.to_arcsec());
-        dbg!(c.to_degrees());
-        assert!(c.default_ellps_dist(&d.to_arcsec().to_radians()) < 1e-4);
-        let c = Coord::geo(100., 50., 0., 0.);
-        let d = datum.interpolation(c, &datumgrid);
-        dbg!(d.to_arcsec());
 
-        let n = geoid.interpolation(c, &geoidgrid);
-        dbg!(n);
-        assert_eq!(1, 0);
+        let n = geoid.interpolation(&c, &geoidgrid);
+        assert!((n[0] - 58.83).abs() < 0.1);
+
+        let d = datum.interpolation(&c, &datumgrid);
+        assert!(c.default_ellps_dist(&d.to_arcsec().to_radians()) < 1e-4);
+
+        let c = Coord::geo(100., 50., 0., 0.);
+        let d = datum.interpolation(&c, &datumgrid);
+        assert!(c.default_ellps_dist(&d.to_arcsec().to_radians()) < 1e-4);
+
         Ok(())
     }
 

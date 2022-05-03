@@ -19,10 +19,11 @@ pub(crate) mod pipeline;
 mod tmerc;
 
 #[rustfmt::skip]
-const BUILTIN_OPERATORS: [(&str, OpConstructor); 12] = [
+const BUILTIN_OPERATORS: [(&str, OpConstructor); 13] = [
     ("adapt",      OpConstructor(adapt::new)),
     ("addone",     OpConstructor(addone::new)),
     ("cart",       OpConstructor(cart::new)),
+    ("gridshift",  OpConstructor(gridshift::new)),
     ("helmert",    OpConstructor(helmert::new)),
     ("lcc",        OpConstructor(lcc::new)),
     ("merc",       OpConstructor(merc::new)),

@@ -10,6 +10,7 @@ pub struct Local {
     constructors: BTreeMap<String, OpConstructor>,
     resources: BTreeMap<String, String>,
     operators: BTreeMap<OpHandle, Op>,
+    #[allow(dead_code)]
     paths: Vec<std::path::PathBuf>,
 }
 
