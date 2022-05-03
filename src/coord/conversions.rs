@@ -13,6 +13,13 @@ impl Coord {
         Coord([self[0].to_degrees(), self[1].to_degrees(), self[2], self[3]])
     }
 
+    /// Transform the first two elements of a `Coord` from radians to seconds
+    /// of arc.
+    #[must_use]
+    pub fn to_arcsec(self) -> Coord {
+        Coord([self[0].to_degrees()*3600., self[1].to_degrees()*3600., self[2], self[3]])
+    }
+
     /// Transform the internal lon/lat/h/t-in-radians to lat/lon/h/t-in-degrees
     #[must_use]
     pub fn to_geo(self) -> Coord {

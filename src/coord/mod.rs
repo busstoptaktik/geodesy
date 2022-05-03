@@ -92,6 +92,13 @@ impl Coord {
         Coord([longitude, latitude, height, time]).to_radians()
     }
 
+    /// A `Coord` from longitude/latitude/height/time, with the angular input in seconds
+    /// of arc. Mostly for handling grid shift elements.
+    #[must_use]
+    pub fn arcsec(longitude: f64, latitude: f64, height: f64, time: f64) -> Coord {
+        Coord([longitude/3600., latitude/3600., height, time]).to_radians()
+    }
+
     /// A `Coord` from longitude/latitude/height/time, with the angular input in degrees
     #[must_use]
     pub fn gis(longitude: f64, latitude: f64, height: f64, time: f64) -> Coord {

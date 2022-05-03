@@ -48,7 +48,7 @@ pub fn new(parameters: &RawParameters, provider: &dyn Provider) -> Result<Op, Er
 
 // If the Gravsoft grid appears to be in angular units, convert to radians
 fn normalize_gravsoft_grid_values(grid: &mut [f64])  {
-    // if any boundary is outside of [-720; 720], the grid must (by a wide margin) be
+    // If any boundary is outside of [-720; 720], the grid must (by a wide margin) be
     // in projected coordinates and the correction in meters, so we simply return.
     for i in 0..4 {
         if grid[i].abs() > 720. {
@@ -68,12 +68,19 @@ fn normalize_gravsoft_grid_values(grid: &mut [f64])  {
     }
     dbg!("DATUMGRID");
 
-    // The grid values are in minutes-of-arc
+    // The grid values are in minutes-of-arc and in latitude/longitude orde.
+    // Swap them and convert into radians.
     // TODO: handle 3-D data with 3rd coordinate in meters
     for i in 6..grid.len() {
-        grid[i] = (grid[i] / 3600.0).to_radians()
+        grid[i] = (grid[i] / 3600.0).to_radians();
+        if i%2 == 1 {
+            let swap = grid[i];
+            grid[i] = grid[i - 1];
+            grid[i - 1] = swap;
+        }
     }
 }
+
 
 fn gravsoft_grid_reader(name: &str, provider: &dyn Provider) -> Result<Vec::<f64>, Error> {
     let buf = provider.get_blob(name)?;
@@ -198,8 +205,6 @@ impl GridHeader {
         let row = (rlat / self.dlat).floor() as i64;
         let col = (rlon / self.dlon).floor() as i64;
 
-        assert_eq!((-1_f64 / -1_f64).floor(), 1_f64);
-
         let col = clamp(col, 0_i64, (self.cols - 2) as i64) as usize;
         let row = clamp(row, 1_i64, (self.rows - 1) as i64) as usize;
 
@@ -224,9 +229,8 @@ impl GridHeader {
             right[i] = (1. - rlat) * grid[lr + i] + rlat * grid[ur + i];
         }
 
-        let to_arcsec = Coord::raw(3600.,3600.,3600.,3600.);
-        dbg!((left).to_geo() / to_arcsec);
-        dbg!((right).to_geo() / to_arcsec);
+        // dbg!(left);
+        // dbg!(right);
         let mut result = Coord::origin();
         for i in 0..self.bands {
             result[i] = (1. - rlon) * left[i] + rlon * right[i];
@@ -280,9 +284,13 @@ mod test {
         dbg!(&geoid.to_degrees());
 
         let c = Coord::geo(58.75, 08.25, 0., 0.);
-
         let d = datum.interpolation(c, &datumgrid);
-        dbg!(d.to_geo());
+        dbg!(d.to_arcsec());
+        dbg!(c.to_degrees());
+        assert!(c.default_ellps_dist(&d.to_arcsec().to_radians()) < 1e-4);
+        let c = Coord::geo(100., 50., 0., 0.);
+        let d = datum.interpolation(c, &datumgrid);
+        dbg!(d.to_arcsec());
 
         let n = geoid.interpolation(c, &geoidgrid);
         dbg!(n);
