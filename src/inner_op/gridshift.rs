@@ -182,7 +182,7 @@ struct GridHeader {
     rows: usize,
     cols: usize,
     bands: usize,
-    header_length: usize,
+    offset: usize,
     last_valid_record_start: usize,
 }
 
@@ -197,11 +197,11 @@ impl GridHeader {
         let rows = ((lat_1 - lat_0) / dlat + 1.5).floor() as usize;
         let cols = ((lon_1 - lon_0) / dlon + 1.5).floor() as usize;
         let bands = (grid.len() - 6_usize) / (rows * cols);
-        let header_length = 6;
-        let last_valid_record_start = header_length + (rows * cols - 1) * bands;
+        let offset = 6;
+        let last_valid_record_start = offset + (rows * cols - 1) * bands;
 
         let elements = rows * cols * bands;
-        if elements == 0 || elements + header_length > grid.len() || bands < 1 {
+        if elements == 0 || elements + offset > grid.len() || bands < 1 {
             return Err(Error::General("Incomplete grid"));
         }
 
@@ -215,7 +215,7 @@ impl GridHeader {
             rows,
             cols,
             bands,
-            header_length,
+            offset,
             last_valid_record_start,
         })
     }
@@ -231,7 +231,7 @@ impl GridHeader {
         let rows = self.rows;
         let cols = self.cols;
         let bands = self.bands;
-        let header_length = self.header_length;
+        let offset = self.offset;
         let last_valid_record_start = self.last_valid_record_start;
         Self {
             lat_0,
@@ -243,7 +243,7 @@ impl GridHeader {
             rows,
             cols,
             bands,
-            header_length,
+            offset,
             last_valid_record_start,
         }
     }
@@ -269,10 +269,10 @@ impl GridHeader {
         // Index of the first band element of each corner value
         #[rustfmt::skip]
         let (ll, lr, ur, ul) = (
-            self.header_length + self.bands * (self.cols *  row      + col    ),
-            self.header_length + self.bands * (self.cols *  row      + col + 1),
-            self.header_length + self.bands * (self.cols * (row - 1) + col + 1),
-            self.header_length + self.bands * (self.cols * (row - 1) + col    ),
+            self.offset + self.bands * (self.cols *  row      + col    ),
+            self.offset + self.bands * (self.cols *  row      + col + 1),
+            self.offset + self.bands * (self.cols * (row - 1) + col + 1),
+            self.offset + self.bands * (self.cols * (row - 1) + col    ),
         );
 
         // Cell relative, cell unit coordinates in a right handed CS (hence .abs())

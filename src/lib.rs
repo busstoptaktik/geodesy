@@ -15,8 +15,8 @@ mod provider;
 pub use crate::coord::Coord;
 pub use crate::ellipsoid::Ellipsoid;
 pub use crate::op::Op;
-pub use crate::provider::Minimal;
 pub use crate::provider::Provider;
+pub use crate::provider::Minimal;
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Copy, Clone)]
 pub struct OpHandle(uuid::Uuid);
 impl Default for OpHandle {
@@ -24,6 +24,7 @@ impl Default for OpHandle {
         OpHandle(uuid::Uuid::new_v4())
     }
 }
+
 /// The bread-and-butter, shrink-wrapped for external use
 pub mod preamble {
     pub use crate::Coord;
