@@ -71,16 +71,13 @@ impl Provider for Minimal {
     }
 
     fn get_blob(&self, name: &str) -> Result<Vec<u8>, Error> {
-        let name = PathBuf::from(name);
-        let ext = name
+        let n = PathBuf::from(name);
+        let ext = n
             .extension()
             .unwrap_or_default()
             .to_str()
             .unwrap_or_default();
-        let mut path: PathBuf = [".", "geodesy"].iter().collect();
-        // let mut path = PathBuf::from("./geodesy");
-        path.push(ext);
-        path.push(&name);
+        let path: PathBuf = [".", "geodesy", ext, name].iter().collect();
         Ok(std::fs::read(path)?)
     }
 }
