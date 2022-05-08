@@ -97,4 +97,11 @@ impl Provider for Local {
         path.push(&name);
         Ok(std::fs::read(path)?)
     }
+
+    /// Access grid resources by identifier
+    fn get_grid(&self, _name: &str) -> Result<Grid, Error> {
+        Err(Error::General(
+            "Grid access by identifier not supported by the Minimal Provider",
+        ))
+    }
 }

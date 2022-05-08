@@ -9,7 +9,7 @@
 // snake case warnings of for this entire file.
 #![allow(non_snake_case)]
 
-use geodesy::{Coord, Error};
+use geodesy::preamble::*;
 
 fn main() -> Result<(), Error> {
     // In example 00, we saw that the `Provider` data structure is the
@@ -21,12 +21,12 @@ fn main() -> Result<(), Error> {
     // providing our own ellipsoid parameters:
 
     // The GRS 1980 ellipsoid is built in, so we use the ::named function.
-    let GRS80 = geodesy::Ellipsoid::named("GRS80")?;
+    let GRS80 = Ellipsoid::named("GRS80")?;
 
     // The Maupertuis 1738 ellipsoid is not built in, so we provide `a`,
     // the semimajor axis, and `f`, the flattening to the `new()`
     // constructor.
-    let Mau38 = geodesy::Ellipsoid::new(6_397_300., 1.0 / 191.);
+    let Mau38 = Ellipsoid::new(6_397_300., 1.0 / 191.);
 
     // Now, let's compute som ancillary ellipsoidal parameters:
     let E = GRS80.linear_eccentricity();

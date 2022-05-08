@@ -5,14 +5,13 @@ use std::io::BufRead;
 // ----- F O R W A R D --------------------------------------------------------------
 
 fn fwd(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
-    let grid = &op.params.series["grid"];
-    let h = GridHeader::gravsoft(grid)?;
+    let grid = &op.params.grids["grid"];
     let mut successes = 0_usize;
 
     // Geoid
-    if h.bands == 1 {
+    if grid.bands == 1 {
         for coord in operands {
-            let d = h.interpolation(coord, grid);
+            let d = grid.interpolation(coord, None);
             coord[2] -= d[0];
             successes += 1;
         }
@@ -21,8 +20,8 @@ fn fwd(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Er
 
     // Datum shift
     for coord in operands {
-        let d = h.interpolation(coord, grid);
-        if h.bands == 1 {
+        let d = grid.interpolation(coord, None);
+        if grid.bands == 1 {
             coord[2] -= d[0];
             continue;
         }
@@ -36,14 +35,13 @@ fn fwd(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Er
 // ----- I N V E R S E --------------------------------------------------------------
 
 fn inv(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
-    let grid = &op.params.series["grid"];
-    let h = GridHeader::gravsoft(grid)?;
+    let grid = &op.params.grids["grid"];
     let mut successes = 0_usize;
 
     // Geoid
-    if h.bands == 1 {
+    if grid.bands == 1 {
         for coord in operands {
-            let t = h.interpolation(coord, grid);
+            let t = grid.interpolation(coord, None);
             coord[2] += t[0];
             successes += 1;
         }
@@ -52,12 +50,13 @@ fn inv(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Er
 
     // Datum shift - here we need to iterate in the inverse case
     for coord in operands {
-        let mut t = *coord - h.interpolation(coord, grid);
+        let mut t = *coord - grid.interpolation(coord, None);
 
-        for _ in 0..5 {
-            let d = t - *coord + h.interpolation(&t, grid);
+        for _ in 0..10 {
+            let d = t - *coord + grid.interpolation(&t, None);
             t = t - d;
-            if d.dot(d).sqrt() < 1e-10 {
+            // i.e. d.dot(d).sqrt() < 1e-10
+            if d.dot(d) < 1e-20 {
                 break;
             }
         }
@@ -85,7 +84,8 @@ pub fn new(parameters: &RawParameters, provider: &dyn Provider) -> Result<Op, Er
 
     let grid_file_name = params.text("grids")?;
     let grid = gravsoft_grid_reader(&grid_file_name, provider)?;
-    params.series.insert("grid", grid);
+    let grid = Grid::plain(&grid)?;
+    params.grids.insert("grid", grid);
 
     let fwd = InnerOp(fwd);
     let inv = InnerOp(inv);
@@ -105,19 +105,19 @@ pub fn new(parameters: &RawParameters, provider: &dyn Provider) -> Result<Op, Er
 fn normalize_gravsoft_grid_values(grid: &mut [f64]) {
     // If any boundary is outside of [-720; 720], the grid must (by a wide margin) be
     // in projected coordinates and the correction in meters, so we simply return.
-    for i in 0..4 {
-        if grid[i].abs() > 720. {
+    for g in grid.iter().take(4) {
+        if g.abs() > 720. {
             return;
         }
     }
 
     // The header values are in decimal degrees
-    for i in 0..6 {
-        grid[i] = grid[i].to_radians();
+    for g in grid.iter_mut().take(6) {
+        *g = g.to_radians();
     }
 
     // If we're handling a geoid grid, we're done: Grid values are in meters
-    let h = GridHeader::gravsoft(grid).unwrap_or_default();
+    let h = Grid::plain(grid).unwrap_or_default();
     if h.bands < 2 {
         return;
     }
@@ -157,146 +157,6 @@ fn gravsoft_grid_reader(name: &str, provider: &dyn Provider) -> Result<Vec<f64>,
     Ok(grid)
 }
 
-// Clamp input to range min..max
-fn clamp<T>(input: T, min: T, max: T) -> T
-where
-    T: PartialOrd<T>,
-{
-    if input < min {
-        return min;
-    }
-    if input > max {
-        return max;
-    }
-    input
-}
-
-#[derive(Debug, Default)]
-struct GridHeader {
-    lat_0: f64, // Latitude of the first (typically northernmost) row of the grid
-    lat_1: f64, // Latitude of the last (typically southernmost) row of the grid
-    lon_0: f64, // Longitude of the first (typically westernmost) column of each row
-    lon_1: f64, // Longitude of the last (typically easternmost) column of each row
-    dlat: f64,  // Signed distance between two consecutive rows
-    dlon: f64,  // Signed distance between two consecutive columns
-    rows: usize,
-    cols: usize,
-    bands: usize,
-    offset: usize,
-    last_valid_record_start: usize,
-}
-
-impl GridHeader {
-    fn gravsoft(grid: &[f64]) -> Result<Self, Error> {
-        let lat_0 = grid[1];
-        let lat_1 = grid[0];
-        let lon_0 = grid[2];
-        let lon_1 = grid[3];
-        let dlat = -grid[4];
-        let dlon = grid[5];
-        let rows = ((lat_1 - lat_0) / dlat + 1.5).floor() as usize;
-        let cols = ((lon_1 - lon_0) / dlon + 1.5).floor() as usize;
-        let bands = (grid.len() - 6_usize) / (rows * cols);
-        let offset = 6;
-        let last_valid_record_start = offset + (rows * cols - 1) * bands;
-
-        let elements = rows * cols * bands;
-        if elements == 0 || elements + offset > grid.len() || bands < 1 {
-            return Err(Error::General("Incomplete grid"));
-        }
-
-        Ok(GridHeader {
-            lat_0,
-            lat_1,
-            lon_0,
-            lon_1,
-            dlat,
-            dlon,
-            rows,
-            cols,
-            bands,
-            offset,
-            last_valid_record_start,
-        })
-    }
-
-    #[allow(dead_code)]
-    pub fn to_degrees(&self) -> Self {
-        let lat_0 = self.lat_0.to_degrees();
-        let lat_1 = self.lat_1.to_degrees();
-        let lon_0 = self.lon_0.to_degrees();
-        let lon_1 = self.lon_1.to_degrees();
-        let dlat = self.dlat.to_degrees();
-        let dlon = self.dlon.to_degrees();
-        let rows = self.rows;
-        let cols = self.cols;
-        let bands = self.bands;
-        let offset = self.offset;
-        let last_valid_record_start = self.last_valid_record_start;
-        Self {
-            lat_0,
-            lat_1,
-            lon_0,
-            lon_1,
-            dlat,
-            dlon,
-            rows,
-            cols,
-            bands,
-            offset,
-            last_valid_record_start,
-        }
-    }
-
-    // Since we store the entire grid+header in a single vector, the interpolation
-    // routine here looks strongly like a case of "writing Fortran 77 in Rust".
-    // It is, however, one of the cases where a more extensive use of abstractions
-    // leads to a significantly larger code base, much harder to maintain and
-    // comprehend.
-    pub fn interpolation(&self, coord: &Coord, grid: &[f64]) -> Coord {
-        // The interpolation coordinate relative to the grid origin
-        let rlon = coord[0] - self.lon_0;
-        let rlat = coord[1] - self.lat_0;
-
-        // The (row, column) of the lower left node of the grid cell containing
-        // coord or, in the case of extrapolation, the nearest cell inside the grid.
-        let row = (rlat / self.dlat).floor() as i64;
-        let col = (rlon / self.dlon).floor() as i64;
-
-        let col = clamp(col, 0_i64, (self.cols - 2) as i64) as usize;
-        let row = clamp(row, 1_i64, (self.rows - 1) as i64) as usize;
-
-        // Index of the first band element of each corner value
-        #[rustfmt::skip]
-        let (ll, lr, ur, ul) = (
-            self.offset + self.bands * (self.cols *  row      + col    ),
-            self.offset + self.bands * (self.cols *  row      + col + 1),
-            self.offset + self.bands * (self.cols * (row - 1) + col + 1),
-            self.offset + self.bands * (self.cols * (row - 1) + col    ),
-        );
-
-        // Cell relative, cell unit coordinates in a right handed CS (hence .abs())
-        let rlon = (coord[0] - (self.lon_0 + col as f64 * self.dlon)) / self.dlon.abs();
-        let rlat = (coord[1] - (self.lat_0 + row as f64 * self.dlat)) / self.dlat.abs();
-
-        // Interpolate
-        let mut left = Coord::origin();
-        for i in 0..self.bands {
-            left[i] = (1. - rlat) * grid[ll + i] + rlat * grid[ul + i];
-        }
-        let mut right = Coord::origin();
-        for i in 0..self.bands {
-            right[i] = (1. - rlat) * grid[lr + i] + rlat * grid[ur + i];
-        }
-
-        let mut result = Coord::origin();
-        for i in 0..self.bands {
-            result[i] = (1. - rlon) * left[i] + rlon * right[i];
-        }
-        result
-    }
-}
-
 // ----- T E S T S ------------------------------------------------------------------
 
 #[cfg(test)]
@@ -329,30 +189,33 @@ mod test {
         let mut datumgrid = Vec::from(HEADER);
         datumgrid.extend_from_slice(&DATUM[..]);
         normalize_gravsoft_grid_values(&mut datumgrid);
-        let datum = GridHeader::gravsoft(&datumgrid)?;
+        let datum = Grid::plain(&datumgrid)?;
+        dbg!(&datum);
 
         let mut geoidgrid = Vec::from(HEADER);
         geoidgrid.extend_from_slice(&GEOID[..]);
         normalize_gravsoft_grid_values(&mut geoidgrid);
-        let geoid = GridHeader::gravsoft(&geoidgrid)?;
+        let geoid = Grid::plain(&geoidgrid)?;
+        dbg!(&geoid);
 
         let c = Coord::geo(58.75, 08.25, 0., 0.);
 
-        let n = geoid.interpolation(&c, &geoidgrid);
+        let n = geoid.interpolation(&c, None);
         assert!((n[0] - 58.83).abs() < 0.1);
 
-        let d = datum.interpolation(&c, &datumgrid);
-        assert!(c.default_ellps_dist(&d.to_arcsec().to_radians()) < 1e-4);
+        let d = datum.interpolation(&c, None);
+        assert!(c.default_ellps_dist(&d.to_arcsec().to_radians()) < 1.0);
 
+        // Extrapolation
         let c = Coord::geo(100., 50., 0., 0.);
-        let d = datum.interpolation(&c, &datumgrid);
-        assert!(c.default_ellps_dist(&d.to_arcsec().to_radians()) < 1e-4);
+        let d = datum.interpolation(&c, None);
+        assert!(c.default_ellps_dist(&d.to_arcsec().to_radians()) < 25.0);
 
         Ok(())
     }
 
     #[test]
-    fn gravsoft() -> Result<(), Error> {
+    fn gridshift() -> Result<(), Error> {
         let mut prv = Minimal::default();
         let op = prv.op("gridshift grids=test.datum")?;
         let cph = Coord::geo(55., 12., 0., 0.);
@@ -361,8 +224,8 @@ mod test {
         prv.apply(op, Fwd, &mut data)?;
         let res = data[0].to_geo();
         dbg!(res);
-        assert!((res[0] - 55.0 * (1. + 1. / 3600.)).abs() < 1e-10);
-        assert!((res[1] - 12.0 * (1. + 1. / 3600.)).abs() < 1e-10);
+        assert!((res[0] - 55.015278).abs() < 1e-6);
+        assert!((res[1] - 12.003333).abs() < 1e-6);
 
         prv.apply(op, Inv, &mut data)?;
         dbg!(data[0].to_degrees());

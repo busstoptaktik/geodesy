@@ -19,6 +19,7 @@ pub struct ParsedParameters {
     pub integer: BTreeMap<&'static str, i64>,
     pub real: BTreeMap<&'static str, f64>,
     pub series: BTreeMap<&'static str, Vec<f64>>,
+    pub grids: BTreeMap<&'static str, Grid>,
     pub text: BTreeMap<&'static str, String>,
     pub uuid: BTreeMap<&'static str, uuid::Uuid>,
     pub ignored: Vec<String>,
@@ -102,6 +103,7 @@ impl ParsedParameters {
         let mut real = BTreeMap::<&'static str, f64>::new();
         let mut series = BTreeMap::<&'static str, Vec<f64>>::new();
         let mut text = BTreeMap::<&'static str, String>::new();
+        let grids = BTreeMap::<&'static str, Grid>::new();
         #[allow(unused_mut)]
         let mut uuid = BTreeMap::<&'static str, uuid::Uuid>::new();
 
@@ -326,6 +328,7 @@ impl ParsedParameters {
             integer,
             real,
             series,
+            grids,
             text,
             uuid,
             ignored,

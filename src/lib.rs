@@ -3,6 +3,7 @@
 pub(crate) mod bibliography;
 pub(crate) mod coord;
 pub(crate) mod ellipsoid;
+pub(crate) mod grid;
 
 #[cfg(doc)]
 pub use crate::bibliography::Bibliography;
@@ -14,9 +15,10 @@ mod provider;
 // The bread-and-butter
 pub use crate::coord::Coord;
 pub use crate::ellipsoid::Ellipsoid;
+pub use crate::grid::Grid;
 pub use crate::op::Op;
-pub use crate::provider::Provider;
 pub use crate::provider::Minimal;
+pub use crate::provider::Provider;
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Copy, Clone)]
 pub struct OpHandle(uuid::Uuid);
 impl Default for OpHandle {
@@ -27,7 +29,7 @@ impl Default for OpHandle {
 
 /// The bread-and-butter, shrink-wrapped for external use
 pub mod preamble {
-    pub use crate::Coord;
+    pub use crate::coord::Coord;
     pub use crate::Direction;
     pub use crate::Direction::Fwd;
     pub use crate::Direction::Inv;
@@ -46,6 +48,8 @@ pub mod inner_op_authoring {
     pub use log::info;
     pub use log::trace;
     pub use log::warn;
+
+    pub use crate::Grid;
 
     pub use crate::inner_op::InnerOp;
     pub use crate::inner_op::OpConstructor;

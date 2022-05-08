@@ -80,4 +80,11 @@ impl Provider for Minimal {
         let path: PathBuf = [".", "geodesy", ext, name].iter().collect();
         Ok(std::fs::read(path)?)
     }
+
+    /// Access grid resources by identifier
+    fn get_grid(&self, _name: &str) -> Result<Grid, Error> {
+        Err(Error::General(
+            "Grid access by identifier not supported by the Minimal Provider",
+        ))
+    }
 }

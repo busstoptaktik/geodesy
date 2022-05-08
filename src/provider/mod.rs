@@ -37,4 +37,7 @@ pub trait Provider {
 
     /// Access `blob`-like resources by identifier
     fn get_blob(&self, name: &str) -> Result<Vec<u8>, Error>;
+
+    /// Access grid resources by identifier
+    fn get_grid(&self, name: &str) -> Result<Grid, Error>;
 }
