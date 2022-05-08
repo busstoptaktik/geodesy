@@ -4,7 +4,7 @@
 
 Thomas Knudsen <knudsen.thomas@gmail.com>
 
-2021-08-20. Last [revision](#document-history) 2021-08-23
+2021-08-20. Last [revision](#document-history) 2022-05-08
 
 ### Abstract
 
@@ -37,7 +37,7 @@ $ echo 553036. -124509 | kp "dms | geo inv"
 
 Architecturally, the operators in Rust Geodesy (`cart`, `tmerc`, `helmert` etc.) live below the API surface. This means they are not (and should not be) described in the API documentation over at [docs.rs](https://docs.rs/geodesy). Rather, their use should be documented in a separate *Rust Geodesy User's Guide*, a book which may materialize some day, as time permits, interest demands, and RG has matured and stabilized sufficiently. Until then, this *Rumination* will serve as stop gap for operator documentation.
 
-A *Rust Geodesy Programmer's Guide* would probably also be useful, and wil definitely materialize before the next week with ten fridays. Until then, the [API documentation](https://docs.rs/geodesy), the [code examples](/examples), and the [architectural overview](/ruminations/000-rumination.md) may be useful. The RG transformation program `kp` will be described in an upcomming [RG Rumination](/ruminations/003-rumination.md). Its [source code](/src/bin/kp.rs) may also be of interest as  study material for programmers. But since it is particularly useful for practical experimentation with RG operators, let's start with a *very* brief description of `kp`.
+A *Rust Geodesy Programmer's Guide* would probably also be useful, and wil definitely materialize before the next week with ten fridays. Until then, the [API documentation](https://docs.rs/geodesy), the [code examples](/examples), and the [architectural overview](/ruminations/000-rumination.md) may be useful. The RG transformation program `kp` is described in [RG Rumination 003](/ruminations/003-rumination.md). Its [source code](/src/bin/kp.rs) may also be of interest as  study material for programmers. But since it is particularly useful for practical experimentation with RG operators, let's start with a *very* brief description of `kp`.
 
 ### A brief `kp` HOWTO
 
@@ -57,18 +57,18 @@ echo coordinate |  kp "operation"
 Convert the geographical coordinate tuple (55 N, 12 E) to utm, zone 32 coordinates:
 
 ```sh
-echo 55 12 0 0 | kp "geo | utm zone:32"
+echo 55 12 0 0 | kp "geo:in | utm zone=32"
 > 691875.6321 6098907.8250 0.0000 0.0000
 ```
 
 While RG coordinates are always 4D, `kp` will provide zero-values for any left-out postfix dimensions:
 
 ```sh
-echo 55 12 | kp "geo | utm zone:32"
+echo 55 12 | kp "geo:in | utm zone:32"
 > 691875.6321 6098907.8250 0.0000 0.0000
 ```
 
-In the examples in the operator descriptions below, we will just give the [GYS](/ruminations/000-rumination.md#gys-the-geodetic-yaml-shorthand) representation, and imply the `echo ... | kp ...` part.
+In the examples in the operator descriptions below, we will just give the operator representation, and imply the `echo ... | kp ...` part.
 
 If in doubt, use `kp --help` or read [Rumination 003: `kp` - the RG Coordinate Processing program](/ruminations/003-rumination.md).
 
@@ -99,13 +99,13 @@ The Rust Geodesy internal format of a four dimensional coordinate tuple is `e, n
 **Example:** Read data in degrees, (latitude, longitude, height, time)-order, write homologous data in radians, (longitude, latitude, height, time)-order, i.e. latitude and longitude swapped.
 
 ```js
-adapt from: neut_deg  to: enut_rad
+adapt from=neut_deg  to=enut_rad
 ```
 
 But since the target format is identical to the default internal format, it can be left out, and the operation be written simply as:
 
 ```js
-adapt from: neut_deg
+adapt from=neut_deg
 ```
 
 (end of example)
@@ -113,14 +113,16 @@ adapt from: neut_deg
 **Usage:** Typically, `adapt` is used in one or both ends of a pipeline, to match data between the RG internal representation and the requirements of the embedding system:
 
 ```sh
-adapt from: neut_deg | cart ... | helmert ... | cart inv ... | adapt to: neut_deg
+adapt from=neut_deg | cart ... | helmert ... | cart inv ... | adapt to=neut_deg
 ```
 
-Note that `adapt to: ...` and `adapt inv from: ...` are equivalent. The latter form is useful when using RG's predefined symbolic definitions, `geo` (latitude, longitude) and `gis` (longitude, latitude), as in:
+Note that `adapt to=...` and `adapt inv from=...` are equivalent. The latter form is sometimes useful: It is a.o. used behind the scenes when using RG's predefined macros, `geo` (latitude, longitude) and `gis` (longitude, latitude), as in:
 
 ```sh
-geo | cart ... | helmert ... | cart inv ... | geo inv
+geo:in | cart ... | helmert ... | cart inv ... | geo:out
 ```
+
+where `geo:out` is defined as `geo:in inv`.
 
 ---
 
@@ -138,7 +140,7 @@ geo | cart ... | helmert ... | cart inv ... | geo inv
 **Example**:
 
 ```sh
-geo | cart ellps:intl | helmert x:-87 y:-96 z:-120 | cart inv ellps:GRS80 | geo inv
+geo:in | cart ellps=intl | helmert x=-87 y=-96 z=-120 | cart inv ellps=GRS80 | gis:out
 ```
 
 cf. [Rumination no. 001](/ruminations/001-rumination.md) for details about this perennial pipeline.
@@ -187,7 +189,7 @@ Both conventions are common, and trivially converted between as they differ by s
 **Example**:
 
 ```sh
-geo | cart ellps:intl | helmert x:-87 y:-96 z:-120 | cart inv ellps:GRS80 | geo inv
+geo:in | cart ellps=intl | helmert x=-87 y=-96 z=-120 | cart inv ellps=GRS80 | geo:out
 ```
 
 **See also:** [PROJ documentation](https://proj.org/operations/transformations/helmert.html): *Helmert transform*. In general the two implementations should behave identically although the RG version implements neither the 4 parameter 2D Helmert variant, nor the 10 parameter 3D Molodensky-Badekas variant.
@@ -215,7 +217,7 @@ geo | cart ellps:intl | helmert x:-87 y:-96 z:-120 | cart inv ellps:GRS80 | geo 
 **Example**:
 
 ```js
-lcc lon_0:-100 lat_1:33 lat_2:45
+lcc lon_0=-100 lat_1=33 lat_2=45
 ```
 
 **See also:** [PROJ documentation](https://proj.org/operations/projections/lcc.html): *Lambert Conformal Conic*. The RG implementation closely follows the PROJ version.
@@ -242,7 +244,7 @@ lcc lon_0:-100 lat_1:33 lat_2:45
 **Example**:
 
 ```js
-merc lon_0:9 lat_0:54 lat_ts:56
+merc lon_0=9 lat_0=54 lat_ts=56
 ```
 
 **See also:** [PROJ documentation](https://proj.org/operations/projections/merc.html): *Mercator*. The current implementation closely follows the PROJ version.
@@ -285,7 +287,7 @@ parameters to come across in real life.
 **Example**:
 
 ```js
-molodensky left_ellps:WGS84 right_ellps:intl dx:84.87 dy:96.49 dz:116.95 abridged:false
+molodensky left_ellps=WGS84 right_ellps=intl dx=84.87 dy=96.49 dz=116.95 abridged=false
 ```
 
 **See also:** [PROJ documentation](https://proj.org/operations/transformations/molodensky.html): *Molodensky*. The current implementations differ between PROJ and RG: RG implements some minor numerical improvements and the ability to parameterize using two ellipsoids, rather than differences between them.
@@ -311,7 +313,7 @@ $ echo 5530.15 -1245.15 | kp "nmea | geo inv"
 EXAMPLE: convert dms to decimal degrees.
 
 ```sh
-$ echo 553036. -124509 | kp "dms | geo inv"
+$ echo 553036. -124509 | kp "dms | geo:out"
 > 55.51  -12.7525 0 0
 ```
 
@@ -332,7 +334,7 @@ $ echo 553036. -124509 | kp "dms | geo inv"
 **Example**:
 
 ```sh
-geo | noop all these parameters are: ignored | geo inv
+geo:in | noop all these parameters are=ignored | geo:out
 ```
 
 ---
@@ -356,7 +358,7 @@ geo | noop all these parameters are: ignored | geo inv
 **Example**: Implement UTM zone 32 using `tmerc` primitives
 
 ```js
-tmerc lon_0:9 k_0:0.9996 x_0:500000
+tmerc lon_0=9 k_0=0.9996 x_0=500000
 ```
 
 **See also:** [PROJ documentation](https://proj.org/operations/projections/tmerc.html): *Transverse Mercator*. The details of the current implementations differ between PROJ and RG.
@@ -378,7 +380,7 @@ tmerc lon_0:9 k_0:0.9996 x_0:500000
 **Example**: Use UTM zone 32
 
 ```js
-utm zone:32
+utm zone=32
 ```
 
 **See also:** [PROJ documentation](https://proj.org/operations/projections/utm.html): *Universal Transverse Mercator*. The current implementations differ between PROJ and RG. Within each 6 degrees wide zone, the differences should be immaterial.
@@ -390,3 +392,4 @@ Major revisions and additions:
 - 2021-08-20: Initial version
 - 2021-08-21: All relevant operators described
 - 2021-08-23: nmea, dm, nmeass, dms
+- 2022-05-08: reflect syntax changes + a few minor corrections

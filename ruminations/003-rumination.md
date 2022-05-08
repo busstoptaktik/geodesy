@@ -4,12 +4,12 @@
 
 Thomas Knudsen <knudsen.thomas@gmail.com>
 
-2021-08-28. Last [revision](#document-history) 2021-08-28
+2021-08-28. Last [revision](#document-history) 2022-05-08
 
 ### Abstract
 
 ```sh
-$ echo 55 12 | kp "geo | utm zone:32"
+$ echo 55 12 | kp "geo:in | utm zone=32"
 > 691875.6321 6098907.8250 0.0000 0.0000
 ```
 
@@ -25,7 +25,7 @@ For many years, Poder was in charge of the GI department for computational geode
 
 ### Usage
 
-Basic operation of `kp` is very simple. Any complexity in `kp` usage is related to the description of the operation to carry out, which is the subject of [Rumination 002](/ruminations/002-rumination.md). The `kp` command line syntax is:
+The basic operation of `kp` is very simple. Any complexity in `kp` usage is related to the description of the operation to carry out, which is the subject of [Rumination 002](/ruminations/002-rumination.md). The `kp` command line syntax is:
 
 ```sh
 kp "operation" file1 file2 ...
@@ -48,14 +48,14 @@ kp -o result "operation" file1 file2 ...
 Convert the coordinate tuple (55 N, 12 E) from geographical coordinates  on the GRS80 ellipsoid to Universal Transverse Mercator, zone 32 coordinates on the same (implied) ellipsoid:
 
 ```sh
-$ echo 55 12 0 0 | kp "geo | utm zone:32"
+$ echo 55 12 0 0 | kp "geo:in | utm zone=32"
 > 691875.6321 6098907.8250 0.0000 0.0000
 ```
 
 While RG coordinates are always 4D, `kp` will provide zero-values for any left-out postfix dimensions:
 
 ```sh
-$ echo 55 12 | kp "geo | utm zone:32"
+$ echo 55 12 | kp "geo:in | utm zone=32"
 > 691875.6321 6098907.8250 0.0000 0.0000
 ```
 
@@ -63,21 +63,21 @@ The `roundtrip` option measures the roundtrip accuracy of a transformation
 (i.e. how close to the origin you end up after a forward+inverse dance). Knud Poder championed this practise with his ingeniously constructed *Poder dual autochecking* method, which was essential at a time where computers were less robust than today (more about that [below](#a-few-more-words-about-knud-poder)).
 
 ```sh
-$ echo 55 12 | kp --roundtrip "geo | utm zone:32"
+$ echo 55 12 | kp --roundtrip "geo:in | utm zone=32"
 > 55 12:  d = 0.05 mm
 ```
 
 The `inv` option runs the specified pipeline inversely:
 
 ```sh
-$ echo 691875.6321 6098907.8250 | kp --inv "geo | utm zone:32"
+$ echo 691875.6321 6098907.8250 | kp --inv "geo:in | utm zone=32"
 > 54.9999999996 11.9999999994 0.00000 0.00000
 ```
 
 The `inv` and `roundtrip` options are mutually exclusive:
 
 ```txt
-$ echo 691875.6321 6098907.8250 | kp --inv --roundtrip "geo | utm zone:32"
+$ echo 691875.6321 6098907.8250 | kp --inv --roundtrip "geo:in | utm zone=32"
 > Options `inverse` and `roundtrip` are mutually exclusive
 > error: process didn't exit successfully: ...
 ```
@@ -199,3 +199,4 @@ http://bib.gfz-potsdam.de/pub/digi/krueger2.pdf
 Major revisions and additions:
 
 - 2021-08-28: Initial version
+- 2022-05-08: Reflect current syntax
