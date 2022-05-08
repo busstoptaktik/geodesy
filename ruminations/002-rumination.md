@@ -9,7 +9,7 @@ Thomas Knudsen <knudsen.thomas@gmail.com>
 ### Abstract
 
 ```sh
-$ echo 553036. -124509 | kp "dms | geo inv"
+$ echo 553036. -124509 | kp "dms:in | geo:out"
 > 55.51  -12.7525 0 0
 ```
 
@@ -135,7 +135,7 @@ where `geo:out` is defined as `geo:in inv`.
 | Argument | Description |
 |----------|-------------|
 | `inv` | Inverse operation: cartesian-to-geographic |
-| `ellps: name` | Use ellipsoid `name` for the conversion|
+| `ellps=name` | Use ellipsoid `name` for the conversion|
 
 **Example**:
 
@@ -205,7 +205,7 @@ geo:in | cart ellps=intl | helmert x=-87 y=-96 z=-120 | cart inv ellps=GRS80 | g
 | Argument | Description |
 |----------|-------------|
 | `inv` | Inverse operation: LCC to geographic |
-| `ellps: name` | Use ellipsoid `name` for the conversion |
+| `ellps=name` | Use ellipsoid `name` for the conversion |
 | `k_0` | Scaling factor |
 | `lon_0` | Longitude of the projection center |
 | `lat_0` | Latitude of the projection center |
@@ -233,7 +233,7 @@ lcc lon_0=-100 lat_1=33 lat_2=45
 | Argument | Description |
 |----------|-------------|
 | `inv` | Inverse operation: Mercator to geographic |
-| `ellps: name` | Use ellipsoid `name` for the conversion |
+| `ellps=name` | Use ellipsoid `name` for the conversion |
 | `k_0` | Scaling factor |
 | `lon_0` | Longitude of the projection center |
 | `lat_0` | Latitude of the projection center |
@@ -274,7 +274,7 @@ parameters to come across in real life.
 | Argument | Description |
 |----------|-------------|
 | `inv` | Inverse operation |
-| `ellps: name` | Use ellipsoid `name` for the conversion |
+| `ellps=name` | Use ellipsoid `name` for the conversion |
 | `dx`  | offset along the first axis  |
 | `dy`  | offset along the second axis |
 | `dz`  | offset along the third axis  |
@@ -348,7 +348,7 @@ geo:in | noop all these parameters are=ignored | geo:out
 | Argument | Description |
 |----------|-------------|
 | `inv` | Inverse operation: transverse-mercator to geographic |
-| `ellps: name` | Use ellipsoid `name` for the conversion |
+| `ellps=name` | Use ellipsoid `name` for the conversion |
 | `lon_0` | Longitude of the projection center |
 | `lat_0` | Latitude of the projection center |
 | `k_0` | Scaling factor |
@@ -374,8 +374,8 @@ tmerc lon_0=9 k_0=0.9996 x_0=500000
 | Argument | Description |
 |----------|-------------|
 | `inv` | Inverse operation: transverse-mercator to geographic |
-| `ellps: name` | Use ellipsoid `name` for the conversion |
-| `zone` | zone number. Between 1-60 |
+| `ellps=name` | Use ellipsoid `name` for the conversion |
+| `zone=nn` | zone number `nn`. Between 1-60 |
 
 **Example**: Use UTM zone 32
 
