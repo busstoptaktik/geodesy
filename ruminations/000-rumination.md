@@ -290,7 +290,7 @@ In `[Knudsen et al, 2019]` we identified a small number of operations collective
 4. Horizontal grid shift (“NADCON-transformation”).
 5. Vertical grid shift (ellipsoidal-to-orthometric height transformation).
 
-Of these only the three first are fully implemented in RG, while the grid shift operations are in various stages of completion. These are **need to do** elements for near future work.
+As per 2022-05-08, these are all implemented in RG. The grid shift operators are, however, implemented for static transformations only. Time varying versions are yet to come. These are very important for transformations in areas affected by post-glacial rebound, so this is an important item on the to-do list.
 
 Also, a number of additional projections are in the pipeline.
 
