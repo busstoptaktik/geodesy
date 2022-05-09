@@ -23,6 +23,7 @@ $ echo 553036. -124509 | kp "dms:in | geo:out"
 - [`cart`](#operator-cart): The geographical-to-cartesian converter
 - [`dm`](#operator-nmea-dm-nmeass-and-dms): DDMM.mmm encoding, sub-entry under `nmea`
 - [`dms`](#operator-nmea-dm-nmeass-and-dms): DDMMSS.sss encoding, sub-entry under `nmea`
+- [`gridshift`](#operator-gridshift): NADCON style datum shifts in 1, 2, and 3 dimensions
 - [`helmert`](#operator-helmert): The Helmert (similarity) transformation
 - [`lcc`](#operator-lcc): The Lambert Conformal Conic projection
 - [`merc`](#operator-merc): The Mercator projection
@@ -188,11 +189,43 @@ Both conventions are common, and trivially converted between as they differ by s
 
 **Example**:
 
-```sh
+```js
 geo:in | cart ellps=intl | helmert x=-87 y=-96 z=-120 | cart inv ellps=GRS80 | geo:out
 ```
 
 **See also:** [PROJ documentation](https://proj.org/operations/transformations/helmert.html): *Helmert transform*. In general the two implementations should behave identically although the RG version implements neither the 4 parameter 2D Helmert variant, nor the 10 parameter 3D Molodensky-Badekas variant.
+
+---
+
+### Operator `gridshift`
+
+**Purpose:**
+Datum shift using grid interpolation.
+
+**Description:**
+The `gridshift` operator implements datum shifts by interpolation in correction grids, for one-, two-, and three-dimensional cases.
+
+`gridshift` follows the common, but potentially confusing, convention that when operating in the forward direction:
+
+- For 1-D transformations (vertical datum shift),  the grid derived value is *subtracted* from the operand
+- For 2-D transformations, the grid derived values are *added* to the operand
+
+3-D and time dependent transformations are not yet implemented.
+
+| Parameter | Description |
+|-----------|-------------|
+| `inv` | Inverse operation: output-to-input datum. For 2-D and 3-D cases, this involves an iterative refinement, typically converging after less than 5 iterations |
+| `grids` | Name of the grid file to use. RG supports only one file for each operation, but maintains the plural form of the `grids` option for alignment with the PROJ precedent |
+
+The `gridshift` operator has built in support for the **Gravsoft** grid format. Support for additional file formats depends on the `Provider` in use.
+
+**Example**:
+
+```sh
+geo:in | gridshift grids=ed50.datum | geo:out
+```
+
+**See also:** PROJ documentation, [`hgridshift`](https://proj.org/operations/transformations/hgridshift.html) and [`vgridshift`](https://proj.org/operations/transformations/vgridshift.html). RG combines the functionality of the two: The dimensionality of the grid determines whether a plane or a vertical transformation is carried out.
 
 ---
 
