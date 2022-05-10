@@ -107,9 +107,18 @@ impl ParsedParameters {
         #[allow(unused_mut)]
         let mut uuid = BTreeMap::<&'static str, uuid::Uuid>::new();
 
+        // 'omit_fwd'/'omit_inv' are implicitly valid for all operators (including pipelines),
+        // so we append them to the gamut
+        let mut gamutt = Vec::new();
+        for g in gamut {
+            gamutt.push(g);
+        }
+        gamutt.push(&OpParameter::Flag { key: "omit_fwd" });
+        gamutt.push(&OpParameter::Flag { key: "omit_inv" });
+
         // Try to locate all accepted parameters, type check, and place them into
         // their proper bins
-        for p in gamut {
+        for p in gamutt {
             match *p {
                 OpParameter::Flag { key } => {
                     if let Some(value) = chase(globals, &locals, key)? {

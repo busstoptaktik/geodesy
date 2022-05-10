@@ -7,6 +7,9 @@ fn pipeline_fwd(op: &Op, provider: &dyn Provider, operands: &mut [Coord]) -> Res
     let mut stack: Vec<Vec<f64>> = vec![];
     let mut n = usize::MAX;
     for step in &op.steps[..] {
+        if step.params.boolean("omit_fwd") {
+            continue;
+        }
         let m = match step.params.name.as_str() {
             "push" => do_the_push(&mut stack, operands, &step.params.boolean),
             "pop" => do_the_pop(&mut stack, operands, &step.params.boolean),
@@ -14,16 +17,31 @@ fn pipeline_fwd(op: &Op, provider: &dyn Provider, operands: &mut [Coord]) -> Res
         };
         n = n.min(m);
     }
+    if n == usize::MAX {
+        n = operands.len();
+    }
     Ok(n)
 }
 
 // ----- I N V E R S E -----------------------------------------------------------------
 
 fn pipeline_inv(op: &Op, provider: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
+    let mut stack: Vec<Vec<f64>> = vec![];
     let mut n = usize::MAX;
+
     for step in op.steps[..].iter().rev() {
-        n = n.min(step.apply(provider, operands, Direction::Inv)?);
+        if step.params.boolean("omit_inv") {
+            continue;
+        }
+        // Note: Under inverse invocation "push" calls pop and vice versa
+        let m = match step.params.name.as_str() {
+            "push" => do_the_pop(&mut stack, operands, &step.params.boolean),
+            "pop" => do_the_push(&mut stack, operands, &step.params.boolean),
+            _ => step.apply(provider, operands, Direction::Inv)?,
+        };
+        n = n.min(m);
     }
+
     Ok(n)
 }
 
@@ -253,7 +271,12 @@ mod tests {
         assert_eq!(data[0][0], 12.);
         assert_eq!(data[0][1], 55.);
 
-        // While popping both at once does not make any difference
+        // While popping both at once does not make any difference: In
+        // case of more than one push/pop argument, push happens in
+        // 1234-order, while pop happens in 4321-order, so a
+        // "push all, pop all" pair is a noop: The order of operator
+        // options is insignificant, so the 1234/4321 order is, in principle
+        // arbitrary, but seleted with the noop-characteristicum in mind.
         let op = prv.op("push v_1 v_2|pop v_1 v_2")?;
         prv.apply(op, Fwd, &mut data)?;
         assert_eq!(data[0][0], 12.);
@@ -264,6 +287,30 @@ mod tests {
         assert_eq!(0, prv.apply(op, Fwd, &mut data)?);
         assert!(data[0][0].is_nan());
         assert_eq!(data[0][2], 55.);
+
+        // Check inversion
+        let op = prv.op("push v_1 v_2|pop v_2 v_1 v_3")?;
+        let mut data = some_basic_coordinates();
+        assert_eq!(2, prv.apply(op, Inv, &mut data)?);
+        assert_eq!(data[0][0], 12.);
+        assert_eq!(data[0][1], 0.);
+
+        // Check omit_fwd
+        let op = prv.op("push v_1 v_2|pop v_2 v_1 v_3 omit_fwd")?;
+        let mut data = some_basic_coordinates();
+        assert_eq!(2, prv.apply(op, Fwd, &mut data)?);
+        assert_eq!(data[0][0], 55.);
+        assert_eq!(data[0][1], 12.);
+        assert_eq!(2, prv.apply(op, Inv, &mut data)?);
+        assert_eq!(data[0][0], 12.);
+        assert_eq!(data[0][1], 0.);
+
+        // Check omit_inv
+        let op = prv.op("push v_1 v_2 v_3 omit_inv|pop v_1 v_2")?;
+        let mut data = some_basic_coordinates();
+        assert_eq!(2, prv.apply(op, Inv, &mut data)?);
+        assert_eq!(data[0][0], 55.);
+        assert_eq!(data[0][1], 12.);
 
         Ok(())
     }
