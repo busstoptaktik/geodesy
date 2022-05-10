@@ -19,7 +19,7 @@ pub(crate) mod pipeline;
 mod tmerc;
 
 #[rustfmt::skip]
-const BUILTIN_OPERATORS: [(&str, OpConstructor); 13] = [
+const BUILTIN_OPERATORS: [(&str, OpConstructor); 15] = [
     ("adapt",      OpConstructor(adapt::new)),
     ("addone",     OpConstructor(addone::new)),
     ("cart",       OpConstructor(cart::new)),
@@ -33,6 +33,8 @@ const BUILTIN_OPERATORS: [(&str, OpConstructor); 13] = [
     ("tmerc",      OpConstructor(tmerc::new)),
     ("utm",        OpConstructor(tmerc::utm)),
     ("pipeline",   OpConstructor(pipeline::new)),
+    ("pop",        OpConstructor(pipeline::pop)),
+    ("push",       OpConstructor(pipeline::push)),
 ];
 // A BTreeMap would have been a better choice for BUILTIN_OPERATORS, except
 // for the annoying fact that it cannot be compile-time const-constructed.

@@ -1,11 +1,19 @@
 use super::*;
+use std::collections::BTreeSet;
+
 
 // ----- F O R W A R D -----------------------------------------------------------------
 
 fn pipeline_fwd(op: &Op, provider: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
+    let mut stack: Vec<Vec<f64>> = vec![];
     let mut n = usize::MAX;
     for step in &op.steps[..] {
-        n = n.min(step.apply(provider, operands, Direction::Fwd)?);
+        let m = match step.params.name.as_str() {
+            "push" => do_the_push(&mut stack, operands, &step.params.boolean),
+            "pop" => do_the_pop(&mut stack, operands, &step.params.boolean),
+            _ =>  step.apply(provider, operands, Direction::Fwd)?
+        };
+        n = n.min(m);
     }
     Ok(n)
 }
@@ -19,6 +27,8 @@ fn pipeline_inv(op: &Op, provider: &dyn Provider, operands: &mut [Coord]) -> Res
     }
     Ok(n)
 }
+
+
 
 // ----- C O N S T R U C T O R ---------------------------------------------------------
 
@@ -49,6 +59,98 @@ pub fn new(parameters: &RawParameters, provider: &dyn Provider) -> Result<Op, Er
         id,
     })
 }
+
+
+// The push and pop constructors are extremely simple, since the pipeline operator
+// does all the hard work. Essentially, they are just flags telling pipeline
+// what to do, given their provided options
+
+// Yes - push and pop do not accept the inv flag although they are both invertible.
+// If you want to invert a push, then use a pop (and vice versa).
+#[rustfmt::skip]
+pub const PUSH_POP_GAMUT: [OpParameter; 4] = [
+    OpParameter::Flag { key: "v_1" },
+    OpParameter::Flag { key: "v_2" },
+    OpParameter::Flag { key: "v_3" },
+    OpParameter::Flag { key: "v_4" },
+];
+
+pub fn push(parameters: &RawParameters, _prv: &dyn Provider) -> Result<Op, Error> {
+    let def = &parameters.definition;
+    let params = ParsedParameters::new(parameters, &PUSH_POP_GAMUT)?;
+
+    let descriptor = OpDescriptor::new(def, InnerOp(noop_placeholder), Some(InnerOp(noop_placeholder)));
+    let steps = Vec::<Op>::new();
+    let id = OpHandle::default();
+
+    Ok(Op {
+        descriptor,
+        params,
+        steps,
+        id,
+    })
+}
+
+
+pub fn pop(parameters: &RawParameters, _prv: &dyn Provider) -> Result<Op, Error> {
+    let def = &parameters.definition;
+    let params = ParsedParameters::new(parameters, &PUSH_POP_GAMUT)?;
+
+    let descriptor = OpDescriptor::new(def, InnerOp(noop_placeholder), Some(InnerOp(noop_placeholder)));
+    let steps = Vec::<Op>::new();
+    let id = OpHandle::default();
+
+    Ok(Op {
+        descriptor,
+        params,
+        steps,
+        id,
+    })
+}
+
+
+// ----- H E L P E R S -----------------------------------------------------------------
+
+
+fn do_the_push(stack: &mut Vec<Vec<f64>>, operands: &mut [Coord], flags: &BTreeSet<&'static str>) -> usize {
+    const ELEMENTS: [&str; 4] = ["v_1", "v_2", "v_3", "v_4"];
+    for i in [0, 1, 2, 3] {
+        if !flags.contains(ELEMENTS[i]) {
+            continue
+        }
+        // Extract the i'th coordinate from all operands
+        let all: Vec<f64> = operands.iter().map(|x| x[i]).collect();
+        stack.push(all);
+    }
+    operands.len()
+}
+
+
+fn do_the_pop(stack: &mut Vec<Vec<f64>>, operands: &mut [Coord], flags: &BTreeSet<&'static str>) -> usize {
+    const ELEMENTS: [&str; 4] = ["v_4", "v_3", "v_2", "v_1"];
+    for i in [0, 1, 2, 3] {
+        if !flags.contains(ELEMENTS[i]) {
+            continue
+        }
+
+        // Stack underflow?
+        if stack.is_empty() {
+            for op in operands {
+                op[3-i] = f64::NAN;
+            }
+            return 0;
+        }
+
+        // Insert the top-of-stack elements into the i'th coordinate of all operands
+        let v = stack.pop().unwrap();
+        for j in 0..operands.len() {
+            operands[j][3-i] = v[j]
+        }
+    }
+    operands.len()
+}
+
+
 
 pub fn split_into_steps(definition: &str) -> (Vec<String>, String) {
     let all = definition.replace('\r', "\n").trim().to_string();
@@ -93,6 +195,8 @@ pub fn split_into_steps(definition: &str) -> (Vec<String>, String) {
     (trimmed_steps, docstring)
 }
 
+
+
 // ----- T E S T S ---------------------------------------------------------------------
 
 #[cfg(test)]
@@ -130,6 +234,32 @@ mod tests {
             prv.op("addone|addone|_garbage"),
             Err(Error::NotFound(_, _))
         ));
+
+        Ok(())
+    }
+
+    #[test]
+    fn push_pop() -> Result<(), Error> {
+        let mut prv = Minimal::default();
+        let mut data = some_basic_coordinates();
+
+        // First we swap lat, lon by doing two independent pops
+        let op = prv.op("push v_2 v_1|addone|pop v_1|pop v_2")?;
+        prv.apply(op, Fwd, &mut data)?;
+        assert_eq!(data[0][0], 12.);
+        assert_eq!(data[0][1], 55.);
+
+        // While popping both at once does not make any difference
+        let op = prv.op("push v_1 v_2|pop v_1 v_2")?;
+        prv.apply(op, Fwd, &mut data)?;
+        assert_eq!(data[0][0], 12.);
+        assert_eq!(data[0][1], 55.);
+
+        // Underflow the stack - get 0 successes
+        let op = prv.op("push v_1 v_2|pop v_2 v_1 v_3")?;
+        assert_eq!(0, prv.apply(op, Fwd, &mut data)?);
+        assert!(data[0][0].is_nan());
+        assert_eq!(data[0][2], 55.);
 
         Ok(())
     }
