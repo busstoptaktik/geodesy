@@ -1,7 +1,6 @@
 use super::*;
 use std::collections::BTreeSet;
 
-
 // ----- F O R W A R D -----------------------------------------------------------------
 
 fn pipeline_fwd(op: &Op, provider: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
@@ -11,7 +10,7 @@ fn pipeline_fwd(op: &Op, provider: &dyn Provider, operands: &mut [Coord]) -> Res
         let m = match step.params.name.as_str() {
             "push" => do_the_push(&mut stack, operands, &step.params.boolean),
             "pop" => do_the_pop(&mut stack, operands, &step.params.boolean),
-            _ =>  step.apply(provider, operands, Direction::Fwd)?
+            _ => step.apply(provider, operands, Direction::Fwd)?,
         };
         n = n.min(m);
     }
@@ -27,8 +26,6 @@ fn pipeline_inv(op: &Op, provider: &dyn Provider, operands: &mut [Coord]) -> Res
     }
     Ok(n)
 }
-
-
 
 // ----- C O N S T R U C T O R ---------------------------------------------------------
 
@@ -60,7 +57,6 @@ pub fn new(parameters: &RawParameters, provider: &dyn Provider) -> Result<Op, Er
     })
 }
 
-
 // The push and pop constructors are extremely simple, since the pipeline operator
 // does all the hard work. Essentially, they are just flags telling pipeline
 // what to do, given their provided options
@@ -79,7 +75,11 @@ pub fn push(parameters: &RawParameters, _prv: &dyn Provider) -> Result<Op, Error
     let def = &parameters.definition;
     let params = ParsedParameters::new(parameters, &PUSH_POP_GAMUT)?;
 
-    let descriptor = OpDescriptor::new(def, InnerOp(noop_placeholder), Some(InnerOp(noop_placeholder)));
+    let descriptor = OpDescriptor::new(
+        def,
+        InnerOp(noop_placeholder),
+        Some(InnerOp(noop_placeholder)),
+    );
     let steps = Vec::<Op>::new();
     let id = OpHandle::default();
 
@@ -90,13 +90,16 @@ pub fn push(parameters: &RawParameters, _prv: &dyn Provider) -> Result<Op, Error
         id,
     })
 }
-
 
 pub fn pop(parameters: &RawParameters, _prv: &dyn Provider) -> Result<Op, Error> {
     let def = &parameters.definition;
     let params = ParsedParameters::new(parameters, &PUSH_POP_GAMUT)?;
 
-    let descriptor = OpDescriptor::new(def, InnerOp(noop_placeholder), Some(InnerOp(noop_placeholder)));
+    let descriptor = OpDescriptor::new(
+        def,
+        InnerOp(noop_placeholder),
+        Some(InnerOp(noop_placeholder)),
+    );
     let steps = Vec::<Op>::new();
     let id = OpHandle::default();
 
@@ -108,15 +111,17 @@ pub fn pop(parameters: &RawParameters, _prv: &dyn Provider) -> Result<Op, Error>
     })
 }
 
-
 // ----- H E L P E R S -----------------------------------------------------------------
 
-
-fn do_the_push(stack: &mut Vec<Vec<f64>>, operands: &mut [Coord], flags: &BTreeSet<&'static str>) -> usize {
+fn do_the_push(
+    stack: &mut Vec<Vec<f64>>,
+    operands: &mut [Coord],
+    flags: &BTreeSet<&'static str>,
+) -> usize {
     const ELEMENTS: [&str; 4] = ["v_1", "v_2", "v_3", "v_4"];
     for i in [0, 1, 2, 3] {
         if !flags.contains(ELEMENTS[i]) {
-            continue
+            continue;
         }
         // Extract the i'th coordinate from all operands
         let all: Vec<f64> = operands.iter().map(|x| x[i]).collect();
@@ -125,18 +130,21 @@ fn do_the_push(stack: &mut Vec<Vec<f64>>, operands: &mut [Coord], flags: &BTreeS
     operands.len()
 }
 
-
-fn do_the_pop(stack: &mut Vec<Vec<f64>>, operands: &mut [Coord], flags: &BTreeSet<&'static str>) -> usize {
+fn do_the_pop(
+    stack: &mut Vec<Vec<f64>>,
+    operands: &mut [Coord],
+    flags: &BTreeSet<&'static str>,
+) -> usize {
     const ELEMENTS: [&str; 4] = ["v_4", "v_3", "v_2", "v_1"];
     for i in [0, 1, 2, 3] {
         if !flags.contains(ELEMENTS[i]) {
-            continue
+            continue;
         }
 
         // Stack underflow?
         if stack.is_empty() {
             for op in operands {
-                op[3-i] = f64::NAN;
+                op[3 - i] = f64::NAN;
             }
             return 0;
         }
@@ -144,13 +152,11 @@ fn do_the_pop(stack: &mut Vec<Vec<f64>>, operands: &mut [Coord], flags: &BTreeSe
         // Insert the top-of-stack elements into the i'th coordinate of all operands
         let v = stack.pop().unwrap();
         for j in 0..operands.len() {
-            operands[j][3-i] = v[j]
+            operands[j][3 - i] = v[j]
         }
     }
     operands.len()
 }
-
-
 
 pub fn split_into_steps(definition: &str) -> (Vec<String>, String) {
     let all = definition.replace('\r', "\n").trim().to_string();
@@ -194,8 +200,6 @@ pub fn split_into_steps(definition: &str) -> (Vec<String>, String) {
     let trimmed_steps = trimmed_steps;
     (trimmed_steps, docstring)
 }
-
-
 
 // ----- T E S T S ---------------------------------------------------------------------
 
