@@ -4,9 +4,9 @@ use std::collections::BTreeSet;
 // ----- F O R W A R D -----------------------------------------------------------------
 
 fn pipeline_fwd(op: &Op, provider: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
-    let mut stack: Vec<Vec<f64>> = vec![];
+    let mut stack = Vec::new();
     let mut n = usize::MAX;
-    for step in &op.steps[..] {
+    for step in &op.steps {
         if step.params.boolean("omit_fwd") {
             continue;
         }
@@ -17,6 +17,8 @@ fn pipeline_fwd(op: &Op, provider: &dyn Provider, operands: &mut [Coord]) -> Res
         };
         n = n.min(m);
     }
+
+    // In case every step has been marked as `omit_fwd`
     if n == usize::MAX {
         n = operands.len();
     }
@@ -26,10 +28,9 @@ fn pipeline_fwd(op: &Op, provider: &dyn Provider, operands: &mut [Coord]) -> Res
 // ----- I N V E R S E -----------------------------------------------------------------
 
 fn pipeline_inv(op: &Op, provider: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
-    let mut stack: Vec<Vec<f64>> = vec![];
+    let mut stack = Vec::new();
     let mut n = usize::MAX;
-
-    for step in op.steps[..].iter().rev() {
+    for step in op.steps.iter().rev() {
         if step.params.boolean("omit_inv") {
             continue;
         }
@@ -42,6 +43,10 @@ fn pipeline_inv(op: &Op, provider: &dyn Provider, operands: &mut [Coord]) -> Res
         n = n.min(m);
     }
 
+    // In case every step has been marked as `omit_inv`
+    if n == usize::MAX {
+        n = operands.len();
+    }
     Ok(n)
 }
 
@@ -98,7 +103,7 @@ pub fn push(parameters: &RawParameters, _prv: &dyn Provider) -> Result<Op, Error
         InnerOp(noop_placeholder),
         Some(InnerOp(noop_placeholder)),
     );
-    let steps = Vec::<Op>::new();
+    let steps = Vec::new();
     let id = OpHandle::default();
 
     Ok(Op {
@@ -118,7 +123,7 @@ pub fn pop(parameters: &RawParameters, _prv: &dyn Provider) -> Result<Op, Error>
         InnerOp(noop_placeholder),
         Some(InnerOp(noop_placeholder)),
     );
-    let steps = Vec::<Op>::new();
+    let steps = Vec::new();
     let id = OpHandle::default();
 
     Ok(Op {
@@ -206,7 +211,10 @@ pub fn split_into_steps(definition: &str) -> (Vec<String>, String) {
     let trimmed = trimmed.join(" ").replace('\n', " ");
 
     // Generate trimmed steps with elements spearated by a single space,
-    // and key-value pairs glued by '=' as in 'key=value'
+    // and key-value pairs glued by '=' as in
+    //     key1=value1 key2=value2
+    // as opposed to e.g.
+    //     key1= value1            key2    =value2
     let steps: Vec<_> = trimmed.split('|').collect();
     let mut trimmed_steps = Vec::<String>::new();
     for mut step in steps {
