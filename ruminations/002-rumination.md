@@ -219,9 +219,12 @@ The `gridshift` operator implements datum shifts by interpolation in correction 
 
 The `gridshift` operator has built in support for the **Gravsoft** grid format. Support for additional file formats depends on the `Provider` in use.
 
+**Units:**
+For grids with angular (geographical) spatial units, the corrections are supposed to be given in seconds of arc, and internally converted to radians. For grids appearing to have linear (projected) spatial units, the corrections are supposed to be given in meters, and are kept unchanged. A grid is supposed to be in linear spatial units if any of its boundaries have a numerical value larger than `2×360`, i.e. clearly outside of the angular range.
+
 **Example**:
 
-```sh
+```
 geo:in | gridshift grids=ed50.datum | geo:out
 ```
 
