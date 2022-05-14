@@ -15,37 +15,27 @@ impl RawParameters {
         let invocation = invocation.to_string();
         let definition = invocation.clone();
 
-        // Direct invocation of a pipeline: "foo | bar baz | bonk"
-        if super::is_pipeline(&invocation) {
-            return RawParameters {
+        // If it is a macro invocation, the `next()` method is called
+        // to do the parameter handling
+        if super::is_resource_name(&invocation) {
+            let definition = "".to_string();
+            let previous = RawParameters {
                 invocation,
                 definition,
                 globals,
                 recursion_level,
             };
+            return previous.next(&previous.invocation);
         }
 
-        // Direct invocation of a primitive operation: "foo bar=baz bonk"
-        if !super::is_resource_name(&invocation) {
-            return RawParameters {
-                invocation,
-                definition,
-                globals,
-                recursion_level,
-            };
-        }
-
-        // Macro expansion initialization
-        // The tough parameter handling is carried out by
-        // the `next()` method in the upcomming step.
-        let definition = "".to_string();
-        let previous = RawParameters {
+        // Not a macro? Then it is either a pipeline, a built-in or
+        // a user defined op, and we can just carry on
+        RawParameters {
             invocation,
             definition,
             globals,
             recursion_level,
-        };
-        previous.next(&previous.invocation)
+        }
     }
 
     // If the next step is a macro (i.e. potentially an embedded pipeline), we
