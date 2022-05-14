@@ -11,15 +11,15 @@ readme = "README.md"
 repository = "https://github.com/busstoptaktik/geodesy/"
 edition = "2021"
 
-default-run = "ug"
+default-run = "pq"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 # Core functionality
 dirs = "3.0"
-memmap = "0.7"
-enum-iterator = "0.7.0"
+# memmap = "0.7"
+# enum-iterator = "0.7.0"
 uuid = { version = "0.8", features = ["v4"] }
 
 # Command line program helpers
