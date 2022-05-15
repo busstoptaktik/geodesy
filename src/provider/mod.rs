@@ -12,6 +12,9 @@ use super::internal::*;
 /// and the external context (i.e. typically resources like grids, transformation definitions,
 /// or ellipsoid parameters).
 pub trait Provider {
+    fn new(resources: Option<BTreeMap<&'static str, String>>) -> Self
+    where Self: Sized;
+
     /// Instantiate the operation given by `definition`
     fn op(&mut self, definition: &str) -> Result<OpHandle, Error>;
     /// Apply operation `op` to `operands`

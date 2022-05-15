@@ -16,6 +16,10 @@ pub struct Minimal {
 }
 
 impl Provider for Minimal {
+    fn new(_resources: Option<BTreeMap<&'static str, String>>) -> Minimal {
+        Minimal::default()
+    }
+
     fn op(&mut self, definition: &str) -> Result<OpHandle, Error> {
         let op = Op::new(definition, self)?;
         let id = op.id;

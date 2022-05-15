@@ -38,6 +38,10 @@ impl Default for Local {
 }
 
 impl Provider for Local {
+    fn new(_resources: Option<BTreeMap<&'static str, String>>) -> Local {
+        Local::default()
+    }
+
     fn op(&mut self, definition: &str) -> Result<OpHandle, Error> {
         let op = Op::new(definition, self)?;
         let id = op.id;
