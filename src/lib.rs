@@ -1,12 +1,12 @@
 #![doc = include_str!("../README.md")]
 
+#[cfg(doc)]
+pub use crate::bibliography::Bibliography;
+
 pub(crate) mod bibliography;
 pub(crate) mod coord;
 pub(crate) mod ellipsoid;
 pub(crate) mod grid;
-
-#[cfg(doc)]
-pub use crate::bibliography::Bibliography;
 
 mod inner_op;
 mod op;
