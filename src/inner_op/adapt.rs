@@ -419,7 +419,6 @@ mod tests {
         assert!((data[0][0] - 691875.6321403517).abs() < 1e-9);
         assert!((data[0][1] - 6098907.825001632).abs() < 1e-9);
         assert_eq!(prv.apply(utm, Inv, &mut data)?, 2);
-        dbg!(data);
         assert!((data[0][0] - 55.0).abs() < 1e-9);
         assert!((data[0][1] - 12.0).abs() < 1e-9);
 

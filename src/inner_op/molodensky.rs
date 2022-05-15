@@ -96,7 +96,6 @@ pub const GAMUT: [OpParameter; 10] = [
 
 pub fn new(parameters: &RawParameters, _provider: &dyn Provider) -> Result<Op, Error> {
     let def = &parameters.definition;
-    dbg!(parameters);
     let mut params = ParsedParameters::new(parameters, &GAMUT)?;
 
     let ellps_0 = params.ellps[0];
@@ -232,9 +231,7 @@ mod tests {
         // within 5 mm in the plane and the elevation.
         let mut operands = [WGS84];
         op.apply(&prv, &mut operands, Fwd)?;
-        dbg!(ED50);
-        dbg!(operands);
-        assert!(dbg!(ED50.default_ellps_dist(&operands[0])) < 0.005);
+        assert!(ED50.default_ellps_dist(&operands[0]) < 0.005);
         assert!((ED50[2] - operands[0][2]).abs() < 0.005);
 
         // The same holds in the reverse unabridged case, where

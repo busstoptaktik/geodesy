@@ -68,7 +68,6 @@ fn main() -> Result<(), anyhow::Error> {
     for (i, item) in [1f64, 2., 3.].into_iter().enumerate() {
         a[i] = item;
     }
-    dbg!(a);
 
     // let rp = geodesy::Plain::new(SearchLevel::LocalPatches, false);
     // rp.expand_experiment("jeg kan | hoppe sagde | lille Yrsa: Hansen");

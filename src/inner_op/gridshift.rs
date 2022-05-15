@@ -191,13 +191,11 @@ mod test {
         datumgrid.extend_from_slice(&DATUM[..]);
         normalize_gravsoft_grid_values(&mut datumgrid);
         let datum = Grid::plain(&datumgrid)?;
-        dbg!(&datum);
 
         let mut geoidgrid = Vec::from(HEADER);
         geoidgrid.extend_from_slice(&GEOID[..]);
         normalize_gravsoft_grid_values(&mut geoidgrid);
         let geoid = Grid::plain(&geoidgrid)?;
-        dbg!(&geoid);
 
         let c = Coord::geo(58.75, 08.25, 0., 0.);
 
@@ -224,12 +222,10 @@ mod test {
 
         prv.apply(op, Fwd, &mut data)?;
         let res = data[0].to_geo();
-        dbg!(res);
         assert!((res[0] - 55.015278).abs() < 1e-6);
         assert!((res[1] - 12.003333).abs() < 1e-6);
 
         prv.apply(op, Inv, &mut data)?;
-        dbg!(data[0].to_degrees());
         assert!((data[0][0] - cph[0]).abs() < 1e-10);
         assert!((data[0][1] - cph[1]).abs() < 1e-10);
 
