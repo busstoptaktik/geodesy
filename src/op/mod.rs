@@ -10,6 +10,19 @@ pub use parameter::OpParameter;
 pub use parsed_parameters::ParsedParameters;
 pub use raw_parameters::RawParameters;
 
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Copy, Clone)]
+pub struct OpHandle(uuid::Uuid);
+impl OpHandle {
+    pub fn new() -> Self {
+        OpHandle(uuid::Uuid::new_v4())
+    }
+}
+impl Default for OpHandle {
+    fn default() -> Self {
+        OpHandle(uuid::Uuid::new_v4())
+    }
+}
+
 /// The defining parameters and functions for an operator
 #[derive(Debug)]
 pub struct Op {
@@ -56,7 +69,7 @@ impl Op {
         let params = ParsedParameters::new(parameters, gamut)?;
         let descriptor = OpDescriptor::new(def, fwd, Some(inv));
         let steps = Vec::<Op>::new();
-        let id = OpHandle::default();
+        let id = OpHandle::new();
 
         Ok(Op {
             descriptor,

@@ -164,7 +164,7 @@ pub fn new(parameters: &RawParameters, _provider: &dyn Provider) -> Result<Op, E
     ];
     params.series.insert("post", Vec::from(post));
     params.series.insert("mult", Vec::from(give.mult));
-    let id = OpHandle::default();
+    let id = OpHandle::new();
 
     Ok(Op {
         descriptor,

@@ -19,17 +19,11 @@ pub use crate::grid::Grid;
 pub use crate::op::Op;
 pub use crate::provider::Minimal;
 pub use crate::provider::Provider;
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Copy, Clone)]
-pub struct OpHandle(uuid::Uuid);
-impl Default for OpHandle {
-    fn default() -> Self {
-        OpHandle(uuid::Uuid::new_v4())
-    }
-}
 
 /// The bread-and-butter, shrink-wrapped for external use
 pub mod preamble {
     pub use crate::coord::Coord;
+    pub use crate::op::OpHandle;
     pub use crate::Direction;
     pub use crate::Direction::Fwd;
     pub use crate::Direction::Inv;
@@ -37,7 +31,6 @@ pub mod preamble {
     pub use crate::Error;
     pub use crate::Minimal;
     pub use crate::Op;
-    pub use crate::OpHandle;
     pub use crate::Provider;
 }
 

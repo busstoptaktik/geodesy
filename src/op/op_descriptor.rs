@@ -19,7 +19,7 @@ impl OpDescriptor {
         let inverted = false; // Handled higher up in the call hierarchy
         let invocation = "".to_string(); // Handled higher up in the call hierarchy
         let inv = inv.unwrap_or_default();
-        let id = OpHandle::default();
+        let id = OpHandle::new();
         OpDescriptor {
             invocation,
             definition,

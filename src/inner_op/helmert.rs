@@ -265,7 +265,7 @@ pub fn new(parameters: &RawParameters, _provider: &dyn Provider) -> Result<Op, E
     let inv = InnerOp(helmert_inv);
     let descriptor = OpDescriptor::new(def, fwd, Some(inv));
     let steps = Vec::<Op>::new();
-    let id = OpHandle::default();
+    let id = OpHandle::new();
     Ok(Op {
         descriptor,
         params,

@@ -71,7 +71,7 @@ pub fn new(parameters: &RawParameters, provider: &dyn Provider) -> Result<Op, Er
     let fwd = InnerOp(pipeline_fwd);
     let inv = InnerOp(pipeline_inv);
     let descriptor = OpDescriptor::new(definition, fwd, Some(inv));
-    let id = OpHandle::default();
+    let id = OpHandle::new();
     Ok(Op {
         descriptor,
         params,
@@ -104,7 +104,7 @@ pub fn push(parameters: &RawParameters, _prv: &dyn Provider) -> Result<Op, Error
         Some(InnerOp(noop_placeholder)),
     );
     let steps = Vec::new();
-    let id = OpHandle::default();
+    let id = OpHandle::new();
 
     Ok(Op {
         descriptor,
@@ -124,7 +124,7 @@ pub fn pop(parameters: &RawParameters, _prv: &dyn Provider) -> Result<Op, Error>
         Some(InnerOp(noop_placeholder)),
     );
     let steps = Vec::new();
-    let id = OpHandle::default();
+    let id = OpHandle::new();
 
     Ok(Op {
         descriptor,

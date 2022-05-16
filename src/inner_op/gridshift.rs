@@ -92,7 +92,7 @@ pub fn new(parameters: &RawParameters, provider: &dyn Provider) -> Result<Op, Er
     let inv = InnerOp(inv);
     let descriptor = OpDescriptor::new(def, fwd, Some(inv));
     let steps = Vec::<Op>::new();
-    let id = OpHandle::default();
+    let id = OpHandle::new();
 
     Ok(Op {
         descriptor,

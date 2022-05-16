@@ -143,7 +143,7 @@ pub fn utm(parameters: &RawParameters, _prv: &dyn Provider) -> Result<Op, Error>
 
     let descriptor = OpDescriptor::new(def, InnerOp(fwd), Some(InnerOp(inv)));
     let steps = Vec::<Op>::new();
-    let id = OpHandle::default();
+    let id = OpHandle::new();
 
     Ok(Op {
         descriptor,
