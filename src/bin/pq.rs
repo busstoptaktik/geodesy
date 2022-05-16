@@ -1,49 +1,38 @@
 /*! Plonketi Plonk! !*/
 //! How to append a postscript to the help message generated.
 // use geodesy::preamble::*;
+use clap::Parser;
 use log::{debug, trace};
 use std::path::PathBuf;
-use structopt::StructOpt;
 
 /// PQ: The Rust Geodesy blablabla program is called pq in order to have
 /// an alphabetically continuous source code file name "PQ.RS".
 /// We encourage porting to other languages, and look forward to the C,
 /// Fortran, Matlab, and Lex versions: "AB.C" and "DE.F", "KL.M", "JK.L",
 /// and the obvious inverted ML version "ON.ML"
-#[derive(StructOpt, Debug)]
-#[structopt(name = "pq")]
-struct Opt {
+#[derive(Parser, Debug)]
+#[clap(name = "pq")]
+#[clap(author, version, about, long_about = None)]
+struct Cli {
     /// Inverse
-    #[structopt(short, long = "inv")]
+    #[clap(short, long = "inv")]
     _inverse: bool,
 
     /// Activate debug mode
-    #[structopt(short, long)]
+    #[clap(short, long)]
     debug: bool,
 
     /// Verbose mode (-v, -vv, -vvv, etc.)
-    #[structopt(short, long, parse(from_occurrences))]
+    #[clap(short, long, parse(from_occurrences))]
     _verbose: u8,
 
-    // Set speed
-    //#[structopt(short, long, default_value = "42")]
-    //speed: f64,
     /// Output file, stdout if not present
-    #[structopt(short, long, parse(from_os_str))]
+    #[clap(short, long = "output", parse(from_os_str))]
     _output: Option<PathBuf>,
 
-    // the long option will be translated by default to kebab case,
-    // i.e. `--nb-cars`.
-    // Number of cars
-    // /#[structopt(short = "c", long)]
-    //nb_cars: Option<i32>,
     /// Operation to apply
-    #[structopt(name = "OPERATION", parse(from_str))]
-    _operation: String,
-
-    /// Files to process
-    #[structopt(name = "FILE", parse(from_os_str))]
-    _files: Vec<PathBuf>,
+    #[clap(name = "ARGS", parse(from_str))]
+    _operation: Vec<String>,
 }
 fn main() -> Result<(), anyhow::Error> {
     // Filter by setting RUST_LOG to one of {Error, Warn, Info, Debug, Trace}
@@ -53,7 +42,7 @@ fn main() -> Result<(), anyhow::Error> {
         simple_logger::init_with_env()?;
     }
 
-    let opt = Opt::from_args();
+    let opt = Cli::parse();
     println!("{:#?}", opt);
     debug!("debug message 1");
     trace!("trace message 1");

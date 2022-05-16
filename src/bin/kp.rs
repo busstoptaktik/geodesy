@@ -1,24 +1,26 @@
+use clap::Parser;
 use geodesy::preamble::*;
 use std::io::BufRead;
 use std::path::PathBuf;
 use std::time;
-use structopt::StructOpt;
 
 /// KP: The Rust Geodesy "Coordinate Processing" program. Called `kp` in honor
 /// of Knud Poder (1925-2019), the nestor of computational geodesy, who would
 /// have found it amusing to know that he provides a reasonable abbreviation
 /// for something that would otherwise have collided with the name of the
 /// Unix file copying program `cp`.
-#[derive(StructOpt, Debug)]
-#[structopt(name = "kp")]
-struct Opt {
+
+#[derive(Parser, Debug)]
+#[clap(name = "kp")]
+#[clap(author, version, about, long_about = None)]
+struct Cli {
     /// Inverse.
     /// Use of `inverse` mode excludes the use of `roundtrip` mode.
-    #[structopt(short, long = "inv")]
+    #[clap(short, long = "inv")]
     inverse: bool,
 
     /// Activate debug mode
-    #[structopt(short, long)]
+    #[clap(short, long)]
     debug: bool,
 
     /// Roundtrip mode - a signature feature of Knud Poder's programs:
@@ -26,34 +28,30 @@ struct Opt {
     /// input argument with its supposedly identical alter ego after
     /// a forward+inverse transformation pair.
     /// Use of `roundtrip` mode excludes the use of `inverse` mode.
-    #[structopt(short, long)]
+    #[clap(short, long)]
     roundtrip: bool,
 
     /// Echo input to output
-    #[structopt(short, long)]
+    #[clap(short, long)]
     echo: bool,
 
     /// Verbose mode (-v, -vv, -vvv, etc.)
-    #[structopt(short, long, parse(from_occurrences))]
+    #[clap(short, long, parse(from_occurrences))]
     verbose: u8,
 
     /// Output file, stdout if not present
-    #[structopt(short, long, parse(from_os_str))]
+    #[clap(short, long, parse(from_os_str))]
     _output: Option<PathBuf>,
 
-    /// Operation to apply
-    #[structopt(name = "OPERATION", parse(from_str))]
-    operation: String,
-
-    /// Files to process
-    #[structopt(name = "FILE", parse(from_os_str))]
-    _files: Vec<PathBuf>,
+    /// First argument is the operation to apply, the remaining the files to operate on
+    args: Vec<String>,
 }
 
 fn main() -> Result<(), anyhow::Error> {
-    let opt = Opt::from_args();
+    let opt = Cli::parse();
+    println!("args: {:?}", opt.args);
 
-    let ctx = Minimal::default();
+    let ctx = Minimal::new(None);
 
     if opt.inverse && opt.roundtrip {
         eprintln!("Options `inverse` and `roundtrip` are mutually exclusive");
@@ -64,11 +62,15 @@ fn main() -> Result<(), anyhow::Error> {
         if let Some(dir) = dirs::data_local_dir() {
             eprintln!("data_local_dir: {}", dir.to_str().unwrap_or_default());
         }
-        eprintln!("{:#?}", opt);
+        eprintln!("opt: {:#?}", opt);
+    }
+
+    if opt.args.is_empty() {
+        return Ok(());
     }
 
     let start = time::Instant::now();
-    let op = Op::new(&opt.operation, &ctx)?;
+    let op = Op::new(&opt.args[0], &ctx)?;
     if opt.verbose > 2 {
         let duration = start.elapsed();
         println!("Created operation in: {:?}", duration);
@@ -111,7 +113,7 @@ fn main() -> Result<(), anyhow::Error> {
         }
 
         if opt.roundtrip {
-            let d = roundtrip_distance(&opt.operation, n, coord, data[0]);
+            let d = roundtrip_distance(&opt.args[0], n, coord, data[0]);
             println!("{}:  d = {:.2} mm", line, 1000. * d);
             continue;
         }
@@ -137,6 +139,7 @@ fn main() -> Result<(), anyhow::Error> {
         let duration = start.elapsed();
         println!("Transformed in: {:?}", duration);
     }
+
     Ok(())
 }
 

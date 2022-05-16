@@ -1,33 +1,34 @@
+use clap::Parser;
 use std::fs::{File, OpenOptions};
 use std::io::{BufRead, Error, Read, Seek, SeekFrom, Write};
 use std::path::PathBuf;
-use structopt::StructOpt;
 
 /// PILE: The Rust Geodesy grid management program. Appends grid files into the
 /// RG grid stockpile file `assets.pile` and writes metadata files for inclusion
 /// into the `assets.zip` directory.
-#[derive(StructOpt, Debug)]
-#[structopt(name = "pile")]
-struct Opt {
+#[derive(Parser, Debug)]
+#[clap(name = "kp")]
+#[clap(author, version, about, long_about = None)]
+struct Cli {
     /// Activate debug mode
-    #[structopt(short, long)]
+    #[clap(short, long)]
     debug: bool,
 
     /// Verbose mode (-v, -vv, -vvv, etc.)
-    #[structopt(short, long, parse(from_occurrences))]
+    #[clap(short, long, parse(from_occurrences))]
     _verbose: u8,
 
     /// Output file, default pile if not present
-    #[structopt(short, long, parse(from_os_str))]
+    #[clap(short, long, parse(from_os_str))]
     output: Option<PathBuf>,
 
     /// Files to process
-    #[structopt(name = "FILE", parse(from_os_str))]
+    #[clap(name = "FILE", parse(from_os_str))]
     files: Vec<PathBuf>,
 }
 
 fn main() -> Result<(), Error> {
-    let opt = Opt::from_args();
+    let opt = Cli::parse();
 
     let mut default_dir = dirs::data_local_dir().unwrap_or_default();
     default_dir.push("geodesy");
