@@ -31,12 +31,12 @@ The documentation is currently limited, but take a look at:
 - The [description of `kp`](/ruminations/003-rumination.md), the *Rust Geodesy* coordinate processing program
 - This essayistic [rumination](/ruminations/000-rumination.md), outlining the overall philosophy and architecture of *Rust Geodesy*.
 - The API documentation at [Docs.rs](https://docs.rs/geodesy)
-- The `examples`
+- The [`examples`](/examples/)
 - The tests embedded in the [source code](/src/)
 
 ## License
 
-*Rust Geodesy*: Copyright 2020, 2021 by Thomas Knudsen <knudsen.thomas@gmail.com>.
+*Rust Geodesy*: Copyright 2020, 2021, 2022 by Thomas Knudsen <knudsen.thomas@gmail.com>.
 
 Licensed under either of
 
