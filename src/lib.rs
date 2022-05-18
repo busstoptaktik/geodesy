@@ -42,7 +42,7 @@ pub mod inner_op_authoring {
     pub use log::trace;
     pub use log::warn;
 
-    pub use crate::Grid;
+    pub use crate::grid::Grid;
 
     pub use crate::inner_op::InnerOp;
     pub use crate::inner_op::OpConstructor;
