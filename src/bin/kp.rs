@@ -3,6 +3,7 @@ use geodesy::preamble::*;
 use std::io::BufRead;
 use std::path::PathBuf;
 use std::time;
+use anyhow::bail;
 
 /// KP: The Rust Geodesy "Coordinate Processing" program. Called `kp` in honor
 /// of Knud Poder (1925-2019), the nestor of computational geodesy, who would
@@ -54,8 +55,7 @@ fn main() -> Result<(), anyhow::Error> {
     let ctx = Minimal::new(None);
 
     if opt.inverse && opt.roundtrip {
-        eprintln!("Options `inverse` and `roundtrip` are mutually exclusive");
-        std::process::exit(exitcode::USAGE);
+        bail!("Options `inverse` and `roundtrip` are mutually exclusive");
     }
 
     if opt.debug {

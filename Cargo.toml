@@ -24,7 +24,6 @@ uuid = { version = "0.8", features = ["v4"] }
 
 # Command line program helpers
 clap = { version = "3.1.18", features = ["derive"] }
-exitcode = "1.1"
 
 # Logging and error handling
 log = "0.4"
