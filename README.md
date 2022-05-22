@@ -1,6 +1,6 @@
 # Geodesy
 
-*Rust Geodesy* (RG), is a platform for experiments with geodetic software, transformations, and standards. *RG* vaguely resembles the [PROJ](https://proj.org) transformation system, and was built in part on the basis of experiments with alternative data flow models for PROJ. The actual transformation functionality of *RG* is, however, minimal: At time of writing, it includes just a few low level operations, including:
+*Rust Geodesy* (RG), is a platform for experiments with geodetic software, transformations, and standards. *RG* vaguely resembles the [PROJ](https://proj.org) transformation system, and was built in part on the basis of experiments with *alternative data flow models for PROJ*. The actual transformation functionality of *RG* is, however, minimal: At time of writing, it includes just a few low level operations, including:
 
 - The three, six, seven, and fourteen-parameter versions of the *Helmert transformation*
 - Horizontal and vertical *grid shift* operations
@@ -9,11 +9,16 @@
 - Three widely used conformal projections: The *Mercator*, the *Transverse Mercator*, and the *Lambert Conformal Conic* projection
 - The *Adapt* operator, which mediates between various conventions for coordinate units and order
 
-While this is sufficient to test the architecture, it is very far from enough to get through a geodesist's daily work.
+While this is sufficient to test the architecture, and while supporting the most important transformation primitives and three of the most used map projections, it is a far cry from PROJ's enormous gamut of supported map projections. So *RG* is fundamentally a *geodesy*, rather than *cartography* library. And while PROJ benefits from four decades of *reality hardening*, RG, being a platform for experiments, does not even consider development in the direction of operational robustness.
 
 Hence, viewing *RG* as *another PROJ*, or *PROJ [RiiR](https://acronyms.thefreedictionary.com/RIIR)*, will lead to bad disappointment. At best, you may catch a weak mirage of a *potential* [shape of jazz to come](https://en.wikipedia.org/wiki/The_Shape_of_Jazz_to_Come) for the PROJ internal dataflow.
 
+That said, being written in Rust, with all the memory safety guarantees Rust provides, *RG* by design avoids a number of pitfalls that are explicitly worked around in the PROJ code base, so the miniscule size of *RG* (as measured in number of code lines) compared to PROJ, is not just a matter of functional pruning, but also a matter of development using a tool wonderfully suited for the task at hand.
+
+Also, having the advantage of learning from PROJ experience, both from a user's and a developer's perspective, *RG* is significantly more extensible than PROJ, so perhaps for a number of applications, and despite its limitations, RG may be sufficient, and perhaps even useful.
+
 ## Aims
+
 Dataflow experimentation is just one aspect of *RG*. Overall, the aims are fourfold:
 
 1. Support experiments for evolution of geodetic standards.
