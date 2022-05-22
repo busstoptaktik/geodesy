@@ -1,9 +1,9 @@
+use anyhow::bail;
 use clap::Parser;
 use geodesy::preamble::*;
 use std::io::BufRead;
 use std::path::PathBuf;
 use std::time;
-use anyhow::bail;
 
 /// KP: The Rust Geodesy "Coordinate Processing" program. Called `kp` in honor
 /// of Knud Poder (1925-2019), the nestor of computational geodesy, who would

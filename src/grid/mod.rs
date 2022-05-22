@@ -33,7 +33,11 @@ pub struct Grid {
 }
 
 impl Grid {
-    pub fn plain(header: &[f64], grid: Option<&[f32]>, offset: Option<usize>) -> Result<Self, Error> {
+    pub fn plain(
+        header: &[f64],
+        grid: Option<&[f32]>,
+        offset: Option<usize>,
+    ) -> Result<Self, Error> {
         if header.len() < 7 {
             return Err(Error::General("Incomplete grid"));
         }
@@ -52,7 +56,7 @@ impl Grid {
         let offset = offset.unwrap_or(0);
         let grid = Vec::from(grid.unwrap_or(&[]));
 
-        if elements == 0 || (offset==0 && elements > grid.len()) || bands < 1 {
+        if elements == 0 || (offset == 0 && elements > grid.len()) || bands < 1 {
             return Err(Error::General("Malformed grid"));
         }
 
@@ -80,7 +84,6 @@ impl Grid {
         let (header, grid) = gravsoft_grid_reader(buf)?;
         Grid::plain(&header, Some(&grid), None)
     }
-
 
     // Since we store the entire grid in a single vector, the interpolation
     // routine here looks strongly like a case of "writing Fortran 77 in Rust".
@@ -133,7 +136,6 @@ impl Grid {
     }
 }
 
-
 // If the Gravsoft grid appears to be in angular units, convert it to radians
 fn normalize_gravsoft_grid_values(header: &mut [f64], grid: &mut [f32]) {
     // If any boundary is outside of [-720; 720], the grid must (by a wide margin) be
@@ -181,8 +183,7 @@ fn gravsoft_grid_reader(buf: &[u8]) -> Result<(Vec<f64>, Vec<f32>), Error> {
             let value = item.parse::<f64>().unwrap_or(f64::NAN);
             if header.len() < 6 {
                 header.push(value);
-            }
-            else {
+            } else {
                 grid.push(value as f32);
             }
         }
@@ -201,27 +202,29 @@ fn gravsoft_grid_reader(buf: &[u8]) -> Result<(Vec<f64>, Vec<f32>), Error> {
     let dlon = header[5];
     let rows = ((lat_1 - lat_0) / dlat + 1.5).floor() as usize;
     let cols = ((lon_1 - lon_0) / dlon + 1.5).floor() as usize;
-    let bands = grid.len() / (rows*cols);
-    if (rows*cols*bands) > grid.len() || bands < 1 {
+    let bands = grid.len() / (rows * cols);
+    if (rows * cols * bands) > grid.len() || bands < 1 {
         return Err(Error::General("Incomplete Gravsoft grid"));
     }
 
-    if (rows*cols*bands) != grid.len() {
-        return Err(Error::General("Unrecognized material at end of Gravsoft grid"));
+    if (rows * cols * bands) != grid.len() {
+        return Err(Error::General(
+            "Unrecognized material at end of Gravsoft grid",
+        ));
     }
 
     if bands > 2 {
-        return Err(Error::General("Unsupported number of bands in Gravsoft grid"));
+        return Err(Error::General(
+            "Unsupported number of bands in Gravsoft grid",
+        ));
     }
 
     header.push(bands as f64);
-
 
     // Handle linear/angular conversions
     normalize_gravsoft_grid_values(&mut header, &mut grid);
     Ok((header, grid))
 }
-
 
 // ----- T E S T S ------------------------------------------------------------------
 #[cfg(test)]
@@ -279,6 +282,5 @@ mod test {
         Ok(())
     }
 }
-
 
 // Additional tests for Grid in src/inner_op/gridshift.rs
