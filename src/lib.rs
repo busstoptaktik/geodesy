@@ -57,10 +57,12 @@ pub mod inner_op_authoring {
 }
 
 /// Preamble for crate-internal modules
-pub(crate) mod internal {
+pub mod internal {
     pub use crate::inner_op_authoring::*;
     pub use std::collections::BTreeMap;
     pub use std::collections::BTreeSet;
+    pub use std::path::PathBuf;
+
     pub use uuid::Uuid;
 }
 
