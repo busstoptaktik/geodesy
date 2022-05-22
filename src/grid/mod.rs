@@ -1,4 +1,5 @@
 use crate::internal::*;
+use std::io::BufRead;
 
 // Clamp input to range min..max
 fn clamp<T>(input: T, min: T, max: T) -> T
@@ -32,34 +33,31 @@ pub struct Grid {
 }
 
 impl Grid {
-    pub fn plain(raw: &[f64]) -> Result<Self, Error> {
-        if raw.len() < 6 {
+    pub fn plain(header: &[f64], grid: Option<&[f32]>, offset: Option<usize>) -> Result<Self, Error> {
+        if header.len() < 7 {
             return Err(Error::General("Incomplete grid"));
         }
 
-        let lat_0 = raw[1];
-        let lat_1 = raw[0];
-        let lon_0 = raw[2];
-        let lon_1 = raw[3];
-        let dlat = -raw[4];
-        let dlon = raw[5];
+        let lat_0 = header[1];
+        let lat_1 = header[0];
+        let lon_0 = header[2];
+        let lon_1 = header[3];
+        let dlat = -header[4];
+        let dlon = header[5];
+        let bands = header[6] as usize;
         let rows = ((lat_1 - lat_0) / dlat + 1.5).floor() as usize;
         let cols = ((lon_1 - lon_0) / dlon + 1.5).floor() as usize;
-        let bands = (raw.len() - 6_usize) / (rows * cols);
-        let offset = 6;
-
         let elements = rows * cols * bands;
-        if elements == 0 || elements + offset > raw.len() || bands < 1 {
-            return Err(Error::General("Incomplete grid"));
-        }
 
-        // Extract the grid part, and convert it to f32
-        let grid: Vec<f32> = raw[offset..].iter().map(|x| *x as f32).collect();
-        if elements != grid.len() {
+        let offset = offset.unwrap_or(0);
+        let grid = Vec::from(grid.unwrap_or(&[]));
+
+        if elements == 0 || (offset==0 && elements > grid.len()) || bands < 1 {
             return Err(Error::General("Malformed grid"));
         }
 
-        let offset = 0;
+        // Extract the grid part, and convert it to f32
+        // let grid: Vec<f32> = raw[offset..].iter().map(|x| *x as f32).collect();
         let last_valid_record_start = offset + (rows * cols - 1) * bands;
 
         Ok(Grid {
@@ -77,6 +75,12 @@ impl Grid {
             grid,
         })
     }
+
+    pub fn gravsoft(buf: &[u8]) -> Result<Self, Error> {
+        let (header, grid) = gravsoft_grid_reader(buf)?;
+        Grid::plain(&header, Some(&grid), None)
+    }
+
 
     // Since we store the entire grid in a single vector, the interpolation
     // routine here looks strongly like a case of "writing Fortran 77 in Rust".
@@ -129,6 +133,152 @@ impl Grid {
     }
 }
 
-// ----- T E S T S ------------------------------------------------------------------
 
-// The tests for Grid are placed in src/inner_op/gridshift.rs
+// If the Gravsoft grid appears to be in angular units, convert it to radians
+fn normalize_gravsoft_grid_values(header: &mut [f64], grid: &mut [f32]) {
+    // If any boundary is outside of [-720; 720], the grid must (by a wide margin) be
+    // in projected coordinates and the correction in meters, so we simply return.
+    for h in header.iter().take(4) {
+        if h.abs() > 720. {
+            return;
+        }
+    }
+
+    // The header values are in decimal degrees
+    for h in header.iter_mut().take(6) {
+        *h = h.to_radians();
+    }
+
+    // If we're handling a geoid grid, we're done: Grid values are in meters
+    let h = Grid::plain(header, Some(grid), None).unwrap_or_default();
+    if h.bands < 2 {
+        return;
+    }
+
+    // The grid values are in minutes-of-arc and in latitude/longitude order.
+    // Swap them and convert into radians.
+    // TODO: handle 3-D data with 3rd coordinate in meters
+    for i in 0..grid.len() {
+        grid[i] = (grid[i] / 3600.0).to_radians();
+        if i % 2 == 1 {
+            grid.swap(i, i - 1);
+        }
+    }
+}
+
+// Read a gravsoft grid. Discard '#'-style comments
+fn gravsoft_grid_reader(buf: &[u8]) -> Result<(Vec<f64>, Vec<f32>), Error> {
+    let all = std::io::BufReader::new(buf);
+    let mut grid = Vec::<f32>::new();
+    let mut header = Vec::<f64>::new();
+
+    for line in all.lines() {
+        // Remove comments
+        let line = line?;
+        let line = line.split('#').collect::<Vec<_>>()[0];
+        // Convert to f64
+        for item in line.split_whitespace() {
+            let value = item.parse::<f64>().unwrap_or(f64::NAN);
+            if header.len() < 6 {
+                header.push(value);
+            }
+            else {
+                grid.push(value as f32);
+            }
+        }
+    }
+
+    if header.len() < 6 {
+        return Err(Error::General("Incomplete Gravsoft header"));
+    }
+
+    // Count the number of bands
+    let lat_0 = header[1];
+    let lat_1 = header[0];
+    let lon_0 = header[2];
+    let lon_1 = header[3];
+    let dlat = -header[4];
+    let dlon = header[5];
+    let rows = ((lat_1 - lat_0) / dlat + 1.5).floor() as usize;
+    let cols = ((lon_1 - lon_0) / dlon + 1.5).floor() as usize;
+    let bands = grid.len() / (rows*cols);
+    if (rows*cols*bands) > grid.len() || bands < 1 {
+        return Err(Error::General("Incomplete Gravsoft grid"));
+    }
+
+    if (rows*cols*bands) != grid.len() {
+        return Err(Error::General("Unrecognized material at end of Gravsoft grid"));
+    }
+
+    if bands > 2 {
+        return Err(Error::General("Unsupported number of bands in Gravsoft grid"));
+    }
+
+    header.push(bands as f64);
+
+
+    // Handle linear/angular conversions
+    normalize_gravsoft_grid_values(&mut header, &mut grid);
+    Ok((header, grid))
+}
+
+
+// ----- T E S T S ------------------------------------------------------------------
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    const HEADER: [f64; 6] = [54., 58., 8., 16., 1., 1.];
+
+    #[rustfmt::skip]
+    const GEOID: [f32; 5*9] = [
+        58.08, 58.09, 58.10, 58.11, 58.12, 58.13, 58.14, 58.15, 58.16,
+        57.08, 57.09, 57.10, 57.11, 57.12, 57.13, 57.14, 57.15, 57.16,
+        56.08, 56.09, 56.10, 56.11, 56.12, 56.13, 56.14, 56.15, 56.16,
+        55.08, 55.09, 55.10, 55.11, 55.12, 55.13, 55.14, 55.15, 55.16,
+        54.08, 54.09, 54.10, 54.11, 54.12, 54.13, 54.14, 54.15, 54.16,
+    ];
+
+    #[allow(dead_code)]
+    #[rustfmt::skip]
+    const DATUM: [f32; 5*2*9] = [
+        58., 08., 58., 09., 58., 10., 58., 11., 58., 12., 58., 13., 58., 14., 58., 15., 58., 16.,
+        57., 08., 57., 09., 57., 10., 57., 11., 57., 12., 57., 13., 57., 14., 57., 15., 57., 16.,
+        56., 08., 56., 09., 56., 10., 56., 11., 56., 12., 56., 13., 56., 14., 56., 15., 56., 16.,
+        55., 08., 55., 09., 55., 10., 55., 11., 55., 12., 55., 13., 55., 14., 55., 15., 55., 16.,
+        54., 08., 54., 09., 54., 10., 54., 11., 54., 12., 54., 13., 54., 14., 54., 15., 54., 16.,
+    ];
+
+    #[test]
+    fn grid_header() -> Result<(), Error> {
+        let mut datum_header = Vec::from(HEADER);
+        datum_header.push(2_f64); // 2 bands
+        let mut datum_grid = Vec::from(DATUM);
+        normalize_gravsoft_grid_values(&mut datum_header, &mut datum_grid);
+        let datum = Grid::plain(&datum_header, Some(&datum_grid), None)?;
+
+        let mut geoid_header = Vec::from(HEADER);
+        geoid_header.push(1_f64); // 1 band
+        let mut geoid_grid = Vec::from(GEOID);
+        normalize_gravsoft_grid_values(&mut geoid_header, &mut geoid_grid);
+        let geoid = Grid::plain(&geoid_header, Some(&geoid_grid), None)?;
+
+        let c = Coord::geo(58.75, 08.25, 0., 0.);
+
+        let n = geoid.interpolation(&c, None);
+        assert!((n[0] - 58.83).abs() < 0.1);
+
+        let d = datum.interpolation(&c, None);
+        assert!(c.default_ellps_dist(&d.to_arcsec().to_radians()) < 1.0);
+
+        // Extrapolation
+        let c = Coord::geo(100., 50., 0., 0.);
+        let d = datum.interpolation(&c, None);
+        assert!(c.default_ellps_dist(&d.to_arcsec().to_radians()) < 25.0);
+
+        Ok(())
+    }
+}
+
+
+// Additional tests for Grid in src/inner_op/gridshift.rs
