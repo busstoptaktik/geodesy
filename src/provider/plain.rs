@@ -1,12 +1,15 @@
 use super::*;
 use std::path::PathBuf;
 
-// ----- T H E   L O C A L   P R O V I D E R -------------------------------------------
+// ----- T H E   P L A I N   P R O V I D E R -------------------------------------------
 
-/// A minimalistic context provider, supporting only built in and run-time defined operators.
-/// Usually sufficient for cartographic uses, and for internal test authoring.
+/// A context provider, supporting built in and run-time defined operators, external grids,
+/// and macros.
+/// Sufficient for most uses, especially geodetic grid development.
+/// May get somewhat clunky when working with large numbers of grids and macros, as each grid
+/// and macro resides in individual files.
 #[derive(Debug)]
-pub struct Local {
+pub struct Plain {
     constructors: BTreeMap<String, OpConstructor>,
     resources: BTreeMap<String, String>,
     operators: BTreeMap<OpHandle, Op>,
@@ -14,8 +17,8 @@ pub struct Local {
     paths: Vec<std::path::PathBuf>,
 }
 
-impl Default for Local {
-    fn default() -> Local {
+impl Default for Plain {
+    fn default() -> Plain {
         let constructors = BTreeMap::new();
         let resources = BTreeMap::new();
         let operators = BTreeMap::new();
@@ -24,11 +27,11 @@ impl Default for Local {
         let localpath: PathBuf = [".", "geodesy"].iter().collect();
         paths.push(localpath);
 
-        if let Some(globalpath) = dirs::data_local_dir() {
-            paths.push(globalpath);
+        if let Some(userpath) = dirs::data_local_dir() {
+            paths.push(userpath);
         }
 
-        Local {
+        Plain {
             constructors,
             resources,
             operators,
@@ -37,9 +40,9 @@ impl Default for Local {
     }
 }
 
-impl Provider for Local {
-    fn new(_resources: Option<BTreeMap<&'static str, String>>) -> Local {
-        Local::default()
+impl Provider for Plain {
+    fn new(_resources: Option<BTreeMap<&'static str, String>>) -> Plain {
+        Plain::default()
     }
 
     fn op(&mut self, definition: &str) -> Result<OpHandle, Error> {
@@ -90,6 +93,22 @@ impl Provider for Local {
             return Ok(result.to_string());
         }
 
+        // TODO: Check for "known prefixes": 'ellps:', 'datum:', etc.
+
+        // We cannot have ':' in filenames on Windows, so we swap them for '_',
+        // and add the ".macro" extension
+        let name = name.replace(":", "_") + ".macro";
+
+        let section = "macro";
+        for path in &self.paths {
+            let mut path = path.clone();
+            path.push(section);
+            path.push(&name);
+            if let Ok(result) = std::fs::read_to_string(path) {
+                return Ok(result);
+            }
+        }
+
         Err(Error::NotFound(
             name.to_string(),
             ": User defined resource".to_string(),
@@ -97,9 +116,21 @@ impl Provider for Local {
     }
 
     fn get_blob(&self, name: &str) -> Result<Vec<u8>, Error> {
-        let mut path = PathBuf::from("geodesy");
-        path.push(&name);
-        Ok(std::fs::read(path)?)
+        let n = PathBuf::from(name);
+        let ext = n
+            .extension()
+            .unwrap_or_default()
+            .to_str()
+            .unwrap_or_default();
+        for path in &self.paths {
+            let mut path = path.clone();
+            path.push(ext);
+            path.push(name);
+            if let Ok(result) = std::fs::read(path) {
+                return Ok(result);
+            }
+        }
+        Err(Error::NotFound(name.to_string(), ": Blob".to_string()))
     }
 
     /// Access grid resources by identifier
@@ -107,5 +138,32 @@ impl Provider for Local {
         Err(Error::General(
             "Grid access by identifier not supported by the Minimal Provider",
         ))
+    }
+}
+
+// ----- T E S T S ------------------------------------------------------------------
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn basic() -> Result<(), Error> {
+        let mut prv = Plain::new(None);
+        let op = prv.op("stupid:way")?;
+
+        let mut data = some_basic_coordinates();
+        assert_eq!(data[0][0], 55.);
+        assert_eq!(data[1][0], 59.);
+
+        prv.apply(op, Fwd, &mut data)?;
+        assert_eq!(data[0][0], 56.);
+        assert_eq!(data[1][0], 60.);
+
+        prv.apply(op, Inv, &mut data)?;
+        assert_eq!(data[0][0], 55.);
+        assert_eq!(data[1][0], 59.);
+
+        Ok(())
     }
 }

@@ -17,7 +17,7 @@ default-run = "pq"
 
 [dependencies]
 # Core functionality
-dirs = "3.0"
+dirs = "4.0"
 # memmap = "0.7"
 uuid = { version = "0.8", features = ["v4"] }
 

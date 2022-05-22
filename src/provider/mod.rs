@@ -1,8 +1,8 @@
-mod local;
 mod minimal;
+mod plain;
 
-pub use local::Local;
 pub use minimal::Minimal;
+pub use plain::Plain;
 
 use super::internal::*;
 
