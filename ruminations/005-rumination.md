@@ -76,6 +76,8 @@ The actual presentation paraphrased the conclusion of the abstract with these wo
 
 - A simplified ISO 19111, (better) reflecting the real world
 - Improved conceptual rigor in geodesy
+- The changes needed are probably surprisingly small
+- ... but that’s the subject of another talk
 
 ---
 
