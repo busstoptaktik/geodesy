@@ -55,7 +55,7 @@ impl Op {
     }
 
     // Helper for implementation of `InnerOp`s: Instantiate an `Op` for the simple
-    // (and common) case, where the `InnerOp` constructor does mot need to set any
+    // (and common) case, where the `InnerOp` constructor does not need to set any
     // other parameters than the ones defined by the instantiation parameter
     // arguments.
     pub fn plain(
@@ -107,7 +107,8 @@ impl Op {
         // A user defined macro?
         else if let Ok(macro_definition) = provider.get_resource(&name) {
             // The " " sentinel simplifies search for "inv", by allowing us to search
-            // for " inv " instead, avoiding matching words *containing* inv
+            // for " inv " instead, avoiding matching words *containing* inv (such as
+            // INVariant, subINVolution, and a few other pathological cases)
             let def = parameters.definition.clone() + " ";
             let inverted = def.contains(" inv ");
             let mut next_param = parameters.next(&parameters.definition);
