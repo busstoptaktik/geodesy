@@ -26,7 +26,8 @@ impl Default for Plain {
         let localpath: PathBuf = [".", "geodesy"].iter().collect();
         paths.push(localpath);
 
-        if let Some(userpath) = dirs::data_local_dir() {
+        if let Some(mut userpath) = dirs::data_local_dir() {
+            userpath.push("geodesy");
             paths.push(userpath);
         }
 
