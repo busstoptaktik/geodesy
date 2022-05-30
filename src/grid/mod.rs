@@ -1,3 +1,11 @@
+// The Grid struct handles grid characteristics and interpolation.
+// The actual grid may be ither part of the Grid struct, or externally
+// provided (presumably by a Provider).
+//
+// In principle grid format agnostic, but includes a parser for
+// Gravsoft format geodetic grids.
+
+
 use crate::internal::*;
 use std::io::BufRead;
 
@@ -27,9 +35,9 @@ pub struct Grid {
     rows: usize,
     cols: usize,
     pub bands: usize,
-    offset: usize,
+    offset: usize, // typically 0, but may be any number for externally stored grids
     last_valid_record_start: usize,
-    grid: Vec<f32>,
+    grid: Vec<f32>, // May be zero sized in cases where the Provider provides access to an externally stored grid
 }
 
 impl Grid {
@@ -54,15 +62,14 @@ impl Grid {
         let elements = rows * cols * bands;
 
         let offset = offset.unwrap_or(0);
+        let last_valid_record_start = offset + (rows * cols - 1) * bands;
+
         let grid = Vec::from(grid.unwrap_or(&[]));
 
         if elements == 0 || (offset == 0 && elements > grid.len()) || bands < 1 {
             return Err(Error::General("Malformed grid"));
         }
 
-        // Extract the grid part, and convert it to f32
-        // let grid: Vec<f32> = raw[offset..].iter().map(|x| *x as f32).collect();
-        let last_valid_record_start = offset + (rows * cols - 1) * bands;
 
         Ok(Grid {
             lat_0,
