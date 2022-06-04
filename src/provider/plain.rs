@@ -97,6 +97,7 @@ impl Provider for Plain {
 
         // We cannot have ':' in filenames on Windows, so we swap them for '_',
         // and add the ".macro" extension
+        #[allow(clippy::single_char_pattern)]
         let name = name.replace(":", "_") + ".macro";
 
         let section = "macro";
@@ -109,10 +110,7 @@ impl Provider for Plain {
             }
         }
 
-        Err(Error::NotFound(
-            name.to_string(),
-            ": User defined resource".to_string(),
-        ))
+        Err(Error::NotFound(name, ": User defined resource".to_string()))
     }
 
     fn get_blob(&self, name: &str) -> Result<Vec<u8>, Error> {

@@ -5,7 +5,6 @@
 // In principle grid format agnostic, but includes a parser for
 // Gravsoft format geodetic grids.
 
-
 use crate::internal::*;
 use std::io::BufRead;
 
@@ -69,7 +68,6 @@ impl Grid {
         if elements == 0 || (offset == 0 && elements > grid.len()) || bands < 1 {
             return Err(Error::General("Malformed grid"));
         }
-
 
         Ok(Grid {
             lat_0,
