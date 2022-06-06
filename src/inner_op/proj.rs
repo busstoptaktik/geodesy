@@ -31,7 +31,8 @@ fn proj(args: &str, forward: bool, operands: &mut [Coord]) -> Result<usize, Erro
 
     // Extract the 2D coordinates from the operands, and convert them into bytes
     // for interprocess communication
-    let mut coo = Vec::with_capacity(2 * operands.len() * size_of::<f64>());
+    let buffer_size = 2 * operands.len() * size_of::<f64>();
+    let mut coo = Vec::with_capacity(buffer_size);
     for op in operands.iter() {
         let e = op[0].to_ne_bytes();
         let n = op[1].to_ne_bytes();
@@ -54,6 +55,9 @@ fn proj(args: &str, forward: bool, operands: &mut [Coord]) -> Result<usize, Erro
 
     // Read the output bytes
     let output = child.wait_with_output().expect("failed to wait on child");
+    if output.stdout.len() != buffer_size {
+        return Err(Error::General("proj: Unexpected return size"));
+    }
 
     // Turn the output bytes into doubles and put them properly back into the operands
     let mut errors = 0_usize;
