@@ -3,17 +3,15 @@
 //
 // Extremely experimental, undocumented, and with too few checks on return
 // values - but (under Windows) amazingly seems to work...
-use std::process::{Command, Stdio};
 use std::io::Write;
 use std::mem::size_of;
+use std::process::{Command, Stdio};
 
 use super::*;
-
 
 // ----- W O R K H O R S E ----------------------------------------------------------
 
 fn proj(args: &str, forward: bool, operands: &mut [Coord]) -> Result<usize, Error> {
-
     // Build the command line arguments needed to spawn proj
     let mut the_args = "-b ".to_string();
     if !forward {
@@ -50,15 +48,17 @@ fn proj(args: &str, forward: bool, operands: &mut [Coord]) -> Result<usize, Erro
         stdin.write_all(&coo).expect("failed to write to stdin");
     });
 
-    let output = child
-        .wait_with_output()
-        .expect("failed to wait on child");
+    let output = child.wait_with_output().expect("failed to wait on child");
 
     // Turn the output bytes into doubles and put them properly back into the operands
     for (i, op) in operands.iter_mut().enumerate() {
-        let start = 16*i;
-        let ebytes: [u8; 8] = output.stdout[start+0..start+8].try_into().unwrap_or([0; 8]);
-        let nbytes: [u8; 8] = output.stdout[start+8..start+16].try_into().unwrap_or([0; 8]);
+        let start = 16 * i;
+        let ebytes: [u8; 8] = output.stdout[start..start + 8]
+            .try_into()
+            .unwrap_or([0; 8]);
+        let nbytes: [u8; 8] = output.stdout[start + 8..start + 16]
+            .try_into()
+            .unwrap_or([0; 8]);
         let e = f64::from_ne_bytes(ebytes);
         let n = f64::from_ne_bytes(nbytes);
         op[0] = e;
@@ -66,9 +66,7 @@ fn proj(args: &str, forward: bool, operands: &mut [Coord]) -> Result<usize, Erro
     }
 
     Ok(operands.len())
-
 }
-
 
 // ----- F O R W A R D --------------------------------------------------------------
 
@@ -104,20 +102,23 @@ pub fn new(parameters: &RawParameters, _provider: &dyn Provider) -> Result<Op, E
     let def = &parameters.definition;
     let given_args = ParsedParameters::new(parameters, &GAMUT)?.given;
     if Command::new("proj").stderr(Stdio::piped()).spawn().is_err() {
-        return Err(Error::NotFound("proj".to_string(), "Cannot locate the 'proj' executable".to_string()));
+        return Err(Error::NotFound(
+            "proj".to_string(),
+            "Cannot locate the 'proj' executable".to_string(),
+        ));
     }
 
     // Construct the proj command line args (the '+'-prefixed stuff in e.g. 'proj +proj=utm +zone=32')
     let mut proj_args = String::new();
     for (k, v) in given_args {
-        if k=="inv" || k=="name" {
-            continue
+        if k == "inv" || k == "name" {
+            continue;
         }
 
         proj_args += " +";
         proj_args += &k;
-        if v=="true" {
-            continue
+        if v == "true" {
+            continue;
         }
         proj_args += "=";
         proj_args += &v;
@@ -143,8 +144,6 @@ pub fn new(parameters: &RawParameters, _provider: &dyn Provider) -> Result<Op, E
 }
 
 // ----- T E S T S ------------------------------------------------------------------
-
-
 
 // echo 12 55 | proj -f %.5f +proj=utm +zone=32
 // 691875.63214    6098907.82501
@@ -188,7 +187,6 @@ mod tests {
         // ...and roundtrip back to utm
         prv.apply(op, Inv, &mut utm)?;
         assert!(rtp[0].hypot2(&utm[0]) < 1e-5);
-
 
         Ok(())
     }
