@@ -1,7 +1,0 @@
-# What goes on here?
-
-pipeline:
-  steps:
-    - cart: {ellps: intl}
-    - helmert: {x: -87, y: -96, z: -120}
-    - cart: {inv: true, ellps: GRS80}
