@@ -107,7 +107,7 @@ pub fn new(parameters: &RawParameters, provider: &dyn Provider) -> Result<Op, Er
 // ----- T E S T S ------------------------------------------------------------------
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::*;
 
     #[test]

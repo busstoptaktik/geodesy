@@ -142,7 +142,7 @@ impl Provider for Plain {
 // ----- T E S T S ------------------------------------------------------------------
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::*;
 
     #[test]

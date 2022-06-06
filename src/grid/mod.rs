@@ -233,7 +233,7 @@ fn gravsoft_grid_reader(buf: &[u8]) -> Result<(Vec<f64>, Vec<f32>), Error> {
 
 // ----- T E S T S ------------------------------------------------------------------
 #[cfg(test)]
-mod test {
+mod tests {
     use super::*;
 
     const HEADER: [f64; 6] = [54., 58., 8., 16., 1., 1.];
