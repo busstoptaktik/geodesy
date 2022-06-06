@@ -1,8 +1,8 @@
 // Operator utilizing the "proj" command line program to provide access to the
-// enormous amount of projections available in the PROJ library.
+// enormous number of projections available in the PROJ library.
 //
 // Extremely experimental, undocumented, and with too few checks on return
-// values - but (under Windows) amazingly seems to work...
+// values - but (under Windows at least) amazingly, it seems to work...
 use std::io::Write;
 use std::mem::size_of;
 use std::process::{Command, Stdio};
@@ -12,7 +12,8 @@ use super::*;
 // ----- W O R K H O R S E ----------------------------------------------------------
 
 fn proj(args: &str, forward: bool, operands: &mut [Coord]) -> Result<usize, Error> {
-    // Build the command line arguments needed to spawn proj
+    // Build the command line arguments needed to spawn proj, including '-b' for
+    // binary i/o, and '-I' to indicate the inverse operation (if that is the case)
     let mut the_args = "-b ".to_string();
     if !forward {
         the_args += "-I ";
@@ -25,9 +26,10 @@ fn proj(args: &str, forward: bool, operands: &mut [Coord]) -> Result<usize, Erro
         .args(&proj_args)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
         .spawn()?;
 
-    // Extract the 2D coordinates from the operands, and convert into bytes
+    // Extract the 2D coordinates from the operands, and convert them into bytes
     // for interprocess communication
     let mut coo = Vec::with_capacity(2 * operands.len() * size_of::<f64>());
     for op in operands.iter() {
@@ -37,6 +39,8 @@ fn proj(args: &str, forward: bool, operands: &mut [Coord]) -> Result<usize, Erro
         coo.extend_from_slice(&e);
         coo.extend_from_slice(&n);
     }
+
+    // Write the input coordinates to proj
 
     // If the child process fills its stdout buffer, it may end up
     // waiting until the parent reads the stdout, and not be able to
@@ -48,24 +52,31 @@ fn proj(args: &str, forward: bool, operands: &mut [Coord]) -> Result<usize, Erro
         stdin.write_all(&coo).expect("failed to write to stdin");
     });
 
+    // Read the output bytes
     let output = child.wait_with_output().expect("failed to wait on child");
 
     // Turn the output bytes into doubles and put them properly back into the operands
+    let mut errors = 0_usize;
     for (i, op) in operands.iter_mut().enumerate() {
         let start = 16 * i;
-        let ebytes: [u8; 8] = output.stdout[start..start + 8]
-            .try_into()
-            .unwrap_or([0; 8]);
+        let ebytes: [u8; 8] = output.stdout[start..start + 8].try_into().unwrap_or([0; 8]);
         let nbytes: [u8; 8] = output.stdout[start + 8..start + 16]
             .try_into()
             .unwrap_or([0; 8]);
-        let e = f64::from_ne_bytes(ebytes);
-        let n = f64::from_ne_bytes(nbytes);
+        let mut e = f64::from_ne_bytes(ebytes);
+        let mut n = f64::from_ne_bytes(nbytes);
+
+        // PROJ uses DBL_MAX to indicate errors, RG uses NAN
+        if e == f64::MAX || n == f64::MAX {
+            e = f64::NAN;
+            n = f64::NAN;
+            errors += 1;
+        }
         op[0] = e;
         op[1] = n;
     }
 
-    Ok(operands.len())
+    Ok(operands.len() - errors)
 }
 
 // ----- F O R W A R D --------------------------------------------------------------
@@ -81,17 +92,6 @@ fn proj_inv(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usiz
 }
 
 // ----- C O N S T R U C T O R ------------------------------------------------------
-
-// let op = Op::new("cart +proj=utm +zone = 32", &provider)?;
-// dbg!(&op.descriptor.definition);
-// dbg!(&op.params.given);
-
-// [src\inner_op\cart.rs:118] &op.descriptor.definition = "cart +proj=utm +zone = 32"
-// [src\inner_op\cart.rs:119] &op.params.given = {
-//     "+proj": "utm",
-//     "+zone": "32",
-//     "name": "cart",
-// }
 
 #[rustfmt::skip]
 pub const GAMUT: [OpParameter; 1] = [
