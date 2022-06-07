@@ -34,11 +34,8 @@ fn proj(args: &str, forward: bool, operands: &mut [Coord]) -> Result<usize, Erro
     let buffer_size = 2 * operands.len() * size_of::<f64>();
     let mut coo = Vec::with_capacity(buffer_size);
     for op in operands.iter() {
-        let e = op[0].to_ne_bytes();
-        let n = op[1].to_ne_bytes();
-
-        coo.extend_from_slice(&e);
-        coo.extend_from_slice(&n);
+        coo.extend_from_slice(&op[0].to_ne_bytes());
+        coo.extend_from_slice(&op[1].to_ne_bytes());
     }
 
     // Write the input coordinates to proj
@@ -70,8 +67,9 @@ fn proj(args: &str, forward: bool, operands: &mut [Coord]) -> Result<usize, Erro
         let mut e = f64::from_ne_bytes(ebytes);
         let mut n = f64::from_ne_bytes(nbytes);
 
-        // PROJ uses DBL_MAX to indicate errors, RG uses NAN
-        if e == f64::MAX || n == f64::MAX {
+        // PROJ uses the C constant HUGE_VAL (i.e. the IEEE infinity value)
+        // to indicate errors, while RG uses NAN
+        if e == f64::INFINITY || n == f64::INFINITY {
             e = f64::NAN;
             n = f64::NAN;
             errors += 1;
@@ -115,10 +113,10 @@ pub fn new(parameters: &RawParameters, _provider: &dyn Provider) -> Result<Op, E
     // Construct the proj command line args (the '+'-prefixed stuff in e.g. 'proj +proj=utm +zone=32')
     let mut proj_args = String::new();
     for (k, v) in given_args {
+        // Remove "proj" or "proj inv" prefixes
         if k == "inv" || k == "name" {
             continue;
         }
-
         proj_args += " +";
         proj_args += &k;
         if v == "true" {
@@ -128,7 +126,6 @@ pub fn new(parameters: &RawParameters, _provider: &dyn Provider) -> Result<Op, E
         proj_args += &v;
     }
     proj_args = proj_args.trim().to_string();
-    dbg!(&proj_args);
 
     // Make the proj argument string available to the operator implementation
     let mut params = ParsedParameters::new(parameters, &GAMUT)?;
