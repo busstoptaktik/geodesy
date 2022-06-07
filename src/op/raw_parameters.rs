@@ -1,3 +1,9 @@
+// `RawParameters` is the vehicle used by the `Op`erator factory in `Op::op(...)`,
+// to ferry args around from the invocator into the constructor of the individual
+// `InnerOp`s. The `InnrOp`constructor typically interprets the contents of
+// `RawParameters`, and converts it into a more runtime friendly instance of
+// `ParsedParameters`.
+
 use super::*;
 
 #[derive(Debug, Default)]

@@ -1,3 +1,10 @@
+// `ParsedParameters is the `InnerOp` specific representation of the operator
+// arguments. The `InnerOp`-constructor asks ParsedParameters::new(...) to
+// interpret the `RawParameters`-representation according to the `GAMUT` of
+// the `InnerOp`(i.e. the args it is willing to interpret and use).
+// Also, the constructor is free to compute up front derived parameters and
+// store them in the `ParsedParameters` struct, ready for use at run time.
+
 #![allow(clippy::needless_range_loop)]
 use super::*;
 
