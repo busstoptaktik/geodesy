@@ -31,6 +31,9 @@ $ echo 553036. -124509 | kp "dms:in | geo:out"
 - [`nmea`](#operator-nmea-dm-nmeass-and-dms): degree/minutes encoding with obvious extension to seconds.
 - [`nmeass`](#operator-nmea-dm-nmeass-and-dms): DDMMSS.sss encoding, sub-entry under `nmea`
 - [`noop`](#operator-noop): The no-operation
+- [`pop`](#operator-pop): Pop a dimension from the stack into the operands
+- [`proj`](#operator-proj): Invoke the `proj` executable to support all the projections PROJ supports.
+- [`push`](#operator-push): Push a dimension from the operands onto the stack
 - [`tmerc`](#operator-tmerc): The transverse Mercator projection
 - [`utm`](#operator-utm): The UTM projection
 
@@ -372,6 +375,64 @@ $ echo 553036. -124509 | kp "dms | geo:out"
 ```sh
 geo:in | noop all these parameters are=ignored | geo:out
 ```
+
+---
+
+### Operator `pop`
+
+**Purpose:** Pop a coordinate dimension from the stack
+
+**Description:**
+Pop the top(s)-of-stack into one or more operand coordinate dimensions. If more than one dimension is given, they are pop'ed in reverse numerical order. Pop's complement, push, pushes in numerical order, so the dance `push v_3 v_2 | pop v_3 v_2` is a noop - no matter in which order the args are given.
+
+| Argument | Description |
+|----------|-------------|
+| `v_1` | Pop the top-of-stack into the first coordinate of the operands |
+| `v_2` | Pop the top-of-stack into the second coordinate of the operands |
+| `v_3` | Pop the top-of-stack into the third coordinate of the operands |
+| `v_4` | Pop the top-of-stack into the fourth coordinate of the operands |
+
+(the argument names are selected for PROJ compatibility)
+
+**See also:** [`push`](#operator-push)
+
+---
+
+### Operator `proj`
+
+**Purpose:** Projection from geographic to any projected system supported by PROJ
+
+**Description:**
+
+Invokes the `proj` executable (if available) instantiating any PROJ supported projection. The syntax is identical to PROJ's, so check the [PROJ projection documentation](https://proj.org/operations/projections/index.html) for details
+
+**Example**: UTM zone 32 implemented using PROJ
+
+```js
+proj proj=utm zone=32 ellps=GRS80
+```
+
+**See also:** [PROJ documentation](https://proj.org/operations/projections/index.html): *Projections*.
+
+---
+
+### Operator `push`
+
+**Purpose:** Push a coordinate dimension onto the stack
+
+**Description:**
+Take a copy of one or more coordinate dimensions and push it onto the stack. If more than one dimension is given, they are pushed in numerical order. Push's complement, pop, pops in reverse numerical order, so the dance `push v_3 v_2 | pop v_3 v_2` is a noop - no matter in which order the args are given.
+
+| Argument | Description |
+|----------|-------------|
+| `v_1` | Push the first coordinate onto the stack |
+| `v_2` | Push the second coordinate onto the stack |
+| `v_3` | Push the third coordinate onto the stack |
+| `v_4` | Push the fourth coordinate onto the stack |
+
+(the argument names are selected for PROJ compatibility)
+
+**See also:** [`pop`](#operator-pop)
 
 ---
 

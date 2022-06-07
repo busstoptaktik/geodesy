@@ -9,7 +9,7 @@
 - Three widely used conformal projections: The *Mercator*, the *Transverse Mercator*, and the *Lambert Conformal Conic* projection
 - The *Adapt* operator, which mediates between various conventions for coordinate units and order
 
-While this is sufficient to test the architecture, and while supporting the most important transformation primitives and three of the most used map projections, it is a far cry from PROJ's enormous gamut of supported map projections. So *RG* is fundamentally a *geodesy*, rather than *cartography* library. And while PROJ benefits from four decades of *reality hardening*, RG, being a platform for experiments, does not even consider development in the direction of operational robustness.
+While this is sufficient to test the architecture, and while supporting the most important transformation primitives and three of the most used map projections, it is a far cry from PROJ's enormous gamut of supported map projections (which, however, is partially supported through a [bridge](/ruminations/002-rumination.md/#operator-proj) to the `proj` projection program). So fundamentally, *RG* is a *geodesy*, rather than *cartography* library. And while PROJ benefits from four decades of *reality hardening*, RG, being a platform for experiments, does not even consider development in the direction of operational robustness.
 
 Hence, viewing *RG* as *another PROJ*, or *PROJ [RiiR](https://acronyms.thefreedictionary.com/RIIR)*, will lead to bad disappointment. At best, you may catch a weak mirage of a *potential* [shape of jazz to come](https://en.wikipedia.org/wiki/The_Shape_of_Jazz_to_Come) for the PROJ internal dataflow.
 
