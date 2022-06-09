@@ -8,7 +8,7 @@ use geodesy::internal::*;
 ///
 /// Since the integration tests in the "tests" directory of a crate are handled as
 /// independent crates, this provider could just as well have been built entirely
-/// outside of the Rust Geodest source tree.
+/// outside of the Rust Geodesy source tree.
 ///
 /// The test in the "tests" section is identical to the one from inner-ops/gridshift.rs
 /// and serves only to show that a user provided provider is used in exactly the same
@@ -124,6 +124,20 @@ mod tests {
         prv.apply(op, Inv, &mut data)?;
         assert!((data[0][0] - cph[0]).abs() < 1e-10);
         assert!((data[0][1] - cph[1]).abs() < 1e-10);
+
+        let cph = Coord::geo(55., 12., 0., 0.);
+
+        // a somewhat unrelated test comparing RG's TM implementation with PROJ's
+        // Guarded by if let Ok, since we do not want to fail this test in case of
+        // no access to the proj executable
+        if let Ok(pj) = prv.op("proj proj=utm zone=32") {
+            let rg = prv.op("utm zone=32")?;
+            let mut data_rg = [cph];
+            let mut data_pj = [cph];
+            prv.apply(rg, Fwd, &mut data_rg)?;
+            prv.apply(pj, Fwd, &mut data_pj)?;
+            assert!((data_rg[0].hypot2(&data_pj[0]) < 1e-4));
+        }
 
         Ok(())
     }
