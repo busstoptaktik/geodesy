@@ -1,8 +1,3 @@
-// TODO
-fn main() {}
-
-/*
-
 // examples/02-user_defined_macros.rs
 
 // See also 00-transformations.rs
@@ -11,81 +6,54 @@ fn main() {}
 
 // In this example we implement a user defined operator. To that end
 // we need to access some of the lower level features of the Rust
-// Geodesy library: The Operator type, its definition argument type,
-// OperatorArgs, and its core trait, OperatorCore. Since they are
-// mostly for library-internal use, they are wrapped up in the dedicated
-// module `operator_construction`.
-use geodesy::GeodesyError;
-use geodesy::GysResource;
-use geodesy::Operator;
-use geodesy::OperatorCore;
-use geodesy::{CoordinateTuple, Provider};
+// Geodesy library. Since they are mostly for library-internal use,
+// they are wrapped up in this dedicated module
+use geodesy::inner_op_authoring::*;
 
 // The functionality of the operator is straightforward: It simply
 // adds 42 to the first element of any coordinate tuple thrown at it.
 // It also implements the inverse operation, i.e. subtracting 42.
 
-pub struct Add42 {
-    args: Vec<(String, String)>,
-    inverted: bool,
+// Forward
+fn add42(_op: &Op, _provider: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
+    let mut n = 0;
+    for o in operands {
+        o[0] += 42.;
+        n += 1;
+    }
+    Ok(n)
 }
 
-impl Add42 {
-    fn new(res: &GysResource) -> Result<Add42, GeodesyError> {
-        let mut args = res.to_args(0)?;
-        let inverted = args.flag("inv");
-        Ok(Add42 {
-            args: args.used,
-            inverted,
-        })
+// Inverse
+fn sub42(_op: &Op, _provider: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
+    let mut n = 0;
+    for o in operands {
+        o[0] -= 42.;
+        n += 1;
     }
-
-    // This is the interface to the Rust Geodesy library: Construct an Add42
-    // element, and wrap it properly for consumption. It is 100% boilerplate.
-    pub fn operator(args: &GysResource, _rp: &dyn Provider) -> Result<Operator, GeodesyError> {
-        let op = Add42::new(args)?;
-        Ok(Operator(Box::new(op)))
-    }
+    Ok(n)
 }
 
-impl OperatorCore for Add42 {
-    fn fwd(&self, _ctx: &dyn Provider, operands: &mut [CoordinateTuple]) -> bool {
-        for coord in operands {
-            coord[0] += 42.;
-        }
-        true
-    }
+// These are the parameters our 'add42'-operator are willing to respond to
+pub const GAMUT: [OpParameter; 1] = [
+    OpParameter::Flag { key: "inv" },
+];
 
-    fn inv(&self, _ctx: &dyn Provider, operands: &mut [CoordinateTuple]) -> bool {
-        for coord in operands {
-            coord[0] -= 42.;
-        }
-        true
-    }
-
-    fn name(&self) -> &'static str {
-        "add42"
-    }
-
-    fn is_inverted(&self) -> bool {
-        self.inverted
-    }
-
-    fn args(&self, _step: usize) -> &[(String, String)] {
-        &self.args
-    }
+// And this is the constructor, generating the object, the provider needs to instantiate an actual instance
+pub fn add42_constructor(parameters: &RawParameters, provider: &dyn Provider) -> Result<Op, Error> {
+    Op::plain(parameters, InnerOp(add42), InnerOp(sub42), &GAMUT, provider)
 }
 
 fn main() -> anyhow::Result<()> {
-    let mut ctx = geodesy::Plain::new(geodesy::SearchLevel::LocalPatches, false);
-    ctx.register_operator("add42", Add42::operator)?;
-    let add42 = ctx.define_operation("add42")?;
+    let mut prv = geodesy::Minimal::new();
+    prv.register_op("add42", OpConstructor(add42_constructor));
+    let add42 = prv.op("add42")?;
 
     // Same test coordinates as in example 00, but no conversion to radians.
-    let cph = CoordinateTuple::raw(12., 55., 0., 0.); // Copenhagen
-    let osl = CoordinateTuple::raw(10., 60., 0., 0.); // Oslo
-    let sth = CoordinateTuple::raw(59., 18., 0., 0.); // Stockholm
-    let hel = CoordinateTuple::raw(60., 25., 0., 0.); // Helsinki
+    let cph = Coord::raw(12., 55., 0., 0.); // Copenhagen
+    let osl = Coord::raw(10., 60., 0., 0.); // Oslo
+    let sth = Coord::raw(59., 18., 0., 0.); // Stockholm
+    let hel = Coord::raw(60., 25., 0., 0.); // Helsinki
 
     let mut data = [osl, cph, sth, hel];
 
@@ -94,18 +62,17 @@ fn main() -> anyhow::Result<()> {
     }
 
     // Now do the transformation
-    ctx.fwd(add42, &mut data);
+    assert_eq!(prv.apply(add42, Fwd, &mut data)?, 4);
     println!("add42 (fwd):");
     for coord in data {
         println!("    {:?}", coord);
     }
 
     // And go back...
-    ctx.inv(add42, &mut data);
+    assert_eq!(prv.apply(add42, Inv, &mut data)?, 4);
     println!("add42 (inv):");
     for coord in data {
         println!("    {:?}", coord);
     }
     Ok(())
 }
-*/
