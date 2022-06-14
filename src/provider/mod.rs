@@ -12,7 +12,7 @@ use super::internal::*;
 /// and the external context (i.e. typically resources like grids, transformation definitions,
 /// or ellipsoid parameters).
 pub trait Provider {
-    fn new(resources: Option<BTreeMap<&'static str, String>>) -> Self
+    fn new() -> Self
     where
         Self: Sized;
 

@@ -52,7 +52,7 @@ fn main() -> Result<(), anyhow::Error> {
     let opt = Cli::parse();
     println!("args: {:?}", opt.args);
 
-    let ctx = Minimal::new(None);
+    let ctx = Minimal::new();
 
     if opt.inverse && opt.roundtrip {
         bail!("Options `inverse` and `roundtrip` are mutually exclusive");

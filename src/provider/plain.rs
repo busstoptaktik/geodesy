@@ -41,8 +41,13 @@ impl Default for Plain {
 }
 
 impl Provider for Plain {
-    fn new(_resources: Option<BTreeMap<&'static str, String>>) -> Plain {
-        Plain::default()
+    fn new() -> Plain {
+        let mut prv = Plain::default();
+        prv.register_resource("geo:in", "adapt from=neut_deg");
+        prv.register_resource("gis:in", "adapt from=enut_deg");
+        prv.register_resource("geo:out", "adapt to=neut_deg");
+        prv.register_resource("gis:out", "adapt to=enut_deg");
+        prv
     }
 
     fn op(&mut self, definition: &str) -> Result<OpHandle, Error> {
@@ -147,7 +152,9 @@ mod tests {
 
     #[test]
     fn basic() -> Result<(), Error> {
-        let mut prv = Plain::new(None);
+        let mut prv = Plain::new();
+
+        // The "stupid way of adding 1" macro from geodesy/macro/stupid_way.macro
         let op = prv.op("stupid:way")?;
 
         let mut data = some_basic_coordinates();

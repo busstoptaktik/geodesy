@@ -25,7 +25,7 @@ pub struct Maximal {
 }
 
 impl Provider for Maximal {
-    fn new(_resources: Option<BTreeMap<&'static str, String>>) -> Maximal {
+    fn new() -> Maximal {
         Maximal::default()
     }
 
