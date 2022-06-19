@@ -227,7 +227,7 @@ For grids with angular (geographical) spatial units, the corrections are suppose
 
 **Example**:
 
-```
+```term
 geo:in | gridshift grids=ed50.datum | geo:out
 ```
 
