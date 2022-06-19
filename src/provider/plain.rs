@@ -43,10 +43,9 @@ impl Default for Plain {
 impl Provider for Plain {
     fn new() -> Plain {
         let mut prv = Plain::default();
-        prv.register_resource("geo:in", "adapt from=neut_deg");
-        prv.register_resource("gis:in", "adapt from=enut_deg");
-        prv.register_resource("geo:out", "adapt to=neut_deg");
-        prv.register_resource("gis:out", "adapt to=enut_deg");
+        for item in BUILTIN_ADAPTORS {
+            prv.register_resource(item.0, item.1);
+        }
         prv
     }
 

@@ -45,3 +45,15 @@ pub trait Provider {
     /// Access grid resources by identifier
     fn get_grid(&self, name: &str) -> Result<Grid, Error>;
 }
+
+
+// Help providers provide canonically named, built in coordinate adaptors
+#[rustfmt::skip]
+const BUILTIN_ADAPTORS: [(&'static str, &'static str); 6] = [
+    ("geo:in",  "adapt from=neut_deg"),
+    ("geo:out", "adapt to=neut_deg"  ),
+    ("gis:in",  "adapt from=enut_deg"),
+    ("gis:out", "adapt to=enut_deg"  ),
+    ("neu:in",  "adapt from=neut"    ),
+    ("neu:out", "adapt to=neut"      ),
+];
