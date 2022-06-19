@@ -169,7 +169,6 @@ mod tests {
         }
 
         // Inverse
-        //let mut operands = cart.clone();
         op.apply(&provider, &mut operands, Inv)?;
         for i in 0..5 {
             assert!(operands[i].default_ellps_3d_dist(&geo[i]) < 10e-9);
