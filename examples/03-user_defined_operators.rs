@@ -35,9 +35,7 @@ fn sub42(_op: &Op, _provider: &dyn Provider, operands: &mut [Coord]) -> Result<u
 }
 
 // These are the parameters our 'add42'-operator are willing to respond to
-pub const GAMUT: [OpParameter; 1] = [
-    OpParameter::Flag { key: "inv" },
-];
+pub const GAMUT: [OpParameter; 1] = [OpParameter::Flag { key: "inv" }];
 
 // And this is the constructor, generating the object, the provider needs to instantiate an actual instance
 pub fn add42_constructor(parameters: &RawParameters, provider: &dyn Provider) -> Result<Op, Error> {

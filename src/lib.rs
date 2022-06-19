@@ -18,6 +18,7 @@ pub use crate::ellipsoid::Ellipsoid;
 pub use crate::grid::Grid;
 pub use crate::op::Op;
 pub use crate::provider::Minimal;
+pub use crate::provider::Plain;
 pub use crate::provider::Provider;
 
 /// The bread-and-butter, shrink-wrapped for external use
@@ -31,6 +32,7 @@ pub mod preamble {
     pub use crate::Error;
     pub use crate::Minimal;
     pub use crate::Op;
+    pub use crate::Plain;
     pub use crate::Provider;
 }
 
