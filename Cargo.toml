@@ -4,7 +4,7 @@ description = "A platform for experiments with geodetic transformations and data
 keywords = ["geodesy", "cartography", "transformations", "geography"]
 categories = ["science"]
 license = "MIT OR Apache-2.0"
-version = "0.7.2"
+version = "0.8.0"
 
 authors = ["Thomas Knudsen <knudsen.thomas@gmail.com>"]
 readme = "README.md"
