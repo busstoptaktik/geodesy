@@ -1,5 +1,28 @@
 # Geodesy
 
+### Abstract
+
+```rust
+// Find the UTM coordinates of some Scandinavian capitals
+use geodesy::preamble::*;
+fn main() -> anyhow::Result<()> {
+    let mut prv = Minimal::new();
+    let utm33 = prv.op("utm zone=33")?;
+
+    let cph = Coord::geo(55., 12., 0., 0.); // Copenhagen
+    let sth = Coord::geo(59., 18., 0., 0.); // Stockholm
+    let mut data = [cph, sth];
+
+    prv.apply(utm33, Fwd, &mut data)?;
+    println!("{:?}", data);
+    Ok(())
+}
+```
+
+---
+
+## Concrete
+
 *Rust Geodesy* (RG), is a platform for experiments with geodetic software, transformations, and standards. *RG* vaguely resembles the [PROJ](https://proj.org) transformation system, and was built in part on the basis of experiments with *alternative data flow models for PROJ*. The actual transformation functionality of *RG* is, however, minimal: At time of writing, it includes just a few low level operations, including:
 
 - The three, six, seven, and fourteen-parameter versions of the *Helmert transformation*
