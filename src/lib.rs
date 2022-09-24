@@ -116,7 +116,7 @@ pub enum Error {
 /// should run in the *forward* direction.
 /// `Inv`: Indicate that a two-way operator, function, or method,
 /// should run in the *inverse* direction.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Direction {
     Fwd,
     Inv,
