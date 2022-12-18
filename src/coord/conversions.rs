@@ -65,7 +65,7 @@ impl Coord {
     /// degree-component, but passing a negative value for minutes leads
     /// to undefined behaviour.
     pub fn dm_to_dd(d: i32, m: f64) -> f64 {
-        d.signum() as f64 * (d.abs() as f64 + (m as f64 / 60.))
+        d.signum() as f64 * (d.abs() as f64 + (m / 60.))
     }
 
     /// Simplistic transformation from the NMEA DDDMM.mmm format to
@@ -78,7 +78,7 @@ impl Coord {
         let fraction = nmea.abs() - dm as f64;
         let d = dm / 100;
         let m = (dm - d * 100) as f64 + fraction;
-        sign * (d as f64 + (m as f64 / 60.))
+        sign * (d as f64 + (m / 60.))
     }
 
     /// Transformation from degrees-with-decimals to the NMEA DDDMM.mmm format.
@@ -102,7 +102,7 @@ impl Coord {
         let ms = dms - d * 10000;
         let m = ms / 100;
         let s = (ms - m * 100) as f64 + fraction;
-        sign * (d as f64 + ((s as f64 / 60.) + m as f64) / 60.)
+        sign * (d as f64 + ((s / 60.) + m as f64) / 60.)
     }
 
     /// Transformation from degrees-with-decimals to the extended
