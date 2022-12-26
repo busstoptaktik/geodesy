@@ -7,7 +7,7 @@ pub(crate) mod bibliography;
 pub(crate) mod coord;
 pub(crate) mod ellipsoid;
 pub(crate) mod grid;
-
+pub mod math;
 mod inner_op;
 mod op;
 mod provider;
@@ -45,10 +45,9 @@ pub mod inner_op_authoring {
     pub use log::warn;
 
     pub use crate::grid::Grid;
-
+    pub use crate::math;
     pub use crate::inner_op::InnerOp;
     pub use crate::inner_op::OpConstructor;
-
     pub use crate::op::OpDescriptor;
     pub use crate::op::OpParameter;
     pub use crate::op::ParsedParameters;

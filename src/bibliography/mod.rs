@@ -67,6 +67,11 @@ pub enum Bibliography {
     /// [DOI](https://doi.org/10.1007/s00190-012-0578-z)
     Kar13,
 
+    /// Charles F.F. Karney, 2022: On auxiliary latitudes
+    /// [DOI](https://doi.org/10.48550/arXiv.2212.05818)
+    /// [pdf](https://arxiv.org/pdf/2212.05818.pdf)
+    Kar22,
+
     /// Thomas Knudsen, Kristian Evers, Geir Arne Hjelle,
     /// Guðmundur Valsson, Martin Lidberg and Pasi Häkli (2019):
     /// *The Bricks and Mortar for Contemporary Reimplementation of Legacy Nordic Transformations*.

@@ -58,6 +58,8 @@ const ELLIPSOID_LIST: [(&str, &str, &str, &str, &str); 47] = [
     ("unitsphere",      "1",             "1",      "0.",                 "Unit Sphere (r=1)"),
 ];
 
+
+
 /// Representation of a (potentially triaxial) ellipsoid.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Ellipsoid {
@@ -233,11 +235,13 @@ impl Ellipsoid {
     }
 }
 
+
 // ----- Tests ---------------------------------------------------------------------
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
     #[test]
     fn test_ellipsoid() -> Result<(), Error> {
         // Constructors
