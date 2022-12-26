@@ -32,6 +32,8 @@ impl Ellipsoid {
         }
         crate::inner_op::sinhpsi_to_tanphi(latitude.sinh(), e).atan()
     }
+
+
 }
 
 // ----- Tests ---------------------------------------------------------------------

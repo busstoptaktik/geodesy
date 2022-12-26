@@ -3,17 +3,20 @@ use std::f64::consts::FRAC_PI_2;
 
 // ----- Meridian geometry -----------------------------------------------------
 impl Ellipsoid {
+    /// Coefficients for expansion of the normalized meridian arc unit in terms
+    /// of *n²*, the square of the third flattening
+    const MERIDIAN_ARC_COEFS: [f64; 5] = [1., 1./4.,  1./64.,  1./256.,  25./16384.];
+
     /// The Normalized Meridian Arc Unit, *Qn*, is the mean length of one radian
     ///  of the meridian. "Normalized", because we measure it in units of the
     /// semimajor axis, *a*.
     ///
     /// König und Weise p.50 (96), p.19 (38b), p.5 (2), here using the extended
-    /// version from [Deakin et al 2012](crate::Bibliography::Dea12) eq. (41)
+    /// version from [Karney 2010](crate::Bibliography::Kar10) eq. (29)
     #[must_use]
     pub fn normalized_meridian_arc_unit(&self) -> f64 {
         let n = self.third_flattening();
-        let nn = n * n;
-        (1. + nn * (1. / 4. + nn * (1. / 64. + nn * (1. / 256. + 25. * nn / 16384.)))) / (1.0 + n)
+        crate::math::horner(n*n, &Ellipsoid::MERIDIAN_ARC_COEFS) / (1. + n)
     }
 
     /// The rectifying radius, *A*, is the radius of a sphere of the same circumference
@@ -21,15 +24,12 @@ impl Ellipsoid {
     ///
     /// Closely related to the [normalized meridian arc unit](Ellipsoid::normalized_meridian_arc_unit).
     ///
+    /// [Karney 2010](crate::Bibliography::Kar10) eq. (29), elaborated in
     /// [Deakin et al 2012](crate::Bibliography::Dea12) eq. (41)
     #[must_use]
     pub fn rectifying_radius(&self) -> f64 {
         let n = self.third_flattening();
-        let nn = n * n;
-        let d = (1. + nn * (1. / 4. + nn * (1. / 64. + nn * (1. / 256. + 25. * nn / 16384.))))
-            / (1. + n);
-
-        self.a * d / (1. + n)
+        self.a * crate::math::horner(n*n, &Ellipsoid::MERIDIAN_ARC_COEFS) / ((1. + n) * (1. + n))
     }
 
     /// The Meridian Quadrant, *Qm*, is the distance from the equator to one of the poles.
