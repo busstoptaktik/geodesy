@@ -28,11 +28,42 @@ impl Ellipsoid {
     pub fn isometric_latitude(&self, latitude: f64, direction: Direction) -> f64 {
         let e = self.eccentricity();
         if direction == Direction::Fwd {
-            return latitude.tan().asinh() - (e * latitude.sin()).atanh() * e;
+            return crate::math::inverse_gudermannian(latitude) - (e * latitude.sin()).atanh() * e;
         }
-        crate::inner_op::sinhpsi_to_tanphi(latitude.sinh(), e).atan()
+        crate::math::sinhpsi_to_tanphi(latitude.sinh(), e).atan()
     }
 
+    pub fn geodetic_to_rectifying_latitude_coefficients(&self, direction: Direction) -> Vec<f64> {
+        let n = self.third_flattening();
+        let n2 = n*n;
+        let mut d = n;
+
+        let mut result = vec![];
+        result.push(crate::math::horner(n2, &constants::MERIDIAN_ARC_COEFFICIENTS) / (1. + n));
+
+        let coefs: &[f64] = if direction == Direction::Fwd {
+            &constants::GEODETIC_TO_RECTIFYING_LATITUDE_COEFFICIENTS
+        } else {
+            &constants::RECTIFYING_TO_GEODETIC_LATITUDE_COEFFICIENTS
+        };
+        let degree = constants::RECTIFYING_TO_GEODETIC_LATITUDE_DEGREE;
+        let mut first_coef = 0_usize;
+        for i in 1_usize..=degree {
+            let n_coefs = (degree - i) / 2;
+            let c = &coefs[first_coef..first_coef+n_coefs];
+            result.push(d * crate::math::horner(n2, c));
+            d *= n;
+            first_coef += n_coefs + 1;
+        }
+            // for (int l = 0, o = 0; l < Lmax; ++l) {
+            //     int m = (Lmax - l - 1) / 2;
+            //     en[l + 1       ] = d * polyval(n2, coeff_mu_phi + o, m);
+            //     en[l + 1 + Lmax] = d * polyval(n2, coeff_phi_mu + o, m);
+            //     d *= n;
+            //     o += m + 1;
+            // }
+        result
+    }
 
 }
 

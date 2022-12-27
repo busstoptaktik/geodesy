@@ -3,9 +3,6 @@ use std::f64::consts::FRAC_PI_2;
 
 // ----- Meridian geometry -----------------------------------------------------
 impl Ellipsoid {
-    /// Coefficients for expansion of the normalized meridian arc unit in terms
-    /// of *n²*, the square of the third flattening
-    const MERIDIAN_ARC_COEFS: [f64; 5] = [1., 1./4.,  1./64.,  1./256.,  25./16384.];
 
     /// The Normalized Meridian Arc Unit, *Qn*, is the mean length of one radian
     ///  of the meridian. "Normalized", because we measure it in units of the
@@ -16,7 +13,7 @@ impl Ellipsoid {
     #[must_use]
     pub fn normalized_meridian_arc_unit(&self) -> f64 {
         let n = self.third_flattening();
-        crate::math::horner(n*n, &Ellipsoid::MERIDIAN_ARC_COEFS) / (1. + n)
+        crate::math::horner(n*n, &constants::MERIDIAN_ARC_COEFFICIENTS) / (1. + n)
     }
 
     /// The rectifying radius, *A*, is the radius of a sphere of the same circumference
@@ -29,7 +26,7 @@ impl Ellipsoid {
     #[must_use]
     pub fn rectifying_radius(&self) -> f64 {
         let n = self.third_flattening();
-        self.a * crate::math::horner(n*n, &Ellipsoid::MERIDIAN_ARC_COEFS) / ((1. + n) * (1. + n))
+        self.a * crate::math::horner(n*n, &constants::MERIDIAN_ARC_COEFFICIENTS) / ((1. + n) * (1. + n))
     }
 
     /// The Meridian Quadrant, *Qm*, is the distance from the equator to one of the poles.
