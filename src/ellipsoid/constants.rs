@@ -1,4 +1,3 @@
-
 // A HashMap would have been a better choice,for the OPERATOR_LIST, except
 // for the annoying fact that it cannot be compile-time constructed
 #[rustfmt::skip]
@@ -53,7 +52,7 @@ pub(super) const ELLIPSOID_LIST: [(&str, &str, &str, &str, &str); 47] = [
 ];
 
 
-// Coefficients to convert phi to mu, Eq. A5 in [Karney (2022)](crate::bibliography::Kar22)
+// Coefficients to convert 𝜙 to 𝜇, Eq. A5 in [Karney (2022)](crate::bibliography::Kar22)
 #[rustfmt::skip]
 pub(super) const GEODETIC_TO_RECTIFYING_LATITUDE_COEFFICIENTS: [f64; 12] = [
     -3.0/2., 9.0/16., -3.0/32.,
@@ -64,7 +63,7 @@ pub(super) const GEODETIC_TO_RECTIFYING_LATITUDE_COEFFICIENTS: [f64; 12] = [
     1001.0/2048.
 ];
 
-// Coefficients to convert mu to phi, Eq. A6 in [Karney (2022)](crate::bibliography::Kar22)
+// Coefficients to convert 𝜇 to 𝜙, Eq. A6 in [Karney (2022)](crate::bibliography::Kar22)
 // with 0 terms dropped
 #[rustfmt::skip]
 pub(super) const RECTIFYING_TO_GEODETIC_LATITUDE_COEFFICIENTS: [f64; 12] = [
@@ -75,8 +74,6 @@ pub(super) const RECTIFYING_TO_GEODETIC_LATITUDE_COEFFICIENTS: [f64; 12] = [
     8011.0/2560.,
     293393.0/61440.,
 ];
-
-pub(super) const RECTIFYING_TO_GEODETIC_LATITUDE_DEGREE: usize  = 6;
 
 /// Coefficients for expansion of the normalized meridian arc unit in terms
 /// of *n²*, the square of the third flattening.
