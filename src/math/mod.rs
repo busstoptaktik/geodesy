@@ -1,6 +1,6 @@
 /// Evaluate Σ cᵢ · xⁱ using Horner's scheme
 pub fn horner(arg: f64, coefficients: &[f64]) -> f64 {
-    if coefficients.len() < 1 {
+    if coefficients.is_empty() {
         return 0.;
     }
     let mut coefficients = coefficients.iter().rev();
@@ -10,7 +10,6 @@ pub fn horner(arg: f64, coefficients: &[f64]) -> f64 {
     }
     value
 }
-
 
 /// Evaluate Σ cᵢ sin( i · arg ), for i ∈ {order, ... , 1}, using Clenshaw summation
 pub fn clenshaw_sin(arg: f64, coefficients: &[f64]) -> f64 {
@@ -25,7 +24,6 @@ pub fn clenshaw_sin(arg: f64, coefficients: &[f64]) -> f64 {
 
     sin_arg * c0
 }
-
 
 // Evaluate Σ cᵢ cos( i · arg ), for i ∈ {order, ... , 1}, using Clenshaw summation
 pub fn clenshaw_cos(arg: f64, coefficients: &[f64]) -> f64 {
@@ -50,7 +48,6 @@ pub fn gudermannian(arg: f64) -> f64 {
 pub fn inverse_gudermannian(arg: f64) -> f64 {
     arg.tan().asinh()
 }
-
 
 // ----- A N C I L L A R Y   F U N C T I O N S -----------------------------------------
 
@@ -148,7 +145,6 @@ pub(crate) fn sinhpsi_to_tanphi(taup: f64, e: f64) -> f64 {
     f64::NAN
 }
 
-
 // ----- Tests ---------------------------------------------------------------------
 
 #[cfg(test)]
@@ -171,8 +167,8 @@ mod tests {
         // The normalized meridian arc unit
         let e = Ellipsoid::named("GRS80")?;
         let n = e.third_flattening();
-        let nn = n*n;
-        let d = [1., 1./4.,  1./64.,  1./256.,  25./16384.];
+        let nn = n * n;
+        let d = [1., 1. / 4., 1. / 64., 1. / 256., 25. / 16384.];
         let result = horner(nn, &d) / (1. + n);
         let expected = 0.9983242984230415;
         assert!((result - expected).abs() < 1e-14);
@@ -190,10 +186,10 @@ mod tests {
 
         let x = 30_f64.to_radians();
 
-        let result = 1.0*x.sin() + 2.0*(2.0*x).sin() + 3.0*(3.0*x).sin();
+        let result = 1.0 * x.sin() + 2.0 * (2.0 * x).sin() + 3.0 * (3.0 * x).sin();
         assert!((clenshaw_sin(x, &coefficients) - result).abs() < 1e-14);
 
-        let result = 1.0*x.cos() + 2.0*(2.0*x).cos() + 3.0*(3.0*x).cos();
+        let result = 1.0 * x.cos() + 2.0 * (2.0 * x).cos() + 3.0 * (3.0 * x).cos();
         assert!((clenshaw_cos(x, &coefficients) - result).abs() < 1e-14);
         Ok(())
     }
