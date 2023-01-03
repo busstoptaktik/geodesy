@@ -1,8 +1,8 @@
 mod cartesians;
+mod constants;
 mod geodesics;
 mod latitudes;
 mod meridians;
-mod constants;
 
 use super::internal::*;
 
@@ -19,6 +19,25 @@ impl Default for Ellipsoid {
     fn default() -> Ellipsoid {
         Ellipsoid::new(6_378_137.0, 1. / 298.257_222_100_882_7)
     }
+}
+
+/// The order of the fourier series used to compute auxiliary latitudes
+const AUX_LATITUDE_ORDER: usize = 6;
+
+/// Two upper triangular matrices of polynomium coefficients for computing
+/// the Fourier coefficients for the auxiliary latitudes
+#[derive(Clone, Copy, Debug, Default)]
+pub(super) struct AuxLatitudeCoefficients {
+    fwd: [[f64; AUX_LATITUDE_ORDER]; AUX_LATITUDE_ORDER],
+    inv: [[f64; AUX_LATITUDE_ORDER]; AUX_LATITUDE_ORDER],
+}
+
+/// The Fourier coefficients used when computing auxiliary latitudes
+#[derive(Clone, Copy, Debug, Default)]
+pub struct AuxLatitudeFourierCoefficients {
+    fwd: [f64; AUX_LATITUDE_ORDER],
+    inv: [f64; AUX_LATITUDE_ORDER],
+    etc: [f64; 2],
 }
 
 impl Ellipsoid {
@@ -43,7 +62,10 @@ impl Ellipsoid {
     /// Predefined ellipsoid; built-in or defined in asset collections
     pub fn named(name: &str) -> Result<Ellipsoid, Error> {
         // Is it one of the few builtins?
-        if let Some(index) = constants::ELLIPSOID_LIST.iter().position(|&ellps| ellps.0 == name) {
+        if let Some(index) = constants::ELLIPSOID_LIST
+            .iter()
+            .position(|&ellps| ellps.0 == name)
+        {
             let e = constants::ELLIPSOID_LIST[index];
             let ax: f64 = e.1.parse().unwrap();
             let ay: f64 = e.2.parse().unwrap();
@@ -180,7 +202,6 @@ impl Ellipsoid {
         self.a * self.a / self.semiminor_axis()
     }
 }
-
 
 // ----- Tests ---------------------------------------------------------------------
 

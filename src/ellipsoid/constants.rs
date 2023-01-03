@@ -1,3 +1,5 @@
+use super::AuxLatitudeCoefficients;
+
 // A HashMap would have been a better choice,for the OPERATOR_LIST, except
 // for the annoying fact that it cannot be compile-time constructed
 #[rustfmt::skip]
@@ -51,31 +53,58 @@ pub(super) const ELLIPSOID_LIST: [(&str, &str, &str, &str, &str); 47] = [
     ("unitsphere",      "1",             "1",      "0.",                 "Unit Sphere (r=1)"),
 ];
 
-
-// Coefficients to convert 𝜙 to 𝜇, Eq. A5 in [Karney (2022)](crate::bibliography::Kar22)
 #[rustfmt::skip]
-pub(super) const GEODETIC_TO_RECTIFYING_LATITUDE_COEFFICIENTS: [f64; 12] = [
-    -3.0/2., 9.0/16., -3.0/32.,
-    15.0/16., -15.0/32., 135.0/2048.,
-    -35.0/48., 105.0/256.,
-    315.0/512., -189.0/512.,
-    -693.0/1280.,
-    1001.0/2048.
-];
+pub(super) const RECTIFYING: AuxLatitudeCoefficients = AuxLatitudeCoefficients {
+    // Geodetic to rectifying: Coefficients for converting 𝜙 to 𝜇.
+    // Eq. A5 in [Karney (2022)](crate::bibliography::Kar22)
+    fwd: [
+        [-3.0 / 2., 0., 9.0 / 16., 0., -3.0 / 32., 0.],
+        [0., 15.0 / 16., 0., -15.0 / 32., 0., 135.0 / 2048.],
+        [0., 0., -35.0 / 48., 0., 105.0 / 256., 0.],
+        [0., 0., 0., 315.0 / 512., 0., -189.0 / 512.],
+        [0., 0., 0., 0., -693.0 / 1280., 0.],
+        [0., 0., 0., 0., 0., 1001.0 / 2048.]
+    ],
 
-// Coefficients to convert 𝜇 to 𝜙, Eq. A6 in [Karney (2022)](crate::bibliography::Kar22)
-// with 0 terms dropped
+    // Rectifying to geodetic: Coefficients for converting 𝜇 to 𝜙.
+    // Eq. A6 in [Karney (2022)](crate::bibliography::Kar22)
+    inv: [
+        [3.0 / 2., 0., -27.0 / 32., 0., 269.0 / 512., 0.],
+        [0., 21.0 / 16., 0., -55.0 / 32., 0., 6759.0 / 4096.],
+        [0., 0., 151.0 / 96., 0., -417.0 / 128., 0.],
+        [0., 0., 0., 1097.0 / 512., 0., -15543.0 / 2560.],
+        [0., 0., 0., 0., 8011.0 / 2560., 0.],
+        [0., 0., 0., 0., 0., 293393.0 / 61440.]
+    ]
+};
+
 #[rustfmt::skip]
-pub(super) const RECTIFYING_TO_GEODETIC_LATITUDE_COEFFICIENTS: [f64; 12] = [
-    3.0/2.,   -27.0/32.,  269.0/512.,
-    21.0/16.,  -55.0/32., 6759.0/4096.,
-    151.0/96., -417.0/128.,
-    1097.0/512., -15543.0/2560.,
-    8011.0/2560.,
-    293393.0/61440.,
-];
+pub(super) const CONFORMAL: AuxLatitudeCoefficients = AuxLatitudeCoefficients {
+    // Geodetic to conformal: Coefficients for converting 𝜙 to 𝜒.
+    // Eq. A11 in [Karney (2022)](crate::bibliography::Kar22)
+    fwd: [
+        [-2., 2./3.,  4./3.,  -82./45.,  32./45.,  4642./4725.],
+        [0., 5./3.,  -16./15.,  -13./9.,  904./315.,  -1522./945.],
+        [0., 0., -26./15.,  34./21.,  8./5.,  -12686./2835.],
+        [0., 0., 0., 1237./630.,  -12./5.,  -24832./14175.],
+        [0., 0., 0., 0., -734./315.,  109598./31185.],
+        [0., 0., 0., 0., 0., 444337./155925.]
+    ],
+
+    // Conformal to geodetic: Coefficients for converting 𝜒 to 𝜙.
+    // Eq. A12 in [Karney (2022)](crate::bibliography::Kar22)
+    inv: [
+        [2.,  -2./3.,  -2.,  116./45.,  26./45.,  -2854./675.],
+        [0., 7./3.,  -8./5.,  -227./45.,  2704./315.,  2323./945.],
+        [0., 0., 56./15.,  -136./35.,  -1262./105.,  73814./2835.],
+        [0., 0., 0., 4279./630.,  -332./35.,  -399572./14175.],
+        [0., 0., 0., 0., 4174./315.,  -144838./6237.],
+        [0., 0., 0., 0., 0., 601676./22275.]
+    ]
+};
 
 /// Coefficients for expansion of the normalized meridian arc unit in terms
 /// of *n²*, the square of the third flattening.
 /// See [Karney 2010](crate::Bibliography::Kar10) eq. (29)
-pub(super) const MERIDIAN_ARC_COEFFICIENTS: [f64; 5] = [1., 1./4.,  1./64.,  1./256.,  25./16384.];
+pub(super) const MERIDIAN_ARC_COEFFICIENTS: [f64; 5] =
+    [1., 1. / 4., 1. / 64., 1. / 256., 25. / 16384.];
