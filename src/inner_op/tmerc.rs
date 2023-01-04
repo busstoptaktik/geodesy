@@ -16,8 +16,7 @@ fn fwd(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Er
     let mut successes = 0_usize;
     for coord in operands {
         let lat = coord[1] + lat_0;
-        let c = lat.cos();
-        let s = lat.sin();
+        let (s, c) = lat.sin_cos();
         let cc = c * c;
         let ss = s * s;
 
