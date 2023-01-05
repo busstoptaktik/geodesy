@@ -1,4 +1,4 @@
-use super::AuxLatitudeCoefficients;
+use crate::math::PolynomialCoefficients;
 
 // A HashMap would have been a better choice,for the OPERATOR_LIST, except
 // for the annoying fact that it cannot be compile-time constructed
@@ -54,7 +54,7 @@ pub(super) const ELLIPSOID_LIST: [(&str, &str, &str, &str, &str); 47] = [
 ];
 
 #[rustfmt::skip]
-pub(super) const RECTIFYING: AuxLatitudeCoefficients = AuxLatitudeCoefficients {
+pub(super) const RECTIFYING: PolynomialCoefficients = PolynomialCoefficients {
     // Geodetic to rectifying: Coefficients for converting 𝜙 to 𝜇.
     // Eq. A5 in [Karney (2022)](crate::bibliography::Kar22)
     fwd: [
@@ -79,7 +79,7 @@ pub(super) const RECTIFYING: AuxLatitudeCoefficients = AuxLatitudeCoefficients {
 };
 
 #[rustfmt::skip]
-pub(super) const CONFORMAL: AuxLatitudeCoefficients = AuxLatitudeCoefficients {
+pub(super) const CONFORMAL: PolynomialCoefficients = PolynomialCoefficients {
     // Geodetic to conformal: Coefficients for converting 𝜙 to 𝜒.
     // Eq. A11 in [Karney (2022)](crate::bibliography::Kar22)
     fwd: [

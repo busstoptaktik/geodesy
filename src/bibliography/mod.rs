@@ -39,6 +39,11 @@ pub enum Bibliography {
     /// Melbourne, 18-21 April, 2012.
     Dea12,
 
+    /// K. E. Engsager and K. Poder, 2007:
+    /// *A highly accurate world wide algorithm for the transverse Mercator mapping (almost)*,
+    /// in Proc. XXIII Intl. Cartographic Conf. (ICC2007), Moscow, p. 2.1.2.
+    Eng07,
+
     /// Toshio Fukushima, 1999: *Fast transform from geocentric to geodetic coordinates*.
     /// Journal of Geodesy, 73(11), pp.603–610
     /// [DOI](https://doi.org/10.1007/s001900050271)

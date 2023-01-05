@@ -1,3 +1,34 @@
+/// The order of the Fourier series used to compute e.g. auxiliary latitudes
+pub const POLYNOMIAL_ORDER: usize = 6;
+
+/// Two upper triangular matrices of polynomium coefficients for computing
+/// the Fourier coefficients for the auxiliary latitudes
+#[derive(Clone, Copy, Debug, Default)]
+pub struct PolynomialCoefficients {
+    pub fwd: [[f64; POLYNOMIAL_ORDER]; POLYNOMIAL_ORDER],
+    pub inv: [[f64; POLYNOMIAL_ORDER]; POLYNOMIAL_ORDER],
+}
+
+/// The Fourier coefficients used when computing e.g. auxiliary latitudes
+#[derive(Clone, Copy, Debug, Default)]
+pub struct FourierCoefficients {
+    pub fwd: [f64; POLYNOMIAL_ORDER],
+    pub inv: [f64; POLYNOMIAL_ORDER],
+    pub etc: [f64; 2],
+}
+
+pub fn fourier_coefficients(
+    arg: f64,
+    coefficients: &PolynomialCoefficients,
+) -> FourierCoefficients {
+    let mut result = FourierCoefficients::default();
+    for i in 0..POLYNOMIAL_ORDER {
+        result.fwd[i] = arg * horner(arg, &coefficients.fwd[i]);
+        result.inv[i] = arg * horner(arg, &coefficients.inv[i]);
+    }
+    result
+}
+
 /// Evaluate Σ cᵢ · xⁱ using Horner's scheme
 pub fn horner(arg: f64, coefficients: &[f64]) -> f64 {
     if coefficients.is_empty() {
@@ -21,7 +52,6 @@ pub fn clenshaw_sin(arg: f64, coefficients: &[f64]) -> f64 {
     for c in coefficients.iter().rev() {
         (c1, c0) = (c0, x.mul_add(c0, c - c1));
     }
-
     sin_arg * c0
 }
 
@@ -35,8 +65,43 @@ pub fn clenshaw_cos(arg: f64, coefficients: &[f64]) -> f64 {
     for c in coefficients.iter().rev() {
         (c1, c0) = (c0, x.mul_add(c0, c - c1));
     }
-
     cos_arg * c0 - c1
+}
+
+/// Evaluate Σ cᵢ Sin( i · arg ), for i ∈ {order, ... , 1}, using Clenshaw summation.
+/// i.e. a series of complex sines with real coefficients
+#[allow(unused_assignments)] // For symmetric initialization of hr2, hi2
+pub fn clenshaw_complex_sin(arg: [f64; 2], coefficients: &[f64]) -> [f64; 2] {
+    // Prepare the trigonometric factors
+    let (sin_r, cos_r) = arg[0].sin_cos();
+    let sinh_i = arg[1].sinh();
+    let cosh_i = arg[1].cosh();
+    let r = 2. * cos_r * cosh_i;
+    let i = -2. * sin_r * sinh_i;
+    let mut coefficients = coefficients.iter().rev();
+
+    // Handle zero length series by conventionally assigning them the sum of 0
+    let Some(c) = coefficients.next() else {
+        return [0.; 2];
+    };
+
+    // Initialize the recurrence coefficients
+    let (mut hr2, mut hr1, mut hr) = (0., 0., *c);
+    let (mut hi2, mut hi1, mut hi) = (0., 0., 0.);
+
+    for c in coefficients {
+        // Rotate the recurrence coefficients
+        (hr2, hi2, hr1, hi1) = (hr1, hi1, hr, hi);
+
+        // Update the recurrent sum
+        hr = -hr2 + r * hr1 - i * hi1 + c;
+        hi = -hi2 + i * hr1 + r * hi1;
+    }
+
+    // Finalize the sum
+    let r = sin_r * cosh_i;
+    let i = cos_r * sinh_i;
+    [r * hr - i * hi, r * hi + i * hr]
 }
 
 /// The Gudermannian function (often written as gd), is the work horse for computations involving
@@ -179,18 +244,36 @@ mod tests {
     #[test]
     fn test_clenshaw() -> Result<(), Error> {
         // Coefficients for 1sin(x) + 2sin(2x) + 3sin(3x)
-        let coefficients = [1_f64, 2., 3.];
+        let coefficients = [1., 2., 3.];
         assert_eq!(clenshaw_sin(0., &[]), 0.);
         assert_eq!(clenshaw_sin(1., &[]), 0.);
         assert_eq!(clenshaw_sin(0.5, &[]), 0.);
 
         let x = 30_f64.to_radians();
 
+        // Clenshaw sine-series summation
         let result = 1.0 * x.sin() + 2.0 * (2.0 * x).sin() + 3.0 * (3.0 * x).sin();
         assert!((clenshaw_sin(x, &coefficients) - result).abs() < 1e-14);
 
+        // Clenshaw cosine-series summation
         let result = 1.0 * x.cos() + 2.0 * (2.0 * x).cos() + 3.0 * (3.0 * x).cos();
         assert!((clenshaw_cos(x, &coefficients) - result).abs() < 1e-14);
+
+        // Clenshaw complex sine summation
+        let coefficients = [6., 5., 4., 3., 2., 1.];
+        let arg = [30f64.to_radians(), 60f64.to_radians()];
+        // Canonical result from Poder/Engsager implementation
+        let r = 248.658846388817693;
+        let i = -463.436347907636559;
+        // Let's see if we can reproduce that...
+        let sum = clenshaw_complex_sin(arg, &coefficients);
+        assert!((sum[0] - r).abs() < 1e-14);
+        assert!((sum[1] - i).abs() < 1e-14);
+
+        // Canonical result for complex cosine clenshaw, from Poder/Engsager implementation
+        // let r = -461.338884918028953;
+        // let i = -246.855278649982154;
+
         Ok(())
     }
 }

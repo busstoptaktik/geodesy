@@ -21,25 +21,6 @@ impl Default for Ellipsoid {
     }
 }
 
-/// The order of the fourier series used to compute auxiliary latitudes
-const AUX_LATITUDE_ORDER: usize = 6;
-
-/// Two upper triangular matrices of polynomium coefficients for computing
-/// the Fourier coefficients for the auxiliary latitudes
-#[derive(Clone, Copy, Debug, Default)]
-pub(super) struct AuxLatitudeCoefficients {
-    fwd: [[f64; AUX_LATITUDE_ORDER]; AUX_LATITUDE_ORDER],
-    inv: [[f64; AUX_LATITUDE_ORDER]; AUX_LATITUDE_ORDER],
-}
-
-/// The Fourier coefficients used when computing auxiliary latitudes
-#[derive(Clone, Copy, Debug, Default)]
-pub struct AuxLatitudeFourierCoefficients {
-    fwd: [f64; AUX_LATITUDE_ORDER],
-    inv: [f64; AUX_LATITUDE_ORDER],
-    etc: [f64; 2],
-}
-
 impl Ellipsoid {
     /// User defined ellipsoid
     #[must_use]

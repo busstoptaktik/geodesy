@@ -6,7 +6,7 @@
 // store them in the `ParsedParameters` struct, ready for use at run time.
 
 #![allow(clippy::needless_range_loop)]
-use crate::ellipsoid::AuxLatitudeFourierCoefficients;
+use crate::math::FourierCoefficients;
 
 use super::*;
 
@@ -31,7 +31,7 @@ pub struct ParsedParameters {
     pub grids: BTreeMap<&'static str, Grid>,
     pub text: BTreeMap<&'static str, String>,
     pub uuid: BTreeMap<&'static str, uuid::Uuid>,
-    pub aux_latitude_fourier_coefficients: BTreeMap<&'static str, AuxLatitudeFourierCoefficients>,
+    pub fourier_coefficients: BTreeMap<&'static str, FourierCoefficients>,
     pub ignored: Vec<String>,
     pub given: BTreeMap<String, String>,
 }
@@ -116,7 +116,7 @@ impl ParsedParameters {
         let grids = BTreeMap::<&'static str, Grid>::new();
         #[allow(unused_mut)]
         let mut uuid = BTreeMap::<&'static str, uuid::Uuid>::new();
-        let aux_latitude_fourier_coefficients = BTreeMap::<&'static str, AuxLatitudeFourierCoefficients>::new();
+        let fourier_coefficients = BTreeMap::<&'static str, FourierCoefficients>::new();
 
         // 'omit_fwd'/'omit_inv' are implicitly valid for all operators (including pipelines),
         // so we append them to the gamut
@@ -351,7 +351,7 @@ impl ParsedParameters {
             grids,
             text,
             uuid,
-            aux_latitude_fourier_coefficients,
+            fourier_coefficients,
             ignored,
             given,
         })
