@@ -8,6 +8,7 @@ use super::inner_op_authoring::*;
 mod adapt;
 mod addone;
 mod cart;
+mod etmerc;
 mod gridshift;
 mod helmert;
 mod lcc;
@@ -20,7 +21,7 @@ mod proj;
 mod tmerc;
 
 #[rustfmt::skip]
-const BUILTIN_OPERATORS: [(&str, OpConstructor); 16] = [
+const BUILTIN_OPERATORS: [(&str, OpConstructor); 17] = [
     ("adapt",      OpConstructor(adapt::new)),
     ("addone",     OpConstructor(addone::new)),
     ("cart",       OpConstructor(cart::new)),
@@ -32,6 +33,7 @@ const BUILTIN_OPERATORS: [(&str, OpConstructor); 16] = [
     ("nmea",       OpConstructor(nmea::new)),
     ("noop",       OpConstructor(noop::new)),
     ("tmerc",      OpConstructor(tmerc::new)),
+    ("etmerc",     OpConstructor(etmerc::new)),
     ("utm",        OpConstructor(tmerc::utm)),
     ("pipeline",   OpConstructor(pipeline::new)),
     ("pop",        OpConstructor(pipeline::pop)),

@@ -1,33 +1,6 @@
 use super::*;
 use crate::math::*;
 
-trait Latitude {
-    fn geocentric(&self, latitude: f64, direction: Direction) -> f64;
-    fn reduced(&self, latitude: f64, direction: Direction) -> f64;
-}
-
-impl Latitude for Ellipsoid {
-    /// Geographic latitude, 𝜙 to geocentric latitude, 𝜙'
-    /// (or vice versa if `forward` is `false`).
-    #[must_use]
-    fn geocentric(&self, latitude: f64, direction: Direction) -> f64 {
-        if direction == Direction::Fwd {
-            return ((1.0 - self.f * (2.0 - self.f)) * latitude.tan()).atan();
-        }
-        (latitude.tan() / (1.0 - self.eccentricity_squared())).atan()
-    }
-
-    /// Geographic latitude to reduced latitude, 𝛽
-    /// (or vice versa if `forward` is  `false`).
-    #[must_use]
-    fn reduced(&self, latitude: f64, direction: Direction) -> f64 {
-        if direction == Direction::Fwd {
-            return latitude.tan().atan2(1. / (1. - self.f));
-        }
-        latitude.tan().atan2(1. - self.f)
-    }
-}
-
 // ----- Latitudes -------------------------------------------------------------
 impl Ellipsoid {
     /// Geographic latitude, 𝜙 to geocentric latitude, 𝜃
@@ -79,28 +52,10 @@ impl Ellipsoid {
         sinhpsi_to_tanphi(latitude.sinh(), e).atan()
     }
 
-    fn latitude_fourier_coefficients(
-        &self,
-        coefficients: &AuxLatitudeCoefficients,
-    ) -> AuxLatitudeFourierCoefficients {
-        let n = self.third_flattening();
-
-        let mut result = AuxLatitudeFourierCoefficients::default();
-        result.etc[0] = self.normalized_meridian_arc_unit();
-
-        for i in 0..AUX_LATITUDE_ORDER {
-            result.fwd[i] = n * horner(n, &coefficients.fwd[i]);
-            result.inv[i] = n * horner(n, &coefficients.inv[i]);
-        }
-        result
-    }
-
     // --- Rectifying latitudes ---
 
     /// Obtain the coefficients needed for working with rectifying latitudes
-    pub fn coefficients_for_rectifying_latitude_computations(
-        &self,
-    ) -> AuxLatitudeFourierCoefficients {
+    pub fn coefficients_for_rectifying_latitude_computations(&self) -> FourierCoefficients {
         self.latitude_fourier_coefficients(&constants::RECTIFYING)
     }
 
@@ -108,7 +63,7 @@ impl Ellipsoid {
     pub fn latitude_geographic_to_rectifying(
         &self,
         geographic_latitude: f64,
-        coefficients: AuxLatitudeFourierCoefficients,
+        coefficients: FourierCoefficients,
     ) -> f64 {
         coefficients.etc[0]
             * (geographic_latitude + clenshaw_sin(2. * geographic_latitude, &coefficients.fwd))
@@ -118,7 +73,7 @@ impl Ellipsoid {
     pub fn latitude_rectifying_to_geographic(
         &self,
         rectifying_latitude: f64,
-        coefficients: AuxLatitudeFourierCoefficients,
+        coefficients: FourierCoefficients,
     ) -> f64 {
         let rlat = rectifying_latitude / coefficients.etc[0];
         rlat + clenshaw_sin(2. * rlat, &coefficients.inv)
@@ -127,9 +82,7 @@ impl Ellipsoid {
     // --- Conformal latitudes ---
 
     /// Obtain the coefficients needed for working with conformal latitudes
-    pub fn coefficients_for_conformal_latitude_computations(
-        &self,
-    ) -> AuxLatitudeFourierCoefficients {
+    pub fn coefficients_for_conformal_latitude_computations(&self) -> FourierCoefficients {
         self.latitude_fourier_coefficients(&constants::CONFORMAL)
     }
 
@@ -137,7 +90,7 @@ impl Ellipsoid {
     pub fn latitude_geographic_to_conformal(
         &self,
         geographic_latitude: f64,
-        coefficients: AuxLatitudeFourierCoefficients,
+        coefficients: FourierCoefficients,
     ) -> f64 {
         geographic_latitude + clenshaw_sin(2. * geographic_latitude, &coefficients.fwd)
     }
@@ -146,9 +99,19 @@ impl Ellipsoid {
     pub fn latitude_conformal_to_geographic(
         &self,
         conformal_latitude: f64,
-        coefficients: AuxLatitudeFourierCoefficients,
+        coefficients: FourierCoefficients,
     ) -> f64 {
         conformal_latitude + clenshaw_sin(2. * conformal_latitude, &coefficients.inv)
+    }
+
+    fn latitude_fourier_coefficients(
+        &self,
+        coefficients: &PolynomialCoefficients,
+    ) -> FourierCoefficients {
+        let n = self.third_flattening();
+        let mut result = fourier_coefficients(n, coefficients);
+        result.etc[0] = self.normalized_meridian_arc_unit();
+        result
     }
 }
 
@@ -156,7 +119,6 @@ impl Ellipsoid {
 
 #[cfg(test)]
 mod tests {
-    use super::Latitude;
     use crate::Direction::*;
     use crate::{Ellipsoid, Error};
     // use crate::preamble;
@@ -177,7 +139,6 @@ mod tests {
             assert!((lat - roundtrip).abs() < 1e-15);
         }
         assert!(ellps.geocentric_latitude(0.0, Fwd).abs() < 1.0e-10);
-        assert!(ellps.geocentric(0.0, Fwd).abs() < 1.0e-10);
         assert!((ellps.geocentric_latitude(FRAC_PI_2, Fwd) - FRAC_PI_2).abs() < 1.0e-10);
 
         // Reduced latitude, 𝛽
