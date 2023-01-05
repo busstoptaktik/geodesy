@@ -116,6 +116,23 @@ pub fn inverse_gudermannian(arg: f64) -> f64 {
 
 // ----- A N C I L L A R Y   F U N C T I O N S -----------------------------------------
 
+/// normalize arbitrary angles to [-π, π):
+pub fn normalize_angle_symmetric(angle: f64) -> f64 {
+    use std::f64::consts::PI;
+    let angle = (angle + PI) % (2.0 * PI);
+    angle - PI * angle.signum()
+}
+
+/// normalize arbitrary angles to [0, 2π):
+pub fn normalize_angle_positive(angle: f64) -> f64 {
+    use std::f64::consts::PI;
+    let angle = angle % (2.0 * PI);
+    if angle < 0. {
+        return angle + 2.0 * PI;
+    }
+    angle
+}
+
 // pj_tsfn is the equivalent of Charles Karney's PROJ function of the
 // same name, which determines the function ts(phi) as defined in
 // Snyder (1987), Eq. (7-10)

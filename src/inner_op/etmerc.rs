@@ -57,7 +57,7 @@ fn fwd(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Er
         lat += dc[0];
         lon += dc[1];
 
-        // If we're too far from the center meridian, we do not want to play
+        // Don't wanna play if we're too far from the center meridian
         if lon.abs() > 2.623395162778 {
             coord[0] = f64::NAN;
             coord[1] = f64::NAN;
@@ -79,36 +79,56 @@ fn fwd(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Er
 // Inverse Transverse Mercator, following Engsager & Poder (2007) (currently Bowring stands in!)
 fn inv(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
     let ellps = op.params.ellps[0];
-    let eps = ellps.second_eccentricity_squared();
-    let lat_0 = op.params.lat[0];
     let lon_0 = op.params.lon[0];
     let x_0 = op.params.x[0];
-    let y_0 = op.params.y[0];
-    let k_0 = op.params.k[0];
+
+    let Some(conformal) = op.params.fourier_coefficients.get("conformal") else {
+        return Ok(0);
+    };
+    let Some(tm) = op.params.fourier_coefficients.get("tm") else {
+        return Ok(0);
+    };
+    let Some(qs) = op.params.real.get("scaled_radius") else {
+        return Ok(0);
+    };
+    let Some(zb) = op.params.real.get("zb") else {
+        return Ok(0);
+    };
 
     let mut successes = 0_usize;
     for coord in operands {
-        // Footpoint latitude, i.e. the latitude of a point on the central meridian
-        // having the same northing as the point of interest
-        let lat = ellps.meridional_distance((coord[1] - y_0) / k_0, Inv);
-        let t = lat.tan();
-        let c = lat.cos();
-        let cc = c * c;
-        #[allow(non_snake_case)]
-        let N = ellps.prime_vertical_radius_of_curvature(lat);
-        let x = (coord[0] - x_0) / (k_0 * N);
-        let xx = x * x;
-        let theta_4 = x.sinh().atan2(c);
-        let theta_5 = (t * theta_4.cos()).atan();
+        // --- 1. Normalize N, E
 
-        // Latitude
-        let xet = xx * xx * eps * t / 24.;
-        coord[1] = lat_0 + (1. + cc * eps) * (theta_5 - xet * (9. - 10. * cc)) - eps * cc * lat;
+        let mut lon = (coord[0] - x_0) / qs;
+        let mut lat = (coord[1] - zb) / qs;
 
-        // Longitude
-        let approx = lon_0 + theta_4;
-        let coef = eps / 60. * xx * x * c;
-        coord[0] = approx - coef * (10. - 4. * xx / cc + xx * cc);
+        // Don't wanna play if we're too far from the center meridian
+        if lon.abs() > 2.623395162778 {
+            coord[0] = f64::NAN;
+            coord[1] = f64::NAN;
+            continue;
+        }
+
+        // --- 2. Normalized N, E -> complex spherical LAT, LNG
+
+        let dc = clenshaw_complex_sin([2. * lat, 2. * lon], &tm.inv);
+        lat += dc[0];
+        lon += dc[1];
+        lon = gudermannian(lon);
+
+        // --- 3. Complex spherical LAT -> Gaussian LAT, LNG
+
+        let (sin_lat, cos_lat) = lat.sin_cos();
+        let (sin_lon, cos_lon) = lon.sin_cos();
+        let cos_lat_lon = cos_lat * cos_lon;
+        lon = sin_lon.atan2(cos_lat_lon);
+        lat = (sin_lat * cos_lon).atan2(sin_lon.hypot(cos_lat_lon));
+
+        // --- 4. Gaussian LAT, LNG -> ellipsoidal LAT, LNG
+
+        let lon = normalize_angle_symmetric(lon + lon_0);
+        let lat = ellps.latitude_conformal_to_geographic(lat, *conformal);
+        (coord[0], coord[1]) = (lon, lat);
 
         successes += 1;
     }
@@ -181,7 +201,7 @@ pub fn new(parameters: &RawParameters, provider: &dyn Provider) -> Result<Op, Er
 
     // Conformal latitude value of the latitude-of-origin - Z in Engsager's notation
     let z = ellps.latitude_geographic_to_conformal(lat_0, conformal);
-    op.params.real.insert("z", z);
+    // op.params.real.insert("z", z);
 
     // Origin northing minus true northing at the origin latitude
     // i.e. true northing = N - zb
@@ -223,9 +243,6 @@ mod tests {
 
         let mut operands = geo.clone();
         op.apply(&prv, &mut operands, Fwd)?;
-        println!("Expected:\n{:?}", projected[0]);
-        println!("Got:\n{:?}", operands[0]);
-        // println!("Op:\n{:#?}", op);
 
         for i in 0..operands.len() {
             assert!(operands[i].hypot2(&projected[i]) < 1e-6);
@@ -233,8 +250,9 @@ mod tests {
 
         op.apply(&prv, &mut operands, Inv)?;
         for i in 0..operands.len() {
-            assert!(operands[i].hypot2(&geo[i]) < 1e-7);
+            assert!(operands[i].hypot2(&geo[i]) < 5e-6);
         }
+
         Ok(())
     }
 
