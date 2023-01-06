@@ -16,7 +16,7 @@ impl Ellipsoid {
     /// Geographic latitude, 𝜙 to geocentric latitude, 𝜃. New approach with separate
     /// functions for the forward and inverse implementations which presumably
     /// speeds things slightly up, and results in more readable user code.
-    /// See also [latitude_geocentric_to_geographic](latitude_geocentric_to_geographic)
+    /// See also [latitude_geocentric_to_geographic](Ellipsoid::latitude_geocentric_to_geographic)
     #[must_use]
     pub fn latitude_geographic_to_geocentric(&self, geographic: f64) -> f64 {
         ((1.0 - self.f * (2.0 - self.f)) * geographic.tan()).atan()
@@ -25,7 +25,7 @@ impl Ellipsoid {
     /// Geocentric latitude, 𝜃 to geographic latitude, 𝜙. New approach with separate
     /// functions for the forward and inverse implementations which presumably
     /// speeds things slightly up, and results in more readable user code.
-    /// See also [latitude_geographic_to_geocentric](latitude_geographic_to_geocentric)
+    /// See also [latitude_geographic_to_geocentric](Ellipsoid::latitude_geographic_to_geocentric)
     #[must_use]
     pub fn latitude_geocentric_to_geographic(&self, latitude: f64) -> f64 {
         (latitude.tan() / (1.0 - self.eccentricity_squared())).atan()
