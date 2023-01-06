@@ -2,7 +2,7 @@
 pub const POLYNOMIAL_ORDER: usize = 6;
 
 /// Two upper triangular matrices of polynomium coefficients for computing
-/// the Fourier coefficients for the auxiliary latitudes
+/// the Fourier coefficients for (a.o.) the auxiliary latitudes
 #[derive(Clone, Copy, Debug, Default)]
 pub struct PolynomialCoefficients {
     pub fwd: [[f64; POLYNOMIAL_ORDER]; POLYNOMIAL_ORDER],
@@ -17,6 +17,10 @@ pub struct FourierCoefficients {
     pub etc: [f64; 2],
 }
 
+// --- Taylor series polynomium evaluation ----
+
+/// Compute Fourier coefficients by evaluating their corresponding
+/// Taylor polynomiums
 pub fn fourier_coefficients(
     arg: f64,
     coefficients: &PolynomialCoefficients,
@@ -41,6 +45,8 @@ pub fn horner(arg: f64, coefficients: &[f64]) -> f64 {
     }
     value
 }
+
+// --- Fourier series summation using Clenshaw's recurrence ---
 
 /// Evaluate Σ cᵢ sin( i · arg ), for i ∈ {order, ... , 1}, using Clenshaw summation
 pub fn clenshaw_sin(arg: f64, coefficients: &[f64]) -> f64 {
@@ -104,6 +110,30 @@ pub fn clenshaw_complex_sin(arg: [f64; 2], coefficients: &[f64]) -> [f64; 2] {
     [r * hr - i * hi, r * hi + i * hr]
 }
 
+// --- Clenshaw versions optimized for Transverse Mercator ---
+
+/// Evaluate Σ cᵢ sin( i · arg ), for i ∈ {order, ... , 1}, using Clenshaw summation
+///
+/// Functionally identical to [clenshaw_sin](crate::math::clenshaw_sin), but
+/// takes advantage trigonometric factors, which are conveniently computed ahead-of-call in
+/// the Transverse Mercator code, tmerc. Since tmerc is so widely used, this optimization
+/// makes good sense, despite the more clumsy call signature. Also, for the same reason
+/// we assert that, despite that compiler heuristics may beg to differ, this function should
+/// always be inlined.
+#[inline(always)]
+pub fn clenshaw_sin_optimized_for_tmerc(trig: [f64; 2], coefficients: &[f64]) -> f64 {
+    // Unpack the trigonometric factors for better readability.
+    let (sin_arg, cos_arg) = (trig[0], trig[1]);
+    let x = 2.0 * cos_arg;
+    let mut c0 = 0.0;
+    let mut c1 = 0.0;
+
+    for c in coefficients.iter().rev() {
+        (c1, c0) = (c0, x.mul_add(c0, c - c1));
+    }
+    sin_arg * c0
+}
+
 /// Evaluate Σ cᵢ Sin( i · arg ), for i ∈ {order, ... , 1}, using Clenshaw summation.
 /// i.e. a series of complex sines with real coefficients.
 ///
@@ -111,7 +141,7 @@ pub fn clenshaw_complex_sin(arg: [f64; 2], coefficients: &[f64]) -> [f64; 2] {
 /// takes advantage of some trigonometric and hyperbolic factors, which are conveniently
 /// computed ahead-of-call in the Transverse Mercator code, tmerc. Since tmerc is so widely
 /// used, this optimization makes good sense, despite the more clumsy call signature. Also,
-/// we assert that, despite compiler heuristics may beg to differ, this function should
+/// we assert that, despite that compiler heuristics may beg to differ, this function should
 /// always be inlined.
 #[allow(unused_assignments)] // For symmetric initialization of hr2, hi2
 #[inline(always)]
