@@ -37,23 +37,33 @@ fn fwd(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Er
 
         let (sin_lat, cos_lat) = lat.sin_cos();
         let (sin_lon, cos_lon) = lon.sin_cos();
-        // let lat = sin_lat.atan2(cos_lon*cos_lat);
-        // let lon = (sin_lon * cos_lat).atan2(sin_lat.hypot(cos_lat * cos_lon));
-
-        // Now some numerical optimizations from PROJ modifications by Even Rouault,
-        // a master in the noble art of turning trigonometry into geometry!
         let cos_lat_lon = cos_lat * cos_lon;
         let mut lat = sin_lat.atan2(cos_lat_lon);
-        let inv_denom_tan_lon = 1. / sin_lat.hypot(cos_lat_lon);
-        let tan_lon = sin_lon * cos_lat * inv_denom_tan_lon;
 
         // --- 3. Complex spherical N, E -> ellipsoidal normalized N, E
 
-        // This version of the inverse Gudermannian is numerically more stable than
-        // other often used formulations, [Karney, 2022](crate::Bibliography::Kar22).
+        // Some numerical optimizations from PROJ modifications by Even Rouault,
+        let inv_denom_tan_lon = 1. / sin_lat.hypot(cos_lat_lon);
+        let tan_lon = sin_lon * cos_lat * inv_denom_tan_lon;
+        // Inverse Gudermannian, using the precomputed tan(lon)
         let mut lon = tan_lon.asinh();
-        // Evaluate the differential term
-        let dc = clenshaw_complex_sin([2. * lat, 2. * lon], &tm.fwd);
+
+        // Trigonometric terms for Clenshaw summation
+        // Non-optimized version:  `let trig = (2.*lat).sin_cos()`
+        let two_inv_denom_tan_lon = 2.0 * inv_denom_tan_lon;
+        let two_inv_denom_tan_lon_square = two_inv_denom_tan_lon * inv_denom_tan_lon;
+        let tmp_r = cos_lat_lon * two_inv_denom_tan_lon_square;
+        let trig = [sin_lat * tmp_r, cos_lat_lon * tmp_r - 1.0];
+
+        // Hyperbolic terms for Clenshaw summation
+        // Non-optimized version:  `let hyp = [(2.*lon).sinh(), (2.*lon).sinh()]`
+        let hyp = [
+            tan_lon * two_inv_denom_tan_lon,
+            two_inv_denom_tan_lon_square - 1.0,
+        ];
+
+        // Evaluate and apply the differential term
+        let dc = clenshaw_complex_sin_optimized_for_tmerc(trig, hyp, &tm.fwd);
         lat += dc[0];
         lon += dc[1];
 
@@ -245,6 +255,8 @@ mod tests {
         op.apply(&prv, &mut operands, Fwd)?;
 
         for i in 0..operands.len() {
+            dbg!(operands[i]);
+            dbg!(projected[i]);
             assert!(operands[i].hypot2(&projected[i]) < 1e-6);
         }
 

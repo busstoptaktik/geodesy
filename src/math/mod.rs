@@ -104,6 +104,55 @@ pub fn clenshaw_complex_sin(arg: [f64; 2], coefficients: &[f64]) -> [f64; 2] {
     [r * hr - i * hi, r * hi + i * hr]
 }
 
+/// Evaluate Σ cᵢ Sin( i · arg ), for i ∈ {order, ... , 1}, using Clenshaw summation.
+/// i.e. a series of complex sines with real coefficients.
+///
+/// Functionally identical to [clenshaw_complex_sin](crate::math::clenshaw_complex_sin), but
+/// takes advantage of some trigonometric and hyperbolic factors, which are conveniently
+/// computed ahead-of-call in the Transverse Mercator code, tmerc. Since tmerc is so widely
+/// used, this optimization makes good sense, despite the more clumsy call signature. Also,
+/// we assert that, despite compiler heuristics may beg to differ, this function should
+/// always be inlined.
+#[allow(unused_assignments)] // For symmetric initialization of hr2, hi2
+#[inline(always)]
+pub fn clenshaw_complex_sin_optimized_for_tmerc(
+    trig: [f64; 2],
+    hyp: [f64; 2],
+    coefficients: &[f64],
+) -> [f64; 2] {
+    // Unpack the trigonometric and hyperbolic factors for better readability.
+    let (sin_r, cos_r) = (trig[0], trig[1]);
+    let (sinh_i, cosh_i) = (hyp[0], hyp[1]);
+    let r = 2. * cos_r * cosh_i;
+    let i = -2. * sin_r * sinh_i;
+
+    // Prepare the iterator for summation in reverse order
+    let mut coefficients = coefficients.iter().rev();
+
+    // Handle zero length series by conventionally assigning them the sum of 0
+    let Some(c) = coefficients.next() else {
+        return [0.; 2];
+    };
+
+    // Initialize the recurrence coefficients
+    let (mut hr2, mut hr1, mut hr) = (0., 0., *c);
+    let (mut hi2, mut hi1, mut hi) = (0., 0., 0.);
+
+    for c in coefficients {
+        // Rotate the recurrence coefficients
+        (hr2, hi2, hr1, hi1) = (hr1, hi1, hr, hi);
+
+        // Update the recurrent sum
+        hr = -hr2 + r * hr1 - i * hi1 + c;
+        hi = -hi2 + i * hr1 + r * hi1;
+    }
+
+    // Finalize the sum
+    let r = sin_r * cosh_i;
+    let i = cos_r * sinh_i;
+    [r * hr - i * hi, r * hi + i * hr]
+}
+
 /// The Gudermannian function (often written as gd), is the work horse for computations involving
 /// the isometric latitude (i.e. the vertical coordinate of the Mercator projection)
 pub fn gudermannian(arg: f64) -> f64 {
