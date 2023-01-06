@@ -8,10 +8,10 @@ use super::internal::*;
 
 // ----- T H E   P R O V I D E R   T R A I T -------------------------------------------
 
-/// The `Provider` trait defines the mode of communication between *Rust Geodesy* internals
+/// The `Context` trait defines the mode of communication between *Rust Geodesy* internals
 /// and the external context (i.e. typically resources like grids, transformation definitions,
 /// or ellipsoid parameters).
-pub trait Provider {
+pub trait Context {
     fn new() -> Self
     where
         Self: Sized;
@@ -46,7 +46,7 @@ pub trait Provider {
     fn get_grid(&self, name: &str) -> Result<Grid, Error>;
 }
 
-// Help providers provide canonically named, built in coordinate adaptors
+// Help context providers provide canonically named, built in coordinate adaptors
 #[rustfmt::skip]
 const BUILTIN_ADAPTORS: [(&str, &str); 8] = [
     ("geo:in",  "adapt from=neut_deg"),

@@ -33,7 +33,7 @@ fn main() {}
 /*
 use geodesy::Ellipsoid;
 use geodesy::Error;
-use geodesy::{CoordinateTuple, Provider};
+use geodesy::{CoordinateTuple, Context};
 
 pub struct GeodesicShift {
     args: Vec<(String, String)>,
@@ -84,14 +84,14 @@ impl GeodesicShift {
 
     // This is the interface to the Rust Geodesy library: Construct a
     // GeodesicShift element, and wrap it properly for consumption.
-    pub fn operator(args: &GysResource, _rp: &dyn Provider) -> Result<Operator, GeodesyError> {
+    pub fn operator(args: &GysResource, _rp: &dyn Context) -> Result<Operator, GeodesyError> {
         let op = GeodesicShift::new(args)?;
         Ok(Operator(Box::new(op)))
     }
 }
 
 impl OperatorCore for GeodesicShift {
-    fn fwd(&self, _ctx: &dyn Provider, operands: &mut [CoordinateTuple]) -> bool {
+    fn fwd(&self, _ctx: &dyn Context, operands: &mut [CoordinateTuple]) -> bool {
         for coord in operands {
             let res = self.ellps.geodesic_fwd(&coord, self.bearing, self.distance);
             coord[0] = res[0];

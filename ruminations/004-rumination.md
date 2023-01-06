@@ -60,13 +60,13 @@ Context style data types are annoying, but experience from work on both PROJ and
 
 ### Solution #2: The OS interface abstraction
 
-In Rust Geodesy, the OS interface is handled by a structure called "the provider". To make the provider less annoying than a PROJ context, it has been given much more functionality, so it's not just a bolted on afterthought, *but the actual API* for accessing the system functionality.
+In Rust Geodesy, the OS interface is handled by a structure called "the Context". To make the Context less annoying than a PROJ context, it has been given much more functionality, so it's not just a bolted on afterthought, *but the actual API* for accessing the system functionality.
 
-To (potentially) reduce the annoying aspect even further, there is not just one provider implementation, but two - `Minimal` and `Plain`, respectively. `Minimal` is much in the style of "classic" PROJ, while `Plain` in principle provides access to externally defined transformations from e.g. the EPSG registry (i.e. "resolver" functionality). Unlike PROJ, however, the definitions used by `Plain` are to be represented in user provided plain text files, not in a SQLite file database.
+To (potentially) reduce the annoying aspect even further, there is not just one Context implementation, but two - `Minimal` and `Plain`, respectively. `Minimal` is much in the style of "classic" PROJ, while `Plain` in principle provides access to externally defined transformations from e.g. the EPSG registry (i.e. "resolver" functionality). Unlike PROJ, however, the definitions used by `Plain` are to be represented in user provided plain text files, not in a SQLite file database.
 
-Hence, Rust Geodesy does not depend on external database functionality. The provider functionality is, however, represented by a Trait, not by fixed data structures, so users wishing to support PROJ's SQLite representation of the EPSG registry, can implement their own provider, supporting that.
+Hence, Rust Geodesy does not depend on external database functionality. The Context functionality is, however, represented by a Trait, not by fixed data structures, so users wishing to support PROJ's SQLite representation of the EPSG registry, can implement their own Context, supporting that.
 
-In a sense, this reflects the modularity of the transformation operator implementation onto the provider implementation: You can use one of the built ins, or you can provide your own. This allows for a very slim core functionality, that can be expanded as needed in actual use cases. In PROJ, the introduction of SQLite as a dependency resulted in much whining: The unreasonable expectations/unfounded entitlement is smoke thick over at <https://github.com/OSGeo/PROJ/issues/1552>. But since RG has the good fortune of being able to learn from PROJ,  why build a monolithic provider/resolver-architecture, when we don't have to? The operator architecture is modular, after all.
+In a sense, this reflects the modularity of the transformation operator implementation onto the Context implementation: You can use one of the built ins, or you can provide your own. This allows for a very slim core functionality, that can be expanded as needed in actual use cases. In PROJ, the introduction of SQLite as a dependency resulted in much whining: The unreasonable expectations/unfounded entitlement is smoke thick over at <https://github.com/OSGeo/PROJ/issues/1552>. But since RG has the good fortune of being able to learn from PROJ,  why build a monolithic Context/resolver-architecture, when we don't have to? The operator architecture is modular, after all.
 
 ### Problem #3: The geodetic registry interface ("the resolver")
 
@@ -96,7 +96,7 @@ One might object that resolving to building on user selection of the exact trans
 
 ### Solution #3: The geodetic registry interface ("the resolver")
 
-Where PROJ supports both "find the proper transformation given input and output CRS", and "use this transformation - do not ask any questions", RG deems the concept of a resolver implausible in the general case, and leaves the implementation of one up the end user, by whom it may be implemented as part of a `Provider` data structure.
+Where PROJ supports both "find the proper transformation given input and output CRS", and "use this transformation - do not ask any questions", RG deems the concept of a resolver implausible in the general case, and leaves the implementation of one up the end user, by whom it may be implemented as part of a `Context` data structure.
 
 
 ### Document History

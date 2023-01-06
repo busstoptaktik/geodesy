@@ -6,7 +6,7 @@ use super::*;
 // ----- F O R W A R D -----------------------------------------------------------------
 
 // Forward transverse mercator, following Engsager & Poder(2007)
-fn fwd(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
+fn fwd(op: &Op, _prv: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
     let ellps = op.params.ellps[0];
     let lat_0 = op.params.lat[0];
     let lon_0 = op.params.lon[0];
@@ -87,7 +87,7 @@ fn fwd(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Er
 // ----- I N V E R S E -----------------------------------------------------------------
 
 // Inverse Transverse Mercator, following Engsager & Poder (2007) (currently Bowring stands in!)
-fn inv(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
+fn inv(op: &Op, _prv: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
     let ellps = op.params.ellps[0];
     let lon_0 = op.params.lon[0];
     let x_0 = op.params.x[0];
@@ -184,7 +184,7 @@ const TRANSVERSE_MERCATOR: PolynomialCoefficients = PolynomialCoefficients {
     ]
 };
 
-pub fn new(parameters: &RawParameters, provider: &dyn Provider) -> Result<Op, Error> {
+pub fn new(parameters: &RawParameters, provider: &dyn Context) -> Result<Op, Error> {
     let mut op = Op::plain(parameters, InnerOp(fwd), InnerOp(inv), &GAMUT, provider)?;
     let ellps = op.params.ellps[0];
     let n = ellps.third_flattening();

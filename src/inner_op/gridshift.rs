@@ -1,10 +1,10 @@
 // Datum shift using grid interpolation.
 use super::*;
-use crate::Provider;
+use crate::Context;
 
 // ----- F O R W A R D --------------------------------------------------------------
 
-fn fwd(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
+fn fwd(op: &Op, _prv: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
     let grid = &op.params.grids["grid"];
     let mut successes = 0_usize;
 
@@ -34,7 +34,7 @@ fn fwd(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Er
 
 // ----- I N V E R S E --------------------------------------------------------------
 
-fn inv(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
+fn inv(op: &Op, _prv: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
     let grid = &op.params.grids["grid"];
     let mut successes = 0_usize;
 
@@ -78,7 +78,7 @@ pub const GAMUT: [OpParameter; 3] = [
     OpParameter::Real { key: "padding", default: Some(0.5) },
 ];
 
-pub fn new(parameters: &RawParameters, provider: &dyn Provider) -> Result<Op, Error> {
+pub fn new(parameters: &RawParameters, provider: &dyn Context) -> Result<Op, Error> {
     let def = &parameters.definition;
     let mut params = ParsedParameters::new(parameters, &GAMUT)?;
 

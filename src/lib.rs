@@ -10,21 +10,22 @@ pub(crate) mod grid;
 mod inner_op;
 pub mod math;
 mod op;
-mod provider;
+mod context;
 
 // The bread-and-butter
 pub use crate::coord::Coord;
 pub use crate::ellipsoid::Ellipsoid;
 pub use crate::grid::Grid;
 pub use crate::op::Op;
-pub use crate::provider::Minimal;
-pub use crate::provider::Plain;
-pub use crate::provider::Provider;
+pub use crate::context::Context;
+pub use crate::context::Minimal;
+pub use crate::context::Plain;
 
 /// The bread-and-butter, shrink-wrapped for external use
 pub mod preamble {
     pub use crate::coord::Coord;
     pub use crate::op::OpHandle;
+    pub use crate::Context;
     pub use crate::Direction;
     pub use crate::Direction::Fwd;
     pub use crate::Direction::Inv;
@@ -33,7 +34,6 @@ pub mod preamble {
     pub use crate::Minimal;
     pub use crate::Op;
     pub use crate::Plain;
-    pub use crate::Provider;
 }
 
 /// Preamble for InnerOp modules (built-in or user defined)

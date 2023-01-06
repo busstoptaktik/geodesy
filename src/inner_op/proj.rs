@@ -83,13 +83,13 @@ fn proj(args: &str, forward: bool, operands: &mut [Coord]) -> Result<usize, Erro
 
 // ----- F O R W A R D --------------------------------------------------------------
 
-fn proj_fwd(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
+fn proj_fwd(op: &Op, _prv: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
     proj(&op.params.text["proj_args"], true, operands)
 }
 
 // ----- I N V E R S E --------------------------------------------------------------
 
-fn proj_inv(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
+fn proj_inv(op: &Op, _prv: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
     proj(&op.params.text["proj_args"], false, operands)
 }
 
@@ -100,7 +100,7 @@ pub const GAMUT: [OpParameter; 1] = [
     OpParameter::Flag { key: "inv" },
 ];
 
-pub fn new(parameters: &RawParameters, _provider: &dyn Provider) -> Result<Op, Error> {
+pub fn new(parameters: &RawParameters, _provider: &dyn Context) -> Result<Op, Error> {
     let def = &parameters.definition;
     let given_args = ParsedParameters::new(parameters, &GAMUT)?.given;
     if Command::new("proj").stderr(Stdio::piped()).spawn().is_err() {

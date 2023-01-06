@@ -2,7 +2,7 @@ use super::*;
 
 // ----- F O R W A R D -----------------------------------------------------------------
 
-fn fwd(_op: &Op, _provider: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
+fn fwd(_op: &Op, _provider: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
     let mut n = 0;
     for o in operands {
         o[0] += 1.;
@@ -13,7 +13,7 @@ fn fwd(_op: &Op, _provider: &dyn Provider, operands: &mut [Coord]) -> Result<usi
 
 // ----- I N V E R S E -----------------------------------------------------------------
 
-fn inv(_op: &Op, _provider: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
+fn inv(_op: &Op, _provider: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
     let mut n = 0;
     for o in operands {
         o[0] -= 1.;
@@ -29,7 +29,7 @@ pub const GAMUT: [OpParameter; 1] = [
     OpParameter::Flag { key: "inv" },
 ];
 
-pub fn new(parameters: &RawParameters, provider: &dyn Provider) -> Result<Op, Error> {
+pub fn new(parameters: &RawParameters, provider: &dyn Context) -> Result<Op, Error> {
     Op::plain(parameters, InnerOp(fwd), InnerOp(inv), &GAMUT, provider)
 }
 

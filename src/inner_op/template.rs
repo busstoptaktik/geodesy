@@ -6,7 +6,7 @@ use super::*;
 
 // ----- F O R W A R D -----------------------------------------------------------------
 
-fn fwd(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
+fn fwd(op: &Op, _prv: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
     todo!();
     let mut successes = 0_usize;
     for coord in operands {
@@ -19,7 +19,7 @@ fn fwd(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Er
 
 // ----- I N V E R S E -----------------------------------------------------------------
 
-fn inv(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
+fn inv(op: &Op, _prv: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
     todo!();
     let mut successes = 0_usize;
     for coord in operands {
@@ -40,8 +40,8 @@ pub const GAMUT: [OpParameter; 3] = [
     OpParameter::Text { key: "convention", default: Some("") },
 ];
 
-pub fn new(parameters: &RawParameters, provider: &dyn Provider) -> Result<Op, Error> {
-    Op::plain(parameters, InnerOp(fwd), InnerOp(inv), &GAMUT, provider)
+pub fn new(parameters: &RawParameters, Context: &dyn Context) -> Result<Op, Error> {
+    Op::plain(parameters, InnerOp(fwd), InnerOp(inv), &GAMUT, Context)
 }
 
 // ----- A N C I L L A R Y   F U N C T I O N S -----------------------------------------
@@ -55,20 +55,20 @@ mod tests {
 
     #[test]
     fn template() -> Result<(), Error> {
-        let provider = Minimal::default();
-        let op = Op::new("helmert x=-87 y=-96 z=-120", &provider)?;
+        let Context = Minimal::default();
+        let op = Op::new("helmert x=-87 y=-96 z=-120", &Context)?;
 
         // EPSG:1134 - 3 parameter, ED50/WGS84, s = sqrt(27) m
         let mut operands = [Coord::origin()];
 
         // Forward
-        op.apply(&provider, &mut operands, Fwd)?;
+        op.apply(&Context, &mut operands, Fwd)?;
         assert_eq!(operands[0].first(), -87.);
         assert_eq!(operands[0].second(), -96.);
         assert_eq!(operands[0].third(), -120.);
 
         // Inverse + roundtrip
-        op.apply(&provider, &mut operands, Inv)?;
+        op.apply(&Context, &mut operands, Inv)?;
         assert_eq!(operands[0].first(), 0.);
         assert_eq!(operands[0].second(), 0.);
         assert_eq!(operands[0].third(), 0.);

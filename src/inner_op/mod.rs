@@ -60,7 +60,7 @@ pub fn builtin(name: &str) -> Result<OpConstructor, Error> {
 /// OpConstructor needs to be a newtype, rather than a type alias,
 /// since we must implement the Debug-trait for OpConstructor (to
 /// make auto derive of the Debug-trait work for any derived type).
-pub struct OpConstructor(pub fn(args: &RawParameters, ctx: &dyn Provider) -> Result<Op, Error>);
+pub struct OpConstructor(pub fn(args: &RawParameters, ctx: &dyn Context) -> Result<Op, Error>);
 
 // Cannot autoderive the Debug trait
 impl core::fmt::Debug for OpConstructor {
@@ -76,7 +76,7 @@ impl core::fmt::Debug for OpConstructor {
 /// must implement the Debug-trait for InnerOp (to make auto derive
 /// of the Debug-trait work for any derived type).
 pub struct InnerOp(
-    pub fn(op: &Op, ctx: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error>,
+    pub fn(op: &Op, ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error>,
 );
 
 // Cannot autoderive the Debug trait
@@ -95,7 +95,7 @@ impl Default for InnerOp {
 
 fn noop_placeholder(
     _params: &Op,
-    _provider: &dyn Provider,
+    _provider: &dyn Context,
     _operands: &mut [Coord],
 ) -> Result<usize, Error> {
     // Consider whether this should return an Err-value if used as a placeholder for a

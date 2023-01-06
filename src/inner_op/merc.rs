@@ -3,7 +3,7 @@ use super::*;
 
 // ----- F O R W A R D -----------------------------------------------------------------
 
-fn fwd(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
+fn fwd(op: &Op, _prv: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
     let ellps = op.params.ellps[0];
     let a = ellps.semimajor_axis();
     let k_0 = op.params.k[0];
@@ -29,7 +29,7 @@ fn fwd(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Er
 
 // ----- I N V E R S E -----------------------------------------------------------------
 
-fn inv(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
+fn inv(op: &Op, _prv: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
     let ellps = op.params.ellps[0];
     let a = ellps.semimajor_axis();
     let k_0 = op.params.k[0];
@@ -70,7 +70,7 @@ pub const GAMUT: [OpParameter; 8] = [
     OpParameter::Real { key: "lat_ts", default: Some(0_f64) },
 ];
 
-pub fn new(parameters: &RawParameters, _provider: &dyn Provider) -> Result<Op, Error> {
+pub fn new(parameters: &RawParameters, _provider: &dyn Context) -> Result<Op, Error> {
     let def = &parameters.definition;
     let mut params = ParsedParameters::new(parameters, &GAMUT)?;
     let ellps = params.ellps[0];

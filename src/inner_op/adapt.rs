@@ -64,7 +64,7 @@ const MULT_DEFAULT: [f64; 4] = [1., 1., 1., 1.];
 
 // ----- F O R W A R D --------------------------------------------------------------
 
-fn fwd(op: &Op, _prv: &dyn Provider, data: &mut [Coord]) -> Result<usize, Error> {
+fn fwd(op: &Op, _prv: &dyn Context, data: &mut [Coord]) -> Result<usize, Error> {
     let n = data.len();
     if op.params.boolean("noop") {
         return Ok(n);
@@ -91,7 +91,7 @@ fn fwd(op: &Op, _prv: &dyn Provider, data: &mut [Coord]) -> Result<usize, Error>
 
 // ----- I N V E R S E --------------------------------------------------------------
 
-fn inv(op: &Op, _prv: &dyn Provider, data: &mut [Coord]) -> Result<usize, Error> {
+fn inv(op: &Op, _prv: &dyn Context, data: &mut [Coord]) -> Result<usize, Error> {
     let n = data.len();
     if op.params.boolean("noop") {
         return Ok(n);
@@ -129,7 +129,7 @@ pub const GAMUT: [OpParameter; 3] = [
     OpParameter::Text { key: "to", default: Some("enut") },
 ];
 
-pub fn new(parameters: &RawParameters, _provider: &dyn Provider) -> Result<Op, Error> {
+pub fn new(parameters: &RawParameters, _provider: &dyn Context) -> Result<Op, Error> {
     let mut params = ParsedParameters::new(parameters, &GAMUT)?;
     let descriptor = OpDescriptor::new(&parameters.definition, InnerOp(fwd), Some(InnerOp(inv)));
     let steps = Vec::<Op>::new();

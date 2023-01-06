@@ -36,7 +36,7 @@ impl Op {
     // operate fwd/inv, taking operator inversion into account.
     pub fn apply(
         &self,
-        ctx: &dyn Provider,
+        ctx: &dyn Context,
         operands: &mut [Coord],
         direction: Direction,
     ) -> Result<usize, Error> {
@@ -48,7 +48,7 @@ impl Op {
         self.descriptor.inv.0(self, ctx, operands)
     }
 
-    pub fn new(definition: &str, provider: &dyn Provider) -> Result<Op, Error> {
+    pub fn new(definition: &str, provider: &dyn Context) -> Result<Op, Error> {
         let globals = provider.globals();
         let parameters = RawParameters::new(definition, &globals);
         Self::op(parameters, provider)
@@ -63,7 +63,7 @@ impl Op {
         fwd: InnerOp,
         inv: InnerOp,
         gamut: &[OpParameter],
-        _provider: &dyn Provider,
+        _provider: &dyn Context,
     ) -> Result<Op, Error> {
         let def = parameters.definition.as_str();
         let params = ParsedParameters::new(parameters, gamut)?;
@@ -83,7 +83,7 @@ impl Op {
     // of precendence between pipelines, user defined operators, macros, and
     // built-in operators
     #[allow(clippy::self_named_constructors)]
-    pub fn op(parameters: RawParameters, provider: &dyn Provider) -> Result<Op, Error> {
+    pub fn op(parameters: RawParameters, provider: &dyn Context) -> Result<Op, Error> {
         if parameters.nesting_too_deep() {
             return Err(Error::Recursion(
                 parameters.invocation,

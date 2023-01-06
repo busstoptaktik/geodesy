@@ -14,7 +14,7 @@ use super::*;
 
 fn helmert_common(
     op: &Op,
-    _prv: &dyn Provider,
+    _prv: &dyn Context,
     operands: &mut [Coord],
     direction: Direction,
 ) -> usize {
@@ -111,13 +111,13 @@ fn helmert_common(
 
 // ----- F O R W A R D --------------------------------------------------------------
 
-fn helmert_fwd(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
+fn helmert_fwd(op: &Op, _prv: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
     Ok(helmert_common(op, _prv, operands, Direction::Fwd))
 }
 
 // ----- I N V E R S E --------------------------------------------------------------
 
-fn helmert_inv(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
+fn helmert_inv(op: &Op, _prv: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
     Ok(helmert_common(op, _prv, operands, Direction::Inv))
 }
 
@@ -162,7 +162,7 @@ pub const GAMUT: [OpParameter; 19] = [
     OpParameter::Real { key: "t_obs", default: Some(std::f64::NAN) },
 ];
 
-pub fn new(parameters: &RawParameters, _provider: &dyn Provider) -> Result<Op, Error> {
+pub fn new(parameters: &RawParameters, _provider: &dyn Context) -> Result<Op, Error> {
     let def = &parameters.definition;
     let mut params = ParsedParameters::new(parameters, &GAMUT)?;
 

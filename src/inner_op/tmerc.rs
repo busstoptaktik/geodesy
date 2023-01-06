@@ -4,7 +4,7 @@ use super::*;
 // ----- F O R W A R D -----------------------------------------------------------------
 
 // Forward transverse mercator, following Bowring (1989)
-fn fwd(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
+fn fwd(op: &Op, _prv: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
     let ellps = op.params.ellps[0];
     let eps = ellps.second_eccentricity_squared();
     let lat_0 = op.params.lat[0];
@@ -48,7 +48,7 @@ fn fwd(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Er
 // ----- I N V E R S E -----------------------------------------------------------------
 
 // Inverse transverse mercator, following Bowring (1989)
-fn inv(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
+fn inv(op: &Op, _prv: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
     let ellps = op.params.ellps[0];
     let eps = ellps.second_eccentricity_squared();
     let lat_0 = op.params.lat[0];
@@ -102,7 +102,7 @@ pub const GAMUT: [OpParameter; 7] = [
     OpParameter::Real { key: "k_0",   default: Some(1_f64) },
 ];
 
-pub fn new(parameters: &RawParameters, provider: &dyn Provider) -> Result<Op, Error> {
+pub fn new(parameters: &RawParameters, provider: &dyn Context) -> Result<Op, Error> {
     Op::plain(parameters, InnerOp(fwd), InnerOp(inv), &GAMUT, provider)
 }
 
@@ -113,7 +113,7 @@ pub const UTM_GAMUT: [OpParameter; 3] = [
     OpParameter::Natural { key: "zone", default: None },
 ];
 
-pub fn utm(parameters: &RawParameters, _prv: &dyn Provider) -> Result<Op, Error> {
+pub fn utm(parameters: &RawParameters, _prv: &dyn Context) -> Result<Op, Error> {
     let def = &parameters.definition;
     let mut params = ParsedParameters::new(parameters, &UTM_GAMUT)?;
 

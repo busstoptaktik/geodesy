@@ -15,7 +15,7 @@ use geodesy::inner_op_authoring::*;
 // It also implements the inverse operation, i.e. subtracting 42.
 
 // Forward
-fn add42(_op: &Op, _provider: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
+fn add42(_op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
     let mut n = 0;
     for o in operands {
         o[0] += 42.;
@@ -25,7 +25,7 @@ fn add42(_op: &Op, _provider: &dyn Provider, operands: &mut [Coord]) -> Result<u
 }
 
 // Inverse
-fn sub42(_op: &Op, _provider: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
+fn sub42(_op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
     let mut n = 0;
     for o in operands {
         o[0] -= 42.;
@@ -37,9 +37,9 @@ fn sub42(_op: &Op, _provider: &dyn Provider, operands: &mut [Coord]) -> Result<u
 // These are the parameters our 'add42'-operator are willing to respond to
 pub const GAMUT: [OpParameter; 1] = [OpParameter::Flag { key: "inv" }];
 
-// And this is the constructor, generating the object, the provider needs to instantiate an actual instance
-pub fn add42_constructor(parameters: &RawParameters, provider: &dyn Provider) -> Result<Op, Error> {
-    Op::plain(parameters, InnerOp(add42), InnerOp(sub42), &GAMUT, provider)
+// And this is the constructor, generating the object, the `Context` needs to instantiate an actual instance
+pub fn add42_constructor(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
+    Op::plain(parameters, InnerOp(add42), InnerOp(sub42), &GAMUT, ctx)
 }
 
 fn main() -> anyhow::Result<()> {
