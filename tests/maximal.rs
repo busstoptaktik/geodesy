@@ -2,7 +2,7 @@ use geodesy::internal::*;
 
 // ----- U S E R   P R O V I D E D   P R O V I D E R ----------------------------------
 
-/// A direct copy of the code of the Minimal provider, renamed as Maximal.
+/// A direct copy of the code of the Minimal Context provider, renamed as Maximal.
 /// Here used as a test and demo of how to write/use a user-provided context
 /// provider.
 ///
@@ -11,8 +11,8 @@ use geodesy::internal::*;
 /// outside of the Rust Geodesy source tree.
 ///
 /// The test in the "tests" section is identical to the one from inner-ops/gridshift.rs
-/// and serves only to show that a user provided provider is used in exactly the same
-/// way as a system provided.
+/// and serves only to show that a user provided context provider is used in exactly
+///  the same way as a system provided.
 
 #[derive(Debug, Default)]
 pub struct Maximal {
@@ -24,7 +24,7 @@ pub struct Maximal {
     operators: BTreeMap<OpHandle, Op>,
 }
 
-impl Provider for Maximal {
+impl Context for Maximal {
     fn new() -> Maximal {
         Maximal::default()
     }
@@ -97,7 +97,7 @@ impl Provider for Maximal {
     /// Access grid resources by identifier
     fn get_grid(&self, _name: &str) -> Result<Grid, Error> {
         Err(Error::General(
-            "Grid access by identifier not supported by the Minimal Provider",
+            "Grid access by identifier not supported by the Maximal context provider",
         ))
     }
 }

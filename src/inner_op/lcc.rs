@@ -8,7 +8,7 @@ const EPS10: f64 = 1e-10;
 
 // Forward Lambert conformal conic, following the PROJ implementation,
 // cf.  https://proj.org/operations/projections/lcc.html
-fn fwd(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
+fn fwd(op: &Op, _prv: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
     let a = op.params.ellps[0].semimajor_axis();
     let e = op.params.ellps[0].eccentricity();
     let lon_0 = op.params.lon[0];
@@ -43,7 +43,7 @@ fn fwd(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Er
 }
 
 // ----- I N V E R S E -----------------------------------------------------------------
-fn inv(op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
+fn inv(op: &Op, _prv: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
     let a = op.params.ellps[0].semimajor_axis();
     let e = op.params.ellps[0].eccentricity();
     let lon_0 = op.params.lon[0];
@@ -107,7 +107,7 @@ pub const GAMUT: [OpParameter; 9] = [
     OpParameter::Real { key: "y_0",   default: Some(0_f64) },
 ];
 
-pub fn new(parameters: &RawParameters, _provider: &dyn Provider) -> Result<Op, Error> {
+pub fn new(parameters: &RawParameters, _provider: &dyn Context) -> Result<Op, Error> {
     let def = &parameters.definition;
     let mut params = ParsedParameters::new(parameters, &GAMUT)?;
     if params.lat[2].is_nan() {

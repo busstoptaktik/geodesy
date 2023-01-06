@@ -40,7 +40,7 @@ impl Default for Plain {
     }
 }
 
-impl Provider for Plain {
+impl Context for Plain {
     fn new() -> Plain {
         let mut prv = Plain::default();
         for item in BUILTIN_ADAPTORS {
@@ -138,7 +138,7 @@ impl Provider for Plain {
     /// Access grid resources by identifier
     fn get_grid(&self, _name: &str) -> Result<Grid, Error> {
         Err(Error::General(
-            "Grid access by identifier not supported by the Minimal Provider",
+            "Grid access by identifier not supported by the Plain context provider",
         ))
     }
 }

@@ -21,7 +21,7 @@ use super::*;
 
 fn common(
     op: &Op,
-    _prv: &dyn Provider,
+    _prv: &dyn Context,
     operands: &mut [Coord],
     direction: Direction,
 ) -> Result<usize, Error> {
@@ -69,12 +69,12 @@ fn common(
 }
 
 // ----- F O R W A R D -----------------------------------------------------------------
-fn fwd(op: &Op, prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
+fn fwd(op: &Op, prv: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
     common(op, prv, operands, Fwd)
 }
 
 // ----- I N V E R S E -----------------------------------------------------------------
-fn inv(op: &Op, prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
+fn inv(op: &Op, prv: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
     common(op, prv, operands, Inv)
 }
 
@@ -94,7 +94,7 @@ pub const GAMUT: [OpParameter; 10] = [
     OpParameter::Text { key: "ellps_1",  default: Some("GRS80") },
 ];
 
-pub fn new(parameters: &RawParameters, _provider: &dyn Provider) -> Result<Op, Error> {
+pub fn new(parameters: &RawParameters, _provider: &dyn Context) -> Result<Op, Error> {
     let def = &parameters.definition;
     let mut params = ParsedParameters::new(parameters, &GAMUT)?;
 

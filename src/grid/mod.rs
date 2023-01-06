@@ -1,6 +1,6 @@
 // The Grid struct handles grid characteristics and interpolation.
 // The actual grid may be ither part of the Grid struct, or externally
-// provided (presumably by a Provider).
+// provided (presumably by a Context).
 //
 // In principle grid format agnostic, but includes a parser for
 // Gravsoft format geodetic grids.
@@ -36,7 +36,7 @@ pub struct Grid {
     pub bands: usize,
     offset: usize, // typically 0, but may be any number for externally stored grids
     last_valid_record_start: usize,
-    grid: Vec<f32>, // May be zero sized in cases where the Provider provides access to an externally stored grid
+    grid: Vec<f32>, // May be zero sized in cases where the Context provides access to an externally stored grid
 }
 
 impl Grid {

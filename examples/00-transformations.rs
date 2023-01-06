@@ -109,12 +109,12 @@ fn main() -> anyhow::Result<()> {
     // Don't do this!
     // ------------------------------------------------------------------------------
     // As PROJ-conoisseurs know, the `Context` type in PROJ plays a somewhat more
-    // passive role than the `Provider` type in RG. But actually, the RG provider API
+    // passive role than the `Context` type in RG. But actually, the RG Context API
     // is built on top of a much more PROJ-like interface, where the operators take
     // center stage. In general, the use of this interface is *not* recommended, but
     // for the rare cases where it is preferable, we demonstrate its use below, by
     // repeating the exercises above, while swapping the roles of the `Op`/`OpHandle`
-    // and the `Provider`.
+    // and the `Context`.
 
     // Create an `Op`, turning geographical coordinates into UTM zone 32 coordinates
     let utm32 = Op::new("utm zone=32", &ctx)?;

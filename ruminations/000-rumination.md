@@ -93,15 +93,15 @@ At comment `[0]`, we obtain access to the most important data types and function
 let mut ctx = Minimal::default();
 ```
 
-At comment `[1]` we instantiate a context `Provider` which, to [PROJ](https:://proj.org) users, will look much like the PROJ `PJ_CONTEXT`object: The `Provider` provides the interface to the messy world external to RG (files, threads, communication, geodetic constants and transformation definitions), and in general centralizes all the *mutable state* of the system.
+At comment `[1]` we instantiate a `Context` which, to [PROJ](https:://proj.org) users, will look much like the PROJ `PJ_CONTEXT`object: The `Context` provides the interface to the messy world external to RG (files, threads, communication, geodetic constants and transformation definitions), and in general centralizes all the *mutable state* of the system.
 
-Also, and contrary to the PROJ `PJ_CONTEXT` case, the `Provider` is in general the sole interface between the `RG` transformation functionality and the application program: You may instantiate a transformation object, but the `Provider` handles it for you. And while you need a separate `Provider` for each thread of your program, the `Provider` itself is designed to eventually do its work in parallel, using several threads.
+Also, and contrary to the PROJ `PJ_CONTEXT` case, the `Context` is in general the sole interface between the `RG` transformation functionality and the application program: You may instantiate a transformation object, but the `Context` handles it for you. And while you need a separate `Context` for each thread of your program, the `Context` itself is designed to eventually do its work in parallel, using several threads.
 
-Note that although RG provides `Minimal`, and a few other built-in `Provider`s, a `Provider` really is anything implementing the [`Provider`](/src/provider/mod.rs) trait, i.e. not necessarily an integral part of RG.
+Note that although RG provides `Minimal`, and a few other built-in `Context`s, a `Context` really is anything implementing the [`Context`](/src/context/mod.rs) trait, i.e. not necessarily an integral part of RG.
 
-The intention with this is to make it possible for an application program to supply a `Provider`, providing access to external resources **in precisely the form they are available in the execution environment of the application program**.
+The intention with this is to make it possible for an application program to supply a `Context`, providing access to external resources **in precisely the form they are available in the execution environment of the application program**.
 
-So forget about discussions on whether transformation definitions should be read from a local SQLite file database, a conection to an external database, or from a local text file: These discussions can be laid to rest simply by providing a `Provider` accessing resources in whichever form is most convenient for the case at hand.
+So forget about discussions on whether transformation definitions should be read from a local SQLite file database, a conection to an external database, or from a local text file: These discussions can be laid to rest simply by providing a `Context` accessing resources in whichever form is most convenient for the case at hand.
 
 ---
 
@@ -110,7 +110,7 @@ So forget about discussions on whether transformation definitions should be read
 let utm32 = ctx.op("utm zone=32").unwrap();
 ```
 
-At comment `[2]`, we use the `op`(eration) method of the `Provider` to instantiate an `Op`erator (closely corresponding to the `PJ` object in PROJ).
+At comment `[2]`, we use the `op`(eration) method of the `Context` to instantiate an `Op`erator (closely corresponding to the `PJ` object in PROJ).
 
 The parametrisation of the operator, i.e. the text `utm zone=32` uses parameter naming conventions closely corresponding to those used in PROJ, where the same operator would be described as `proj=utm zone=32`
 (see also [ellps implied](#note-ellps-implied) in the Notes section).
@@ -119,11 +119,11 @@ PROJ has a *de facto* convention that **the first** element in a definition stri
 
 Through the evolution of PROJ from a projection library to a generic transformation library, the `proj=` part has become slightly confusing, since it is used to identify not just `proj`ections, but any kind of geodetic operations. RG, being born as a generic geodetic library, eliminates this potential confusion.
 
-Note, however, that contrary to PROJ, when instantiating an operator in RG, you do not actually get an `Op`erator object back, but just a handle to an `Op`erator - an `OpHandle` (which is actually just a weakly disguised UUID). The `Op` itself lives its entire life embedded inside the `Provider`. And while the `Provider` is mutable, the `Operator`, once created, is *immutable*.
+Note, however, that contrary to PROJ, when instantiating an operator in RG, you do not actually get an `Op`erator object back, but just a handle to an `Op`erator - an `OpHandle` (which is actually just a weakly disguised UUID). The `Op` itself lives its entire life embedded inside the `Context`. And while the `Context` is mutable, the `Operator`, once created, is *immutable*.
 
-This makes `Operator`s thread-sharable, so the `Provider` will eventually (although still not implemented), be able to automatically parallelize large transformation jobs, eliminating some of the need for separate thread handling at the application program level.
+This makes `Operator`s thread-sharable, so the `Context` will eventually (although still not implemented), be able to automatically parallelize large transformation jobs, eliminating some of the need for separate thread handling at the application program level.
 
-**A note on naming:** The method for instantiating an `Op`erator is called `Provider::op(...)`. This eliminates the need to discern between operators and operations: Conceptually, an **operation** is an *instantiation of an operator*, i.e. an operator with parameters fixed, and ready for work. An **operator** on the other hand, is formally a datatype, i.e. just a description of a memory layout of the parameters. At the API level we don't care, and hence use the abbreviation `op(...)`, which returns a handle to an **operation**, which can be used to **operate** on a set of **operands**. It's op...s all the way down!
+**A note on naming:** The method for instantiating an `Op`erator is called `Context::op(...)`. This eliminates the need to discern between operators and operations: Conceptually, an **operation** is an *instantiation of an operator*, i.e. an operator with parameters fixed, and ready for work. An **operator** on the other hand, is formally a datatype, i.e. just a description of a memory layout of the parameters. At the API level we don't care, and hence use the abbreviation `op(...)`, which returns a handle to an **operation**, which can be used to **operate** on a set of **operands**. It's op...s all the way down!
 
 ---
 
@@ -310,7 +310,7 @@ The Rust ecosystem includes excellent logging facilities, utilized, but still un
 
 From the detailed walkthrough of the example above, we can summarize "the philosophy of RG" as:
 
-- **Be flexible:** User defined macros and operators are first class citizens in the RG ecosystem - they are treated exactly as the built-ins, and hence, can be used as vehicles for implementation of new built-in functionality. Even the `Provider`, i.e. the interface between the RG internals and external resources, can be swapped out with a user supplied/application specific one.
+- **Be flexible:** User defined macros and operators are first class citizens in the RG ecosystem - they are treated exactly as the built-ins, and hence, can be used as vehicles for implementation of new built-in functionality. Even the `Context`, i.e. the interface between the RG internals and external resources, can be swapped out with a user supplied/application specific one.
 - **Don't overspecify:** For example, the `Coord` object is just an ordered set of four numbers, with no specific interpretation implied. It works as a shuttle, ferrying the operand between the steps of a pipeline of `Op`erators: The meaning of the operand is entirely up to the `Op`erator.
 - **Transformations are important. Systems not so much:** RG does not anywhere refer explicitly to input or output system names. Although it can be used to construct transformations between specific reference frames (as in the "ED50 to WGS84" case, in the *user defined macro* example), it doesn't really attribute any meaning to these internally.
 - **Coordinates and data flow pathways are four dimensional:** From end to end, data runs through RG along 4D pathways. Since all geodata capture today is either directly or indirectly based on GNSS, the coordinates are inherently four dimensional. And while much application software ignores this fact, embracing it is the only way to obtain even decimeter accuracy over time scales of just a few years. Contemporary coordinate handling software should never ignore this.

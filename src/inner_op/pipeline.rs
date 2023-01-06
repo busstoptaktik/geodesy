@@ -3,7 +3,7 @@ use std::collections::BTreeSet;
 
 // ----- F O R W A R D -----------------------------------------------------------------
 
-fn pipeline_fwd(op: &Op, provider: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
+fn pipeline_fwd(op: &Op, provider: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
     let mut stack = Vec::new();
     let mut n = usize::MAX;
     for step in &op.steps {
@@ -27,7 +27,7 @@ fn pipeline_fwd(op: &Op, provider: &dyn Provider, operands: &mut [Coord]) -> Res
 
 // ----- I N V E R S E -----------------------------------------------------------------
 
-fn pipeline_inv(op: &Op, provider: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
+fn pipeline_inv(op: &Op, provider: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
     let mut stack = Vec::new();
     let mut n = usize::MAX;
     for step in op.steps.iter().rev() {
@@ -57,7 +57,7 @@ pub const GAMUT: [OpParameter; 1] = [
     OpParameter::Flag { key: "inv" },
 ];
 
-pub fn new(parameters: &RawParameters, provider: &dyn Provider) -> Result<Op, Error> {
+pub fn new(parameters: &RawParameters, provider: &dyn Context) -> Result<Op, Error> {
     let definition = &parameters.definition;
     let thesteps = split_into_steps(definition).0;
     let mut steps = Vec::new();
@@ -94,7 +94,7 @@ pub const PUSH_POP_GAMUT: [OpParameter; 4] = [
     OpParameter::Flag { key: "v_4" },
 ];
 
-pub fn push(parameters: &RawParameters, _prv: &dyn Provider) -> Result<Op, Error> {
+pub fn push(parameters: &RawParameters, _prv: &dyn Context) -> Result<Op, Error> {
     let def = &parameters.definition;
     let params = ParsedParameters::new(parameters, &PUSH_POP_GAMUT)?;
 
@@ -114,7 +114,7 @@ pub fn push(parameters: &RawParameters, _prv: &dyn Provider) -> Result<Op, Error
     })
 }
 
-pub fn pop(parameters: &RawParameters, _prv: &dyn Provider) -> Result<Op, Error> {
+pub fn pop(parameters: &RawParameters, _prv: &dyn Context) -> Result<Op, Error> {
     let def = &parameters.definition;
     let params = ParsedParameters::new(parameters, &PUSH_POP_GAMUT)?;
 

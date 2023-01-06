@@ -3,13 +3,13 @@ use super::*;
 
 // ----- F O R W A R D --------------------------------------------------------------
 
-fn fwd(_op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
+fn fwd(_op: &Op, _prv: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
     Ok(operands.len())
 }
 
 // ----- I N V E R S E --------------------------------------------------------------
 
-fn inv(_op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, Error> {
+fn inv(_op: &Op, _prv: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
     Ok(operands.len())
 }
 
@@ -20,7 +20,7 @@ fn inv(_op: &Op, _prv: &dyn Provider, operands: &mut [Coord]) -> Result<usize, E
 pub const GAMUT: [OpParameter; 0] = [
 ];
 
-pub fn new(parameters: &RawParameters, provider: &dyn Provider) -> Result<Op, Error> {
+pub fn new(parameters: &RawParameters, provider: &dyn Context) -> Result<Op, Error> {
     Op::plain(parameters, InnerOp(fwd), InnerOp(inv), &GAMUT, provider)
 }
 

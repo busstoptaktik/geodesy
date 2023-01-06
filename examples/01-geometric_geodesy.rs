@@ -12,7 +12,7 @@
 use geodesy::preamble::*;
 
 fn main() -> Result<(), Error> {
-    // In example 00, we saw that the `Provider` data structure is the
+    // In example 00, we saw that the `Context` data structure is the
     // coordinating element for all things related to transformations
     // in Rust Geodesy. For generic geometric geodesy the same can be
     // said about the `Ellipsoid`. So to do anything, we must first

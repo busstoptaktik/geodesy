@@ -14,7 +14,7 @@ pub struct Minimal {
     operators: BTreeMap<OpHandle, Op>,
 }
 
-impl Provider for Minimal {
+impl Context for Minimal {
     fn new() -> Minimal {
         let mut prv = Minimal::default();
         for item in BUILTIN_ADAPTORS {
@@ -91,7 +91,7 @@ impl Provider for Minimal {
     /// Access grid resources by identifier
     fn get_grid(&self, _name: &str) -> Result<Grid, Error> {
         Err(Error::General(
-            "Grid access by identifier not supported by the Minimal Provider",
+            "Grid access by identifier not supported by the Minimal context provider",
         ))
     }
 }

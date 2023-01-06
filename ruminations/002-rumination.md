@@ -220,7 +220,7 @@ The `gridshift` operator implements datum shifts by interpolation in correction 
 | `inv` | Inverse operation: output-to-input datum. For 2-D and 3-D cases, this involves an iterative refinement, typically converging after less than 5 iterations |
 | `grids` | Name of the grid file to use. RG supports only one file for each operation, but maintains the plural form of the `grids` option for alignment with the PROJ precedent |
 
-The `gridshift` operator has built in support for the **Gravsoft** grid format. Support for additional file formats depends on the `Provider` in use.
+The `gridshift` operator has built in support for the **Gravsoft** grid format. Support for additional file formats depends on the `Context` in use.
 
 **Units:**
 For grids with angular (geographical) spatial units, the corrections are supposed to be given in seconds of arc, and internally converted to radians. For grids appearing to have linear (projected) spatial units, the corrections are supposed to be given in meters, and are kept unchanged. A grid is supposed to be in linear spatial units if any of its boundaries have a numerical value larger than `2×360`, i.e. clearly outside of the angular range.
