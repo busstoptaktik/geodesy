@@ -8,7 +8,6 @@
 use crate::internal::*;
 use std::io::BufRead;
 
-// #[allow(dead_code)]
 #[derive(Debug, Default)]
 pub struct Grid {
     lat_0: f64, // Latitude of the first (typically northernmost) row of the grid
@@ -21,6 +20,7 @@ pub struct Grid {
     cols: usize,
     pub bands: usize,
     offset: usize, // typically 0, but may be any number for externally stored grids
+    #[allow(dead_code)]
     last_valid_record_start: usize,
     grid: Vec<f32>, // May be zero sized in cases where the Context provides access to an externally stored grid
 }
@@ -69,6 +69,35 @@ impl Grid {
             last_valid_record_start,
             grid,
         })
+    }
+
+    /// Determine whether a given coordinate falls within the grid borders.
+    /// "On the border" qualifies as within.
+    pub fn contains(&self, position: Coord) -> bool {
+        // We start by assuming that the last row (latitude) is the southernmost
+        let mut min = self.lat_1;
+        let mut max = self.lat_0;
+        // If it's not, we swap
+        if self.dlat > 0. {
+            (min, max) = (max, min)
+        }
+        if position[1] != position[1].clamp(min, max) {
+            return false;
+        }
+
+        // The default assumption is the other way round for columns (longitudes)
+        min = self.lon_0;
+        max = self.lon_1;
+        // If it's not, we swap
+        if self.dlon < 0. {
+            (min, max) = (max, min)
+        }
+        if position[0] != position[0].clamp(min, max) {
+            return false;
+        }
+
+        // If we fell through all the way to the bottom, we're inside the grid
+        true
     }
 
     pub fn gravsoft(buf: &[u8]) -> Result<Self, Error> {
@@ -174,6 +203,7 @@ fn gravsoft_grid_reader(buf: &[u8]) -> Result<(Vec<f64>, Vec<f32>), Error> {
         // Convert to f64
         for item in line.split_whitespace() {
             let value = item.parse::<f64>().unwrap_or(f64::NAN);
+            // In Gravsoft grids, the header is the first 6 numbers of the file
             if header.len() < 6 {
                 header.push(value);
             } else {
@@ -191,7 +221,7 @@ fn gravsoft_grid_reader(buf: &[u8]) -> Result<(Vec<f64>, Vec<f32>), Error> {
     let lat_1 = header[0];
     let lon_0 = header[2];
     let lon_1 = header[3];
-    let dlat = -header[4];
+    let dlat = -header[4]; // minus because rows go from north to south
     let dlon = header[5];
     let rows = ((lat_1 - lat_0) / dlat + 1.5).floor() as usize;
     let cols = ((lon_1 - lon_0) / dlon + 1.5).floor() as usize;
@@ -247,12 +277,14 @@ mod tests {
 
     #[test]
     fn grid_header() -> Result<(), Error> {
+        // Create a datum correction grid (2 bands)
         let mut datum_header = Vec::from(HEADER);
         datum_header.push(2_f64); // 2 bands
         let mut datum_grid = Vec::from(DATUM);
         normalize_gravsoft_grid_values(&mut datum_header, &mut datum_grid);
         let datum = Grid::plain(&datum_header, Some(&datum_grid), None)?;
 
+        // Create a geoid grid (1 band)
         let mut geoid_header = Vec::from(HEADER);
         geoid_header.push(1_f64); // 1 band
         let mut geoid_grid = Vec::from(GEOID);
@@ -260,6 +292,7 @@ mod tests {
         let geoid = Grid::plain(&geoid_header, Some(&geoid_grid), None)?;
 
         let c = Coord::geo(58.75, 08.25, 0., 0.);
+        assert_eq!(geoid.contains(c), false);
 
         let n = geoid.interpolation(&c, None);
         assert!((n[0] - 58.83).abs() < 0.1);
@@ -269,8 +302,28 @@ mod tests {
 
         // Extrapolation
         let c = Coord::geo(100., 50., 0., 0.);
-        let d = datum.interpolation(&c, None);
-        assert!(c.default_ellps_dist(&d.to_arcsec().to_radians()) < 25.0);
+        // ...with output converted back to arcsec
+        let d = datum.interpolation(&c, None).to_arcsec();
+
+        // The grid is constructed to make the position in degrees equal to
+        // the extrapolation value in arcsec.
+        // Even for this case of extreme extrapolation, we expect the difference
+        // to be less than 1/10_000 of an arcsec (i.e. approx 3 mm)
+        assert!(c.to_degrees().hypot2(&d) < 1e-4);
+        // Spelled out
+        assert!((50.0 - d[0]).hypot(100.0 - d[1]) < 1e-4);
+
+        // Interpolation
+        let c = Coord::geo(55.06, 12.03, 0., 0.);
+        // Check that we're not extrapolating
+        assert_eq!(datum.contains(c), true);
+        // ...with output converted back to arcsec
+        let d = datum.interpolation(&c, None).to_arcsec();
+        // We can do slightly better for interpolation than for extrapolation,
+        // but the grid values are f32, so we have only approx 7 significant
+        // figures...
+        assert!(c.to_degrees().hypot2(&d) < 1e-5);
+
 
         Ok(())
     }
