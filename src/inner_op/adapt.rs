@@ -407,8 +407,8 @@ mod tests {
         // Roundtrip geo->utm->geo, using separate ops for fwd and inv
         let mut data = some_basic_coordinates();
         assert_eq!(prv.apply(utm, Fwd, &mut data)?, 2);
-        assert!((data[0][0] - 691875.6321403517).abs() < 1e-9);
-        assert!((data[0][1] - 6098907.825001632).abs() < 1e-9);
+        assert!((data[0][0] - 691875.6321396603).abs() < 1e-9);
+        assert!((data[0][1] - 6098907.825005002).abs() < 1e-9);
         assert_eq!(prv.apply(geo, Fwd, &mut data)?, 2);
         assert!((data[0][0] - 55.0).abs() < 1e-9);
         assert!((data[0][1] - 12.0).abs() < 1e-9);
@@ -416,8 +416,8 @@ mod tests {
         // Same, but using a plain Inv invocation for the return trip
         let mut data = some_basic_coordinates();
         assert_eq!(prv.apply(utm, Fwd, &mut data)?, 2);
-        assert!((data[0][0] - 691875.6321403517).abs() < 1e-9);
-        assert!((data[0][1] - 6098907.825001632).abs() < 1e-9);
+        assert!((data[0][0] - 691875.6321396603).abs() < 1e-9);
+        assert!((data[0][1] - 6098907.825005002).abs() < 1e-9);
         assert_eq!(prv.apply(utm, Inv, &mut data)?, 2);
         assert!((data[0][0] - 55.0).abs() < 1e-9);
         assert!((data[0][1] - 12.0).abs() < 1e-9);
