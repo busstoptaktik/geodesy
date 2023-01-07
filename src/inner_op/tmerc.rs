@@ -1,44 +1,82 @@
-//! Transverse Mercator, according to Bowring
+//! Transverse Mercator, following Engsager & Poder (2007)
 use super::*;
+use crate::math::*;
 
 // ----- F O R W A R D -----------------------------------------------------------------
 
-// Forward transverse mercator, following Bowring (1989)
+// Forward transverse mercator, following Engsager & Poder(2007)
 fn fwd(op: &Op, _prv: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
     let ellps = op.params.ellps[0];
-    let eps = ellps.second_eccentricity_squared();
     let lat_0 = op.params.lat[0];
     let lon_0 = op.params.lon[0];
     let x_0 = op.params.x[0];
-    let y_0 = op.params.y[0];
-    let k_0 = op.params.k[0];
+    let Some(conformal) = op.params.fourier_coefficients.get("conformal") else {
+        return Ok(0);
+    };
+    let Some(tm) = op.params.fourier_coefficients.get("tm") else {
+        return Ok(0);
+    };
+    let Some(qs) = op.params.real.get("scaled_radius") else {
+        return Ok(0);
+    };
+    let Some(zb) = op.params.real.get("zb") else {
+        return Ok(0);
+    };
 
     let mut successes = 0_usize;
     for coord in operands {
-        let lat = coord[1] + lat_0;
-        let (s, c) = lat.sin_cos();
-        let cc = c * c;
-        let ss = s * s;
+        // --- 1. Geographical -> Conformal latitude, rotated longitude
 
-        let dlon = coord[0] - lon_0;
-        let oo = dlon * dlon;
+        // The conformal latitude
+        let lat = ellps.latitude_geographic_to_conformal(coord[1] + lat_0, *conformal);
+        // The longitude as reckoned from the central meridian
+        let lon = coord[0] - lon_0;
 
-        #[allow(non_snake_case)]
-        let N = ellps.prime_vertical_radius_of_curvature(lat);
-        let z = eps * dlon.powi(3) * c.powi(5) / 6.;
-        let sd2 = (dlon / 2.).sin();
+        // --- 2. Conformal LAT, LNG -> complex spherical LAT
 
-        let theta_2 = (2. * s * c * sd2 * sd2).atan2(ss + cc * dlon.cos());
+        let (sin_lat, cos_lat) = lat.sin_cos();
+        let (sin_lon, cos_lon) = lon.sin_cos();
+        let cos_lat_lon = cos_lat * cos_lon;
+        let mut lat = sin_lat.atan2(cos_lat_lon);
 
-        // Easting
-        let sd = dlon.sin();
-        coord[0] = x_0 + k_0 * N * ((c * sd).atanh() + z * (1. + oo * (36. * cc - 29.) / 10.));
+        // --- 3. Complex spherical N, E -> ellipsoidal normalized N, E
 
-        // Northing
-        let m = ellps.meridional_distance(lat, Fwd);
-        let znos4 = z * N * dlon * s / 4.;
-        let ecc = 4. * eps * cc;
-        coord[1] = y_0 + k_0 * (m + N * theta_2 + znos4 * (9. + ecc + oo * (20. * cc - 11.)));
+        // Some numerical optimizations from PROJ modifications by Even Rouault,
+        let inv_denom_tan_lon = 1. / sin_lat.hypot(cos_lat_lon);
+        let tan_lon = sin_lon * cos_lat * inv_denom_tan_lon;
+        // Inverse Gudermannian, using the precomputed tan(lon)
+        let mut lon = tan_lon.asinh();
+
+        // Trigonometric terms for Clenshaw summation
+        // Non-optimized version:  `let trig = (2.*lat).sin_cos()`
+        let two_inv_denom_tan_lon = 2.0 * inv_denom_tan_lon;
+        let two_inv_denom_tan_lon_square = two_inv_denom_tan_lon * inv_denom_tan_lon;
+        let tmp_r = cos_lat_lon * two_inv_denom_tan_lon_square;
+        let trig = [sin_lat * tmp_r, cos_lat_lon * tmp_r - 1.0];
+
+        // Hyperbolic terms for Clenshaw summation
+        // Non-optimized version:  `let hyp = [(2.*lon).sinh(), (2.*lon).sinh()]`
+        let hyp = [
+            tan_lon * two_inv_denom_tan_lon,
+            two_inv_denom_tan_lon_square - 1.0,
+        ];
+
+        // Evaluate and apply the differential term
+        let dc = clenshaw_complex_sin_optimized_for_tmerc(trig, hyp, &tm.fwd);
+        lat += dc[0];
+        lon += dc[1];
+
+        // Don't wanna play if we're too far from the center meridian
+        if lon.abs() > 2.623395162778 {
+            coord[0] = f64::NAN;
+            coord[1] = f64::NAN;
+            continue;
+        }
+
+        // --- 4. ellipsoidal normalized N, E -> metric N, E
+
+        coord[0] = qs * lon + x_0; // Easting
+        coord[1] = qs * lat + zb; // Northing
         successes += 1;
     }
 
@@ -47,39 +85,59 @@ fn fwd(op: &Op, _prv: &dyn Context, operands: &mut [Coord]) -> Result<usize, Err
 
 // ----- I N V E R S E -----------------------------------------------------------------
 
-// Inverse transverse mercator, following Bowring (1989)
+// Inverse Transverse Mercator, following Engsager & Poder (2007) (currently Bowring stands in!)
 fn inv(op: &Op, _prv: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
     let ellps = op.params.ellps[0];
-    let eps = ellps.second_eccentricity_squared();
-    let lat_0 = op.params.lat[0];
     let lon_0 = op.params.lon[0];
     let x_0 = op.params.x[0];
-    let y_0 = op.params.y[0];
-    let k_0 = op.params.k[0];
+
+    let Some(conformal) = op.params.fourier_coefficients.get("conformal") else {
+        return Ok(0);
+    };
+    let Some(tm) = op.params.fourier_coefficients.get("tm") else {
+        return Ok(0);
+    };
+    let Some(qs) = op.params.real.get("scaled_radius") else {
+        return Ok(0);
+    };
+    let Some(zb) = op.params.real.get("zb") else {
+        return Ok(0);
+    };
 
     let mut successes = 0_usize;
     for coord in operands {
-        // Footpoint latitude, i.e. the latitude of a point on the central meridian
-        // having the same northing as the point of interest
-        let lat = ellps.meridional_distance((coord[1] - y_0) / k_0, Inv);
-        let t = lat.tan();
-        let c = lat.cos();
-        let cc = c * c;
-        #[allow(non_snake_case)]
-        let N = ellps.prime_vertical_radius_of_curvature(lat);
-        let x = (coord[0] - x_0) / (k_0 * N);
-        let xx = x * x;
-        let theta_4 = x.sinh().atan2(c);
-        let theta_5 = (t * theta_4.cos()).atan();
+        // --- 1. Normalize N, E
 
-        // Latitude
-        let xet = xx * xx * eps * t / 24.;
-        coord[1] = lat_0 + (1. + cc * eps) * (theta_5 - xet * (9. - 10. * cc)) - eps * cc * lat;
+        let mut lon = (coord[0] - x_0) / qs;
+        let mut lat = (coord[1] - zb) / qs;
 
-        // Longitude
-        let approx = lon_0 + theta_4;
-        let coef = eps / 60. * xx * x * c;
-        coord[0] = approx - coef * (10. - 4. * xx / cc + xx * cc);
+        // Don't wanna play if we're too far from the center meridian
+        if lon.abs() > 2.623395162778 {
+            coord[0] = f64::NAN;
+            coord[1] = f64::NAN;
+            continue;
+        }
+
+        // --- 2. Normalized N, E -> complex spherical LAT, LNG
+
+        let dc = clenshaw_complex_sin([2. * lat, 2. * lon], &tm.inv);
+        lat += dc[0];
+        lon += dc[1];
+        lon = gudermannian(lon);
+
+        // --- 3. Complex spherical LAT -> Gaussian LAT, LNG
+
+        let (sin_lat, cos_lat) = lat.sin_cos();
+        let (sin_lon, cos_lon) = lon.sin_cos();
+        let cos_lat_lon = cos_lat * cos_lon;
+        lon = sin_lon.atan2(cos_lat_lon);
+        lat = (sin_lat * cos_lon).atan2(sin_lon.hypot(cos_lat_lon));
+
+        // --- 4. Gaussian LAT, LNG -> ellipsoidal LAT, LNG
+
+        let lon = normalize_angle_symmetric(lon + lon_0);
+        let lat = ellps.latitude_conformal_to_geographic(lat, *conformal);
+        (coord[0], coord[1]) = (lon, lat);
 
         successes += 1;
     }
@@ -102,8 +160,67 @@ pub const GAMUT: [OpParameter; 7] = [
     OpParameter::Real { key: "k_0",   default: Some(1_f64) },
 ];
 
+#[rustfmt::skip]
+const TRANSVERSE_MERCATOR: PolynomialCoefficients = PolynomialCoefficients {
+    // Geodetic to TM. [Engsager & Poder, 2007](crate::Bibliography::Eng07)
+    fwd: [
+        [1./2.,   -2./3.,   5./16.,   41./180.,   -127./288.0 ,   7891./37800.],
+        [0., 13./48.,   -3./5.,   557./1440.,   281./630.,   -1983433./1935360.],
+        [0., 0., 61./240.,  -103./140.,   15061./26880.,   167603./181440.],
+        [0., 0., 0., 49561./161280.,   -179./168.,   6601661./7257600.],
+        [0., 0., 0., 0., 34729./80640.,   -3418889./1995840.],
+        [0., 0., 0., 0., 0., 212378941./319334400.]
+    ],
+
+    // TM to Geodetic. [Engsager & Poder, 2007](crate::Bibliography::Eng07)
+    inv: [
+        [-1./2.,   2./3.,   -37./96.,   1./360.,   81./512.,   -96199./604800.],
+        [0., -1./48.,   -1./15.,   437./1440.,   -46./105.,   1118711./3870720.],
+        [0., 0., -17./480.,   37./840.,   209./4480.,   -5569./90720.],
+        [0., 0., 0., -4397./161280.,   11./504.,   830251./7257600.],
+        [0., 0., 0., 0., -4583./161280.,   108847./3991680.],
+        [0., 0., 0., 0., 0., -20648693./638668800.]
+    ]
+};
+
+// Common setup workhorse between utm and the plain tmerc:
+// Pre-compute some of the computationally heavy prerequisites,
+// to get better amortization over the full operator lifetime.
+fn precompute(op: &mut Op) {
+    let ellps = op.params.ellps[0];
+    let n = ellps.third_flattening();
+    let lat_0 = op.params.lat[0];
+    let y_0 = op.params.y[0];
+
+    // The scaled spherical Earth radius - Qn in Engsager's implementation
+    let qs = op.params.k[0] * ellps.semimajor_axis() * ellps.normalized_meridian_arc_unit(); // meridian_quadrant();
+    op.params.real.insert("scaled_radius", qs);
+
+    // The Fourier series for the conformal latitude
+    let conformal = ellps.coefficients_for_conformal_latitude_computations();
+    op.params
+        .fourier_coefficients
+        .insert("conformal", conformal);
+
+    // The Fourier series for the transverse mercator coordinates, from [Engsager & Poder, 2007](crate::Bibliography::Eng07),
+    // with extensions to 6th order by [Karney, 2011](crate::Bibliography::Kar11).
+    let tm = fourier_coefficients(n, &TRANSVERSE_MERCATOR);
+    op.params.fourier_coefficients.insert("tm", tm);
+
+    // Conformal latitude value of the latitude-of-origin - Z in Engsager's notation
+    let z = ellps.latitude_geographic_to_conformal(lat_0, conformal);
+    // op.params.real.insert("z", z);
+
+    // Origin northing minus true northing at the origin latitude
+    // i.e. true northing = N - zb
+    let zb = y_0 - qs * (z + clenshaw_sin(2. * z, &tm.fwd));
+    op.params.real.insert("zb", zb);
+}
+
 pub fn new(parameters: &RawParameters, provider: &dyn Context) -> Result<Op, Error> {
-    Op::plain(parameters, InnerOp(fwd), InnerOp(inv), &GAMUT, provider)
+    let mut op = Op::plain(parameters, InnerOp(fwd), InnerOp(inv), &GAMUT, provider)?;
+    precompute(&mut op);
+    Ok(op)
 }
 
 #[rustfmt::skip]
@@ -144,12 +261,15 @@ pub fn utm(parameters: &RawParameters, _prv: &dyn Context) -> Result<Op, Error> 
     let steps = Vec::<Op>::new();
     let id = OpHandle::new();
 
-    Ok(Op {
+    let mut op = Op {
         descriptor,
         params,
         steps,
         id,
-    })
+    };
+
+    precompute(&mut op);
+    Ok(op)
 }
 
 // ----- T E S T S ---------------------------------------------------------------------
@@ -160,10 +280,6 @@ mod tests {
 
     #[test]
     fn tmerc() -> Result<(), Error> {
-        let prv = Minimal::default();
-        let definition = "tmerc k_0=0.9996 lon_0=9 x_0=500000";
-        let op = Op::new(definition, &prv)?;
-
         // Validation values from PROJ:
         // echo 12 55 0 0 | cct -d18 +proj=utm +zone=32 | clip
         #[rustfmt::skip]
@@ -182,16 +298,24 @@ mod tests {
             Coord::raw(-455_673.814_189_040,-6_198_246.671_090_279, 0., 0.)
         ];
 
+        let prv = Minimal::default();
+        let definition = "tmerc k_0=0.9996 lon_0=9 x_0=500000";
+        let op = Op::new(definition, &prv)?;
+
         let mut operands = geo.clone();
         op.apply(&prv, &mut operands, Fwd)?;
+
         for i in 0..operands.len() {
-            assert!(operands[i].hypot2(&projected[i]) < 5e-3);
+            dbg!(operands[i]);
+            dbg!(projected[i]);
+            assert!(operands[i].hypot2(&projected[i]) < 1e-6);
         }
 
         op.apply(&prv, &mut operands, Inv)?;
         for i in 0..operands.len() {
-            assert!(operands[i].hypot2(&geo[i]) < 10e-8);
+            assert!(operands[i].hypot2(&geo[i]) < 5e-6);
         }
+
         Ok(())
     }
 

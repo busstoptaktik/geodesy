@@ -7,8 +7,8 @@ use super::inner_op_authoring::*;
 
 mod adapt;
 mod addone;
+mod btmerc;
 mod cart;
-mod etmerc;
 mod gridshift;
 mod helmert;
 mod lcc;
@@ -24,6 +24,8 @@ mod tmerc;
 const BUILTIN_OPERATORS: [(&str, OpConstructor); 18] = [
     ("adapt",      OpConstructor(adapt::new)),
     ("addone",     OpConstructor(addone::new)),
+    ("btmerc",     OpConstructor(btmerc::new)),
+    ("butm",       OpConstructor(btmerc::utm)),
     ("cart",       OpConstructor(cart::new)),
     ("gridshift",  OpConstructor(gridshift::new)),
     ("helmert",    OpConstructor(helmert::new)),
@@ -32,8 +34,6 @@ const BUILTIN_OPERATORS: [(&str, OpConstructor); 18] = [
     ("molodensky", OpConstructor(molodensky::new)),
     ("nmea",       OpConstructor(nmea::new)),
     ("noop",       OpConstructor(noop::new)),
-    ("etmerc",     OpConstructor(etmerc::new)),
-    ("eutm",       OpConstructor(etmerc::eutm)),
     ("tmerc",      OpConstructor(tmerc::new)),
     ("utm",        OpConstructor(tmerc::utm)),
     ("pipeline",   OpConstructor(pipeline::new)),
