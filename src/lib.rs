@@ -4,22 +4,22 @@
 pub use crate::bibliography::Bibliography;
 
 pub(crate) mod bibliography;
+mod context;
 pub(crate) mod coord;
 pub(crate) mod ellipsoid;
 pub(crate) mod grid;
 mod inner_op;
 pub mod math;
 mod op;
-mod context;
 
 // The bread-and-butter
+pub use crate::context::Context;
+pub use crate::context::Minimal;
+pub use crate::context::Plain;
 pub use crate::coord::Coord;
 pub use crate::ellipsoid::Ellipsoid;
 pub use crate::grid::Grid;
 pub use crate::op::Op;
-pub use crate::context::Context;
-pub use crate::context::Minimal;
-pub use crate::context::Plain;
 
 /// The bread-and-butter, shrink-wrapped for external use
 pub mod preamble {

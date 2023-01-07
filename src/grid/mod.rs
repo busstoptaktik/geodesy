@@ -324,7 +324,6 @@ mod tests {
         // figures...
         assert!(c.to_degrees().hypot2(&d) < 1e-5);
 
-
         Ok(())
     }
 }
