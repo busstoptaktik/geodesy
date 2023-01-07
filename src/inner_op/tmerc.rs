@@ -161,6 +161,60 @@ pub const GAMUT: [OpParameter; 7] = [
 ];
 
 #[rustfmt::skip]
+pub const UTM_GAMUT: [OpParameter; 3] = [
+    OpParameter::Flag { key: "inv" },
+    OpParameter::Text { key: "ellps", default: Some("GRS80") },
+    OpParameter::Natural { key: "zone", default: None },
+];
+
+// ----- C O N S T R U C T O R,   U T M ------------------------------------------------
+
+pub fn utm(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> {
+    let def = &parameters.definition;
+    let mut params = ParsedParameters::new(parameters, &UTM_GAMUT)?;
+
+    // The UTM zone should be an integer between 1 and 60
+    let zone = params.natural("zone")?;
+    if !(1..61).contains(&zone) {
+        return Err(Error::General(
+            "UTM: 'zone' must be an integer in the interval 1..60",
+        ));
+    }
+
+    // The scaling factor is 0.9996 by definition of UTM
+    params.k[0] = 0.9996;
+
+    // The center meridian is determined by the zone
+    params.lon[0] = (-183. + 6. * zone as f64).to_radians();
+
+    // The base parallel is by definition the equator
+    params.lat[0] = 0.0;
+
+    // The false easting is 500000 m by definition of UTM
+    params.x[0] = 500000.0;
+
+    // The false northing is 0 m by definition of UTM
+    params.x[0] = 500000.0;
+
+    let descriptor = OpDescriptor::new(def, InnerOp(fwd), Some(InnerOp(inv)));
+    let steps = Vec::<Op>::new();
+    let id = OpHandle::new();
+
+    let mut op = Op {
+        descriptor,
+        params,
+        steps,
+        id,
+    };
+
+    precompute(&mut op);
+    Ok(op)
+}
+
+
+// ----- A N C I L L A R Y   F U N C T I O N S -----------------------------------------
+
+#[rustfmt::skip]
 const TRANSVERSE_MERCATOR: PolynomialCoefficients = PolynomialCoefficients {
     // Geodetic to TM. [Engsager & Poder, 2007](crate::Bibliography::Eng07)
     fwd: [
@@ -223,54 +277,7 @@ pub fn new(parameters: &RawParameters, provider: &dyn Context) -> Result<Op, Err
     Ok(op)
 }
 
-#[rustfmt::skip]
-pub const UTM_GAMUT: [OpParameter; 3] = [
-    OpParameter::Flag { key: "inv" },
-    OpParameter::Text { key: "ellps", default: Some("GRS80") },
-    OpParameter::Natural { key: "zone", default: None },
-];
 
-pub fn utm(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> {
-    let def = &parameters.definition;
-    let mut params = ParsedParameters::new(parameters, &UTM_GAMUT)?;
-
-    // The UTM zone should be an integer between 1 and 60
-    let zone = params.natural("zone")?;
-    if !(1..61).contains(&zone) {
-        return Err(Error::General(
-            "UTM: 'zone' must be an integer in the interval 1..60",
-        ));
-    }
-
-    // The scaling factor is 0.9996 by definition of UTM
-    params.k[0] = 0.9996;
-
-    // The center meridian is determined by the zone
-    params.lon[0] = (-183. + 6. * zone as f64).to_radians();
-
-    // The base parallel is by definition the equator
-    params.lat[0] = 0.0;
-
-    // The false easting is 500000 m by definition of UTM
-    params.x[0] = 500000.0;
-
-    // The false northing is 0 m by definition of UTM
-    params.x[0] = 500000.0;
-
-    let descriptor = OpDescriptor::new(def, InnerOp(fwd), Some(InnerOp(inv)));
-    let steps = Vec::<Op>::new();
-    let id = OpHandle::new();
-
-    let mut op = Op {
-        descriptor,
-        params,
-        steps,
-        id,
-    };
-
-    precompute(&mut op);
-    Ok(op)
-}
 
 // ----- T E S T S ---------------------------------------------------------------------
 
