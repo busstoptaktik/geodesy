@@ -1,6 +1,5 @@
 //! Transverse Mercator, following Engsager & Poder (2007)
 use crate::math::*;
-
 use super::*;
 
 // ----- F O R W A R D -----------------------------------------------------------------
@@ -184,15 +183,15 @@ const TRANSVERSE_MERCATOR: PolynomialCoefficients = PolynomialCoefficients {
     ]
 };
 
-pub fn new(parameters: &RawParameters, provider: &dyn Context) -> Result<Op, Error> {
-    let mut op = Op::plain(parameters, InnerOp(fwd), InnerOp(inv), &GAMUT, provider)?;
+
+// Common setup workhorse between utm and the plain tmerc:
+// Pre-compute some of the computationally heavy prerequisites,
+// to get better amortization over the full operator lifetime.
+fn precompute(op: &mut Op) {
     let ellps = op.params.ellps[0];
     let n = ellps.third_flattening();
     let lat_0 = op.params.lat[0];
     let y_0 = op.params.y[0];
-
-    // Pre-compute some of the computationally heavy prerequisites,
-    // to get better amortization over the full operator lifetime.
 
     // The scaled spherical Earth radius - Qn in Engsager's implementation
     let qs = op.params.k[0] * ellps.semimajor_axis() * ellps.normalized_meridian_arc_unit(); // meridian_quadrant();
@@ -217,9 +216,65 @@ pub fn new(parameters: &RawParameters, provider: &dyn Context) -> Result<Op, Err
     // i.e. true northing = N - zb
     let zb = y_0 - qs * (z + clenshaw_sin(2. * z, &tm.fwd));
     op.params.real.insert("zb", zb);
+}
 
+pub fn new(parameters: &RawParameters, provider: &dyn Context) -> Result<Op, Error> {
+    let mut op = Op::plain(parameters, InnerOp(fwd), InnerOp(inv), &GAMUT, provider)?;
+    precompute(&mut op);
     Ok(op)
 }
+
+#[rustfmt::skip]
+pub const UTM_GAMUT: [OpParameter; 3] = [
+    OpParameter::Flag { key: "inv" },
+    OpParameter::Text { key: "ellps", default: Some("GRS80") },
+    OpParameter::Natural { key: "zone", default: None },
+];
+
+pub fn eutm(parameters: &RawParameters, _prv: &dyn Context) -> Result<Op, Error> {
+    let def = &parameters.definition;
+    let mut params = ParsedParameters::new(parameters, &UTM_GAMUT)?;
+
+    // The UTM zone should be an integer between 1 and 60
+    let zone = params.natural("zone")?;
+    if !(1..61).contains(&zone) {
+        return Err(Error::General(
+            "UTM: 'zone' must be an integer in the interval 1..60",
+        ));
+    }
+
+    // The scaling factor is 0.9996 by definition of UTM
+    params.k[0] = 0.9996;
+
+    // The center meridian is determined by the zone
+    params.lon[0] = (-183. + 6. * zone as f64).to_radians();
+
+    // The base parallel is by definition the equator
+    params.lat[0] = 0.0;
+
+    // The false easting is 500000 m by definition of UTM
+    params.x[0] = 500000.0;
+
+    // The false northing is 0 m by definition of UTM
+    params.x[0] = 500000.0;
+
+    let descriptor = OpDescriptor::new(def, InnerOp(fwd), Some(InnerOp(inv)));
+    let steps = Vec::<Op>::new();
+    let id = OpHandle::new();
+
+    let mut op = Op {
+        descriptor,
+        params,
+        steps,
+        id,
+    };
+
+    precompute(&mut op);
+    Ok(op)
+}
+
+
+
 
 // ----- T E S T S ---------------------------------------------------------------------
 
@@ -228,7 +283,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn etmerc() -> Result<(), Error> {
+    fn tmerc() -> Result<(), Error> {
         // Validation values from PROJ:
         // echo 12 55 0 0 | cct -d18 +proj=utm +zone=32 | clip
         #[rustfmt::skip]
@@ -271,7 +326,7 @@ mod tests {
     #[test]
     fn utm() -> Result<(), Error> {
         let prv = Minimal::default();
-        let definition = "utm zone=32";
+        let definition = "eutm zone=32";
         let op = Op::new(definition, &prv)?;
 
         // Validation values from PROJ:

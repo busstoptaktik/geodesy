@@ -21,7 +21,7 @@ mod proj;
 mod tmerc;
 
 #[rustfmt::skip]
-const BUILTIN_OPERATORS: [(&str, OpConstructor); 17] = [
+const BUILTIN_OPERATORS: [(&str, OpConstructor); 18] = [
     ("adapt",      OpConstructor(adapt::new)),
     ("addone",     OpConstructor(addone::new)),
     ("cart",       OpConstructor(cart::new)),
@@ -32,8 +32,9 @@ const BUILTIN_OPERATORS: [(&str, OpConstructor); 17] = [
     ("molodensky", OpConstructor(molodensky::new)),
     ("nmea",       OpConstructor(nmea::new)),
     ("noop",       OpConstructor(noop::new)),
-    ("tmerc",      OpConstructor(tmerc::new)),
     ("etmerc",     OpConstructor(etmerc::new)),
+    ("eutm",       OpConstructor(etmerc::eutm)),
+    ("tmerc",      OpConstructor(tmerc::new)),
     ("utm",        OpConstructor(tmerc::utm)),
     ("pipeline",   OpConstructor(pipeline::new)),
     ("pop",        OpConstructor(pipeline::pop)),
