@@ -8,21 +8,7 @@
 use crate::internal::*;
 use std::io::BufRead;
 
-// Clamp input to range min..max
-fn clamp<T>(input: T, min: T, max: T) -> T
-where
-    T: PartialOrd<T>,
-{
-    if input < min {
-        return min;
-    }
-    if input > max {
-        return max;
-    }
-    input
-}
-
-#[allow(dead_code)]
+// #[allow(dead_code)]
 #[derive(Debug, Default)]
 pub struct Grid {
     lat_0: f64, // Latitude of the first (typically northernmost) row of the grid
@@ -107,8 +93,10 @@ impl Grid {
         let row = (rlat / self.dlat).floor() as i64;
         let col = (rlon / self.dlon).floor() as i64;
 
-        let col = clamp(col, 0_i64, (self.cols - 2) as i64) as usize;
-        let row = clamp(row, 1_i64, (self.rows - 1) as i64) as usize;
+        // let col = clamp(col, 0_i64, (self.cols - 2) as i64) as usize;
+        // let row = clamp(row, 1_i64, (self.rows - 1) as i64) as usize;
+        let col = col.clamp(0_i64, (self.cols - 2) as i64) as usize;
+        let row = row.clamp(1_i64, (self.rows - 1) as i64) as usize;
 
         // Index of the first band element of each corner value
         #[rustfmt::skip]
