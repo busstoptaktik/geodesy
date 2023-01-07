@@ -64,7 +64,7 @@ const MULT_DEFAULT: [f64; 4] = [1., 1., 1., 1.];
 
 // ----- F O R W A R D --------------------------------------------------------------
 
-fn fwd(op: &Op, _prv: &dyn Context, data: &mut [Coord]) -> Result<usize, Error> {
+fn fwd(op: &Op, _ctx: &dyn Context, data: &mut [Coord]) -> Result<usize, Error> {
     let n = data.len();
     if op.params.boolean("noop") {
         return Ok(n);
@@ -91,7 +91,7 @@ fn fwd(op: &Op, _prv: &dyn Context, data: &mut [Coord]) -> Result<usize, Error> 
 
 // ----- I N V E R S E --------------------------------------------------------------
 
-fn inv(op: &Op, _prv: &dyn Context, data: &mut [Coord]) -> Result<usize, Error> {
+fn inv(op: &Op, _ctx: &dyn Context, data: &mut [Coord]) -> Result<usize, Error> {
     let n = data.len();
     if op.params.boolean("noop") {
         return Ok(n);
@@ -351,15 +351,15 @@ mod tests {
     // Test that 'inv' behaves as if 'from' and 'to' were swapped
     #[test]
     fn adapt_inv() -> Result<(), Error> {
-        let mut prv = Minimal::default();
-        let degify = prv.op("adapt inv from = neut_deg   to = enut_gon")?;
+        let mut ctx = Minimal::default();
+        let degify = ctx.op("adapt inv from = neut_deg   to = enut_gon")?;
 
         let mut data = [
             Coord::raw(200., 100., 0., 0.),
             Coord::raw(100., 50., 0., 0.),
         ];
 
-        assert_eq!(prv.apply(degify, Fwd, &mut data)?, 2);
+        assert_eq!(ctx.apply(degify, Fwd, &mut data)?, 2);
         assert!((data[0][0] - 90.0).abs() < 1e-10);
         assert!((data[0][1] - 180.0).abs() < 1e-10);
 
@@ -369,7 +369,7 @@ mod tests {
         assert_eq!(data[1][2], 0.);
         assert_eq!(data[1][3], 0.);
 
-        assert_eq!(prv.apply(degify, Inv, &mut data)?, 2);
+        assert_eq!(ctx.apply(degify, Inv, &mut data)?, 2);
         assert!((data[0][0] - 200.0).abs() < 1e-10);
         assert!((data[0][1] - 100.0).abs() < 1e-10);
         assert!((data[1][0] - 100.0).abs() < 1e-10);
@@ -381,10 +381,10 @@ mod tests {
     // Test that operation without unit conversion works as expected
     #[test]
     fn no_unit_conversion() -> Result<(), Error> {
-        let mut prv = Minimal::default();
+        let mut ctx = Minimal::default();
         let mut data = some_basic_coordinates();
-        let swap = prv.op("adapt from=neut")?;
-        assert_eq!(prv.apply(swap, Fwd, &mut data)?, 2);
+        let swap = ctx.op("adapt from=neut")?;
+        assert_eq!(ctx.apply(swap, Fwd, &mut data)?, 2);
         assert_eq!(data[0][0], 12.0);
         assert_eq!(data[0][1], 55.0);
         Ok(())
@@ -393,39 +393,39 @@ mod tests {
     // Test invocation through the geo:* and gis:* macros
     #[test]
     fn geo_gis_and_all_that() -> Result<(), Error> {
-        let mut prv = Minimal::default();
+        let mut ctx = Minimal::default();
 
         // Separate :in- and :out-versions, for better readability
-        prv.register_resource("geo:in", "adapt from = neut_deg");
-        prv.register_resource("geo:out", "geo:in inv");
-        prv.register_resource("gis:in", "adapt from = enut_deg");
-        prv.register_resource("gis:out", "gis:in inv");
+        ctx.register_resource("geo:in", "adapt from = neut_deg");
+        ctx.register_resource("geo:out", "geo:in inv");
+        ctx.register_resource("gis:in", "adapt from = enut_deg");
+        ctx.register_resource("gis:out", "gis:in inv");
 
-        let utm = prv.op("geo:in | utm zone=32")?;
-        let geo = prv.op("utm zone=32 inv | geo:out")?;
+        let utm = ctx.op("geo:in | utm zone=32")?;
+        let geo = ctx.op("utm zone=32 inv | geo:out")?;
 
         // Roundtrip geo->utm->geo, using separate ops for fwd and inv
         let mut data = some_basic_coordinates();
-        assert_eq!(prv.apply(utm, Fwd, &mut data)?, 2);
+        assert_eq!(ctx.apply(utm, Fwd, &mut data)?, 2);
         assert!((data[0][0] - 691875.6321396603).abs() < 1e-9);
         assert!((data[0][1] - 6098907.825005002).abs() < 1e-9);
-        assert_eq!(prv.apply(geo, Fwd, &mut data)?, 2);
+        assert_eq!(ctx.apply(geo, Fwd, &mut data)?, 2);
         assert!((data[0][0] - 55.0).abs() < 1e-9);
         assert!((data[0][1] - 12.0).abs() < 1e-9);
 
         // Same, but using a plain Inv invocation for the return trip
         let mut data = some_basic_coordinates();
-        assert_eq!(prv.apply(utm, Fwd, &mut data)?, 2);
+        assert_eq!(ctx.apply(utm, Fwd, &mut data)?, 2);
         assert!((data[0][0] - 691875.6321396603).abs() < 1e-9);
         assert!((data[0][1] - 6098907.825005002).abs() < 1e-9);
-        assert_eq!(prv.apply(utm, Inv, &mut data)?, 2);
+        assert_eq!(ctx.apply(utm, Inv, &mut data)?, 2);
         assert!((data[0][0] - 55.0).abs() < 1e-9);
         assert!((data[0][1] - 12.0).abs() < 1e-9);
 
         // Swap data by reading them as geo, writing them as gis
         let mut data = some_basic_coordinates();
-        let swap = prv.op("geo:in | gis:out")?;
-        assert_eq!(prv.apply(swap, Fwd, &mut data)?, 2);
+        let swap = ctx.op("geo:in | gis:out")?;
+        assert_eq!(ctx.apply(swap, Fwd, &mut data)?, 2);
         assert!((data[0][0] - 12.0).abs() < 1e-9);
         assert!((data[0][1] - 55.0).abs() < 1e-9);
 

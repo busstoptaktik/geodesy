@@ -94,7 +94,7 @@ pub const PUSH_POP_GAMUT: [OpParameter; 4] = [
     OpParameter::Flag { key: "v_4" },
 ];
 
-pub fn push(parameters: &RawParameters, _prv: &dyn Context) -> Result<Op, Error> {
+pub fn push(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> {
     let def = &parameters.definition;
     let params = ParsedParameters::new(parameters, &PUSH_POP_GAMUT)?;
 
@@ -114,7 +114,7 @@ pub fn push(parameters: &RawParameters, _prv: &dyn Context) -> Result<Op, Error>
     })
 }
 
-pub fn pop(parameters: &RawParameters, _prv: &dyn Context) -> Result<Op, Error> {
+pub fn pop(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> {
     let def = &parameters.definition;
     let params = ParsedParameters::new(parameters, &PUSH_POP_GAMUT)?;
 
@@ -234,34 +234,34 @@ mod tests {
     use super::*;
     #[test]
     fn pipeline() -> Result<(), Error> {
-        let mut prv = Minimal::default();
-        let op = prv.op("addone|addone|addone")?;
+        let mut ctx = Minimal::default();
+        let op = ctx.op("addone|addone|addone")?;
         let mut data = some_basic_coordinates();
 
-        prv.apply(op, Fwd, &mut data)?;
+        ctx.apply(op, Fwd, &mut data)?;
         assert_eq!(data[0][0], 58.);
         assert_eq!(data[1][0], 62.);
 
-        prv.apply(op, Inv, &mut data)?;
+        ctx.apply(op, Inv, &mut data)?;
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
 
-        let op = prv.op("addone|addone inv|addone")?;
+        let op = ctx.op("addone|addone inv|addone")?;
         let mut data = some_basic_coordinates();
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
 
-        prv.apply(op, Fwd, &mut data)?;
+        ctx.apply(op, Fwd, &mut data)?;
         assert_eq!(data[0][0], 56.);
         assert_eq!(data[1][0], 60.);
 
-        prv.apply(op, Inv, &mut data)?;
+        ctx.apply(op, Inv, &mut data)?;
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
 
         // Try to invoke garbage as a pipeline step
         assert!(matches!(
-            prv.op("addone|addone|_garbage"),
+            ctx.op("addone|addone|_garbage"),
             Err(Error::NotFound(_, _))
         ));
 
@@ -270,12 +270,12 @@ mod tests {
 
     #[test]
     fn push_pop() -> Result<(), Error> {
-        let mut prv = Minimal::default();
+        let mut ctx = Minimal::default();
         let mut data = some_basic_coordinates();
 
         // First we swap lat, lon by doing two independent pops
-        let op = prv.op("push v_2 v_1|addone|pop v_1|pop v_2")?;
-        prv.apply(op, Fwd, &mut data)?;
+        let op = ctx.op("push v_2 v_1|addone|pop v_1|pop v_2")?;
+        ctx.apply(op, Fwd, &mut data)?;
         assert_eq!(data[0][0], 12.);
         assert_eq!(data[0][1], 55.);
 
@@ -285,38 +285,38 @@ mod tests {
         // "push all, pop all" pair is a noop: The order of operator
         // options is insignificant, so the 1234/4321 order is, in principle
         // arbitrary, but seleted with the noop-characteristicum in mind.
-        let op = prv.op("push v_1 v_2|pop v_1 v_2")?;
-        prv.apply(op, Fwd, &mut data)?;
+        let op = ctx.op("push v_1 v_2|pop v_1 v_2")?;
+        ctx.apply(op, Fwd, &mut data)?;
         assert_eq!(data[0][0], 12.);
         assert_eq!(data[0][1], 55.);
 
         // Underflow the stack - get 0 successes
-        let op = prv.op("push v_1 v_2|pop v_2 v_1 v_3")?;
-        assert_eq!(0, prv.apply(op, Fwd, &mut data)?);
+        let op = ctx.op("push v_1 v_2|pop v_2 v_1 v_3")?;
+        assert_eq!(0, ctx.apply(op, Fwd, &mut data)?);
         assert!(data[0][0].is_nan());
         assert_eq!(data[0][2], 55.);
 
         // Check inversion
-        let op = prv.op("push v_1 v_2|pop v_2 v_1 v_3")?;
+        let op = ctx.op("push v_1 v_2|pop v_2 v_1 v_3")?;
         let mut data = some_basic_coordinates();
-        assert_eq!(2, prv.apply(op, Inv, &mut data)?);
+        assert_eq!(2, ctx.apply(op, Inv, &mut data)?);
         assert_eq!(data[0][0], 12.);
         assert_eq!(data[0][1], 0.);
 
         // Check omit_fwd
-        let op = prv.op("push v_1 v_2|pop v_2 v_1 v_3 omit_fwd")?;
+        let op = ctx.op("push v_1 v_2|pop v_2 v_1 v_3 omit_fwd")?;
         let mut data = some_basic_coordinates();
-        assert_eq!(2, prv.apply(op, Fwd, &mut data)?);
+        assert_eq!(2, ctx.apply(op, Fwd, &mut data)?);
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[0][1], 12.);
-        assert_eq!(2, prv.apply(op, Inv, &mut data)?);
+        assert_eq!(2, ctx.apply(op, Inv, &mut data)?);
         assert_eq!(data[0][0], 12.);
         assert_eq!(data[0][1], 0.);
 
         // Check omit_inv
-        let op = prv.op("push v_1 v_2 v_3 omit_inv|pop v_1 v_2")?;
+        let op = ctx.op("push v_1 v_2 v_3 omit_inv|pop v_1 v_2")?;
         let mut data = some_basic_coordinates();
-        assert_eq!(2, prv.apply(op, Inv, &mut data)?);
+        assert_eq!(2, ctx.apply(op, Inv, &mut data)?);
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[0][1], 12.);
 

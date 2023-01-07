@@ -16,11 +16,11 @@ pub struct Minimal {
 
 impl Context for Minimal {
     fn new() -> Minimal {
-        let mut prv = Minimal::default();
+        let mut ctx = Minimal::default();
         for item in BUILTIN_ADAPTORS {
-            prv.register_resource(item.0, item.1);
+            ctx.register_resource(item.0, item.1);
         }
-        prv
+        ctx
     }
 
     fn op(&mut self, definition: &str) -> Result<OpHandle, Error> {

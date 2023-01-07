@@ -14,7 +14,7 @@ use super::*;
 
 fn helmert_common(
     op: &Op,
-    _prv: &dyn Context,
+    _ctx: &dyn Context,
     operands: &mut [Coord],
     direction: Direction,
 ) -> usize {
@@ -111,14 +111,14 @@ fn helmert_common(
 
 // ----- F O R W A R D --------------------------------------------------------------
 
-fn helmert_fwd(op: &Op, _prv: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
-    Ok(helmert_common(op, _prv, operands, Direction::Fwd))
+fn helmert_fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+    Ok(helmert_common(op, _ctx, operands, Direction::Fwd))
 }
 
 // ----- I N V E R S E --------------------------------------------------------------
 
-fn helmert_inv(op: &Op, _prv: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
-    Ok(helmert_common(op, _prv, operands, Direction::Inv))
+fn helmert_inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+    Ok(helmert_common(op, _ctx, operands, Direction::Inv))
 }
 
 // ----- C O N S T R U C T O R ------------------------------------------------------

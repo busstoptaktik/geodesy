@@ -4,7 +4,7 @@ use crate::Context;
 
 // ----- F O R W A R D --------------------------------------------------------------
 
-fn fwd(op: &Op, _prv: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
     let grid = &op.params.grids["grid"];
     let mut successes = 0_usize;
 
@@ -34,7 +34,7 @@ fn fwd(op: &Op, _prv: &dyn Context, operands: &mut [Coord]) -> Result<usize, Err
 
 // ----- I N V E R S E --------------------------------------------------------------
 
-fn inv(op: &Op, _prv: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
     let grid = &op.params.grids["grid"];
     let mut successes = 0_usize;
 
@@ -112,17 +112,17 @@ mod tests {
 
     #[test]
     fn gridshift() -> Result<(), Error> {
-        let mut prv = Minimal::default();
-        let op = prv.op("gridshift grids=test.datum")?;
+        let mut ctx = Minimal::default();
+        let op = ctx.op("gridshift grids=test.datum")?;
         let cph = Coord::geo(55., 12., 0., 0.);
         let mut data = [cph];
 
-        prv.apply(op, Fwd, &mut data)?;
+        ctx.apply(op, Fwd, &mut data)?;
         let res = data[0].to_geo();
         assert!((res[0] - 55.015278).abs() < 1e-6);
         assert!((res[1] - 12.003333).abs() < 1e-6);
 
-        prv.apply(op, Inv, &mut data)?;
+        ctx.apply(op, Inv, &mut data)?;
         assert!((data[0][0] - cph[0]).abs() < 1e-10);
         assert!((data[0][1] - cph[1]).abs() < 1e-10);
 

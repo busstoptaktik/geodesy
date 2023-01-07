@@ -42,11 +42,11 @@ impl Default for Plain {
 
 impl Context for Plain {
     fn new() -> Plain {
-        let mut prv = Plain::default();
+        let mut ctx = Plain::default();
         for item in BUILTIN_ADAPTORS {
-            prv.register_resource(item.0, item.1);
+            ctx.register_resource(item.0, item.1);
         }
-        prv
+        ctx
     }
 
     fn op(&mut self, definition: &str) -> Result<OpHandle, Error> {
@@ -151,20 +151,20 @@ mod tests {
 
     #[test]
     fn basic() -> Result<(), Error> {
-        let mut prv = Plain::new();
+        let mut ctx = Plain::new();
 
         // The "stupid way of adding 1" macro from geodesy/macro/stupid_way.macro
-        let op = prv.op("stupid:way")?;
+        let op = ctx.op("stupid:way")?;
 
         let mut data = some_basic_coordinates();
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
 
-        prv.apply(op, Fwd, &mut data)?;
+        ctx.apply(op, Fwd, &mut data)?;
         assert_eq!(data[0][0], 56.);
         assert_eq!(data[1][0], 60.);
 
-        prv.apply(op, Inv, &mut data)?;
+        ctx.apply(op, Inv, &mut data)?;
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
 

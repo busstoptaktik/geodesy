@@ -5,7 +5,7 @@ use crate::math::*;
 // ----- F O R W A R D -----------------------------------------------------------------
 
 // Forward transverse mercator, following Engsager & Poder(2007)
-fn fwd(op: &Op, _prv: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
     let ellps = op.params.ellps[0];
     let lat_0 = op.params.lat[0];
     let lon_0 = op.params.lon[0];
@@ -86,7 +86,7 @@ fn fwd(op: &Op, _prv: &dyn Context, operands: &mut [Coord]) -> Result<usize, Err
 // ----- I N V E R S E -----------------------------------------------------------------
 
 // Inverse Transverse Mercator, following Engsager & Poder (2007) (currently Bowring stands in!)
-fn inv(op: &Op, _prv: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
     let ellps = op.params.ellps[0];
     let lon_0 = op.params.lon[0];
     let x_0 = op.params.x[0];
@@ -230,7 +230,7 @@ pub const UTM_GAMUT: [OpParameter; 3] = [
     OpParameter::Natural { key: "zone", default: None },
 ];
 
-pub fn utm(parameters: &RawParameters, _prv: &dyn Context) -> Result<Op, Error> {
+pub fn utm(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> {
     let def = &parameters.definition;
     let mut params = ParsedParameters::new(parameters, &UTM_GAMUT)?;
 
@@ -298,12 +298,12 @@ mod tests {
             Coord::raw(-455_673.814_189_040,-6_198_246.671_090_279, 0., 0.)
         ];
 
-        let prv = Minimal::default();
+        let ctx = Minimal::default();
         let definition = "tmerc k_0=0.9996 lon_0=9 x_0=500000";
-        let op = Op::new(definition, &prv)?;
+        let op = Op::new(definition, &ctx)?;
 
         let mut operands = geo.clone();
-        op.apply(&prv, &mut operands, Fwd)?;
+        op.apply(&ctx, &mut operands, Fwd)?;
 
         for i in 0..operands.len() {
             dbg!(operands[i]);
@@ -311,7 +311,7 @@ mod tests {
             assert!(operands[i].hypot2(&projected[i]) < 1e-6);
         }
 
-        op.apply(&prv, &mut operands, Inv)?;
+        op.apply(&ctx, &mut operands, Inv)?;
         for i in 0..operands.len() {
             assert!(operands[i].hypot2(&geo[i]) < 5e-6);
         }
@@ -321,9 +321,9 @@ mod tests {
 
     #[test]
     fn utm() -> Result<(), Error> {
-        let prv = Minimal::default();
+        let ctx = Minimal::default();
         let definition = "utm zone=32";
-        let op = Op::new(definition, &prv)?;
+        let op = Op::new(definition, &ctx)?;
 
         // Validation values from PROJ:
         // echo 12 55 0 0 | cct -d18 +proj=utm +zone=32 | clip
@@ -344,12 +344,12 @@ mod tests {
         ];
 
         let mut operands = geo.clone();
-        op.apply(&prv, &mut operands, Fwd)?;
+        op.apply(&ctx, &mut operands, Fwd)?;
         for i in 0..operands.len() {
             assert!(operands[i].hypot2(&projected[i]) < 5e-3);
         }
 
-        op.apply(&prv, &mut operands, Inv)?;
+        op.apply(&ctx, &mut operands, Inv)?;
         for i in 0..operands.len() {
             assert!(operands[i].hypot2(&geo[i]) < 10e-8);
         }

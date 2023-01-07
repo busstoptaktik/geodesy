@@ -250,28 +250,28 @@ mod tests {
     // that the instantiation fails with an `Error::Recursion(...)`
     #[test]
     fn nesting() -> Result<(), Error> {
-        let mut prv = Minimal::default();
-        prv.register_resource("foo:baz", "foo:bar");
-        prv.register_resource("foo:bar", "foo:baz");
+        let mut ctx = Minimal::default();
+        ctx.register_resource("foo:baz", "foo:bar");
+        ctx.register_resource("foo:bar", "foo:baz");
 
-        assert_eq!("foo:baz", prv.get_resource("foo:bar")?);
-        assert_eq!("foo:bar", prv.get_resource("foo:baz")?);
+        assert_eq!("foo:baz", ctx.get_resource("foo:bar")?);
+        assert_eq!("foo:bar", ctx.get_resource("foo:baz")?);
 
-        assert!(matches!(prv.op("foo:baz"), Err(Error::Recursion(_, _))));
+        assert!(matches!(ctx.op("foo:baz"), Err(Error::Recursion(_, _))));
         Ok(())
     }
 
     #[test]
     fn pipeline() -> Result<(), Error> {
         let mut data = some_basic_coordinates();
-        let mut prv = Minimal::default();
-        let op = prv.op("addone|addone|addone")?;
+        let mut ctx = Minimal::default();
+        let op = ctx.op("addone|addone|addone")?;
 
-        prv.apply(op, Fwd, &mut data)?;
+        ctx.apply(op, Fwd, &mut data)?;
         assert_eq!(data[0][0], 58.);
         assert_eq!(data[1][0], 62.);
 
-        prv.apply(op, Inv, &mut data)?;
+        ctx.apply(op, Inv, &mut data)?;
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
 
@@ -281,15 +281,15 @@ mod tests {
     #[test]
     fn macro_expansion() -> Result<(), Error> {
         let mut data = some_basic_coordinates();
-        let mut prv = Minimal::default();
-        prv.register_resource("sub:one", "addone inv");
-        let op = prv.op("addone|sub:one|addone")?;
+        let mut ctx = Minimal::default();
+        ctx.register_resource("sub:one", "addone inv");
+        let op = ctx.op("addone|sub:one|addone")?;
 
-        prv.apply(op, Fwd, &mut data)?;
+        ctx.apply(op, Fwd, &mut data)?;
         assert_eq!(data[0][0], 56.);
         assert_eq!(data[1][0], 60.);
 
-        prv.apply(op, Inv, &mut data)?;
+        ctx.apply(op, Inv, &mut data)?;
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
 
@@ -299,15 +299,15 @@ mod tests {
     #[test]
     fn macro_expansion_inverted() -> Result<(), Error> {
         let mut data = some_basic_coordinates();
-        let mut prv = Minimal::default();
-        prv.register_resource("sub:one", "addone inv");
-        let op = prv.op("addone|sub:one inv|addone")?;
+        let mut ctx = Minimal::default();
+        ctx.register_resource("sub:one", "addone inv");
+        let op = ctx.op("addone|sub:one inv|addone")?;
 
-        prv.apply(op, Fwd, &mut data)?;
+        ctx.apply(op, Fwd, &mut data)?;
         assert_eq!(data[0][0], 58.);
         assert_eq!(data[1][0], 62.);
 
-        prv.apply(op, Inv, &mut data)?;
+        ctx.apply(op, Inv, &mut data)?;
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
 
@@ -317,24 +317,24 @@ mod tests {
     #[test]
     fn macro_expansion_with_embedded_pipeline() -> Result<(), Error> {
         let mut data = some_basic_coordinates();
-        let mut prv = Minimal::default();
-        prv.register_resource("sub:three", "addone inv|addone inv|addone inv");
-        let op = prv.op("addone|sub:three")?;
+        let mut ctx = Minimal::default();
+        ctx.register_resource("sub:three", "addone inv|addone inv|addone inv");
+        let op = ctx.op("addone|sub:three")?;
 
-        prv.apply(op, Fwd, &mut data)?;
+        ctx.apply(op, Fwd, &mut data)?;
         assert_eq!(data[0][0], 53.);
         assert_eq!(data[1][0], 57.);
 
-        prv.apply(op, Inv, &mut data)?;
+        ctx.apply(op, Inv, &mut data)?;
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
 
-        let op = prv.op("addone|sub:three inv")?;
-        prv.apply(op, Fwd, &mut data)?;
+        let op = ctx.op("addone|sub:three inv")?;
+        ctx.apply(op, Fwd, &mut data)?;
         assert_eq!(data[0][0], 59.);
         assert_eq!(data[1][0], 63.);
 
-        prv.apply(op, Inv, &mut data)?;
+        ctx.apply(op, Inv, &mut data)?;
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
 
@@ -344,53 +344,53 @@ mod tests {
     #[test]
     fn macro_expansion_with_defaults_provided() -> Result<(), Error> {
         let mut data = some_basic_coordinates();
-        let mut prv = Minimal::default();
+        let mut ctx = Minimal::default();
 
         // A macro providing a default value of 1 for the x parameter
-        prv.register_resource("helmert:one", "helmert x=*1");
+        ctx.register_resource("helmert:one", "helmert x=*1");
 
         // Instantiating the macro without parameters - getting the default
-        let op = prv.op("helmert:one")?;
+        let op = ctx.op("helmert:one")?;
 
-        prv.apply(op, Fwd, &mut data)?;
+        ctx.apply(op, Fwd, &mut data)?;
         assert_eq!(data[0][0], 56.);
         assert_eq!(data[1][0], 60.);
 
-        prv.apply(op, Inv, &mut data)?;
+        ctx.apply(op, Inv, &mut data)?;
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
 
         // Instantiating the macro with parameters - overwriting the default
         // For good measure, check that it also works inside a pipeline
-        let op = prv.op("addone|helmert:one x=2")?;
+        let op = ctx.op("addone|helmert:one x=2")?;
 
-        prv.apply(op, Fwd, &mut data)?;
+        ctx.apply(op, Fwd, &mut data)?;
         assert_eq!(data[0][0], 58.);
         assert_eq!(data[1][0], 62.);
 
-        prv.apply(op, Inv, &mut data)?;
+        ctx.apply(op, Inv, &mut data)?;
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
 
         // Overwrite the default, and provide additional args
-        let op = prv.op("helmert:one x=2 inv")?;
+        let op = ctx.op("helmert:one x=2 inv")?;
 
-        prv.apply(op, Fwd, &mut data)?;
+        ctx.apply(op, Fwd, &mut data)?;
         assert_eq!(data[0][0], 53.);
         assert_eq!(data[1][0], 57.);
 
-        prv.apply(op, Inv, &mut data)?;
+        ctx.apply(op, Inv, &mut data)?;
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
 
         // Overwrite the default, and provide additional args
-        let op = prv.op("addone|helmert:one inv x=2")?;
+        let op = ctx.op("addone|helmert:one inv x=2")?;
 
-        prv.apply(op, Fwd, &mut data)?;
+        ctx.apply(op, Fwd, &mut data)?;
         assert_eq!(data[0][0], 54.);
         assert_eq!(data[1][0], 58.);
 
-        prv.apply(op, Inv, &mut data)?;
+        ctx.apply(op, Inv, &mut data)?;
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
 

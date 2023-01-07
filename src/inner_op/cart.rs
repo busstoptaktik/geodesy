@@ -5,7 +5,7 @@ use super::*;
 
 // ----- F O R W A R D --------------------------------------------------------------
 
-fn cart_fwd(op: &Op, _prv: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+fn cart_fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
     let mut n = 0_usize;
     for coord in operands {
         *coord = op.params.ellps[0].cartesian(coord);
@@ -18,7 +18,7 @@ fn cart_fwd(op: &Op, _prv: &dyn Context, operands: &mut [Coord]) -> Result<usize
 
 // ----- I N V E R S E --------------------------------------------------------------
 
-fn cart_inv(op: &Op, _prv: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+fn cart_inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
     // eccentricity squared, Fukushima's E, Claessens' c3 = 1-c2`
     let es = op.params.ellps[0].eccentricity_squared();
     // semiminor axis

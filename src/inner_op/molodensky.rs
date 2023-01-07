@@ -21,7 +21,7 @@ use super::*;
 
 fn common(
     op: &Op,
-    _prv: &dyn Context,
+    _ctx: &dyn Context,
     operands: &mut [Coord],
     direction: Direction,
 ) -> Result<usize, Error> {
@@ -69,13 +69,13 @@ fn common(
 }
 
 // ----- F O R W A R D -----------------------------------------------------------------
-fn fwd(op: &Op, prv: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
-    common(op, prv, operands, Fwd)
+fn fwd(op: &Op, ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+    common(op, ctx, operands, Fwd)
 }
 
 // ----- I N V E R S E -----------------------------------------------------------------
-fn inv(op: &Op, prv: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
-    common(op, prv, operands, Inv)
+fn inv(op: &Op, ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+    common(op, ctx, operands, Inv)
 }
 
 // ----- C O N S T R U C T O R ---------------------------------------------------------
@@ -198,7 +198,7 @@ mod tests {
 
     #[test]
     fn molodensky() -> Result<(), Error> {
-        let prv = Minimal::default();
+        let ctx = Minimal::default();
         // ---------------------------------------------------------------------------
         // Test case from OGP Publication 373-7-2: Geomatics Guidance Note number 7,
         // part 2: Transformation from WGS84 to ED50.
@@ -208,7 +208,7 @@ mod tests {
             molodensky ellps_0=WGS84 ellps_1=intl
             dx=84.87 dy=96.49 dz=116.95
         ";
-        let op = Op::new(definition, &prv)?;
+        let op = Op::new(definition, &ctx)?;
 
         // Test point (53.80939444444444, 2.12955, 73 m)
         let lat = Coord::dms_to_dd(53, 48, 33.82);
@@ -230,14 +230,14 @@ mod tests {
         // In the unabridged case, Molodensky replicates Helmert to
         // within 5 mm in the plane and the elevation.
         let mut operands = [WGS84];
-        op.apply(&prv, &mut operands, Fwd)?;
+        op.apply(&ctx, &mut operands, Fwd)?;
         assert!(ED50.default_ellps_dist(&operands[0]) < 0.005);
         assert!((ED50[2] - operands[0][2]).abs() < 0.005);
 
         // The same holds in the reverse unabridged case, where
         // additionally the elevation is even better
         let mut operands = [ED50];
-        op.apply(&prv, &mut operands, Inv)?;
+        op.apply(&ctx, &mut operands, Inv)?;
         assert!(WGS84.default_ellps_3d_dist(&operands[0]) < 0.005);
         assert!((WGS84[2] - operands[0][2]).abs() < 0.001);
 
@@ -247,16 +247,16 @@ mod tests {
             molodensky ellps_0=WGS84 ellps_1=intl
             dx=84.87 dy=96.49 dz=116.95 abridged
         ";
-        let op = Op::new(definition, &prv)?;
+        let op = Op::new(definition, &ctx)?;
 
         let mut operands = [WGS84];
-        op.apply(&prv, &mut operands, Fwd)?;
+        op.apply(&ctx, &mut operands, Fwd)?;
         assert!(ED50.default_ellps_dist(&operands[0]) < 0.1);
         // Heights are worse in the abridged case
         assert!((ED50[2] - operands[0][2]).abs() < 0.075);
 
         let mut operands = [ED50];
-        op.apply(&prv, &mut operands, Inv)?;
+        op.apply(&ctx, &mut operands, Inv)?;
         assert!(WGS84.default_ellps_dist(&operands[0]) < 0.1);
         // Heights are worse in the abridged case
         assert!((WGS84[2] - operands[0][2]).abs() < 0.075);

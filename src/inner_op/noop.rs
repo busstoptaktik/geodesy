@@ -3,13 +3,13 @@ use super::*;
 
 // ----- F O R W A R D --------------------------------------------------------------
 
-fn fwd(_op: &Op, _prv: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+fn fwd(_op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
     Ok(operands.len())
 }
 
 // ----- I N V E R S E --------------------------------------------------------------
 
-fn inv(_op: &Op, _prv: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+fn inv(_op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
     Ok(operands.len())
 }
 

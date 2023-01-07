@@ -22,7 +22,7 @@ use super::*;
 
 // ----- F O R W A R D -----------------------------------------------------------------
 
-fn fwd(op: &Op, _prv: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
     let dms = op.params.boolean("dms");
     let mut successes = 0_usize;
     for o in operands {
@@ -39,7 +39,7 @@ fn fwd(op: &Op, _prv: &dyn Context, operands: &mut [Coord]) -> Result<usize, Err
 
 // ----- I N V E R S E -----------------------------------------------------------------
 
-fn inv(op: &Op, _prv: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
     let dms = op.params.boolean("dms");
     let mut successes = 0_usize;
     for o in operands {

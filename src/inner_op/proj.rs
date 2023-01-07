@@ -83,13 +83,13 @@ fn proj(args: &str, forward: bool, operands: &mut [Coord]) -> Result<usize, Erro
 
 // ----- F O R W A R D --------------------------------------------------------------
 
-fn proj_fwd(op: &Op, _prv: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+fn proj_fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
     proj(&op.params.text["proj_args"], true, operands)
 }
 
 // ----- I N V E R S E --------------------------------------------------------------
 
-fn proj_inv(op: &Op, _prv: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+fn proj_inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
     proj(&op.params.text["proj_args"], false, operands)
 }
 
@@ -160,22 +160,22 @@ mod tests {
         }
 
         // Test projection: utm zone 32
-        let mut prv = Minimal::default();
-        let op = prv.op("proj proj=utm zone=32")?;
+        let mut ctx = Minimal::default();
+        let op = ctx.op("proj proj=utm zone=32")?;
 
         // Test values: geo, utm and roundtrip (another copy of geo)
         let mut geo = [Coord::geo(55., 12., 0., 0.)];
         let utm = [Coord::raw(691875.63214, 6098907.82501, 0., 0.)];
         let rtp = [Coord::geo(55., 12., 0., 0.)];
 
-        prv.apply(op, Fwd, &mut geo)?;
+        ctx.apply(op, Fwd, &mut geo)?;
         assert!(geo[0].hypot2(&utm[0]) < 1e-5);
 
-        prv.apply(op, Inv, &mut geo)?;
+        ctx.apply(op, Inv, &mut geo)?;
         assert!(rtp[0].default_ellps_dist(&geo[0]) < 1e-5);
 
         // Inverted invocation - note "proj inv ..."
-        let op = prv.op("proj inv proj=utm zone=32")?;
+        let op = ctx.op("proj inv proj=utm zone=32")?;
 
         // Test values: utm and geo swaps roles here
         let geo = [Coord::geo(55., 12., 0., 0.)];
@@ -183,10 +183,10 @@ mod tests {
         let rtp = [Coord::raw(691875.63214, 6098907.82501, 0., 0.)];
 
         // Now, we get the inverse utm projection when calling the operator in the Fwd direction
-        prv.apply(op, Fwd, &mut utm)?;
+        ctx.apply(op, Fwd, &mut utm)?;
         assert!(geo[0].default_ellps_dist(&utm[0]) < 1e-5);
         // ...and roundtrip back to utm
-        prv.apply(op, Inv, &mut utm)?;
+        ctx.apply(op, Inv, &mut utm)?;
         assert!(rtp[0].hypot2(&utm[0]) < 1e-5);
 
         Ok(())
