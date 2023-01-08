@@ -12,15 +12,19 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Err
     let lon_0 = op.params.lon[0];
     let x_0 = op.params.x[0];
     let Some(conformal) = op.params.fourier_coefficients.get("conformal") else {
+        warn!("Missing Fourier coefficients for conformal mapping!");
         return Ok(0);
     };
     let Some(tm) = op.params.fourier_coefficients.get("tm") else {
+        warn!("Missing Fourier coefficients for TM!");
         return Ok(0);
     };
     let Some(qs) = op.params.real.get("scaled_radius") else {
+        warn!("Missing a scaled radius!");
         return Ok(0);
     };
     let Some(zb) = op.params.real.get("zb") else {
+        warn!("Missing a zombie parameter!");
         return Ok(0);
     };
 
@@ -81,6 +85,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Err
         successes += 1;
     }
 
+    info!("Successes: {successes}");
     Ok(successes)
 }
 
@@ -93,15 +98,19 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Err
     let lon_0 = op.params.lon[0];
     let x_0 = op.params.x[0];
     let Some(conformal) = op.params.fourier_coefficients.get("conformal") else {
+        warn!("Missing Fourier coefficients for conformal mapping!");
         return Ok(0);
     };
     let Some(tm) = op.params.fourier_coefficients.get("tm") else {
+        warn!("Missing Fourier coefficients for TM!");
         return Ok(0);
     };
     let Some(qs) = op.params.real.get("scaled_radius") else {
+        warn!("Missing a scaled radius!");
         return Ok(0);
     };
     let Some(zb) = op.params.real.get("zb") else {
+        warn!("Missing a zombie parameter!");
         return Ok(0);
     };
 
@@ -143,6 +152,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Err
         successes += 1;
     }
 
+    info!("Successes: {successes}");
     Ok(successes)
 }
 
@@ -177,10 +187,12 @@ pub fn utm(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     // The UTM zone should be an integer between 1 and 60
     let zone = params.natural("zone")?;
     if !(1..61).contains(&zone) {
+        error!("UTM: {zone}. Must be an integer in the interval 1..60");
         return Err(Error::General(
             "UTM: 'zone' must be an integer in the interval 1..60",
         ));
     }
+    info!("Zone: {zone}");
 
     // The scaling factor is 0.9996 by definition of UTM
     params.k[0] = 0.9996;
@@ -249,26 +261,31 @@ fn precompute(op: &mut Op) {
     // The scaled spherical Earth radius - Qn in Engsager's implementation
     let qs = op.params.k[0] * ellps.semimajor_axis() * ellps.normalized_meridian_arc_unit(); // meridian_quadrant();
     op.params.real.insert("scaled_radius", qs);
+    info!("Scaled radius: {qs}");
 
     // The Fourier series for the conformal latitude
     let conformal = ellps.coefficients_for_conformal_latitude_computations();
     op.params
         .fourier_coefficients
         .insert("conformal", conformal);
+    info!(
+        "Fourier coefficients for conformal latitude: {:#?}",
+        conformal
+    );
 
     // The Fourier series for the transverse mercator coordinates, from [Engsager & Poder, 2007](crate::Bibliography::Eng07),
     // with extensions to 6th order by [Karney, 2011](crate::Bibliography::Kar11).
     let tm = fourier_coefficients(n, &TRANSVERSE_MERCATOR);
     op.params.fourier_coefficients.insert("tm", tm);
+    info!("Fourier coefficients for TM: {:#?}", conformal);
 
     // Conformal latitude value of the latitude-of-origin - Z in Engsager's notation
     let z = ellps.latitude_geographic_to_conformal(lat_0, conformal);
-    // op.params.real.insert("z", z);
-
     // Origin northing minus true northing at the origin latitude
     // i.e. true northing = N - zb
     let zb = y_0 - qs * (z + clenshaw_sin(2. * z, &tm.fwd));
     op.params.real.insert("zb", zb);
+    info!("Zombie parameter: {zb}");
 }
 
 pub fn new(parameters: &RawParameters, provider: &dyn Context) -> Result<Op, Error> {
