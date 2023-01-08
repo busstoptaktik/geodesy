@@ -4,9 +4,10 @@ alias l := list
 alias r := run
 alias t := test
 alias tt := test-all
+alias rr := run-all
 
-# Defaults to test.
-default: test
+# Harmless default
+default: list
 
 # list all justfile targets
 list:
@@ -17,7 +18,7 @@ test:
     cargo test --lib
 
 # Unit tests, doc tests, pile test, and compiling of examples
-test-all: test-pile
+test-all:
     cargo test
 
 # Check that all tests pass, and that formatting and coding conventions are OK.
@@ -39,10 +40,10 @@ tree:
     cargo modules generate tree --lib --with-types
 
 # Build and install assets
-assets:
-    zip -r assets.zip assets
-    mv assets.zip $LOCALAPPDATA/geodesy
-    ls -l $LOCALAPPDATA/geodesy
+#assets:
+#    zip -r assets.zip assets
+#    mv assets.zip $LOCALAPPDATA/geodesy
+#    ls -l $LOCALAPPDATA/geodesy
 
 # Build documentation, open in browser for inspection.
 doc:
@@ -61,16 +62,6 @@ pq ARGS:
 run-example EXAMPLE:
     cargo run --example `basename examples/"{{EXAMPLE}}"* .rs`
 
-# Test the `pile` executable
-test-pile:
-    touch tests/foobar.pile
-    rm tests/foobar.pile
-    cargo run --bin pile -- -o tests/foobar.pile tests/foo.raw tests/bar.raw
-    diff tests/assets/proj-data/foo.aux tests/assets/expected/foo.aux
-    diff tests/assets/proj-data/bar.aux tests/assets/expected/bar.aux
-    diff tests/foobar.pile tests/assets/expected/foobar
-    rm tests/foobar.pile
-
 # Run default application and all examples.
 run-all:
     cargo run -- --help
@@ -79,29 +70,10 @@ run-all:
     cargo run --example 02-user_defined_macros
     cargo run --example 03-user_defined_operators
 
-# Show diff of all 'git add'-ed files
-diff:  && stat
-    git diff
-
-# Given check passes, commit what has been "git add"-ed
-commit: check  &&  stat
-    git commit
-
-# Given check passes, add everything and commit all changes
-commit-all: check  &&  stat
-    git commit -a
-
-# As commit-all but use MESSAGE as commit-message
-commit-fast MESSAGE: check  &&  stat
-    git commit -a -m "{{MESSAGE}}"
-
-# Git status
-stat:
-    git status
-
 # Compact format log for changelog report
 changes:
-    git log --pretty=format:"%as: %s (%an)" > CHANGELOG
+    git log --pretty=format:"%as: %s (%an)"
+    # git log --pretty=format:"%as: %s (%an)" > CHANGELOG
 
 # Some invisible oddities for general amusement
 
