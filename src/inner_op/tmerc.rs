@@ -6,6 +6,7 @@ use crate::math::*;
 
 // Forward transverse mercator, following Engsager & Poder(2007)
 fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+    // Make all precomputed parameters directly accessible
     let ellps = op.params.ellps[0];
     let lat_0 = op.params.lat[0];
     let lon_0 = op.params.lon[0];
@@ -87,10 +88,10 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Err
 
 // Inverse Transverse Mercator, following Engsager & Poder (2007) (currently Bowring stands in!)
 fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+    // Make all precomputed parameters directly accessible
     let ellps = op.params.ellps[0];
     let lon_0 = op.params.lon[0];
     let x_0 = op.params.x[0];
-
     let Some(conformal) = op.params.fourier_coefficients.get("conformal") else {
         return Ok(0);
     };
@@ -211,7 +212,6 @@ pub fn utm(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     Ok(op)
 }
 
-
 // ----- A N C I L L A R Y   F U N C T I O N S -----------------------------------------
 
 #[rustfmt::skip]
@@ -276,8 +276,6 @@ pub fn new(parameters: &RawParameters, provider: &dyn Context) -> Result<Op, Err
     precompute(&mut op);
     Ok(op)
 }
-
-
 
 // ----- T E S T S ---------------------------------------------------------------------
 
