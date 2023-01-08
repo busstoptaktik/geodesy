@@ -1,6 +1,7 @@
 use anyhow::bail;
 use clap::Parser;
 use geodesy::preamble::*;
+use simple_logger::SimpleLogger;
 use std::io::BufRead;
 use std::path::PathBuf;
 use std::time;
@@ -49,6 +50,9 @@ struct Cli {
 }
 
 fn main() -> Result<(), anyhow::Error> {
+    SimpleLogger::new().env().init().unwrap();
+    log::trace!("This is KP");
+
     let opt = Cli::parse();
     println!("args: {:?}", opt.args);
 
