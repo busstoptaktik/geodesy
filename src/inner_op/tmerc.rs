@@ -259,7 +259,7 @@ fn precompute(op: &mut Op) {
     let y_0 = op.params.y[0];
 
     // The scaled spherical Earth radius - Qn in Engsager's implementation
-    let qs = op.params.k[0] * ellps.semimajor_axis() * ellps.normalized_meridian_arc_unit(); // meridian_quadrant();
+    let qs = op.params.k[0] * ellps.semimajor_axis() * ellps.normalized_meridian_arc_unit();
     op.params.real.insert("scaled_radius", qs);
     info!("Scaled radius: {qs}");
 
