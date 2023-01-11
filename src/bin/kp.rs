@@ -50,7 +50,7 @@ struct Cli {
 }
 
 fn main() -> Result<(), anyhow::Error> {
-    SimpleLogger::new().env().init().unwrap();
+    SimpleLogger::new().with_level(log::LevelFilter::Error).env().init().unwrap();
     log::trace!("This is KP");
 
     let opt = Cli::parse();
