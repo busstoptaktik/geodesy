@@ -203,8 +203,8 @@ Being intended for authoring of geodetic functionality, customization is a very 
 First a macro:
 
 ```rust
-// Define a macro, using "look-up" notation (^) for the macro parameters
-let macro_text = "cart ellps=^ellps_0 | helmert: x=^x y=^y z=^z |  cart inv ellps=^ellps_1";
+// Define a macro, using '$'-sigil notation for the macro parameters
+let macro_text = "cart ellps=$ellps_0 | helmert: x=$x y=$y z=$z |  cart inv ellps=$ellps_1";
 
 // Register the macro, under the name "geo:helmert"
 ctx.register_macro("geo:helmert", macro_text);
@@ -212,7 +212,8 @@ ctx.register_macro("geo:helmert", macro_text);
 // Instantiate the geo:helmert macro with replacement values
 // for the parameters left, right, x, y, z
 ed50_wgs84 = ctx.op("geo:helmert ellps_0=intl ellps_1=GRS80 x=-87 y=-96 z=-120").unwrap();
-// Note that the syntax is identical to that used for built-in operators
+// Note that the syntax is identical to that used for built-in operators, but macros are
+// recognized by having a ':' anywhere in their name
 
 // ... and use:
 ctx.apply(ed50_wgs84, Fwd, data);

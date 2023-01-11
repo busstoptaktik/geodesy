@@ -3,8 +3,8 @@ use super::*;
 /// The fundamental elements of an operator (i.e. everything but steps and args)
 #[derive(Debug, Default)]
 pub struct OpDescriptor {
-    pub invocation: String, // e.g. geohelmert ellps_0=GRS80 x=1 y=2 z=3 ellps_1=intl
-    pub definition: String, // e.g. cart ellps=^ellps_0 | helmert | cart inv ellps=^ellps_1
+    pub invocation: String, // e.g. geo:helmert ellps_0=GRS80 x=1 y=2 z=3 ellps_1=intl
+    pub definition: String, // e.g. cart ellps=$ellps_0 | helmert | cart inv ellps=$ellps_1
     pub invertible: bool,
     pub inverted: bool,
     pub fwd: InnerOp,
