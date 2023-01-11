@@ -368,7 +368,7 @@ pub fn chase(
     // The haystack is a reverse iterator over both lists in series
     let mut haystack = globals.iter().chain(locals.iter()).rev();
 
-    // Find the needle in the haystack, recursively chasing look-ups ('^')
+    // Find the needle in the haystack, recursively chasing look-ups ('$')
     // and handling defaults ('*')
     let key = key.trim();
     if key.is_empty() {
@@ -398,7 +398,7 @@ pub fn chase(
 
         // If the value is a(nother) lookup, we continue the search in the same iterator,
         // now using a *new search key*, as specified by the current value
-        if let Some(stripped) = thevalue.strip_prefix('^') {
+        if let Some(stripped) = thevalue.strip_prefix('$') {
             chasing = true;
             needle = stripped;
             continue;
@@ -440,8 +440,9 @@ mod tests {
 
     #[test]
     fn basic() -> Result<(), Error> {
-        let invocation = String::from("cucumber flag ellps_0=123 , 456");
-        let globals = BTreeMap::<String, String>::new();
+        let invocation = String::from("cucumber flag ellps_0=123 , 456 natural=$indirection");
+        let mut globals = BTreeMap::<String, String>::new();
+        globals.insert("indirection".to_string(), "123".to_string());
         let raw = RawParameters::new(&invocation, &globals);
         let p = ParsedParameters::new(&raw, &GAMUT)?;
         // println!("{:#?}", p);
@@ -465,7 +466,7 @@ mod tests {
         assert_eq!(series[3], 4.);
 
         // Etc.
-        assert_eq!(*p.natural.get("natural").unwrap(), 0_usize);
+        assert_eq!(*p.natural.get("natural").unwrap(), 123_usize);
         assert_eq!(*p.integer.get("integer").unwrap(), -1);
         assert_eq!(*p.text.get("text").unwrap(), "text");
 
