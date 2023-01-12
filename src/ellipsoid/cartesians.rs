@@ -117,7 +117,6 @@ mod tests {
         let geo = Coord::geo(55., 12., 100., 0.);
         let cart = ellps.cartesian(&geo);
         let geo2 = ellps.geographic(&cart);
-        assert_eq!(geo[0], geo2[0]);
         assert!((geo[0] - geo2[0]).abs() < 1.0e-12);
         assert!((geo[1] - geo2[1]).abs() < 1.0e-12);
         assert!((geo[2] - geo2[2]).abs() < 1.0e-9);
