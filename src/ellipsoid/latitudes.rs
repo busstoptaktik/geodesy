@@ -3,28 +3,16 @@ use crate::math::*;
 
 // ----- Latitudes -------------------------------------------------------------
 impl Ellipsoid {
-    /// Geographic latitude, 𝜙 to geocentric latitude, 𝜃
-    /// (or vice versa if `forward` is `false`).
-    #[must_use]
-    pub fn geocentric_latitude(&self, latitude: f64, direction: Direction) -> f64 {
-        if direction == Direction::Fwd {
-            return ((1.0 - self.f * (2.0 - self.f)) * latitude.tan()).atan();
-        }
-        (latitude.tan() / (1.0 - self.eccentricity_squared())).atan()
-    }
+    // --- Classic latitudes: geographic, geocentric & reduced ---
 
-    /// Geographic latitude, 𝜙 to geocentric latitude, 𝜃. New approach with separate
-    /// functions for the forward and inverse implementations which presumably
-    /// speeds things slightly up, and results in more readable user code.
+    /// Geographic latitude, 𝜙 to geocentric latitude, 𝜃.
     /// See also [latitude_geocentric_to_geographic](Ellipsoid::latitude_geocentric_to_geographic)
     #[must_use]
     pub fn latitude_geographic_to_geocentric(&self, geographic: f64) -> f64 {
         ((1.0 - self.f * (2.0 - self.f)) * geographic.tan()).atan()
     }
 
-    /// Geocentric latitude, 𝜃 to geographic latitude, 𝜙. New approach with separate
-    /// functions for the forward and inverse implementations which presumably
-    /// speeds things slightly up, and results in more readable user code.
+    /// Geocentric latitude, 𝜃 to geographic latitude, 𝜙.
     /// See also [latitude_geographic_to_geocentric](Ellipsoid::latitude_geographic_to_geocentric)
     #[must_use]
     pub fn latitude_geocentric_to_geographic(&self, latitude: f64) -> f64 {
@@ -32,12 +20,14 @@ impl Ellipsoid {
     }
 
     /// Geographic latitude to reduced latitude, 𝛽
-    /// (or vice versa if `forward` is  `false`).
     #[must_use]
-    pub fn reduced_latitude(&self, latitude: f64, direction: Direction) -> f64 {
-        if direction == Direction::Fwd {
-            return latitude.tan().atan2(1. / (1. - self.f));
-        }
+    pub fn latitude_geographic_to_reduced(&self, latitude: f64) -> f64 {
+        latitude.tan().atan2(1. / (1. - self.f))
+    }
+
+    /// Geographic latitude to reduced latitude, 𝛽
+    #[must_use]
+    pub fn latitude_reduced_to_geographic(&self, latitude: f64) -> f64 {
         latitude.tan().atan2(1. - self.f)
     }
 
@@ -52,7 +42,9 @@ impl Ellipsoid {
         sinhpsi_to_tanphi(latitude.sinh(), e).atan()
     }
 
-    // --- Rectifying latitudes ---
+    // --- Auxiliary latitudes ---
+
+    // --- Rectifying latitude ---
 
     /// Obtain the coefficients needed for working with rectifying latitudes
     pub fn coefficients_for_rectifying_latitude_computations(&self) -> FourierCoefficients {
@@ -79,7 +71,7 @@ impl Ellipsoid {
         rlat + clenshaw_sin(2. * rlat, &coefficients.inv)
     }
 
-    // --- Conformal latitudes ---
+    // --- Conformal latitude ---
 
     /// Obtain the coefficients needed for working with conformal latitudes
     pub fn coefficients_for_conformal_latitude_computations(&self) -> FourierCoefficients {
@@ -119,45 +111,56 @@ impl Ellipsoid {
 
 #[cfg(test)]
 mod tests {
-    use crate::Direction::*;
-    use crate::{Ellipsoid, Error};
-    // use crate::preamble;
-    // use crate::internal;
     use super::*;
-
     use std::f64::consts::FRAC_PI_2;
+
+    // Geocentric latitude, 𝜃
     #[test]
-    fn latitudes() -> Result<(), Error> {
+    fn geocentric() -> Result<(), Error> {
         let ellps = Ellipsoid::named("GRS80")?;
         let lats = Vec::from([35., 45., 55.]);
-
-        // Geocentric latitude, 𝜃
         for lat in &lats {
             let lat = *lat as f64;
-            let theta = ellps.geocentric_latitude(lat.to_radians(), Fwd);
-            let roundtrip = ellps.geocentric_latitude(theta, Inv).to_degrees();
+            let theta = ellps.latitude_geographic_to_geocentric(lat.to_radians());
+            let roundtrip = ellps.latitude_geocentric_to_geographic(theta).to_degrees();
             assert!((lat - roundtrip).abs() < 1e-15);
         }
-        assert!(ellps.geocentric_latitude(0.0, Fwd).abs() < 1.0e-10);
-        assert!((ellps.geocentric_latitude(FRAC_PI_2, Fwd) - FRAC_PI_2).abs() < 1.0e-10);
+        assert!(ellps.latitude_geographic_to_geocentric(0.0).abs() < 1.0e-10);
+        assert!((ellps.latitude_geographic_to_geocentric(FRAC_PI_2) - FRAC_PI_2).abs() < 1.0e-10);
+        Ok(())
+    }
 
-        // Reduced latitude, 𝛽
+    // Reduced latitude, 𝛽
+    #[test]
+    fn reduced() -> Result<(), Error> {
+        let ellps = Ellipsoid::named("GRS80")?;
         let lat = 55_f64.to_radians();
-        let lat2 = ellps.reduced_latitude(ellps.reduced_latitude(lat, Fwd), Inv);
+        let lat1 = ellps.latitude_geographic_to_reduced(lat);
+        let lat2 = ellps.latitude_reduced_to_geographic(lat1);
         assert!((lat - lat2) < 1.0e-12);
-        assert!(ellps.reduced_latitude(0.0, Fwd).abs() < 1.0e-10);
-        assert!((ellps.reduced_latitude(FRAC_PI_2, Fwd) - FRAC_PI_2).abs() < 1.0e-10);
+        assert!(ellps.latitude_geographic_to_reduced(0.0).abs() < 1.0e-10);
+        assert!((ellps.latitude_geographic_to_reduced(FRAC_PI_2) - FRAC_PI_2).abs() < 1.0e-10);
+        Ok(())
+    }
 
-        // Isometric latitude, 𝜓
+    // Isometric latitude, 𝜓
+    #[test]
+    fn isometric() -> Result<(), Error> {
+        let ellps = Ellipsoid::named("GRS80")?;
         let angle = 45_f64.to_radians();
         let isometric = 50.227465815385806f64.to_radians();
         assert!((ellps.isometric_latitude(angle, Fwd) - isometric).abs() < 1e-15);
         assert!((ellps.isometric_latitude(isometric, Inv) - angle).abs() < 1e-15);
+        Ok(())
+    }
 
-        // Rectifying latitude, 𝜇
+    // Rectifying latitude, 𝜇
+    #[test]
+    fn rectifying() -> Result<(), Error> {
+        let ellps = Ellipsoid::named("GRS80")?;
         let latitudes = vec![35., 45., 55., -35., -45., -55., 0., 90.];
         let coefficients = ellps.coefficients_for_rectifying_latitude_computations();
-        // Roundtrip phi->mu->phi
+        // Roundtrip 𝜙 -> 𝜇 -> 𝜙
         for phi in latitudes {
             let lat = (phi as f64).to_radians();
             let mu = ellps.latitude_geographic_to_rectifying(lat, coefficients);
@@ -166,19 +169,19 @@ mod tests {
             assert!((lat - phi).abs() < 1e-14);
             assert!((lat + ihp).abs() < 1e-14); // Symmetry
         }
+        Ok(())
+    }
 
-        // Conformal latitude, 𝜒
-        #[rustfmt::skip]
+    // Conformal latitude, 𝜒
+    #[test]
+    fn conformal() -> Result<(), Error> {
+        let ellps = Ellipsoid::named("GRS80")?;
         let latitudes = vec![35., 45., 55., -35., -45., -55., 0., 90.];
+        #[rustfmt::skip]
         let conformal_latitudes = vec![
-            34.819454814955349775,
-            44.807684055145067248,
-            54.819109023689023275, // Northern hemisphere
-            -34.819454814955349775,
-            -44.807684055145067248,
-            -54.819109023689023275, // Symmetry wrt. the Equator
-            0.,
-            90., // Extreme values are invariant
+            34.819454814955349775,  44.807684055145067248,  54.819109023689023275, // Northern hemisphere
+           -34.819454814955349775, -44.807684055145067248, -54.819109023689023275, // Symmetry wrt. the Equator
+            0., 90., // Extreme values are invariant
         ];
 
         let chi_coefs = ellps.latitude_fourier_coefficients(&constants::CONFORMAL);
@@ -192,39 +195,40 @@ mod tests {
             assert!((phi - ellps.latitude_conformal_to_geographic(chi, chi_coefs)).abs() < 1e-14);
         }
 
+        let lat = 55_f64.to_radians();
         let chi = ellps.latitude_geographic_to_conformal(lat, chi_coefs);
         let phi = ellps.latitude_conformal_to_geographic(chi, chi_coefs);
         assert!((chi.to_degrees() - 54.819109023689023275).abs() < 1e-12);
         assert_eq!(phi.to_degrees(), 55.0);
         Ok(())
     }
-
-    // From the Poder-Engsager implementation, as revitalized in Coopsy
-    // Conformal:      34.819454814955349775
-    // Geographic:     35.000000000000000000
-    //
-    // Conformal:      44.807684055145067248
-    // Geographic:     45.000000000000000000
-    //
-    // Conformal:      54.819109023689023275
-    // Geographic:     55.000000000000000000
-    //
-    // Conformal:     -54.819109023689023275
-    // Geographic:    -55.000000000000000000
-
-    // Geographic to conformal
-    // Coef[0] =   -0.00335655463626897662
-    // Coef[1] =   4.69457307327488333e-06
-    // Coef[2] =  -8.19449756752843304e-09
-    // Coef[3] =   1.55799671344272666e-11
-    // Coef[4] =    -3.103292317686079e-14
-    // Coef[5] =   6.38914768904757935e-17
-    //
-    // Conformal to geographic
-    // Coef[0] =    0.00335655148560440753
-    // Coef[1] =   6.57187326307206622e-06
-    // Coef[2] =   1.76467247399761524e-08
-    // Coef[3] =   5.38775389000947284e-11
-    // Coef[4] =   1.76400751591338953e-13
-    // Coef[5] =   6.05607405520758705e-16
 }
+
+// From the Poder-Engsager implementation, as revitalized in Coopsy
+// Conformal:      34.819454814955349775
+// Geographic:     35.000000000000000000
+//
+// Conformal:      44.807684055145067248
+// Geographic:     45.000000000000000000
+//
+// Conformal:      54.819109023689023275
+// Geographic:     55.000000000000000000
+//
+// Conformal:     -54.819109023689023275
+// Geographic:    -55.000000000000000000
+
+// Geographic to conformal
+// Coef[0] =   -0.00335655463626897662
+// Coef[1] =   4.69457307327488333e-06
+// Coef[2] =  -8.19449756752843304e-09
+// Coef[3] =   1.55799671344272666e-11
+// Coef[4] =    -3.103292317686079e-14
+// Coef[5] =   6.38914768904757935e-17
+//
+// Conformal to geographic
+// Coef[0] =    0.00335655148560440753
+// Coef[1] =   6.57187326307206622e-06
+// Coef[2] =   1.76467247399761524e-08
+// Coef[3] =   5.38775389000947284e-11
+// Coef[4] =   1.76400751591338953e-13
+// Coef[5] =   6.05607405520758705e-16

@@ -63,7 +63,7 @@ impl Ellipsoid {
         let L1 = from[0];
 
         // The latitude of P1 projected onto the auxiliary sphere
-        let U1 = self.reduced_latitude(B1, Direction::Fwd);
+        let U1 = self.latitude_geographic_to_reduced(B1);
         let U1cos = U1.cos();
         let U1sin = U1.sin();
 
@@ -153,8 +153,8 @@ impl Ellipsoid {
             return Coord::geo(0., 0., 0., 0.);
         }
 
-        let U1 = self.reduced_latitude(B1, Direction::Fwd);
-        let U2 = self.reduced_latitude(B2, Direction::Fwd);
+        let U1 = self.latitude_geographic_to_reduced(B1);
+        let U2 = self.latitude_geographic_to_reduced(B2);
 
         let U1cos = U1.cos();
         let U2cos = U2.cos();
