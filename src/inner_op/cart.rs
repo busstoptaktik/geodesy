@@ -1,4 +1,4 @@
-#![allow(non_snake_case)]
+/// Geographical to cartesian (and v.v.) conversion
 use super::*;
 
 // ----- F O R W A R D --------------------------------------------------------------
@@ -33,6 +33,7 @@ fn cart_inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize
     let cutoff = op.params.ellps[0].semimajor_axis() * 1e-16;
 
     let mut n = 0_usize;
+    #[allow(non_snake_case)]
     for coord in operands {
         let X = coord[0];
         let Y = coord[1];
