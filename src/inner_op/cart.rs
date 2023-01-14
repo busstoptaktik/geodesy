@@ -1,6 +1,4 @@
 #![allow(non_snake_case)]
-
-/// Template for implementation of operators
 use super::*;
 
 // ----- F O R W A R D --------------------------------------------------------------
