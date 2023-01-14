@@ -25,6 +25,7 @@ $ echo 553036. -124509 | kp "dms:in | geo:out"
 - [`dms`](#operator-nmea-dm-nmeass-and-dms): DDMMSS.sss encoding, sub-entry under `nmea`
 - [`gridshift`](#operator-gridshift): NADCON style datum shifts in 1, 2, and 3 dimensions
 - [`helmert`](#operator-helmert): The Helmert (similarity) transformation
+- [`latitude`](#operator-latitude): Auxiliary latitudes
 - [`lcc`](#operator-lcc): The Lambert Conformal Conic projection
 - [`merc`](#operator-merc): The Mercator projection
 - [`molodensky`](#operator-molodensky): The full and abridged Molodensky transformations
@@ -232,6 +233,33 @@ geo:in | gridshift grids=ed50.datum | geo:out
 ```
 
 **See also:** PROJ documentation, [`hgridshift`](https://proj.org/operations/transformations/hgridshift.html) and [`vgridshift`](https://proj.org/operations/transformations/vgridshift.html). RG combines the functionality of the two: The dimensionality of the grid determines whether a plane or a vertical transformation is carried out.
+
+---
+
+### Operator `latitude`
+
+**Purpose:** Convert from geographic to an auxiliary latitude
+
+**Description:**
+
+| Argument | Description |
+|----------|-------------|
+| `inv` | Inverse operation: auxiliary to geographic |
+| `ellps=name` | Use ellipsoid `name` for the conversion |
+| `authalic` | Currently ignored |
+| `conformal` | Convert to conformal latitude |
+| `geocentric` | Convert to geocentric latitude |
+| `parametric` | Convert to parametric latitude |
+| `reduced` | (synonym for `parametric`) |
+| `rectifying` | Convert to rectifying latitude |
+
+**Example**:
+
+```js
+latitude geocentric ellps=GRS80
+```
+
+**See also:** Charles F.F. Karney, 2022: [On auxiliary latitudes](https://doi.org/10.48550/arXiv.2212.05818)
 
 ---
 
