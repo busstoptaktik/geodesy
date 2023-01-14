@@ -86,7 +86,6 @@ fn cart_inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize
 
 // ----- C O N S T R U C T O R ------------------------------------------------------
 
-// Example...
 #[rustfmt::skip]
 pub const GAMUT: [OpParameter; 2] = [
     OpParameter::Flag { key: "inv" },
