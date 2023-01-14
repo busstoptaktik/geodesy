@@ -16,7 +16,7 @@ impl Ellipsoid {
     /// [Deakin et al](crate::Bibliography::Dea12) provides a higher order (*n⁸*) derivation.
     ///
     #[must_use]
-    #[allow(non_snake_case)] // make it possible to mimic math notation from original paper
+    #[allow(non_snake_case)] // make it possible to mimic math notation from the original paper
     #[allow(clippy::many_single_char_names)] // ditto
     pub fn meridional_distance(&self, latitude: f64, direction: Direction) -> f64 {
         let n = self.third_flattening();
@@ -27,8 +27,9 @@ impl Ellipsoid {
 
         if direction == Direction::Fwd {
             let B = 9. * (1. - 3. * n * n / 8.0);
-            let x = 1. + 13. / 12. * n * (2. * latitude).cos();
-            let y = 0. + 13. / 12. * n * (2. * latitude).sin();
+            let (s, c) = (2. * latitude).sin_cos();
+            let x = 1. + 13. / 12. * n * c;
+            let y = 0. + 13. / 12. * n * s;
             let r = y.hypot(x);
             let v = y.atan2(x);
             let theta = latitude - B * r.powf(-2. / 13.) * (2. * v / 13.).sin();
@@ -37,8 +38,9 @@ impl Ellipsoid {
 
         let C = 1. - 9. * n * n / 16.;
         let theta = latitude / A;
-        let x = 1. - 155. / 84. * n * (2. * theta).cos();
-        let y = 0. + 155. / 84. * n * (2. * theta).sin();
+        let (s, c) = (2. * theta).sin_cos();
+        let x = 1. - 155. / 84. * n * c;
+        let y = 0. + 155. / 84. * n * s;
         let r = y.hypot(x);
         let v = y.atan2(x);
 
@@ -64,8 +66,7 @@ impl Ellipsoid {
 
         // The latitude of P1 projected onto the auxiliary sphere
         let U1 = self.latitude_geographic_to_reduced(B1);
-        let U1cos = U1.cos();
-        let U1sin = U1.sin();
+        let (U1sin, U1cos) = U1.sin_cos();
 
         // σ_1, here ss1, is the angular distance on the aux sphere from P1 to equator
         let azicos = azimuth.cos();
@@ -102,8 +103,7 @@ impl Ellipsoid {
             let ssmx2cos2 = ssmx2cos * ssmx2cos;
             t1 = -1. + 2. * ssmx2cos2;
             let t2 = -3. + 4. * ssmx2cos2;
-            let sssin = ss.sin();
-            let sscos = ss.cos();
+            let (sssin, sscos) = ss.sin_cos();
             let t3 = -3. + 4. * sssin * sssin;
             let dss = B * sssin * (ssmx2cos + B / 4. * (sscos * t1 - B / 6. * ssmx2cos * t2 * t3));
 
@@ -117,8 +117,7 @@ impl Ellipsoid {
         }
 
         // B2: Latitude of destination
-        let sssin = ss.sin();
-        let sscos = ss.cos();
+        let (sssin, sscos) = ss.sin_cos();
         let t4 = U1cos * azicos * sssin;
         let t5 = U1cos * azicos * sscos;
         let B2 = (U1sin * sscos + t4).atan2((1. - self.f) * aasin.hypot(U1sin * sssin - t5));
@@ -156,10 +155,8 @@ impl Ellipsoid {
         let U1 = self.latitude_geographic_to_reduced(B1);
         let U2 = self.latitude_geographic_to_reduced(B2);
 
-        let U1cos = U1.cos();
-        let U2cos = U2.cos();
-        let U1sin = U1.sin();
-        let U2sin = U2.sin();
+        let (U1sin, U1cos) = U1.sin_cos();
+        let (U2sin, U2cos) = U2.sin_cos();
         let eps = self.second_eccentricity_squared();
 
         // Initial estimate for λ, the longitude on the auxiliary sphere
@@ -179,8 +176,7 @@ impl Ellipsoid {
             i += 1;
 
             // σ, the angular separation between the points
-            llsin = ll.sin();
-            llcos = ll.cos();
+            (llsin, llcos) = ll.sin_cos();
             let t1 = U2cos * llsin;
             let t2 = U1cos * U2sin - U2cos * U1sin * llcos;
             sssin = t1.hypot(t2);
