@@ -55,7 +55,7 @@ mod tests {
 
     #[test]
     fn template() -> Result<(), Error> {
-        let ctx = Minimal::default();
+        let mut ctx = Minimal::default();
         // EPSG:1134 - 3 parameter, ED50/WGS84, s = sqrt(27) m
         let op = ctx.op("helmert x=-87 y=-96 z=-120")?;
 
