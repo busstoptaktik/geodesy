@@ -55,20 +55,20 @@ mod tests {
 
     #[test]
     fn template() -> Result<(), Error> {
-        let Context = Minimal::default();
-        let op = Op::new("helmert x=-87 y=-96 z=-120", &Context)?;
-
+        let ctx = Minimal::default();
         // EPSG:1134 - 3 parameter, ED50/WGS84, s = sqrt(27) m
+        let op = ctx.op("helmert x=-87 y=-96 z=-120")?;
+
         let mut operands = [Coord::origin()];
 
         // Forward
-        op.apply(&Context, &mut operands, Fwd)?;
+        ctx.apply(op, Fwd, &mut operands)?;
         assert_eq!(operands[0].first(), -87.);
         assert_eq!(operands[0].second(), -96.);
         assert_eq!(operands[0].third(), -120.);
 
         // Inverse + roundtrip
-        op.apply(&Context, &mut operands, Inv)?;
+        ctx.apply(op, Inv, &mut operands)?;
         assert_eq!(operands[0].first(), 0.);
         assert_eq!(operands[0].second(), 0.);
         assert_eq!(operands[0].third(), 0.);
