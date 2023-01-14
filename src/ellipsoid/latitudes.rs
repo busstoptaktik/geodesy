@@ -55,7 +55,7 @@ impl Ellipsoid {
     pub fn latitude_geographic_to_rectifying(
         &self,
         geographic_latitude: f64,
-        coefficients: FourierCoefficients,
+        coefficients: &FourierCoefficients,
     ) -> f64 {
         coefficients.etc[0]
             * (geographic_latitude + clenshaw_sin(2. * geographic_latitude, &coefficients.fwd))
@@ -65,7 +65,7 @@ impl Ellipsoid {
     pub fn latitude_rectifying_to_geographic(
         &self,
         rectifying_latitude: f64,
-        coefficients: FourierCoefficients,
+        coefficients: &FourierCoefficients,
     ) -> f64 {
         let rlat = rectifying_latitude / coefficients.etc[0];
         rlat + clenshaw_sin(2. * rlat, &coefficients.inv)
@@ -82,7 +82,7 @@ impl Ellipsoid {
     pub fn latitude_geographic_to_conformal(
         &self,
         geographic_latitude: f64,
-        coefficients: FourierCoefficients,
+        coefficients: &FourierCoefficients,
     ) -> f64 {
         geographic_latitude + clenshaw_sin(2. * geographic_latitude, &coefficients.fwd)
     }
@@ -91,7 +91,7 @@ impl Ellipsoid {
     pub fn latitude_conformal_to_geographic(
         &self,
         conformal_latitude: f64,
-        coefficients: FourierCoefficients,
+        coefficients: &FourierCoefficients,
     ) -> f64 {
         conformal_latitude + clenshaw_sin(2. * conformal_latitude, &coefficients.inv)
     }
@@ -163,9 +163,9 @@ mod tests {
         // Roundtrip 𝜙 -> 𝜇 -> 𝜙
         for phi in latitudes {
             let lat = (phi as f64).to_radians();
-            let mu = ellps.latitude_geographic_to_rectifying(lat, coefficients);
-            let phi = ellps.latitude_rectifying_to_geographic(mu, coefficients);
-            let ihp = ellps.latitude_rectifying_to_geographic(-mu, coefficients);
+            let mu = ellps.latitude_geographic_to_rectifying(lat, &coefficients);
+            let phi = ellps.latitude_rectifying_to_geographic(mu, &coefficients);
+            let ihp = ellps.latitude_rectifying_to_geographic(-mu, &coefficients);
             assert!((lat - phi).abs() < 1e-14);
             assert!((lat + ihp).abs() < 1e-14); // Symmetry
         }
@@ -191,13 +191,13 @@ mod tests {
             // The casts are necessary, at least as of Rust 1.66
             let phi = (*(pair.0) as f64).to_radians();
             let chi = (*(pair.1) as f64).to_radians();
-            assert!((chi - ellps.latitude_geographic_to_conformal(phi, chi_coefs)).abs() < 1e-14);
-            assert!((phi - ellps.latitude_conformal_to_geographic(chi, chi_coefs)).abs() < 1e-14);
+            assert!((chi - ellps.latitude_geographic_to_conformal(phi, &chi_coefs)).abs() < 1e-14);
+            assert!((phi - ellps.latitude_conformal_to_geographic(chi, &chi_coefs)).abs() < 1e-14);
         }
 
         let lat = 55_f64.to_radians();
-        let chi = ellps.latitude_geographic_to_conformal(lat, chi_coefs);
-        let phi = ellps.latitude_conformal_to_geographic(chi, chi_coefs);
+        let chi = ellps.latitude_geographic_to_conformal(lat, &chi_coefs);
+        let phi = ellps.latitude_conformal_to_geographic(chi, &chi_coefs);
         assert!((chi.to_degrees() - 54.819109023689023275).abs() < 1e-12);
         assert_eq!(phi.to_degrees(), 55.0);
         Ok(())

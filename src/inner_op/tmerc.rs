@@ -33,7 +33,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Err
         // --- 1. Geographical -> Conformal latitude, rotated longitude
 
         // The conformal latitude
-        let lat = ellps.latitude_geographic_to_conformal(coord[1] + lat_0, *conformal);
+        let lat = ellps.latitude_geographic_to_conformal(coord[1] + lat_0, conformal);
         // The longitude as reckoned from the central meridian
         let lon = coord[0] - lon_0;
 
@@ -146,7 +146,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Err
         // --- 4. Gaussian LAT, LNG -> ellipsoidal LAT, LNG
 
         let lon = normalize_angle_symmetric(lon + lon_0);
-        let lat = ellps.latitude_conformal_to_geographic(lat, *conformal);
+        let lat = ellps.latitude_conformal_to_geographic(lat, conformal);
         (coord[0], coord[1]) = (lon, lat);
 
         successes += 1;
@@ -280,7 +280,7 @@ fn precompute(op: &mut Op) {
     info!("Fourier coefficients for TM: {:#?}", conformal);
 
     // Conformal latitude value of the latitude-of-origin - Z in Engsager's notation
-    let z = ellps.latitude_geographic_to_conformal(lat_0, conformal);
+    let z = ellps.latitude_geographic_to_conformal(lat_0, &conformal);
     // Origin northing minus true northing at the origin latitude
     // i.e. true northing = N - zb
     let zb = y_0 - qs * (z + clenshaw_sin(2. * z, &tm.fwd));
