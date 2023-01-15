@@ -1,19 +1,19 @@
 # Geodesy
 
-### Abstract
+## Abstract
 
 ```rust
 // Find the UTM coordinates of some Scandinavian capitals
 use geodesy::preamble::*;
 fn main() -> anyhow::Result<()> {
-    let mut prv = Minimal::new();
-    let utm33 = prv.op("utm zone=33")?;
+    let mut context = Minimal::new();
+    let utm33 = context.op("utm zone=33")?;
 
     let cph = Coord::geo(55., 12., 0., 0.); // Copenhagen
     let sth = Coord::geo(59., 18., 0., 0.); // Stockholm
     let mut data = [cph, sth];
 
-    prv.apply(utm33, Fwd, &mut data)?;
+    context.apply(utm33, Fwd, &mut data)?;
     println!("{:?}", data);
     Ok(())
 }
@@ -64,7 +64,7 @@ The documentation is currently limited, but take a look at:
 
 ## License
 
-*Rust Geodesy*: Copyright 2020, 2021, 2022 by Thomas Knudsen <knudsen.thomas@gmail.com>.
+*Rust Geodesy*: Copyright 2020, 2021, 2022, 2023 by Thomas Knudsen <knudsen.thomas@gmail.com>.
 
 Licensed under either of
 
