@@ -58,6 +58,7 @@ pub mod inner_op_authoring {
 /// Preamble for crate-internal modules, and authoring of Context providers
 pub mod internal {
     pub use crate::context::Context;
+    pub use crate::context::BUILTIN_ADAPTORS;
     pub use crate::inner_op_authoring::*;
     pub use std::collections::BTreeMap;
     pub use std::collections::BTreeSet;

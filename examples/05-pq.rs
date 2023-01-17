@@ -48,6 +48,8 @@ fn main() -> Result<(), anyhow::Error> {
     debug!("debug message 1");
     trace!("trace message 1");
 
+    // We use ::new() instead of ::default() in order to gain access to the
+    // BUILTIN_ADAPTORS
     let mut ctx = geodesy::Minimal::new();
     trace!("trace message 2");
     debug!("debug message 2");
