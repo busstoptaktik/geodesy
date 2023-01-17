@@ -1,6 +1,7 @@
 use super::*;
+use crate::context::Context;
 
-// ----- T H E   P L A I N   P R O V I D E R -------------------------------------------
+// ----- T H E   P L A I N   C O N T E X T ---------------------------------------------
 
 /// A context provider, supporting built in and run-time defined operators, external grids,
 /// and macros.
@@ -12,7 +13,6 @@ pub struct Plain {
     constructors: BTreeMap<String, OpConstructor>,
     resources: BTreeMap<String, String>,
     operators: BTreeMap<OpHandle, Op>,
-    #[allow(dead_code)]
     paths: Vec<std::path::PathBuf>,
 }
 

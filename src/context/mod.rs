@@ -1,12 +1,11 @@
+use crate::internal::*;
 mod minimal;
 mod plain;
 
 pub use minimal::Minimal;
 pub use plain::Plain;
 
-use super::internal::*;
-
-// ----- T H E   P R O V I D E R   T R A I T -------------------------------------------
+// ----- T H E   C O N T E X T   T R A I T -------------------------------------------
 
 /// The `Context` trait defines the mode of communication between *Rust Geodesy* internals
 /// and the external context (i.e. typically resources like grids, transformation definitions,

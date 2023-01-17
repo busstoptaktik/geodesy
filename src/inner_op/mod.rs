@@ -1,4 +1,4 @@
-use super::inner_op_authoring::*;
+use crate::inner_op_authoring::*;
 
 // ----- B U I L T I N   O P E R A T O R S ---------------------------------------------
 

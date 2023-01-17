@@ -2,6 +2,7 @@
 //! How to append a postscript to the help message generated.
 // use geodesy::preamble::*;
 use clap::Parser;
+use geodesy::preamble::*;
 use log::{debug, trace};
 use std::path::PathBuf;
 
@@ -47,9 +48,7 @@ fn main() -> Result<(), anyhow::Error> {
     debug!("debug message 1");
     trace!("trace message 1");
 
-    // use std::env;
-    use geodesy::Coord as C;
-    let _ctx = geodesy::Minimal::default();
+    let mut ctx = geodesy::Minimal::new();
     trace!("trace message 2");
     debug!("debug message 2");
 
@@ -57,9 +56,6 @@ fn main() -> Result<(), anyhow::Error> {
     for (i, item) in [1f64, 2., 3.].into_iter().enumerate() {
         a[i] = item;
     }
-
-    // let rp = geodesy::Plain::new(SearchLevel::LocalPatches, false);
-    // rp.expand_experiment("jeg kan | hoppe sagde | lille Yrsa: Hansen");
 
     if opt.debug {
         if let Some(dir) = dirs::data_local_dir() {
@@ -69,15 +65,22 @@ fn main() -> Result<(), anyhow::Error> {
 
     // let _oo = ctx.define_operation(&opt.operation)?;
 
-    // A pipeline in Geodetic YAML Shorthand (GYS)
-    let _gys =
-        "geo | cart ellps:intl | helmert x:-87 y:-96 z:-120 | cart inv ellps:GRS80 | geo inv";
+    // A pipeline
+    let pip =
+        "geo:in | cart ellps:intl | helmert x:-87 y:-96 z:-120 | cart inv ellps:GRS80 | geo:out";
+    let pip = ctx.op(pip)?;
 
-    let copenhagen = C::raw(55., 12., 0., 0.);
-    let stockholm = C::raw(59., 18., 0., 0.);
-    let gys_data = [copenhagen, stockholm];
-    for coord in gys_data {
-        println!("    {:?}", coord);
+    let copenhagen = Coord::geo(55., 12., 0., 0.);
+    let stockholm = Coord::geo(59., 18., 0., 0.);
+    let mut data = [copenhagen, stockholm];
+    for coord in data {
+        println!("    {:?}", coord.to_geo());
     }
+
+    ctx.apply(pip, Fwd, &mut data)?;
+    for coord in &data {
+        println!("    {:?}", coord.to_geo());
+    }
+
     Ok(())
 }

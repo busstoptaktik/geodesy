@@ -1,15 +1,12 @@
 #![doc = include_str!("../README.md")]
 
-#[cfg(doc)]
-pub use crate::bibliography::Bibliography;
-
-pub(crate) mod bibliography;
+mod bibliography;
 mod context;
-pub(crate) mod coord;
-pub(crate) mod ellipsoid;
-pub(crate) mod grid;
+mod coord;
+mod ellipsoid;
+mod grid;
 mod inner_op;
-pub mod math;
+mod math;
 mod op;
 
 // The bread-and-butter
@@ -18,21 +15,22 @@ pub use crate::context::Minimal;
 pub use crate::context::Plain;
 pub use crate::coord::Coord;
 pub use crate::ellipsoid::Ellipsoid;
-pub use crate::grid::Grid;
-pub use crate::op::Op;
+pub use crate::Direction::Fwd;
+pub use crate::Direction::Inv;
 
 /// The bread-and-butter, shrink-wrapped for external use
 pub mod preamble {
-    pub use crate::coord::Coord;
+    pub use crate::context::Context;
+    pub use crate::grid::Grid;
+    pub use crate::op::Op;
     pub use crate::op::OpHandle;
-    pub use crate::Context;
+    pub use crate::Coord;
     pub use crate::Direction;
     pub use crate::Direction::Fwd;
     pub use crate::Direction::Inv;
     pub use crate::Ellipsoid;
     pub use crate::Error;
     pub use crate::Minimal;
-    pub use crate::Op;
     pub use crate::Plain;
 }
 
@@ -44,10 +42,10 @@ pub mod inner_op_authoring {
     pub use log::trace;
     pub use log::warn;
 
-    pub use crate::grid::Grid;
+    pub use crate::context::Context;
     pub use crate::inner_op::InnerOp;
     pub use crate::inner_op::OpConstructor;
-    pub use crate::math;
+    pub use crate::math::*;
     pub use crate::op::OpDescriptor;
     pub use crate::op::OpParameter;
     pub use crate::op::ParsedParameters;
@@ -57,8 +55,9 @@ pub mod inner_op_authoring {
     pub use crate::some_basic_coordinates;
 }
 
-/// Preamble for crate-internal modules
+/// Preamble for crate-internal modules, and authoring of Context providers
 pub mod internal {
+    pub use crate::context::Context;
     pub use crate::inner_op_authoring::*;
     pub use std::collections::BTreeMap;
     pub use std::collections::BTreeSet;
@@ -127,3 +126,6 @@ pub fn some_basic_coordinates() -> [Coord; 2] {
     let stockholm = Coord::raw(59., 18., 0., 0.);
     [copenhagen, stockholm]
 }
+
+#[cfg(doc)]
+pub use crate::bibliography::Bibliography;
