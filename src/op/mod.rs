@@ -48,10 +48,10 @@ impl Op {
         self.descriptor.inv.0(self, ctx, operands)
     }
 
-    pub fn new(definition: &str, provider: &dyn Context) -> Result<Op, Error> {
-        let globals = provider.globals();
+    pub fn new(definition: &str, ctx: &dyn Context) -> Result<Op, Error> {
+        let globals = ctx.globals();
         let parameters = RawParameters::new(definition, &globals);
-        Self::op(parameters, provider)
+        Self::op(parameters, ctx)
     }
 
     // Helper for implementation of `InnerOp`s: Instantiate an `Op` for the simple
@@ -63,7 +63,7 @@ impl Op {
         fwd: InnerOp,
         inv: InnerOp,
         gamut: &[OpParameter],
-        _provider: &dyn Context,
+        _ctx: &dyn Context,
     ) -> Result<Op, Error> {
         let def = parameters.definition.as_str();
         let params = ParsedParameters::new(parameters, gamut)?;
@@ -83,7 +83,7 @@ impl Op {
     // of precendence between pipelines, user defined operators, macros, and
     // built-in operators
     #[allow(clippy::self_named_constructors)]
-    pub fn op(parameters: RawParameters, provider: &dyn Context) -> Result<Op, Error> {
+    pub fn op(parameters: RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
         if parameters.nesting_too_deep() {
             return Err(Error::Recursion(
                 parameters.invocation,
@@ -95,17 +95,17 @@ impl Op {
 
         // A pipeline?
         if is_pipeline(&parameters.definition) {
-            return super::inner_op::pipeline::new(&parameters, provider);
+            return super::inner_op::pipeline::new(&parameters, ctx);
         }
 
         // A user defined operator?
         if !is_resource_name(&name) {
-            if let Ok(constructor) = provider.get_op(&name) {
-                return constructor.0(&parameters, provider)?.handle_op_inversion();
+            if let Ok(constructor) = ctx.get_op(&name) {
+                return constructor.0(&parameters, ctx)?.handle_op_inversion();
             }
         }
         // A user defined macro?
-        else if let Ok(macro_definition) = provider.get_resource(&name) {
+        else if let Ok(macro_definition) = ctx.get_resource(&name) {
             // The " " sentinel simplifies search for "inv", by allowing us to search
             // for " inv " instead, avoiding matching words *containing* inv (such as
             // INVariant, subINVolution, and a few other pathological cases)
@@ -113,12 +113,12 @@ impl Op {
             let inverted = def.contains(" inv ");
             let mut next_param = parameters.next(&parameters.definition);
             next_param.definition = macro_definition;
-            return Op::op(next_param, provider)?.handle_inversion(inverted);
+            return Op::op(next_param, ctx)?.handle_inversion(inverted);
         }
 
         // A built in operator?
         if let Ok(constructor) = super::inner_op::builtin(&name) {
-            return constructor.0(&parameters, provider)?.handle_op_inversion();
+            return constructor.0(&parameters, ctx)?.handle_op_inversion();
         }
 
         Err(super::Error::NotFound(
@@ -212,33 +212,28 @@ mod tests {
     // an Op, and invoke its forward and backward operational modes
     #[test]
     fn basic() -> Result<(), Error> {
-        let mut provider = Minimal::default();
+        let mut ctx = Minimal::default();
 
         // Try to invoke garbage as a user defined Op
-        assert!(matches!(
-            Op::new("_foo", &provider),
-            Err(Error::NotFound(_, _))
-        ));
+        assert!(matches!(Op::new("_foo", &ctx), Err(Error::NotFound(_, _))));
 
         // Check forward and inverse operation
-        // let op = Op::new("addone", &provider)?;
-        let op = provider.op("addone")?;
+        let op = ctx.op("addone")?;
         let mut data = some_basic_coordinates();
-        provider.apply(op, Fwd, &mut data)?;
+        ctx.apply(op, Fwd, &mut data)?;
         assert_eq!(data[0][0], 56.);
         assert_eq!(data[1][0], 60.);
-        provider.apply(op, Inv, &mut data)?;
+        ctx.apply(op, Inv, &mut data)?;
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
 
         // Also for an inverted operator: check forward and inverse operation
-        let op = provider.op("addone inv")?;
-        // let op = Op::new("addone inv", &provider)?;
+        let op = ctx.op("addone inv")?;
         let mut data = some_basic_coordinates();
-        provider.apply(op, Fwd, &mut data)?;
+        ctx.apply(op, Fwd, &mut data)?;
         assert_eq!(data[0][0], 54.);
         assert_eq!(data[1][0], 58.);
-        provider.apply(op, Inv, &mut data)?;
+        ctx.apply(op, Inv, &mut data)?;
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
 

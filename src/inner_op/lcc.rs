@@ -107,7 +107,7 @@ pub const GAMUT: [OpParameter; 9] = [
     OpParameter::Real { key: "y_0",   default: Some(0_f64) },
 ];
 
-pub fn new(parameters: &RawParameters, _provider: &dyn Context) -> Result<Op, Error> {
+pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> {
     let def = &parameters.definition;
     let mut params = ParsedParameters::new(parameters, &GAMUT)?;
     if params.lat[2].is_nan() {

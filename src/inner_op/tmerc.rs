@@ -288,8 +288,8 @@ fn precompute(op: &mut Op) {
     info!("Zombie parameter: {zb}");
 }
 
-pub fn new(parameters: &RawParameters, provider: &dyn Context) -> Result<Op, Error> {
-    let mut op = Op::plain(parameters, InnerOp(fwd), InnerOp(inv), &GAMUT, provider)?;
+pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
+    let mut op = Op::plain(parameters, InnerOp(fwd), InnerOp(inv), &GAMUT, ctx)?;
     precompute(&mut op);
     Ok(op)
 }

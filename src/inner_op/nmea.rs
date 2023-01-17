@@ -67,8 +67,8 @@ pub const GAMUT: [OpParameter; 2] = [
     OpParameter::Flag { key: "dms" }
 ];
 
-pub fn new(parameters: &RawParameters, provider: &dyn Context) -> Result<Op, Error> {
-    Op::plain(parameters, InnerOp(fwd), InnerOp(inv), &GAMUT, provider)
+pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
+    Op::plain(parameters, InnerOp(fwd), InnerOp(inv), &GAMUT, ctx)
 }
 
 // ----- T E S T S ---------------------------------------------------------------------
@@ -79,19 +79,19 @@ mod tests {
 
     #[test]
     fn nmea() -> Result<(), Error> {
-        let provider = Minimal::default();
-        let op = Op::new("nmea", &provider)?;
+        let ctx = Minimal::default();
+        let op = Op::new("nmea", &ctx)?;
 
         let mut operands = [Coord::raw(5530.15, -1245.15, 0., 0.)];
 
         // Forward: nmea to internal
-        op.apply(&provider, &mut operands, Fwd)?;
+        op.apply(&ctx, &mut operands, Fwd)?;
         assert!((operands[0].first().to_degrees() - -12.7525).abs() < 1e-14);
         assert!((operands[0].second().to_degrees() - 55.5025).abs() < 1e-14);
         assert_eq!(operands[0].third(), 0.0);
 
         // Inverse + roundtrip: Internal to nmea
-        op.apply(&provider, &mut operands, Inv)?;
+        op.apply(&ctx, &mut operands, Inv)?;
         assert!((operands[0].first() - 5530.15).abs() < 1e-14);
         assert!((operands[0].second() - -1245.15).abs() < 1e-14);
         assert_eq!(operands[0].first(), 5530.15);
@@ -102,16 +102,16 @@ mod tests {
 
     #[test]
     fn nmea_dms() -> Result<(), Error> {
-        let provider = Minimal::default();
-        let op = Op::new("nmea dms", &provider)?;
+        let ctx = Minimal::default();
+        let op = Op::new("nmea dms", &ctx)?;
 
         let mut operands = [Coord::raw(553036., -124509., 0., 0.)];
         let geo = Coord::geo(55.51, -12.7525, 0., 0.);
 
-        op.apply(&provider, &mut operands, Fwd)?;
+        op.apply(&ctx, &mut operands, Fwd)?;
         assert!(operands[0].default_ellps_dist(&geo) < 1e-10);
 
-        op.apply(&provider, &mut operands, Inv)?;
+        op.apply(&ctx, &mut operands, Inv)?;
         assert!((operands[0][0] - 553036.).abs() < 1e-10);
         assert!((operands[0][1] + 124509.).abs() < 1e-10);
 

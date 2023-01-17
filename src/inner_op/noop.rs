@@ -20,8 +20,8 @@ fn inv(_op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Er
 pub const GAMUT: [OpParameter; 0] = [
 ];
 
-pub fn new(parameters: &RawParameters, provider: &dyn Context) -> Result<Op, Error> {
-    Op::plain(parameters, InnerOp(fwd), InnerOp(inv), &GAMUT, provider)
+pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
+    Op::plain(parameters, InnerOp(fwd), InnerOp(inv), &GAMUT, ctx)
 }
 
 // ----- T E S T S ------------------------------------------------------------------
@@ -33,18 +33,18 @@ mod tests {
 
     #[test]
     fn no_change() -> Result<(), Error> {
-        let provider = Minimal::default();
-        let op = Op::new("noop", &provider)?;
+        let ctx = Minimal::default();
+        let op = Op::new("noop", &ctx)?;
 
         // EPSG:1134 - 3 parameter, ED50/WGS84, s = sqrt(27) m
         let mut operands = [GDA94];
 
         // Forward
-        op.apply(&provider, &mut operands, Fwd)?;
+        op.apply(&ctx, &mut operands, Fwd)?;
         assert_eq!(operands[0], GDA94);
 
         // Inverse + roundtrip
-        op.apply(&provider, &mut operands, Inv)?;
+        op.apply(&ctx, &mut operands, Inv)?;
         assert_eq!(operands[0], GDA94);
         Ok(())
     }

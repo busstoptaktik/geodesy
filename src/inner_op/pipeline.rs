@@ -3,7 +3,7 @@ use std::collections::BTreeSet;
 
 // ----- F O R W A R D -----------------------------------------------------------------
 
-fn pipeline_fwd(op: &Op, provider: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+fn pipeline_fwd(op: &Op, ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
     let mut stack = Vec::new();
     let mut n = usize::MAX;
     for step in &op.steps {
@@ -13,7 +13,7 @@ fn pipeline_fwd(op: &Op, provider: &dyn Context, operands: &mut [Coord]) -> Resu
         let m = match step.params.name.as_str() {
             "push" => do_the_push(&mut stack, operands, &step.params.boolean),
             "pop" => do_the_pop(&mut stack, operands, &step.params.boolean),
-            _ => step.apply(provider, operands, Direction::Fwd)?,
+            _ => step.apply(ctx, operands, Direction::Fwd)?,
         };
         n = n.min(m);
     }
@@ -27,7 +27,7 @@ fn pipeline_fwd(op: &Op, provider: &dyn Context, operands: &mut [Coord]) -> Resu
 
 // ----- I N V E R S E -----------------------------------------------------------------
 
-fn pipeline_inv(op: &Op, provider: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+fn pipeline_inv(op: &Op, ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
     let mut stack = Vec::new();
     let mut n = usize::MAX;
     for step in op.steps.iter().rev() {
@@ -38,7 +38,7 @@ fn pipeline_inv(op: &Op, provider: &dyn Context, operands: &mut [Coord]) -> Resu
         let m = match step.params.name.as_str() {
             "push" => do_the_pop(&mut stack, operands, &step.params.boolean),
             "pop" => do_the_push(&mut stack, operands, &step.params.boolean),
-            _ => step.apply(provider, operands, Direction::Inv)?,
+            _ => step.apply(ctx, operands, Direction::Inv)?,
         };
         n = n.min(m);
     }
@@ -57,14 +57,14 @@ pub const GAMUT: [OpParameter; 1] = [
     OpParameter::Flag { key: "inv" },
 ];
 
-pub fn new(parameters: &RawParameters, provider: &dyn Context) -> Result<Op, Error> {
+pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
     let definition = &parameters.definition;
     let thesteps = split_into_steps(definition).0;
     let mut steps = Vec::new();
 
     for step in thesteps {
         let step_parameters = parameters.next(&step);
-        steps.push(Op::op(step_parameters, provider)?);
+        steps.push(Op::op(step_parameters, ctx)?);
     }
 
     let params = ParsedParameters::new(parameters, &GAMUT)?;

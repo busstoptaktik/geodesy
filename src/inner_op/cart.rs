@@ -93,13 +93,13 @@ pub const GAMUT: [OpParameter; 2] = [
     OpParameter::Text { key: "ellps", default: Some("GRS80") },
 ];
 
-pub fn new(parameters: &RawParameters, provider: &dyn Context) -> Result<Op, Error> {
+pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
     Op::plain(
         parameters,
         InnerOp(cart_fwd),
         InnerOp(cart_inv),
         &GAMUT,
-        provider,
+        ctx,
     )
 }
 
@@ -111,8 +111,8 @@ mod tests {
 
     #[test]
     fn roundtrip() -> Result<(), Error> {
-        let provider = Minimal::default();
-        let op = Op::new("cart", &provider)?;
+        let ctx = Minimal::default();
+        let op = Op::new("cart", &ctx)?;
 
         let geo = [
             Coord::geo(85., 0., 100000., 0.),
@@ -161,13 +161,13 @@ mod tests {
 
         // Forward
         let mut operands = geo.clone();
-        op.apply(&provider, &mut operands, Fwd)?;
+        op.apply(&ctx, &mut operands, Fwd)?;
         for i in 0..4 {
             assert!(operands[i].hypot3(&cart[i]) < 20e-9);
         }
 
         // Inverse
-        op.apply(&provider, &mut operands, Inv)?;
+        op.apply(&ctx, &mut operands, Inv)?;
         for i in 0..5 {
             assert!(operands[i].default_ellps_3d_dist(&geo[i]) < 10e-9);
         }

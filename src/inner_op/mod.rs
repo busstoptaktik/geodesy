@@ -98,7 +98,7 @@ impl Default for InnerOp {
 
 fn noop_placeholder(
     _params: &Op,
-    _provider: &dyn Context,
+    _ctx: &dyn Context,
     _operands: &mut [Coord],
 ) -> Result<usize, Error> {
     // Consider whether this should return an Err-value if used as a placeholder for a

@@ -129,7 +129,7 @@ pub const GAMUT: [OpParameter; 3] = [
     OpParameter::Text { key: "to", default: Some("enut") },
 ];
 
-pub fn new(parameters: &RawParameters, _provider: &dyn Context) -> Result<Op, Error> {
+pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> {
     let mut params = ParsedParameters::new(parameters, &GAMUT)?;
     let descriptor = OpDescriptor::new(&parameters.definition, InnerOp(fwd), Some(InnerOp(inv)));
     let steps = Vec::<Op>::new();

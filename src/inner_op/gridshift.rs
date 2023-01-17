@@ -77,15 +77,13 @@ pub const GAMUT: [OpParameter; 3] = [
     OpParameter::Real { key: "padding", default: Some(0.5) },
 ];
 
-pub fn new(parameters: &RawParameters, provider: &dyn Context) -> Result<Op, Error> {
+pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
     let def = &parameters.definition;
     let mut params = ParsedParameters::new(parameters, &GAMUT)?;
 
     let grid_file_name = params.text("grids")?;
-    let buf = provider.get_blob(&grid_file_name)?;
+    let buf = ctx.get_blob(&grid_file_name)?;
 
-    //let (header, grid) = gravsoft_grid_reader(&grid_file_name, provider)?;
-    //let grid = Grid::plain(&header, Some(&grid), None)?;
     let grid = Grid::gravsoft(&buf)?;
     params.grids.insert("grid", grid);
 

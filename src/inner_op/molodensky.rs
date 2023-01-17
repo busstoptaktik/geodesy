@@ -94,7 +94,7 @@ pub const GAMUT: [OpParameter; 10] = [
     OpParameter::Text { key: "ellps_1",  default: Some("GRS80") },
 ];
 
-pub fn new(parameters: &RawParameters, _provider: &dyn Context) -> Result<Op, Error> {
+pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> {
     let def = &parameters.definition;
     let mut params = ParsedParameters::new(parameters, &GAMUT)?;
 

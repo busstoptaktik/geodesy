@@ -162,7 +162,7 @@ pub const GAMUT: [OpParameter; 19] = [
     OpParameter::Real { key: "t_obs", default: Some(std::f64::NAN) },
 ];
 
-pub fn new(parameters: &RawParameters, _provider: &dyn Context) -> Result<Op, Error> {
+pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> {
     let def = &parameters.definition;
     let mut params = ParsedParameters::new(parameters, &GAMUT)?;
 
@@ -340,18 +340,18 @@ mod tests {
 
     #[test]
     fn translation() -> Result<(), Error> {
-        let provider = Minimal::default();
-        let op = Op::new("helmert x=-87 y=-96 z=-120", &provider)?;
+        let ctx = Minimal::default();
+        let op = Op::new("helmert x=-87 y=-96 z=-120", &ctx)?;
 
         // EPSG:1134 - 3 parameter, ED50/WGS84, s = sqrt(27) m
         let mut operands = [Coord::origin()];
 
-        op.apply(&provider, &mut operands, Direction::Fwd)?;
+        op.apply(&ctx, &mut operands, Direction::Fwd)?;
         assert_eq!(operands[0].first(), -87.);
         assert_eq!(operands[0].second(), -96.);
         assert_eq!(operands[0].third(), -120.);
 
-        op.apply(&provider, &mut operands, Direction::Inv)?;
+        op.apply(&ctx, &mut operands, Direction::Inv)?;
         assert_eq!(operands[0].first(), 0.);
         assert_eq!(operands[0].second(), 0.);
         assert_eq!(operands[0].third(), 0.);
@@ -364,7 +364,7 @@ mod tests {
     // Transformation from GDA94 to GDA2020.
     #[test]
     fn translation_rotation_and_scale() -> Result<(), Error> {
-        let provider = Minimal::default();
+        let ctx = Minimal::default();
         let definition = "
             helmert convention = coordinate_frame
             x =  0.06155  rx = -0.0394924
@@ -372,15 +372,15 @@ mod tests {
             z = -0.04019  rz = -0.0328979
             s = -0.009994 exact
         ";
-        let op = Op::new(definition, &provider)?;
+        let op = Op::new(definition, &ctx)?;
 
         // The forward transformation should hit closer than 75 um
         let mut operands = [GDA94];
-        op.apply(&provider, &mut operands, Direction::Fwd)?;
+        op.apply(&ctx, &mut operands, Direction::Fwd)?;
         assert!(GDA2020A.hypot3(&operands[0]) < 75e-6);
 
         // ... and an even better roundtrip
-        op.apply(&provider, &mut operands, Direction::Inv)?;
+        op.apply(&ctx, &mut operands, Direction::Inv)?;
         assert!(GDA94.hypot3(&operands[0]) < 75e-7);
 
         Ok(())
@@ -390,21 +390,21 @@ mod tests {
     // Test point ALIC (Alice Springs)
     #[test]
     fn dynamic() -> Result<(), Error> {
-        let provider = Minimal::default();
+        let ctx = Minimal::default();
         let definition = "
             helmert  exact    convention = coordinate_frame
             drx = 0.00150379  dry = 0.00118346  drz = 0.00120716
             t_epoch = 2020.0
         ";
-        let op = Op::new(definition, &provider)?;
+        let op = Op::new(definition, &ctx)?;
 
         // The forward transformation should hit closeer than 40 um
         let mut operands = [ITRF2014];
-        op.apply(&provider, &mut operands, Direction::Fwd)?;
+        op.apply(&ctx, &mut operands, Direction::Fwd)?;
         assert!(GDA2020B.hypot3(&operands[0]) < 40e-6);
 
         // ... and even closer on the way back
-        op.apply(&provider, &mut operands, Direction::Inv)?;
+        op.apply(&ctx, &mut operands, Direction::Inv)?;
         assert!(ITRF2014.hypot3(&operands[0]) < 40e-8);
 
         Ok(())
@@ -413,7 +413,7 @@ mod tests {
     // Same as above, but with fixed time `t_obs` option
     #[test]
     fn fixed_dynamic() -> Result<(), Error> {
-        let provider = Minimal::default();
+        let ctx = Minimal::default();
         let definition = "
             helmert  exact    convention = coordinate_frame
             drx = 0.00150379  dry = 0.00118346  drz = 0.00120716
@@ -422,10 +422,10 @@ mod tests {
         let mut operands = [ITRF2014];
         operands[0][3] = 2030.;
 
-        let op = Op::new(definition, &provider)?;
-        op.apply(&provider, &mut operands, Direction::Fwd)?;
+        let op = Op::new(definition, &ctx)?;
+        op.apply(&ctx, &mut operands, Direction::Fwd)?;
         assert!(GDA2020B.hypot3(&operands[0]) < 40e-6);
-        op.apply(&provider, &mut operands, Direction::Inv)?;
+        op.apply(&ctx, &mut operands, Direction::Inv)?;
         assert!(ITRF2014.hypot3(&operands[0]) < 40e-8);
 
         Ok(())
