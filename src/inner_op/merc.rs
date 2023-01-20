@@ -19,7 +19,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Err
 
         // Latitude
         let lat = coord[1] + lat_0;
-        coord[1] = a * k_0 * ellps.isometric_latitude(lat, Fwd) - y_0;
+        coord[1] = a * k_0 * ellps.latitude_geographic_to_isometric(lat) - y_0;
 
         successes += 1;
     }
@@ -47,7 +47,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Err
         // Northing -> Latitude
         let y = coord[1] + y_0;
         let psi = y / (a * k_0);
-        coord[1] = ellps.isometric_latitude(psi, Inv) - lat_0;
+        coord[1] = ellps.latitude_isometric_to_geographic(psi) - lat_0;
         successes += 1;
     }
 

@@ -15,31 +15,38 @@ impl Ellipsoid {
     /// Geocentric latitude, 𝜃 to geographic latitude, 𝜙.
     /// See also [latitude_geographic_to_geocentric](Ellipsoid::latitude_geographic_to_geocentric)
     #[must_use]
-    pub fn latitude_geocentric_to_geographic(&self, latitude: f64) -> f64 {
-        (latitude.tan() / (1.0 - self.eccentricity_squared())).atan()
+    pub fn latitude_geocentric_to_geographic(&self, geocentric: f64) -> f64 {
+        (geocentric.tan() / (1.0 - self.eccentricity_squared())).atan()
     }
 
-    /// Geographic latitude to reduced latitude, 𝛽
+    /// Geographic latitude, 𝜙 to reduced latitude, 𝛽.
+    /// See also [latitude_reduced_to_geographic](Ellipsoid::latitude_reduced_to_geographic)
     #[must_use]
-    pub fn latitude_geographic_to_reduced(&self, latitude: f64) -> f64 {
-        latitude.tan().atan2(1. / (1. - self.f))
+    pub fn latitude_geographic_to_reduced(&self, geographic: f64) -> f64 {
+        geographic.tan().atan2(1. / (1. - self.f))
     }
 
-    /// Geographic latitude to reduced latitude, 𝛽
+    /// Reduced latitude, 𝛽 to geographic latitude, 𝜙
+    /// See also [latitude_geographic_to_reduced](Ellipsoid::latitude_geographic_to_reduced)
     #[must_use]
-    pub fn latitude_reduced_to_geographic(&self, latitude: f64) -> f64 {
-        latitude.tan().atan2(1. - self.f)
+    pub fn latitude_reduced_to_geographic(&self, reduced: f64) -> f64 {
+        reduced.tan().atan2(1. - self.f)
     }
 
-    /// Geographic latitude to Isometric latitude, 𝜓
-    /// (or vice versa if `forward` is  `false`).
+    /// Geographic latitude, 𝜙 to Isometric latitude, 𝜓.
+    /// See also [latitude_isometric_to_geographic](Ellipsoid::latitude_isometric_to_geographic)
     #[must_use]
-    pub fn isometric_latitude(&self, latitude: f64, direction: Direction) -> f64 {
+    pub fn latitude_geographic_to_isometric(&self, geographic: f64) -> f64 {
         let e = self.eccentricity();
-        if direction == Direction::Fwd {
-            return inverse_gudermannian(latitude) - (e * latitude.sin()).atanh() * e;
-        }
-        sinhpsi_to_tanphi(latitude.sinh(), e).atan()
+        inverse_gudermannian(geographic) - (e * geographic.sin()).atanh() * e
+    }
+
+    /// Isometric latitude, 𝜓 to geographic latitude, 𝜙.
+    /// See also [latitude_geographic_to_isometric](Ellipsoid::latitude_geographic_to_isometric)
+    #[must_use]
+    pub fn latitude_isometric_to_geographic(&self, isometric: f64) -> f64 {
+        let e = self.eccentricity();
+        sinhpsi_to_tanphi(isometric.sinh(), e).atan()
     }
 
     // --- Auxiliary latitudes ---
@@ -149,8 +156,9 @@ mod tests {
         let ellps = Ellipsoid::named("GRS80")?;
         let angle = 45_f64.to_radians();
         let isometric = 50.227465815385806f64.to_radians();
-        assert!((ellps.isometric_latitude(angle, Fwd) - isometric).abs() < 1e-15);
-        assert!((ellps.isometric_latitude(isometric, Inv) - angle).abs() < 1e-15);
+        assert!((ellps.latitude_geographic_to_isometric(angle) - isometric).abs() < 1e-15);
+        assert!((ellps.latitude_isometric_to_geographic(isometric) - angle).abs() < 1e-15);
+        assert!((ellps.latitude_isometric_to_geographic(-isometric) + angle).abs() < 1e-15);
         Ok(())
     }
 
