@@ -32,7 +32,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Err
                 continue;
             }
         } else {
-            rho = c * crate::math::pj_tsfn(phi.sin_cos(), e).powf(n);
+            rho = c * crate::math::ts(phi.sin_cos(), e).powf(n);
         }
         let sc = (lam * n).sin_cos();
         coord[0] = a * k_0 * rho * sc.0 + x_0;
@@ -154,7 +154,7 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     let m1 = crate::math::pj_msfn(sc, es);
 
     // Snyder (1982) eq. 7-10: exp(-𝜓)
-    let ml1 = crate::math::pj_tsfn(sc, e);
+    let ml1 = crate::math::ts(sc, e);
 
     // Secant case?
     if (phi1 - phi2).abs() >= EPS10 {
@@ -163,7 +163,7 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
         if n == 0. {
             return Err(Error::General("Lcc: Invalid value for eccentricity"));
         }
-        let ml2 = crate::math::pj_tsfn(sc, e);
+        let ml2 = crate::math::ts(sc, e);
         let denom = (ml1 / ml2).ln();
         if denom == 0. {
             return Err(Error::General("Lcc: Invalid value for eccentricity"));
@@ -174,7 +174,7 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     let c = m1 * ml1.powf(-n) / n;
     let mut rho0 = 0.;
     if (lat_0.abs() - FRAC_PI_2).abs() > EPS10 {
-        rho0 = c * crate::math::pj_tsfn(lat_0.sin_cos(), e).powf(n);
+        rho0 = c * crate::math::ts(lat_0.sin_cos(), e).powf(n);
     }
 
     params.real.insert("c", c);

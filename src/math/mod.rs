@@ -212,9 +212,9 @@ pub fn normalize_angle_positive(angle: f64) -> f64 {
     angle
 }
 
-// pj_tsfn is the equivalent of Charles Karney's PROJ function of the
-// same name, which determines the function ts(phi) as defined in
-// Snyder (1987), Eq. (7-10)
+// ts is the equivalent of Charles Karney's PROJ function `pj_tsfn`.
+// It determines the function ts(phi) as defined in Snyder (1987),
+// Eq. (7-10)
 //
 // ts is the exponential of the negated isometric latitude, i.e.
 // exp(-𝜓), but evaluated in a numerically more stable way than
@@ -224,22 +224,28 @@ pub fn normalize_angle_positive(angle: f64) -> f64 {
 // version, including the majority of the comments.
 //
 // Inputs:
-//   (sin phi, cos phi) = trigs of geographic latitude
-//   e = eccentricity of the ellipsoid
+//   (sin 𝜙, cos 𝜙): trigs of geographic latitude
+//   e: eccentricity of the ellipsoid
 // Output:
-//   ts = exp(-psi) where psi is the isometric latitude (dimensionless)
-//      = 1 / (tan(chi) + sec(chi))
-// Here isometric latitude is defined by
-//   psi = log( tan(pi/4 + phi/2) *
-//              ( (1 - e*sin(phi)) / (1 + e*sin(phi)) )^(e/2) )
-//       = asinh(tan(phi)) - e * atanh(e * sin(phi))
-//       = asinh(tan(chi))
-//   chi = conformal latitude
-pub(crate) fn pj_tsfn(sincos: (f64, f64), e: f64) -> f64 {
-    // exp(-asinh(tan(phi)))
-    //    = 1 / (tan(phi) + sec(phi))
-    //    = cos(phi) / (1 + sin(phi))  good for phi > 0
-    //    = (1 - sin(phi)) / cos(phi)  good for phi < 0
+//   ts: exp(-𝜓)  =  1 / (tan 𝜒 + sec 𝜒)
+//   where 𝜓 is the isometric latitude (dimensionless)
+//   and 𝜒 is the conformal latitude (radians)
+//
+// Here the isometric latitude is defined by
+//   𝜓 = log(
+//           tan(𝜋/4 + 𝜙/2) *
+//           ( (1 - e × sin 𝜙) / (1 + e × sin 𝜙) ) ^ (e/2)
+//       )
+//     = asinh(tan 𝜙) - e × atanh(e × sin 𝜙)
+//     = asinh(tan 𝜒)
+//
+// where 𝜒 is the conformal latitude
+//
+pub(crate) fn ts(sincos: (f64, f64), e: f64) -> f64 {
+    // exp(-asinh(tan 𝜙))
+    //    = 1 / (tan 𝜙 + sec 𝜙)
+    //    = cos 𝜙 / (1 + sin 𝜙)  good for 𝜙 > 0
+    //    = (1 - sin 𝜙) / cos 𝜙  good for 𝜙 < 0
     let factor = if sincos.0 > 0. {
         sincos.1 / (1. + sincos.0)
     } else {
