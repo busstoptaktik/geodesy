@@ -106,12 +106,12 @@ impl Op {
         }
         // A user defined macro?
         else if let Ok(macro_definition) = ctx.get_resource(&name) {
-            // The " " sentinel simplifies search for "inv", by allowing us to search
-            // for " inv " instead, avoiding matching words *containing* inv (such as
-            // INVariant, subINVolution, and a few other pathological cases)
-            let def = parameters.definition.clone() + " ";
-            let inverted = def.contains(" inv ");
-            let mut next_param = parameters.next(&parameters.definition);
+            // search for whitespace-delimited "inv" in order to avoid matching
+            // tokens *containing* inv (INVariant, subINVolution, and a few other
+            // pathological cases)
+            let def = &parameters.definition;
+            let inverted = def.contains(" inv ") || def.ends_with(" inv");
+            let mut next_param = parameters.next(def);
             next_param.definition = macro_definition;
             return Op::op(next_param, ctx)?.handle_inversion(inverted);
         }
@@ -121,7 +121,7 @@ impl Op {
             return constructor.0(&parameters, ctx)?.handle_op_inversion();
         }
 
-        Err(super::Error::NotFound(
+        Err(Error::NotFound(
             name,
             ": ".to_string() + &parameters.definition,
         ))
@@ -228,11 +228,13 @@ mod tests {
         assert_eq!(data[1][0], 59.);
 
         // Also for an inverted operator: check forward and inverse operation
-        let op = ctx.op("addone inv")?;
+        let op = ctx.op("addone inv ")?;
         let mut data = some_basic_coordinates();
         ctx.apply(op, Fwd, &mut data)?;
         assert_eq!(data[0][0], 54.);
         assert_eq!(data[1][0], 58.);
+        // Corner case: " inv " vs. "inv"
+        let op = ctx.op("addone inv")?;
         ctx.apply(op, Inv, &mut data)?;
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
