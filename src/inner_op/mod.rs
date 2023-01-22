@@ -11,6 +11,7 @@ mod btmerc;
 mod cart;
 mod gridshift;
 mod helmert;
+mod laea;
 mod latitude;
 mod lcc;
 mod merc;
@@ -22,7 +23,7 @@ mod proj;
 mod tmerc;
 
 #[rustfmt::skip]
-const BUILTIN_OPERATORS: [(&str, OpConstructor); 19] = [
+const BUILTIN_OPERATORS: [(&str, OpConstructor); 20] = [
     ("adapt",      OpConstructor(adapt::new)),
     ("addone",     OpConstructor(addone::new)),
     ("btmerc",     OpConstructor(btmerc::new)),
@@ -30,6 +31,7 @@ const BUILTIN_OPERATORS: [(&str, OpConstructor); 19] = [
     ("cart",       OpConstructor(cart::new)),
     ("gridshift",  OpConstructor(gridshift::new)),
     ("helmert",    OpConstructor(helmert::new)),
+    ("laea",       OpConstructor(laea::new)),
     ("latitude",   OpConstructor(latitude::new)),
     ("lcc",        OpConstructor(lcc::new)),
     ("merc",       OpConstructor(merc::new)),
