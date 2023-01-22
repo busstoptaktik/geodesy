@@ -264,6 +264,22 @@ pub(crate) fn pj_phi2(ts0: f64, e: f64) -> f64 {
     sinhpsi_to_tanphi((1. / ts0 - ts0) / 2., e).atan()
 }
 
+// Snyder (1982) eq. ??, PROJ's pj_qsfn()
+pub(crate) fn qs(sinphi: f64, e: f64) -> f64 {
+    let es = e * e;
+    let one_es = 1.0 - es;
+
+    if e < 1e-7 {
+        return 2.0 * sinphi;
+    }
+
+    let con = e * sinphi;
+    let div1 = 1.0 - con * con;
+    let div2 = 1.0 + con;
+
+    one_es * (sinphi / div1 - (0.5 / e) * ((1. - con) / div2).ln())
+}
+
 // Ancillary function for computing the inverse isometric latitude. Follows
 // [Karney, 2011](crate::Bibliography::Kar11), and the PROJ implementation
 // in proj/src/phi2.cpp.
