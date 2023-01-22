@@ -103,6 +103,31 @@ pub(super) const CONFORMAL: PolynomialCoefficients = PolynomialCoefficients {
     ]
 };
 
+#[rustfmt::skip]
+pub(super) const AUTHALIC: PolynomialCoefficients = PolynomialCoefficients {
+    // Geodetic to authalic: Coefficients for converting 𝜙 to 𝜉.
+    // Eq. A19 in [Karney (2022)](crate::bibliography::Kar22)
+    fwd: [
+        [-4./3.,  -4./45.,  88./315.,  538./4725.,  20824./467775.,  -44732./2837835.],
+        [0.,  34./45.,  8./105.,  -2482./14175.,  -37192./467775.,  -12467764./212837625.],
+        [0.,  0.,  -1532./2835.,  -898./14175.,  54968./467775.,  100320856./1915538625.],
+        [0.,  0.,  0.,  6007./14175.,  24496./467775.,  -5884124./70945875.],
+        [0.,  0.,  0.,  0.,  -23356./66825.,  -839792./19348875.],
+        [0., 0., 0., 0., 0., 570284222./1915538625.]
+    ],
+
+    // Authalic to geodetic: Coefficients for converting 𝜉 to 𝜙.
+    // Eq. A20 in [Karney (2022)](crate::bibliography::Kar22)
+    inv: [
+        [4./3.,  4./45.,  -16./35.,  -2582./14175.,  60136./467775.,  28112932./212837625.],
+        [0.,  46./45.,  152./945.,  -11966./14175.,  -21016./51975.,  251310128./638512875.],
+        [0.,  0.,  3044./2835.,  3802./14175.,  -94388./66825.,  -8797648./10945935.],
+        [0.,  0.,  0.,  6059./4725.,  41072./93555.,  -1472637812./638512875.],
+        [0.,  0.,  0.,  0.,  768272./467775.,  455935736./638512875.],
+        [0., 0., 0., 0., 0., 4210684958./1915538625.]
+    ]
+};
+
 /// Coefficients for expansion of the normalized meridian arc unit in terms
 /// of *n²*, the square of the third flattening.
 /// See [Karney 2010](crate::Bibliography::Kar10) eq. (29)
