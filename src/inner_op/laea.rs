@@ -1,5 +1,5 @@
 //! Lambert azimuthal equal area: EPSG coordinate operation method 9820, implemented
-//! following the IOGP Geomatics Guidance Note Number 7, part 2, pp.78--80
+//! following [IOGP, 2019](crate::Bibliography::Iogp19), pp. 78-80
 use super::*;
 use std::f64::consts::FRAC_PI_2;
 const EPS10: f64 = 1e-10;
@@ -9,20 +9,46 @@ const EPS10: f64 = 1e-10;
 // ----- F O R W A R D -----------------------------------------------------------------
 
 fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+    // Oblique aspect: [IOGP, 2019](crate::Bibliography::Iogp19), pp. 78-80
     let Ok(xi_0) = op.params.real("xi_0") else { return Ok(0) };
     let Ok(qp)   = op.params.real("qp")   else { return Ok(0) };
     let Ok(rq)   = op.params.real("rq")   else { return Ok(0) };
     let Ok(d)    = op.params.real("d")    else { return Ok(0) };
+
+    let oblique = op.params.boolean("oblique");
+    let north_polar = op.params.boolean("north_polar");
+    let south_polar = op.params.boolean("south_polar");
 
     let lon_0 = op.params.lon(0);
     let x_0 = op.params.x(0);
     let y_0 = op.params.y(0);
     let ellps = op.params.ellps(0);
     let e = ellps.eccentricity();
+    let a = ellps.semimajor_axis();
 
     let (sin_xi_0, cos_xi_0) = xi_0.sin_cos();
 
     let mut successes = 0_usize;
+
+    // The polar aspects are fairly simple
+    if north_polar || south_polar {
+        for coord in operands {
+            let sign = if north_polar { -1.0 } else { 1.0 };
+
+            let lat = coord[1];
+            let lon = coord[0];
+            let (sin_lon, cos_lon) = (lon - lon_0).sin_cos();
+
+            let q = qs(lat.sin(), e);
+            let rho = a * (qp + sign * q).sqrt();
+
+            coord[0] = x_0 + rho * sin_lon;
+            coord[1] = y_0 + sign * rho * cos_lon;
+            successes += 1;
+        }
+        return Ok(successes);
+    }
+
     for coord in operands {
         let lon = coord[0];
         let lat = coord[1];
@@ -32,8 +58,12 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Err
         let xi = (qs(lat.sin(), e) / qp).asin();
 
         let (sin_xi, cos_xi) = xi.sin_cos();
-        let factor = 1.0 + sin_xi_0 * sin_xi + (cos_xi_0 * cos_xi * cos_lon);
-        let b = rq * (2.0 / factor).sqrt();
+        let b = if oblique {
+            let factor = 1.0 + sin_xi_0 * sin_xi + (cos_xi_0 * cos_xi * cos_lon);
+            rq * (2.0 / factor).sqrt()
+        } else {
+            1.0
+        };
 
         // Easting
         coord[0] = x_0 + (b * d) * (cos_xi * sin_lon);
@@ -50,8 +80,79 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Err
 // ----- I N V E R S E -----------------------------------------------------------------
 
 fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+    // Oblique aspect: [IOGP, 2019](crate::Bibliography::Iogp19), pp. 78-80
+    let Ok(xi_0) = op.params.real("xi_0") else { return Ok(0) };
+    let Ok(rq)   = op.params.real("rq")   else { return Ok(0) };
+    let Ok(d)    = op.params.real("d")    else { return Ok(0) };
+    let Ok(authalic)  = op.params.fourier_coefficients("authalic") else { return Ok(0) };
+
+    let north_polar = op.params.boolean("north_polar");
+    let south_polar = op.params.boolean("south_polar");
+
+    let lon_0 = op.params.lon(0);
+    let lat_0 = op.params.lat(0);
+    let x_0 = op.params.x(0);
+    let y_0 = op.params.y(0);
+
+    let ellps = op.params.ellps(0);
+    let a = ellps.semimajor_axis();
+    let es = ellps.eccentricity_squared();
+    let e = es.sqrt();
+
+    let (sin_xi_0, cos_xi_0) = xi_0.sin_cos();
+
     let mut successes = 0_usize;
-    for _coord in operands {
+
+    // The polar aspects are not as simple as in the forward case
+    if north_polar || south_polar {
+        for coord in operands {
+            let sign = if north_polar { -1.0 } else { 1.0 };
+
+            let x = coord[0];
+            let y = coord[1];
+            let rho = (x - x_0).hypot(y - y_0);
+
+            // The authalic latitude is a bit convoluted
+            let denom = a*a * (1.0 - ((1.0 - es) / (2.0*e)) * ((1.0 - e)/(1.0 + e)).ln());
+            let xi = (-sign) * (1.0 - rho*rho / denom);
+
+            coord[0] = lon_0 + (x - x_0).atan2(sign * (y - y_0));
+            coord[1] = ellps.latitude_authalic_to_geographic(xi, &authalic);
+            successes += 1;
+        }
+        return Ok(successes);
+    }
+    
+
+    for coord in operands {
+        let x = coord[0];
+        let y = coord[1];
+        let rho = ((x - x_0) / d).hypot(d * (y - y_0));
+        // A bit of reality hardening ported from the PROJ implementation
+        if rho < EPS10 {
+            coord[0] = 0.0;
+            coord[1] = lat_0;
+            successes += 1;
+            continue;
+        }
+
+        // Another case of PROJ reality hardening
+        let asin_argument = 0.5 * rho / rq;
+        if asin_argument.abs() > 1.0 {
+            warn!("LAEA: ({}, {}) outside domain", x, y);
+            continue;
+        }
+
+        let c = 2.0 * asin_argument.asin();
+        let (sin_c, cos_c) = c.sin_cos();
+        // The authalic latitude, 𝜉
+        let xi = (cos_c * sin_xi_0 + (d * (y - y_0) * sin_c * cos_xi_0) / rho).asin();
+        coord[1] = ellps.latitude_authalic_to_geographic(xi, &authalic);
+
+        let num = (x - x_0) * sin_c;
+        let denom = d * rho * cos_xi_0 * cos_c - d * d * (y - y_0) * sin_xi_0 * sin_c;
+        coord[0] = num.atan2(denom) + lon_0;
+
         successes += 1;
     }
 
@@ -61,14 +162,13 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Err
 // ----- C O N S T R U C T O R ---------------------------------------------------------
 
 #[rustfmt::skip]
-pub const GAMUT: [OpParameter; 7] = [
+pub const GAMUT: [OpParameter; 6] = [
     OpParameter::Flag { key: "inv" },
     OpParameter::Text { key: "ellps", default: Some("GRS80") },
 
     OpParameter::Real { key: "lat_0", default: Some(0_f64) },
     OpParameter::Real { key: "lon_0", default: Some(0_f64) },
 
-    OpParameter::Real { key: "k_0",   default: Some(1_f64) },
     OpParameter::Real { key: "x_0",   default: Some(0_f64) },
     OpParameter::Real { key: "y_0",   default: Some(0_f64) },
 ];
@@ -102,8 +202,9 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
 
     // --- Precompute some latitude invariant factors ---
 
-    let a = params.ellps[0].semimajor_axis();
-    let es = params.ellps[0].eccentricity_squared();
+    let ellps = params.ellps[0];
+    let a = ellps.semimajor_axis();
+    let es = ellps.eccentricity_squared();
     let e = es.sqrt();
     let (sin_phi_0, cos_phi_0) = lat_0.sin_cos();
 
@@ -116,7 +217,13 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     // Rq in the IOGP text
     let rq = a * (0.5 * qp).sqrt();
     // D in the IOGP text
-    let d = a * (cos_phi_0 / (1.0 - es * sin_phi_0 * sin_phi_0).sqrt()) / (rq * xi_0.cos());
+    let d = if oblique {
+        a * (cos_phi_0 / (1.0 - es * sin_phi_0 * sin_phi_0).sqrt()) / (rq * xi_0.cos())
+    } else if equatoreal {
+        rq.recip()
+    } else {
+        a
+    };
 
     params.real.insert("xi_0", xi_0);
     params.real.insert("q0", q0);
@@ -124,36 +231,9 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     params.real.insert("rq", rq);
     params.real.insert("d", d);
 
-    /*
-    PROJ snippet:
-    Q->mmf = .5 / (1. - P->es);
-    Q->apa = pj_authset(P->es);
-    if (nullptr==Q->apa)
-        return destructor(P, PROJ_ERR_OTHER /*ENOMEM*/);
-    switch (Q->mode) {
-    case N_POLE:
-    case S_POLE:
-        Q->dd = 1.;
-        break;
-    case EQUIT:
-        Q->dd = 1. / (Q->rq = sqrt(.5 * Q->qp));
-        Q->xmf = 1.;
-        Q->ymf = .5 * Q->qp;
-        break;
-    case OBLIQ:
-        Q->rq = sqrt(.5 * Q->qp);
-        sinphi = sin(P->phi0);
-        Q->sinb1 = pj_qsfn(sinphi, P->e, P->one_es) / Q->qp;
-        Q->cosb1 = sqrt(1. - Q->sinb1 * Q->sinb1);
-        Q->dd = cos(P->phi0) / (sqrt(1. - P->es * sinphi * sinphi) *
-           Q->rq * Q->cosb1);
-        Q->ymf = (Q->xmf = Q->rq) / Q->dd;
-        Q->xmf *= Q->dd;
-        break;
-    }
-    P->inv = laea_e_inverse;
-    P->fwd = laea_e_forward;
-    */
+    let authalic = ellps.coefficients_for_authalic_latitude_computations();
+    params.fourier_coefficients.insert("authalic", authalic);
+
     let descriptor = OpDescriptor::new(def, InnerOp(fwd), Some(InnerOp(inv)));
     let steps = Vec::<Op>::new();
     let id = OpHandle::new();
@@ -176,23 +256,24 @@ mod tests {
     #[test]
     fn laea_oblique() -> Result<(), Error> {
         let mut ctx = Minimal::default();
+
+        // ETRS-LAEA grid definition
         let op = ctx.op("laea ellps=GRS80 lat_0=52 lon_0=10  x_0=4321000 y_0=3210000")?;
 
-        let mut operands = [Coord::origin(), Coord::geo(50.0, 5.0, 0.0, 0.0)];
+        // The test point from IOGP
+        let p = Coord::geo(50.0, 5.0, 0.0, 0.0);
+        let mut operands = [p];
 
         // Forward
         ctx.apply(op, Fwd, &mut operands)?;
-        println!("{:#?}", operands);
-        assert!(1 == 2);
+        assert!((operands[0][0] - 3962799.45).abs() < 0.01);
+        assert!((operands[0][1] - 2999718.85).abs() < 0.01);
+        ctx.apply(op, Inv, &mut operands)?;
+        assert!((operands[0][0].to_degrees() - 5.0).abs() < 1e-12);
+        assert!((operands[0][1].to_degrees() - 50.).abs() < 1e-12);
 
-        // assert_eq!(operands[0].first(), -87.);
-        // assert_eq!(operands[0].second(), -96.);
-        // assert_eq!(operands[0].third(), -120.);
-        // // Inverse + roundtrip
-        // ctx.apply(op, Inv, &mut operands)?;
-        // assert_eq!(operands[0].first(), 0.);
-        // assert_eq!(operands[0].second(), 0.);
-        // assert_eq!(operands[0].third(), 0.);
+        // Missing test points for the poar aspects
+        
         Ok(())
     }
 }

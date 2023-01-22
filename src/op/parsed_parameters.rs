@@ -77,6 +77,12 @@ impl ParsedParameters {
         }
         Err(Error::MissingParam(key.to_string()))
     }
+    pub fn fourier_coefficients(&self, key: &str) -> Result<FourierCoefficients, Error> {
+        if let Some(value) = self.fourier_coefficients.get(key) {
+            return Ok(*value);
+        }
+        Err(Error::MissingParam(key.to_string()))
+    }
     pub fn ignored(&self) -> Vec<String> {
         self.ignored.clone()
     }
