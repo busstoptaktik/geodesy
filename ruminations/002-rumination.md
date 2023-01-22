@@ -281,7 +281,7 @@ The RG implementation closely follows the IOGP (2019) exposition, but utilizes t
 |----------|-------------|
 | `inv` | Inverse operation: auxiliary to geographic |
 | `ellps=name` | Use ellipsoid `name` for the conversion |
-| `authalic` | Currently ignored |
+| `authalic` | Convert to authalic latitude |
 | `conformal` | Convert to conformal latitude |
 | `geocentric` | Convert to geocentric latitude |
 | `parametric` | Convert to parametric latitude |

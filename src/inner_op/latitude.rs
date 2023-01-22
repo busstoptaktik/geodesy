@@ -36,12 +36,14 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Err
             successes += 1;
         }
     } else if op.params.boolean("authalic") {
-        let Some(_coefficients) = op.params.fourier_coefficients.get("coefficients") else {
+        let Some(coefficients) = op.params.fourier_coefficients.get("coefficients") else {
             return Ok(0);
         };
 
-        // Not yet implemented in Ellipsoid::Latitudes
-        return Ok(0);
+        for coord in operands {
+            coord[1] = ellps.latitude_geographic_to_authalic(coord[1], coefficients);
+            successes += 1;
+        }
     }
 
     Ok(successes)
@@ -82,12 +84,14 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Err
             successes += 1;
         }
     } else if op.params.boolean("authalic") {
-        let Some(_coefficients) = op.params.fourier_coefficients.get("coefficients") else {
+        let Some(coefficients) = op.params.fourier_coefficients.get("coefficients") else {
             return Ok(0);
         };
 
-        // Not yet implemented in Ellipsoid::Latitudes
-        return Ok(0);
+        for coord in operands {
+            coord[1] = ellps.latitude_authalic_to_geographic(coord[1], coefficients);
+            successes += 1;
+        }
     }
 
     Ok(successes)
@@ -126,12 +130,9 @@ pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
         number_of_flags += 1;
     }
     if op.params.boolean("authalic") {
-        return Err(Error::General(
-            "latitude: Authalic latitude not implemented yet",
-        ));
-        // let coefficients = ellps.coefficients_for_authalic_latitude_computations();
-        // op.params.fourier_coefficients.insert("coefficients", coefficients);
-        // number_of_flags += 1;
+        let coefficients = ellps.coefficients_for_authalic_latitude_computations();
+        op.params.fourier_coefficients.insert("coefficients", coefficients);
+        number_of_flags += 1;
     }
     if op.params.boolean("rectifying") {
         let coefficients = ellps.coefficients_for_rectifying_latitude_computations();
@@ -188,6 +189,15 @@ mod tests {
         assert!((operands[0][1].to_degrees() - 54.772_351_809_646_84).abs() < 1e-12);
         ctx.apply(op, Inv, &mut operands)?;
         assert!((operands[0][1].to_degrees() - 55.).abs() < 1e-12);
+
+        // Authalic
+        let op = ctx.op("latitude authalic ellps=GRS80")?;
+        let mut operands = [Coord::geo(55., 12., 0., 0.)];
+        ctx.apply(op, Fwd, &mut operands)?;
+        assert!((operands[0][1].to_degrees() - 54.879_361_594_517_796).abs() < 1e-12);
+        ctx.apply(op, Inv, &mut operands)?;
+        assert!((operands[0][1].to_degrees() - 55.).abs() < 1e-12);
+
 
         Ok(())
     }
