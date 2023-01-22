@@ -25,7 +25,7 @@ $ echo 553036. -124509 | kp "dms:in | geo:out"
 - [`dms`](#operator-nmea-dm-nmeass-and-dms): DDMMSS.sss encoding, sub-entry under `nmea`
 - [`gridshift`](#operator-gridshift): NADCON style datum shifts in 1, 2, and 3 dimensions
 - [`helmert`](#operator-helmert): The Helmert (similarity) transformation
-- [`laea`](#operator-lcc): The Lambert Authalic Equal Area projection
+- [`laea`](#operator-laea): The Lambert Authalic Equal Area projection
 - [`latitude`](#operator-latitude): Auxiliary latitudes
 - [`lcc`](#operator-lcc): The Lambert Conformal Conic projection
 - [`merc`](#operator-merc): The Mercator projection
