@@ -25,6 +25,7 @@ $ echo 553036. -124509 | kp "dms:in | geo:out"
 - [`dms`](#operator-nmea-dm-nmeass-and-dms): DDMMSS.sss encoding, sub-entry under `nmea`
 - [`gridshift`](#operator-gridshift): NADCON style datum shifts in 1, 2, and 3 dimensions
 - [`helmert`](#operator-helmert): The Helmert (similarity) transformation
+- [`laea`](#operator-lcc): The Lambert Authalic Equal Area projection
 - [`latitude`](#operator-latitude): Auxiliary latitudes
 - [`lcc`](#operator-lcc): The Lambert Conformal Conic projection
 - [`merc`](#operator-merc): The Mercator projection
@@ -233,6 +234,40 @@ geo:in | gridshift grids=ed50.datum | geo:out
 ```
 
 **See also:** PROJ documentation, [`hgridshift`](https://proj.org/operations/transformations/hgridshift.html) and [`vgridshift`](https://proj.org/operations/transformations/vgridshift.html). RG combines the functionality of the two: The dimensionality of the grid determines whether a plane or a vertical transformation is carried out.
+
+
+---
+
+### Operator `laea`
+
+**Purpose:** Projection from geographic to Lambert azimuthal equal area coordinates
+
+**Description:**
+
+| Argument | Description |
+|----------|-------------|
+| `inv` | Inverse operation: LAEA to geographic |
+| `ellps=name` | Use ellipsoid `name` for the conversion |
+| `lon_0` | Longitude of the projection center |
+| `lat_0` | Latitude of the projection center |
+| `x_0` | False easting  |
+| `y_0` | False northing |
+
+**Example**:
+
+The ETRS89-LAEA grid (used by a.o. The European Environmental Agency, for thematic mapping of the EU member and candidate states), is given by:
+
+```js
+laea lon_0=10  lat_0=52  x_0=4321000  y_0=3210000  ellps=GRS80
+```
+
+**See also:**
+
+- [PROJ documentation](https://proj.org/operations/projections/laea.html): *Lambert Azimuthal Equal Area*.
+- [IOGP, 2019](https://www.iogp.org/wp-content/uploads/2019/09/373-07-02.pdf): *Coordinate Conversions and Transformations including Formulas*. IOGP Geomatics Guidance Note Number 7, part 2, 162 pp.
+- [Charles F.F. Karney, 2022](https://doi.org/10.48550/arXiv.2212.05818): *On auxiliary latitudes*
+
+The RG implementation closely follows the IOGP (2019) exposition, but utilizes the work by Karney (2022) to obtain a higher accuracy in the handling of the conversion between authalic and geographic latitudes.
 
 ---
 

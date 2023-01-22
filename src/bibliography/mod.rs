@@ -54,6 +54,11 @@ pub enum Bibliography {
     /// [DOI](https://doi.org/10.1007/s00190-006-0023-2)
     Fuk06,
 
+    /// IOGP, 2019: *Coordinate Conversions and Transformations including Formulas. Revised - September 2019*
+    /// IOGP Geomatics Guidance Note Number 7, part 2. IOGP publication no. 373-7-2, 162 pp.
+    /// [pdf](https://www.iogp.org/wp-content/uploads/2019/09/373-07-02.pdf)
+    Iogp19,
+
     /// Charles F.F. Karney, 2010: *Transverse Mercator with an accuracy of a few nanometers*.
     /// [pdf](https://arxiv.org/pdf/1002.1417.pdf)
     Kar10,
