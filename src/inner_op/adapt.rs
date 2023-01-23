@@ -3,14 +3,14 @@
 Example:
 
 ```sh
-adapt from=neut_deg  to=enut_rad
+adapt from=neuf_deg  to=enuf_rad
 ```
 
-We introduce the coordinate type designations *eastish, northish, upish, timish*,
-and their geometrical inverses *westish, southish, downish, reversed-timeish*,
+We introduce the coordinate type designations *eastish, northish, upish, futurish*,
+and their geometrical inverses *westish, southish, downish, pastish*,
 with mostly evident meaning: A coordinate is *eastish* if you would typically draw
 it along an abscissa, *northish* if you would typically draw it along an ordinate,
-*upish* if you would need to draw it out of the paper, and "timeish"
+*upish* if you would need to draw it out of the paper, and "futurish"
 if it represents ordinary, forward evolving time. *Westish, southish, downish*, and
 *reversed-timeish* are the axis-reverted versions of the former four.
 
@@ -20,9 +20,9 @@ These 8 spatio-temporal directional designations have convenient short forms,
 Also, we introduce the 3 common angular representations "degrees, gradians, radians",
 conveniently abbrevieated as "deg", "gon" and "rad".
 
-The Rust Geodesy internal format of a four dimensional coordinate tuple is e, n, u, t,
+The Rust Geodesy internal format of a four dimensional coordinate tuple is e, n, u, f,
 and the internal unit of measure for angular coordinates is radians. In `adapt`, terms,
-this is described as `enut_rad`.
+this is described as `enuf_rad`.
 
 `adapt` covers the same ground as the `PROJ` operator `axisswap`, but using a somewhat
 different approach: You never tell `adapt` what you want it to do - you only tell it
@@ -36,14 +36,14 @@ That output format is identical to the default internal format, so it can actual
 be left out, and the order be written as:
 
 ```sh
-adapt from=neut_deg
+adapt from=neuf_deg
 ```
 
 Typically, `adapt` is used in both ends of a pipeline, to match data between the
 RG internal representation and the requirements of the embedding system:
 
 ```sh
-adapt from=neut_deg | cart ... | helmert ... | cart inv ... | adapt to=neut_deg
+adapt from=neuf_deg | cart ... | helmert ... | cart inv ... | adapt to=neuf_deg
 ```
 
 Note that `adapt to=...` and `adapt inv from=...` are equivalent.
@@ -125,8 +125,8 @@ fn inv(op: &Op, _ctx: &dyn Context, data: &mut [Coord]) -> Result<usize, Error> 
 #[rustfmt::skip]
 pub const GAMUT: [OpParameter; 3] = [
     OpParameter::Flag { key: "inv" },
-    OpParameter::Text { key: "from", default: Some("enut") },
-    OpParameter::Text { key: "to", default: Some("enut") },
+    OpParameter::Text { key: "from", default: Some("enuf") },
+    OpParameter::Text { key: "to", default: Some("enuf") },
 ];
 
 pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> {
@@ -222,7 +222,7 @@ fn coordinate_order_descriptor(desc: &str) -> Option<CoordinateOrderDescriptor> 
         let d = desc[i];
 
         // Unknown designator
-        if !"neutswdr".contains(d) {
+        if !"neufswdp".contains(d) {
             return None;
         }
         // Sign and position in the internal representation
@@ -230,11 +230,11 @@ fn coordinate_order_descriptor(desc: &str) -> Option<CoordinateOrderDescriptor> 
             'w' => -1,
             's' => -2,
             'd' => -3,
-            'r' => -4,
+            'p' => -4,
             'e' => 1,
             'n' => 2,
             'u' => 3,
-            't' => 4,
+            'f' => 4,
             _ => 0, // cannot happen: We already err'ed on unknowns
         };
         indices[i] = dd;
@@ -247,6 +247,7 @@ fn coordinate_order_descriptor(desc: &str) -> Option<CoordinateOrderDescriptor> 
         count[(indices[i].abs() - 1) as usize] += 1;
     }
     if count != [1, 1, 1, 1] {
+        warn!("adapt: {:?} is not a proper permutation", desc);
         return None;
     }
 
@@ -284,34 +285,33 @@ mod tests {
     // Test that the underlying descriptor-functionality works
     #[test]
     fn descriptor() {
-        use super::combine_descriptors;
-        use super::coordinate_order_descriptor as descriptor;
+        use coordinate_order_descriptor as descriptor;
 
         // Axis swap n<->e
-        assert_eq!([1usize, 0, 2, 3], descriptor("neut").unwrap().post);
+        assert_eq!([1usize, 0, 2, 3], descriptor("neuf").unwrap().post);
 
         // Axis inversion for n+u. Check for all valid angular units
-        assert_eq!([1usize, 0, 2, 3], descriptor("sedt_rad").unwrap().post);
-        assert_eq!([1usize, 0, 2, 3], descriptor("sedt_gon").unwrap().post);
-        assert_eq!([1usize, 0, 2, 3], descriptor("sedt_deg").unwrap().post);
-        assert_eq!([-1., 1., -1., 1.], descriptor("sedt_any").unwrap().mult);
+        assert_eq!([1usize, 0, 2, 3], descriptor("sedf_rad").unwrap().post);
+        assert_eq!([1usize, 0, 2, 3], descriptor("sedf_gon").unwrap().post);
+        assert_eq!([1usize, 0, 2, 3], descriptor("sedf_deg").unwrap().post);
+        assert_eq!([-1., 1., -1., 1.], descriptor("sedf_any").unwrap().mult);
 
         // noop
-        assert_eq!(false, descriptor("sedt_any").unwrap().noop);
-        assert_eq!(true, descriptor("enut_any").unwrap().noop);
-        assert_eq!(true, descriptor("enut_rad").unwrap().noop);
-        assert_eq!(true, descriptor("enut").unwrap().noop);
+        assert_eq!(false, descriptor("sedf_any").unwrap().noop);
+        assert_eq!(true, descriptor("enuf_any").unwrap().noop);
+        assert_eq!(true, descriptor("enuf_rad").unwrap().noop);
+        assert_eq!(true, descriptor("enuf").unwrap().noop);
         assert_eq!(true, descriptor("pass").unwrap().noop);
 
         // Invalid angular unit "pap"
-        assert!(descriptor("sedt_pap").is_none());
+        assert!(descriptor("sedf_pap").is_none());
 
         // Invalid: Overlapping axes, "ns"
-        assert!(descriptor("nsut").is_none());
+        assert!(descriptor("nsuf").is_none());
 
         // Now a combination, where we swap both axis order and orientation
-        let from = descriptor("neut_deg").unwrap();
-        let to = descriptor("wndt_gon").unwrap();
+        let from = descriptor("neuf_deg").unwrap();
+        let to = descriptor("wndf_gon").unwrap();
         let give = combine_descriptors(&from, &to);
         assert_eq!([1_usize, 0, 2, 3], give.post);
         assert!(give.mult[0] + 400. / 360. < 1e-10); // mult[0] is negative for westish
@@ -325,7 +325,7 @@ mod tests {
     #[test]
     fn adapt() -> Result<(), Error> {
         let mut ctx = Minimal::default();
-        let gonify = ctx.op("adapt from = neut_deg   to = enut_gon")?;
+        let gonify = ctx.op("adapt from = neuf_deg   to = enuf_gon")?;
 
         let mut data = [Coord::raw(90., 180., 0., 0.), Coord::raw(45., 90., 0., 0.)];
 
@@ -352,7 +352,7 @@ mod tests {
     #[test]
     fn adapt_inv() -> Result<(), Error> {
         let mut ctx = Minimal::default();
-        let degify = ctx.op("adapt inv from = neut_deg   to = enut_gon")?;
+        let degify = ctx.op("adapt inv from = neuf_deg   to = enuf_gon")?;
 
         let mut data = [
             Coord::raw(200., 100., 0., 0.),
@@ -383,7 +383,7 @@ mod tests {
     fn no_unit_conversion() -> Result<(), Error> {
         let mut ctx = Minimal::default();
         let mut data = some_basic_coordinates();
-        let swap = ctx.op("adapt from=neut")?;
+        let swap = ctx.op("adapt from=neuf")?;
         assert_eq!(ctx.apply(swap, Fwd, &mut data)?, 2);
         assert_eq!(data[0][0], 12.0);
         assert_eq!(data[0][1], 55.0);
@@ -396,9 +396,9 @@ mod tests {
         let mut ctx = Minimal::default();
 
         // Separate :in- and :out-versions, for better readability
-        ctx.register_resource("geo:in", "adapt from = neut_deg");
+        ctx.register_resource("geo:in", "adapt from = neuf_deg");
         ctx.register_resource("geo:out", "geo:in inv");
-        ctx.register_resource("gis:in", "adapt from = enut_deg");
+        ctx.register_resource("gis:in", "adapt from = enuf_deg");
         ctx.register_resource("gis:out", "gis:in inv");
 
         let utm = ctx.op("geo:in | utm zone=32")?;

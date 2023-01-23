@@ -50,12 +50,12 @@ pub trait Context {
 // Help context providers provide canonically named, built in coordinate adaptors
 #[rustfmt::skip]
 pub const BUILTIN_ADAPTORS: [(&str, &str); 8] = [
-    ("geo:in",  "adapt from=neut_deg"),
-    ("geo:out", "adapt to=neut_deg"  ),
-    ("gis:in",  "adapt from=enut_deg"),
-    ("gis:out", "adapt to=enut_deg"  ),
-    ("neu:in",  "adapt from=neut"    ),
-    ("neu:out", "adapt to=neut"      ),
-    ("enu:in",  "adapt from=enut"    ),
-    ("enu:out", "adapt to=enut"      ),
+    ("geo:in",  "adapt from=neuf_deg"),
+    ("geo:out", "adapt to=neuf_deg"  ),
+    ("gis:in",  "adapt from=enuf_deg"),
+    ("gis:out", "adapt to=enuf_deg"  ),
+    ("neu:in",  "adapt from=neuf"    ),
+    ("neu:out", "adapt to=neuf"      ),
+    ("enu:in",  "adapt from=enuf"    ),
+    ("enu:out", "adapt to=enuf"      ),
 ];

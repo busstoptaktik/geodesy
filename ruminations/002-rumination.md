@@ -84,34 +84,34 @@ If in doubt, use `kp --help` or read [Rumination 003: `kp` - the RG Coordinate P
 
 **Purpose:** Adapt source coordinate order and angular units to target ditto, using a declarative approach.
 
-**Description:** Let us first introduce the **coordinate traits** *eastish, northish, upish, timish*, and their geometrical inverses *westish, southish, downish, reversed-timeish*, with mostly evident meaning:
+**Description:** Let us first introduce the **coordinate traits** *eastish, northish, upish, futursh*, and their geometrical inverses *westish, southish, downish, pastish*, with mostly evident meaning:
 
 A coordinate is
 
 - **eastish** if you would typically draw it along an abscissa (e.g. longitude or easting),
 - **northish** if you would typically draw it along an ordinate (e.g. latitude or northing),
 - **upish** if you would need to draw it out of the paper (e.g. height or elevation), and
-- **timeish** if it represents ordinary, forward evolving time (e.g. time or time interval).
+- **futurish** if it represents ordinary, forward evolving time (e.g. time or time interval).
 
-*Westish, southish, downish*, and *reversed-timeish* are the axis-reverted versions of the former four. These 8 spatio-temporal directional designations have convenient short forms,
-`e, n, u, t` and `w, s, d, r`, respectively.
+*Westish, southish, downish*, and *pastish* are the axis-reverted versions of the former four. These 8 spatio-temporal directional designations have convenient short forms,
+`e, n, u, f` and `w, s, d, p`, respectively.
 
 Also, we introduce the 3 common angular representations *degrees, gradians, radians*, conventionally abbreviated as `deg`, `gon` and `rad`.
 
-The Rust Geodesy internal format of a four dimensional coordinate tuple is `e, n, u, t`, and the internal unit of measure for angular coordinates is radians. In `adapt`, terms, this is described as `enut_rad`.
+The Rust Geodesy internal format of a four dimensional coordinate tuple is `e, n, u, f`, and the internal unit of measure for angular coordinates is radians. In `adapt`, terms, this is described as `enut_rad`.
 
 `adapt` covers much of the same ground as the `PROJ` operators [`axisswap`](https://proj.org/operations/conversions/axisswap.html) and [`unitconvert`](https://proj.org/operations/conversions/unitconvert.html), but using a declarative, rather than imperative, approach: You never tell `adapt` how you want things done, only what kind of result you want. You tell it where you want to go `from`, and where you want to go `to` (and in most cases actually only one of those). Then `adapt` figures out how to fulfill that wish.
 
 **Example:** Read data in degrees, (latitude, longitude, height, time)-order, write homologous data in radians, (longitude, latitude, height, time)-order, i.e. latitude and longitude swapped.
 
 ```js
-adapt from=neut_deg  to=enut_rad
+adapt from=neuf_deg  to=enuf_rad
 ```
 
 But since the target format is identical to the default internal format, it can be left out, and the operation be written simply as:
 
 ```js
-adapt from=neut_deg
+adapt from=neuf_deg
 ```
 
 (end of example)
@@ -119,7 +119,7 @@ adapt from=neut_deg
 **Usage:** Typically, `adapt` is used in one or both ends of a pipeline, to match data between the RG internal representation and the requirements of the embedding system:
 
 ```sh
-adapt from=neut_deg | cart ... | helmert ... | cart inv ... | adapt to=neut_deg
+adapt from=neuf_deg | cart ... | helmert ... | cart inv ... | adapt to=neuf_deg
 ```
 
 Note that `adapt to=...` and `adapt inv from=...` are equivalent. The latter form is sometimes useful: It is a.o. used behind the scenes when using RG's predefined macros, `geo` (latitude, longitude) and `gis` (longitude, latitude), as in:
@@ -128,7 +128,7 @@ Note that `adapt to=...` and `adapt inv from=...` are equivalent. The latter for
 geo:in | cart ... | helmert ... | cart inv ... | geo:out
 ```
 
-where `geo:out` is defined as `geo:in inv`.
+where `geo:out` could be defined as `geo:in inv`.
 
 ---
 
