@@ -113,8 +113,8 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Err
             let rho = (x - x_0).hypot(y - y_0);
 
             // The authalic latitude is a bit convoluted
-            let denom = a*a * (1.0 - ((1.0 - es) / (2.0*e)) * ((1.0 - e)/(1.0 + e)).ln());
-            let xi = (-sign) * (1.0 - rho*rho / denom);
+            let denom = a * a * (1.0 - ((1.0 - es) / (2.0 * e)) * ((1.0 - e) / (1.0 + e)).ln());
+            let xi = (-sign) * (1.0 - rho * rho / denom);
 
             coord[0] = lon_0 + (x - x_0).atan2(sign * (y - y_0));
             coord[1] = ellps.latitude_authalic_to_geographic(xi, &authalic);
@@ -122,7 +122,6 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Err
         }
         return Ok(successes);
     }
-    
 
     for coord in operands {
         let x = coord[0];
@@ -273,7 +272,7 @@ mod tests {
         assert!((operands[0][1].to_degrees() - 50.).abs() < 1e-12);
 
         // Missing test points for the poar aspects
-        
+
         Ok(())
     }
 }

@@ -131,7 +131,9 @@ pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
     }
     if op.params.boolean("authalic") {
         let coefficients = ellps.coefficients_for_authalic_latitude_computations();
-        op.params.fourier_coefficients.insert("coefficients", coefficients);
+        op.params
+            .fourier_coefficients
+            .insert("coefficients", coefficients);
         number_of_flags += 1;
     }
     if op.params.boolean("rectifying") {
@@ -197,7 +199,6 @@ mod tests {
         assert!((operands[0][1].to_degrees() - 54.879_361_594_517_796).abs() < 1e-12);
         ctx.apply(op, Inv, &mut operands)?;
         assert!((operands[0][1].to_degrees() - 55.).abs() < 1e-12);
-
 
         Ok(())
     }
