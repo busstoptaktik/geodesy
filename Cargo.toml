@@ -15,11 +15,14 @@ default-run = "kp"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+js = ["uuid/js"]
+
 [dependencies]
 # Core functionality
 dirs = "4.0"
 # memmap = "0.7"
-uuid = { version = "0.8", features = ["v4"] }
+uuid = { version = "1", features = ["v4"] }
 
 # Command line program helpers
 clap = { version = "3.1.18", features = ["derive"] }
@@ -35,4 +38,4 @@ anyhow = "1.0"
 
 
 [profile.release]
-strip = true  # Automatically strip symbols from the binary.
+strip = true # Automatically strip symbols from the binary.
