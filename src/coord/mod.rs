@@ -1,8 +1,8 @@
 use super::internal::*;
 use std::ops::{Add, Div, Index, IndexMut, Mul, Sub};
 
-pub mod conversions;
-pub mod distances;
+mod conversions;
+mod distances;
 
 /// Generic 4D coordinate tuple, with no fixed interpretation of the elements
 #[derive(Debug, Default, PartialEq, Copy, Clone)]
