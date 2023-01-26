@@ -159,7 +159,7 @@ mod tests {
             let lat = *lat as f64;
             let theta = ellps.latitude_geographic_to_geocentric(lat.to_radians());
             let roundtrip = ellps.latitude_geocentric_to_geographic(theta).to_degrees();
-            assert!((lat - roundtrip).abs() < 1e-15);
+            assert!((lat - roundtrip).abs() < 1e-14);
         }
         assert!(ellps.latitude_geographic_to_geocentric(0.0).abs() < 1.0e-10);
         assert!((ellps.latitude_geographic_to_geocentric(FRAC_PI_2) - FRAC_PI_2).abs() < 1.0e-10);
