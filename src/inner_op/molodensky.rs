@@ -19,12 +19,7 @@ use super::*;
 
 // ----- C O M M O N -------------------------------------------------------------------
 
-fn common(
-    op: &Op,
-    _ctx: &dyn Context,
-    operands: &mut [Coord],
-    direction: Direction,
-) -> usize {
+fn common(op: &Op, _ctx: &dyn Context, operands: &mut [Coord], direction: Direction) -> usize {
     let ellps = op.params.ellps[0];
     let a = ellps.semimajor_axis();
     let f = ellps.flattening();
