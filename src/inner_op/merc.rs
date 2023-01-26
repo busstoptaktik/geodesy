@@ -3,7 +3,7 @@ use super::*;
 
 // ----- F O R W A R D -----------------------------------------------------------------
 
-fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
     let ellps = op.params.ellps[0];
     let a = ellps.semimajor_axis();
     let k_0 = op.params.k[0];
@@ -24,12 +24,12 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Err
         successes += 1;
     }
 
-    Ok(successes)
+    successes
 }
 
 // ----- I N V E R S E -----------------------------------------------------------------
 
-fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
     let ellps = op.params.ellps[0];
     let a = ellps.semimajor_axis();
     let k_0 = op.params.k[0];
@@ -51,7 +51,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Err
         successes += 1;
     }
 
-    Ok(successes)
+    successes
 }
 
 // ----- C O N S T R U C T O R ---------------------------------------------------------
@@ -108,9 +108,9 @@ mod tests {
 
     #[test]
     fn merc() -> Result<(), Error> {
-        let ctx = Minimal::default();
+        let mut ctx = Minimal::default();
         let definition = "merc";
-        let op = Op::new(definition, &ctx)?;
+        let op = ctx.op(definition)?;
 
         // Validation value from PROJ: echo 12 55 0 0 | cct -d18 +proj=merc
         // followed by quadrant tests from PROJ builtins.gie
@@ -132,13 +132,13 @@ mod tests {
 
         // Forward
         let mut operands = geo.clone();
-        op.apply(&ctx, &mut operands, Fwd)?;
+        ctx.apply(op, Fwd, &mut operands)?;
         for i in 0..operands.len() {
             assert!(operands[i].hypot2(&projected[i]) < 20e-9);
         }
 
         // Roundtrip
-        op.apply(&ctx, &mut operands, Inv)?;
+        ctx.apply(op, Inv, &mut operands)?;
         for i in 0..operands.len() {
             assert!(operands[i].hypot2(&geo[i]) < 20e-9);
         }
@@ -148,9 +148,9 @@ mod tests {
 
     #[test]
     fn merc_lat_ts() -> Result<(), Error> {
-        let ctx = Minimal::default();
+        let mut ctx = Minimal::default();
         let definition = "merc lat_ts=56";
-        let op = Op::new(definition, &ctx)?;
+        let op = ctx.op(definition)?;
 
         // Validation value from PROJ: echo 12 55 0 0 | cct -d18 +proj=merc +lat_ts=56
         let geo = [Coord::geo(55., 12., 0., 0.)];
@@ -164,13 +164,13 @@ mod tests {
 
         // Forward
         let mut operands = geo.clone();
-        op.apply(&ctx, &mut operands, Fwd)?;
+        ctx.apply(op, Fwd, &mut operands)?;
         for i in 0..operands.len() {
             assert!(operands[i].hypot2(&projected[i]) < 20e-9);
         }
 
         // Roundtrip
-        op.apply(&ctx, &mut operands, Inv)?;
+        ctx.apply(op, Inv, &mut operands)?;
         for i in 0..operands.len() {
             assert!(operands[i].hypot2(&geo[i]) < 20e-9);
         }

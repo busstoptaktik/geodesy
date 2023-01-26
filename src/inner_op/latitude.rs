@@ -3,7 +3,7 @@ use super::*;
 
 // ----- F O R W A R D -----------------------------------------------------------------
 
-fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
     let mut successes = 0_usize;
     let ellps = op.params.ellps[0];
 
@@ -19,7 +19,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Err
         }
     } else if op.params.boolean("conformal") {
         let Some(coefficients) = op.params.fourier_coefficients.get("coefficients") else {
-            return Ok(0);
+            return 0;
         };
 
         for coord in operands {
@@ -28,7 +28,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Err
         }
     } else if op.params.boolean("rectifying") {
         let Some(coefficients) = op.params.fourier_coefficients.get("coefficients") else {
-            return Ok(0);
+            return 0;
         };
 
         for coord in operands {
@@ -37,7 +37,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Err
         }
     } else if op.params.boolean("authalic") {
         let Some(coefficients) = op.params.fourier_coefficients.get("coefficients") else {
-            return Ok(0);
+            return 0;
         };
 
         for coord in operands {
@@ -46,12 +46,12 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Err
         }
     }
 
-    Ok(successes)
+    successes
 }
 
 // ----- I N V E R S E -----------------------------------------------------------------
 
-fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
     let mut successes = 0_usize;
     let ellps = op.params.ellps[0];
 
@@ -67,7 +67,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Err
         }
     } else if op.params.boolean("conformal") {
         let Some(coefficients) = op.params.fourier_coefficients.get("coefficients") else {
-            return Ok(0);
+            return 0;
         };
 
         for coord in operands {
@@ -76,7 +76,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Err
         }
     } else if op.params.boolean("rectifying") {
         let Some(coefficients) = op.params.fourier_coefficients.get("coefficients") else {
-            return Ok(0);
+            return 0;
         };
 
         for coord in operands {
@@ -85,7 +85,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Err
         }
     } else if op.params.boolean("authalic") {
         let Some(coefficients) = op.params.fourier_coefficients.get("coefficients") else {
-            return Ok(0);
+            return 0;
         };
 
         for coord in operands {
@@ -94,7 +94,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Err
         }
     }
 
-    Ok(successes)
+    successes
 }
 
 // ----- C O N S T R U C T O R ---------------------------------------------------------

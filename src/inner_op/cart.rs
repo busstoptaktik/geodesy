@@ -3,7 +3,7 @@ use super::*;
 
 // ----- F O R W A R D --------------------------------------------------------------
 
-fn cart_fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+fn cart_fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
     let mut n = 0_usize;
     for coord in operands {
         *coord = op.params.ellps[0].cartesian(coord);
@@ -11,12 +11,12 @@ fn cart_fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize
             n += 1;
         }
     }
-    Ok(n)
+    n
 }
 
 // ----- I N V E R S E --------------------------------------------------------------
 
-fn cart_inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+fn cart_inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
     // eccentricity squared, Fukushima's E, Claessens' c3 = 1-c2`
     let es = op.params.ellps[0].eccentricity_squared();
     // semiminor axis
@@ -82,7 +82,7 @@ fn cart_inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize
             n += 1;
         }
     }
-    Ok(n)
+    n
 }
 
 // ----- C O N S T R U C T O R ------------------------------------------------------
@@ -111,8 +111,8 @@ mod tests {
 
     #[test]
     fn roundtrip() -> Result<(), Error> {
-        let ctx = Minimal::default();
-        let op = Op::new("cart", &ctx)?;
+        let mut ctx = Minimal::default();
+        let op = ctx.op("cart")?;
 
         let geo = [
             Coord::geo(85., 0., 100000., 0.),
@@ -161,13 +161,13 @@ mod tests {
 
         // Forward
         let mut operands = geo.clone();
-        op.apply(&ctx, &mut operands, Fwd)?;
+        ctx.apply(op, Fwd, &mut operands)?;
         for i in 0..4 {
             assert!(operands[i].hypot3(&cart[i]) < 20e-9);
         }
 
         // Inverse
-        op.apply(&ctx, &mut operands, Inv)?;
+        ctx.apply(op, Inv, &mut operands)?;
         for i in 0..5 {
             assert!(operands[i].default_ellps_3d_dist(&geo[i]) < 10e-9);
         }

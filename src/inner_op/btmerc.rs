@@ -4,7 +4,7 @@ use super::*;
 // ----- F O R W A R D -----------------------------------------------------------------
 
 // Forward transverse mercator, following Bowring (1989)
-fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
     let ellps = op.params.ellps[0];
     let eps = ellps.second_eccentricity_squared();
     let lat_0 = op.params.lat[0];
@@ -42,13 +42,13 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Err
         successes += 1;
     }
 
-    Ok(successes)
+    successes
 }
 
 // ----- I N V E R S E -----------------------------------------------------------------
 
 // Inverse transverse mercator, following Bowring (1989)
-fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
     let ellps = op.params.ellps[0];
     let eps = ellps.second_eccentricity_squared();
     let lat_0 = op.params.lat[0];
@@ -84,7 +84,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Err
         successes += 1;
     }
 
-    Ok(successes)
+    successes
 }
 
 // ----- C O N S T R U C T O R ---------------------------------------------------------
@@ -160,9 +160,9 @@ mod tests {
 
     #[test]
     fn btmerc() -> Result<(), Error> {
-        let ctx = Minimal::default();
+        let mut ctx = Minimal::default();
         let definition = "btmerc k_0=0.9996 lon_0=9 x_0=500000";
-        let op = Op::new(definition, &ctx)?;
+        let op = ctx.op(definition)?;
 
         // Validation values from PROJ:
         // echo 12 55 0 0 | cct -d18 +proj=utm +zone=32 | clip
@@ -183,12 +183,12 @@ mod tests {
         ];
 
         let mut operands = geo.clone();
-        op.apply(&ctx, &mut operands, Fwd)?;
+        ctx.apply(op, Fwd, &mut operands)?;
         for i in 0..operands.len() {
             assert!(operands[i].hypot2(&projected[i]) < 5e-3);
         }
 
-        op.apply(&ctx, &mut operands, Inv)?;
+        ctx.apply(op, Inv, &mut operands)?;
         for i in 0..operands.len() {
             assert!(operands[i].hypot2(&geo[i]) < 10e-8);
         }
@@ -197,9 +197,9 @@ mod tests {
 
     #[test]
     fn butm() -> Result<(), Error> {
-        let ctx = Minimal::default();
+        let mut ctx = Minimal::default();
         let definition = "butm zone=32";
-        let op = Op::new(definition, &ctx)?;
+        let op = ctx.op(definition)?;
 
         // Validation values from PROJ:
         // echo 12 55 0 0 | cct -d18 +proj=utm +zone=32 | clip
@@ -220,12 +220,12 @@ mod tests {
         ];
 
         let mut operands = geo.clone();
-        op.apply(&ctx, &mut operands, Fwd)?;
+        ctx.apply(op, Fwd, &mut operands)?;
         for i in 0..operands.len() {
             assert!(operands[i].hypot2(&projected[i]) < 5e-3);
         }
 
-        op.apply(&ctx, &mut operands, Inv)?;
+        ctx.apply(op, Inv, &mut operands)?;
         for i in 0..operands.len() {
             assert!(operands[i].hypot2(&geo[i]) < 10e-8);
         }

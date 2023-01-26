@@ -3,14 +3,14 @@ use super::*;
 
 // ----- F O R W A R D --------------------------------------------------------------
 
-fn fwd(_op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
-    Ok(operands.len())
+fn fwd(_op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
+    operands.len()
 }
 
 // ----- I N V E R S E --------------------------------------------------------------
 
-fn inv(_op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
-    Ok(operands.len())
+fn inv(_op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
+    operands.len()
 }
 
 // ----- C O N S T R U C T O R ------------------------------------------------------
@@ -33,18 +33,18 @@ mod tests {
 
     #[test]
     fn no_change() -> Result<(), Error> {
-        let ctx = Minimal::default();
-        let op = Op::new("noop", &ctx)?;
+        let mut ctx = Minimal::default();
+        let op = ctx.op("noop")?;
 
         // EPSG:1134 - 3 parameter, ED50/WGS84, s = sqrt(27) m
         let mut operands = [GDA94];
 
         // Forward
-        op.apply(&ctx, &mut operands, Fwd)?;
+        ctx.apply(op, Fwd, &mut operands)?;
         assert_eq!(operands[0], GDA94);
 
         // Inverse + roundtrip
-        op.apply(&ctx, &mut operands, Inv)?;
+        ctx.apply(op, Inv, &mut operands)?;
         assert_eq!(operands[0], GDA94);
         Ok(())
     }

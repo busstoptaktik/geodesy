@@ -3,7 +3,7 @@ use super::*;
 
 // ----- F O R W A R D --------------------------------------------------------------
 
-fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
     let grid = &op.params.grids["grid"];
     let mut successes = 0_usize;
 
@@ -14,7 +14,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Err
             coord[2] -= d[0];
             successes += 1;
         }
-        return Ok(successes);
+        return successes;
     }
 
     // Datum shift
@@ -28,12 +28,12 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Err
         coord[1] += d[1];
         successes += 1;
     }
-    Ok(successes)
+    successes
 }
 
 // ----- I N V E R S E --------------------------------------------------------------
 
-fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
     let grid = &op.params.grids["grid"];
     let mut successes = 0_usize;
 
@@ -44,7 +44,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Err
             coord[2] += t[0];
             successes += 1;
         }
-        return Ok(successes);
+        return successes;
     }
 
     // Datum shift - here we need to iterate in the inverse case
@@ -64,7 +64,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Err
         successes += 1;
     }
 
-    Ok(successes)
+    successes
 }
 
 // ----- C O N S T R U C T O R ------------------------------------------------------

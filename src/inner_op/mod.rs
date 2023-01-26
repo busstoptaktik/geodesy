@@ -81,7 +81,7 @@ impl core::fmt::Debug for OpConstructor {
 /// must implement the Debug-trait for InnerOp (to make auto derive
 /// of the Debug-trait work for any derived type).
 pub struct InnerOp(
-    pub fn(op: &Op, ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error>,
+    pub fn(op: &Op, ctx: &dyn Context, operands: &mut [Coord]) -> usize,
 );
 
 // Cannot autoderive the Debug trait
@@ -102,8 +102,8 @@ fn noop_placeholder(
     _params: &Op,
     _ctx: &dyn Context,
     _operands: &mut [Coord],
-) -> Result<usize, Error> {
+) -> usize {
     // Consider whether this should return an Err-value if used as a placeholder for a
     // non-existing or non-implemented inverse operation
-    Ok(0)
+    0
 }

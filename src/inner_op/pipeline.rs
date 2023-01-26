@@ -3,7 +3,7 @@ use std::collections::BTreeSet;
 
 // ----- F O R W A R D -----------------------------------------------------------------
 
-fn pipeline_fwd(op: &Op, ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+fn pipeline_fwd(op: &Op, ctx: &dyn Context, operands: &mut [Coord]) -> usize {
     let mut stack = Vec::new();
     let mut n = usize::MAX;
     for step in &op.steps {
@@ -13,7 +13,7 @@ fn pipeline_fwd(op: &Op, ctx: &dyn Context, operands: &mut [Coord]) -> Result<us
         let m = match step.params.name.as_str() {
             "push" => do_the_push(&mut stack, operands, &step.params.boolean),
             "pop" => do_the_pop(&mut stack, operands, &step.params.boolean),
-            _ => step.apply(ctx, operands, Direction::Fwd)?,
+            _ => step.apply(ctx, operands, Fwd),
         };
         n = n.min(m);
     }
@@ -22,12 +22,12 @@ fn pipeline_fwd(op: &Op, ctx: &dyn Context, operands: &mut [Coord]) -> Result<us
     if n == usize::MAX {
         n = operands.len();
     }
-    Ok(n)
+    n
 }
 
 // ----- I N V E R S E -----------------------------------------------------------------
 
-fn pipeline_inv(op: &Op, ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+fn pipeline_inv(op: &Op, ctx: &dyn Context, operands: &mut [Coord]) -> usize {
     let mut stack = Vec::new();
     let mut n = usize::MAX;
     for step in op.steps.iter().rev() {
@@ -38,7 +38,7 @@ fn pipeline_inv(op: &Op, ctx: &dyn Context, operands: &mut [Coord]) -> Result<us
         let m = match step.params.name.as_str() {
             "push" => do_the_pop(&mut stack, operands, &step.params.boolean),
             "pop" => do_the_push(&mut stack, operands, &step.params.boolean),
-            _ => step.apply(ctx, operands, Direction::Inv)?,
+            _ => step.apply(ctx, operands, Inv),
         };
         n = n.min(m);
     }
@@ -47,7 +47,7 @@ fn pipeline_inv(op: &Op, ctx: &dyn Context, operands: &mut [Coord]) -> Result<us
     if n == usize::MAX {
         n = operands.len();
     }
-    Ok(n)
+    n
 }
 
 // ----- C O N S T R U C T O R ---------------------------------------------------------

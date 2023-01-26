@@ -5,7 +5,7 @@ use crate::math::*;
 // ----- F O R W A R D -----------------------------------------------------------------
 
 // Forward transverse mercator, following Engsager & Poder(2007)
-fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
     // Make all precomputed parameters directly accessible
     let ellps = op.params.ellps[0];
     let lat_0 = op.params.lat[0];
@@ -13,19 +13,19 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Err
     let x_0 = op.params.x[0];
     let Some(conformal) = op.params.fourier_coefficients.get("conformal") else {
         warn!("Missing Fourier coefficients for conformal mapping!");
-        return Ok(0);
+        return 0;
     };
     let Some(tm) = op.params.fourier_coefficients.get("tm") else {
         warn!("Missing Fourier coefficients for TM!");
-        return Ok(0);
+        return 0;
     };
     let Some(qs) = op.params.real.get("scaled_radius") else {
         warn!("Missing a scaled radius!");
-        return Ok(0);
+        return 0;
     };
     let Some(zb) = op.params.real.get("zb") else {
         warn!("Missing a zombie parameter!");
-        return Ok(0);
+        return 0;
     };
 
     let mut successes = 0_usize;
@@ -86,32 +86,32 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Err
     }
 
     info!("Successes: {successes}");
-    Ok(successes)
+    successes
 }
 
 // ----- I N V E R S E -----------------------------------------------------------------
 
 // Inverse Transverse Mercator, following Engsager & Poder (2007) (currently Bowring stands in!)
-fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
     // Make all precomputed parameters directly accessible
     let ellps = op.params.ellps[0];
     let lon_0 = op.params.lon[0];
     let x_0 = op.params.x[0];
     let Some(conformal) = op.params.fourier_coefficients.get("conformal") else {
         warn!("Missing Fourier coefficients for conformal mapping!");
-        return Ok(0);
+        return 0;
     };
     let Some(tm) = op.params.fourier_coefficients.get("tm") else {
         warn!("Missing Fourier coefficients for TM!");
-        return Ok(0);
+        return 0;
     };
     let Some(qs) = op.params.real.get("scaled_radius") else {
         warn!("Missing a scaled radius!");
-        return Ok(0);
+        return 0;
     };
     let Some(zb) = op.params.real.get("zb") else {
         warn!("Missing a zombie parameter!");
-        return Ok(0);
+        return 0;
     };
 
     let mut successes = 0_usize;
@@ -153,7 +153,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Err
     }
 
     info!("Successes: {successes}");
-    Ok(successes)
+    successes
 }
 
 // ----- C O N S T R U C T O R ---------------------------------------------------------
@@ -320,12 +320,12 @@ mod tests {
             Coord::raw(-455_673.814_189_040,-6_198_246.671_090_279, 0., 0.)
         ];
 
-        let ctx = Minimal::default();
+        let mut ctx = Minimal::default();
         let definition = "tmerc k_0=0.9996 lon_0=9 x_0=500000";
-        let op = Op::new(definition, &ctx)?;
+        let op = ctx.op(definition)?;
 
         let mut operands = geo.clone();
-        op.apply(&ctx, &mut operands, Fwd)?;
+        ctx.apply(op, Fwd, &mut operands)?;
 
         for i in 0..operands.len() {
             dbg!(operands[i]);
@@ -333,7 +333,7 @@ mod tests {
             assert!(operands[i].hypot2(&projected[i]) < 1e-6);
         }
 
-        op.apply(&ctx, &mut operands, Inv)?;
+        ctx.apply(op, Inv, &mut operands)?;
         for i in 0..operands.len() {
             assert!(operands[i].hypot2(&geo[i]) < 5e-6);
         }
@@ -343,9 +343,9 @@ mod tests {
 
     #[test]
     fn utm() -> Result<(), Error> {
-        let ctx = Minimal::default();
+        let mut ctx = Minimal::default();
         let definition = "utm zone=32";
-        let op = Op::new(definition, &ctx)?;
+        let op = ctx.op(definition)?;
 
         // Validation values from PROJ:
         // echo 12 55 0 0 | cct -d18 +proj=utm +zone=32 | clip
@@ -366,12 +366,12 @@ mod tests {
         ];
 
         let mut operands = geo.clone();
-        op.apply(&ctx, &mut operands, Fwd)?;
+        ctx.apply(op, Fwd, &mut operands)?;
         for i in 0..operands.len() {
             assert!(operands[i].hypot2(&projected[i]) < 5e-3);
         }
 
-        op.apply(&ctx, &mut operands, Inv)?;
+        ctx.apply(op, Inv, &mut operands)?;
         for i in 0..operands.len() {
             assert!(operands[i].hypot2(&geo[i]) < 10e-8);
         }

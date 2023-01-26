@@ -6,7 +6,7 @@ use super::*;
 
 // ----- F O R W A R D -----------------------------------------------------------------
 
-fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
     todo!();
     let mut successes = 0_usize;
     for coord in operands {
@@ -14,12 +14,12 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Err
         successes += 1;
     }
 
-    Ok(successes)
+    successes
 }
 
 // ----- I N V E R S E -----------------------------------------------------------------
 
-fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
     todo!();
     let mut successes = 0_usize;
     for coord in operands {
@@ -27,7 +27,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Err
         successes += 1;
     }
 
-    Ok(successes)
+    successes
 }
 
 // ----- C O N S T R U C T O R ---------------------------------------------------------

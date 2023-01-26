@@ -119,7 +119,7 @@ fn main() -> anyhow::Result<()> {
     // Create an `Op`, turning geographical coordinates into UTM zone 32 coordinates
     let utm32 = Op::new("utm zone=32", &ctx)?;
     // Now, let's use the utm32-operator to transform some data
-    utm32.apply(&ctx, &mut data, Fwd)?;
+    utm32.apply(&ctx, &mut data, Fwd);
 
     println!("utm32:");
     for coord in data {
@@ -127,7 +127,7 @@ fn main() -> anyhow::Result<()> {
     }
 
     // Take the inverse road back to geographic coordinates
-    utm32.apply(&ctx, &mut data, Inv)?;
+    utm32.apply(&ctx, &mut data, Inv);
 
     println!("Roundtrip to geo:");
     for coord in data {
@@ -139,7 +139,7 @@ fn main() -> anyhow::Result<()> {
 
     // EPSG:1134
     let ed50_wgs84 = Op::new(pipeline, &ctx)?;
-    ed50_wgs84.apply(&ctx, &mut data, Inv)?;
+    ed50_wgs84.apply(&ctx, &mut data, Inv);
     println!("ed50:");
     for coord in data {
         println!("    {:?}", Coord::to_geo(coord));

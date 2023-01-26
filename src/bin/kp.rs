@@ -60,7 +60,7 @@ fn main() -> Result<(), anyhow::Error> {
     let opt = Cli::parse();
     println!("args: {:?}", opt.args);
 
-    let ctx = Minimal::new();
+    let mut ctx = Minimal::new();
 
     if opt.inverse && opt.roundtrip {
         bail!("Options `inverse` and `roundtrip` are mutually exclusive");
@@ -78,7 +78,7 @@ fn main() -> Result<(), anyhow::Error> {
     }
 
     let start = time::Instant::now();
-    let op = Op::new(&opt.args[0], &ctx)?;
+    let op = ctx.op(&opt.args[0])?;
     if opt.verbose > 2 {
         let duration = start.elapsed();
         println!("Created operation in: {:?}", duration);
@@ -109,14 +109,14 @@ fn main() -> Result<(), anyhow::Error> {
 
         // Transformation - this is the actual geodetic content
         if opt.inverse {
-            op.apply(&ctx, &mut data, Inv)?;
+            ctx.apply(op, Inv, &mut data)?;
             if opt.roundtrip {
-                op.apply(&ctx, &mut data, Fwd)?;
+                ctx.apply(op, Fwd, &mut data)?;
             }
         } else {
-            op.apply(&ctx, &mut data, Fwd)?;
+            ctx.apply(op, Fwd, &mut data)?;
             if opt.roundtrip {
-                op.apply(&ctx, &mut data, Inv)?;
+                ctx.apply(op, Inv, &mut data)?;
             }
         }
 

@@ -15,23 +15,23 @@ use geodesy::inner_op_authoring::*;
 // It also implements the inverse operation, i.e. subtracting 42.
 
 // Forward
-fn add42(_op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+fn add42(_op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
     let mut n = 0;
     for o in operands {
         o[0] += 42.;
         n += 1;
     }
-    Ok(n)
+    n
 }
 
 // Inverse
-fn sub42(_op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+fn sub42(_op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
     let mut n = 0;
     for o in operands {
         o[0] -= 42.;
         n += 1;
     }
-    Ok(n)
+    n
 }
 
 // These are the parameters our 'add42'-operator are willing to respond to

@@ -8,16 +8,16 @@ const EPS10: f64 = 1e-10;
 
 // Forward Lambert conformal conic, following the PROJ implementation,
 // cf.  https://proj.org/operations/projections/lcc.html
-fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
     let a = op.params.ellps[0].semimajor_axis();
     let e = op.params.ellps[0].eccentricity();
     let lon_0 = op.params.lon[0];
     let k_0 = op.params.k[0];
     let x_0 = op.params.x[0];
     let y_0 = op.params.y[0];
-    let n = op.params.real("n")?;
-    let c = op.params.real("c")?;
-    let rho0 = op.params.real("rho0")?;
+    let Ok(n) = op.params.real("n") else { return 0 };
+    let Ok(c) = op.params.real("c") else { return 0 };
+    let Ok(rho0) = op.params.real("rho0") else { return 0 };
     let mut successes = 0_usize;
 
     for coord in operands {
@@ -39,20 +39,20 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Err
         coord[1] = a * k_0 * (rho0 - rho * sc.1) + y_0;
         successes += 1;
     }
-    Ok(successes)
+    successes
 }
 
 // ----- I N V E R S E -----------------------------------------------------------------
-fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
     let a = op.params.ellps[0].semimajor_axis();
     let e = op.params.ellps[0].eccentricity();
     let lon_0 = op.params.lon[0];
     let k_0 = op.params.k[0];
     let x_0 = op.params.x[0];
     let y_0 = op.params.y[0];
-    let n = op.params.real("n")?;
-    let c = op.params.real("c")?;
-    let rho0 = op.params.real("rho0")?;
+    let Ok(n) = op.params.real("n") else { return 0 };
+    let Ok(c) = op.params.real("c") else { return 0 };
+    let Ok(rho0) = op.params.real("rho0") else { return 0 };
     let mut successes = 0_usize;
 
     for coord in operands {
@@ -86,7 +86,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Err
         coord[1] = phi;
         successes += 1;
     }
-    Ok(successes)
+    successes
 }
 
 // ----- C O N S T R U C T O R ---------------------------------------------------------
@@ -200,13 +200,14 @@ mod tests {
     use super::*;
     #[test]
     fn one_standard_parallel() -> Result<(), Error> {
-        let ctx = Minimal::default();
+        let mut ctx = Minimal::default();
         let definition = "lcc lat_1=57 lon_0=12";
-        let op = Op::new(definition, &ctx)?;
+        let op = ctx.op(definition)?;
 
         // Validation values from PROJ:
         //     echo 12 55 0 0 | cct -d18 proj=lcc lat_1=57 lon_0=12  -- | clip
         //     echo 10 55 0 0 | cct -d18 proj=lcc lat_1=57 lon_0=12  -- | clip
+        //     echo 14 59 0 0 | cct -d18 proj=lcc lat_1=57 lon_0=12  -- | clip
 
         let geo = [
             Coord::geo(55., 12., 0., 0.),
@@ -221,12 +222,12 @@ mod tests {
         ];
 
         let mut operands = geo.clone();
-        op.apply(&ctx, &mut operands, Fwd)?;
+        ctx.apply(op, Fwd, &mut operands)?;
         for i in 0..operands.len() {
             assert!(operands[i].hypot2(&projected[i]) < 2e-9);
         }
 
-        op.apply(&ctx, &mut operands, Inv)?;
+        ctx.apply(op, Inv, &mut operands)?;
         for i in 0..operands.len() {
             assert!(operands[i].hypot2(&geo[i]) < 1e-9);
         }
@@ -235,9 +236,9 @@ mod tests {
 
     #[test]
     fn two_standard_parallels() -> Result<(), Error> {
-        let ctx = Minimal::default();
+        let mut ctx = Minimal::default();
         let definition = "lcc lat_1=33 lat_2=45 lon_0=10";
-        let op = Op::new(definition, &ctx)?;
+        let op = ctx.op(definition)?;
 
         // Validation value from PROJ:
         // echo 12 40 0 0 | cct -d12 proj=lcc lat_1=33 lat_2=45 lon_0=10 -- | clip
@@ -250,12 +251,12 @@ mod tests {
         )];
 
         let mut operands = geo.clone();
-        op.apply(&ctx, &mut operands, Fwd)?;
+        ctx.apply(op, Fwd, &mut operands)?;
         for i in 0..operands.len() {
             assert!(operands[i].hypot2(&projected[i]) < 9e-9);
         }
 
-        op.apply(&ctx, &mut operands, Inv)?;
+        ctx.apply(op, Inv, &mut operands)?;
         for i in 0..operands.len() {
             assert!(operands[i].hypot2(&geo[i]) < 1e-9);
         }
@@ -264,9 +265,9 @@ mod tests {
 
     #[test]
     fn one_standard_parallel_and_latitudinal_offset() -> Result<(), Error> {
-        let ctx = Minimal::default();
+        let mut ctx = Minimal::default();
         let definition = "lcc lat_1=39 lat_0=35 lon_0=10";
-        let op = Op::new(definition, &ctx)?;
+        let op = ctx.op(definition)?;
 
         // Validation value from PROJ:
         // echo 12 40 0 0 | cct -d12 proj=lcc lat_1=39 lat_0=35 lon_0=10 -- | clip
@@ -274,12 +275,12 @@ mod tests {
         let projected = [Coord::raw(170800.011728740647, 557172.361112929415, 0., 0.)];
 
         let mut operands = geo.clone();
-        op.apply(&ctx, &mut operands, Fwd)?;
+        ctx.apply(op, Fwd, &mut operands)?;
         for i in 0..operands.len() {
             assert!(operands[i].hypot2(&projected[i]) < 2e-9);
         }
 
-        op.apply(&ctx, &mut operands, Inv)?;
+        ctx.apply(op, Inv, &mut operands)?;
         for i in 0..operands.len() {
             assert!(operands[i].hypot2(&geo[i]) < 2e-9);
         }
@@ -288,9 +289,9 @@ mod tests {
 
     #[test]
     fn two_standard_parallels_and_latitudinal_offset() -> Result<(), Error> {
-        let ctx = Minimal::default();
+        let mut ctx = Minimal::default();
         let definition = "lcc lat_1=33 lat_2=45 lat_0=35 lon_0=10";
-        let op = Op::new(definition, &ctx)?;
+        let op = ctx.op(definition)?;
 
         // Validation value from PROJ:
         // echo 12 40 0 0 | cct -d12 proj=lcc lat_1=33 lat_2=45 lat_0=35 lon_0=10 -- | clip
@@ -298,12 +299,12 @@ mod tests {
         let projected = [Coord::raw(169863.026093938359, 554155.440793916583, 0., 0.)];
 
         let mut operands = geo.clone();
-        op.apply(&ctx, &mut operands, Fwd)?;
+        ctx.apply(op, Fwd, &mut operands)?;
         for i in 0..operands.len() {
             assert!(operands[i].hypot2(&projected[i]) < 2e-9);
         }
 
-        op.apply(&ctx, &mut operands, Inv)?;
+        ctx.apply(op, Inv, &mut operands)?;
         for i in 0..operands.len() {
             assert!(operands[i].hypot2(&geo[i]) < 1e-9);
         }
@@ -312,9 +313,9 @@ mod tests {
 
     #[test]
     fn two_sp_lat_offset_xy_offset() -> Result<(), Error> {
-        let ctx = Minimal::default();
+        let mut ctx = Minimal::default();
         let definition = "lcc lat_1=33 lat_2=45 lat_0=35 lon_0=10 x_0=12345 y_0=67890";
-        let op = Op::new(definition, &ctx)?;
+        let op = ctx.op(definition)?;
 
         // Validation value from PROJ:
         // echo 12 40 0 0 | cct -d12 proj=lcc lat_1=33 lat_2=45 lat_0=35 lon_0=10  x_0=12345 y_0=67890 -- | clip
@@ -322,12 +323,12 @@ mod tests {
         let projected = [Coord::raw(182208.026093938301, 622045.440793916583, 0., 0.)];
 
         let mut operands = geo.clone();
-        op.apply(&ctx, &mut operands, Fwd)?;
+        ctx.apply(op, Fwd, &mut operands)?;
         for i in 0..operands.len() {
             assert!(operands[i].hypot2(&projected[i]) < 2e-9);
         }
 
-        op.apply(&ctx, &mut operands, Inv)?;
+        ctx.apply(op, Inv, &mut operands)?;
         for i in 0..operands.len() {
             assert!(operands[i].hypot2(&geo[i]) < 1e-9);
         }
@@ -336,9 +337,9 @@ mod tests {
 
     #[test]
     fn two_sp_lat_offset_xy_offset_scaling() -> Result<(), Error> {
-        let ctx = Minimal::default();
+        let mut ctx = Minimal::default();
         let definition = "lcc lat_1=33 lat_2=45 lat_0=35 lon_0=10 x_0=12345 y_0=67890 k_0=0.99";
-        let op = Op::new(definition, &ctx)?;
+        let op = ctx.op(definition)?;
 
         // Validation value from PROJ:
         // echo 12 40 0 0 | cct -d12 proj=lcc lat_1=33 lat_2=45 lat_0=35 lon_0=10  x_0=12345 y_0=67890 k_0=0.99 -- | clip
@@ -346,12 +347,12 @@ mod tests {
         let projected = [Coord::raw(180509.395832998911, 616503.886385977501, 0., 0.)];
 
         let mut operands = geo.clone();
-        op.apply(&ctx, &mut operands, Fwd)?;
+        ctx.apply(op, Fwd, &mut operands)?;
         for i in 0..operands.len() {
             assert!(operands[i].hypot2(&projected[i]) < 2e-9);
         }
 
-        op.apply(&ctx, &mut operands, Inv)?;
+        ctx.apply(op, Inv, &mut operands)?;
         for i in 0..operands.len() {
             assert!(operands[i].hypot2(&geo[i]) < 1e-9);
         }

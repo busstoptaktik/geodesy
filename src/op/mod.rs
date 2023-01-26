@@ -39,7 +39,7 @@ impl Op {
         ctx: &dyn Context,
         operands: &mut [Coord],
         direction: Direction,
-    ) -> Result<usize, Error> {
+    ) -> usize {
         let forward = direction == Direction::Fwd;
         // Short form of (inverted && !forward) || (forward && !inverted)
         if self.descriptor.inverted != forward {

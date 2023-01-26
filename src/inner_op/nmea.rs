@@ -22,7 +22,7 @@ use super::*;
 
 // ----- F O R W A R D -----------------------------------------------------------------
 
-fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
     let dms = op.params.boolean("dms");
     let mut successes = 0_usize;
     for o in operands {
@@ -34,12 +34,12 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Err
         successes += 1;
     }
 
-    Ok(successes)
+    successes
 }
 
 // ----- I N V E R S E -----------------------------------------------------------------
 
-fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
     let dms = op.params.boolean("dms");
     let mut successes = 0_usize;
     for o in operands {
@@ -55,7 +55,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Err
         successes += 1;
     }
 
-    Ok(successes)
+    successes
 }
 
 // ----- C O N S T R U C T O R ---------------------------------------------------------
@@ -79,19 +79,19 @@ mod tests {
 
     #[test]
     fn nmea() -> Result<(), Error> {
-        let ctx = Minimal::default();
-        let op = Op::new("nmea", &ctx)?;
+        let mut ctx = Minimal::default();
+        let op = ctx.op("nmea")?;
 
         let mut operands = [Coord::raw(5530.15, -1245.15, 0., 0.)];
 
         // Forward: nmea to internal
-        op.apply(&ctx, &mut operands, Fwd)?;
+        ctx.apply(op, Fwd, &mut operands)?;
         assert!((operands[0].first().to_degrees() - -12.7525).abs() < 1e-14);
         assert!((operands[0].second().to_degrees() - 55.5025).abs() < 1e-14);
         assert_eq!(operands[0].third(), 0.0);
 
         // Inverse + roundtrip: Internal to nmea
-        op.apply(&ctx, &mut operands, Inv)?;
+        ctx.apply(op, Inv, &mut operands)?;
         assert!((operands[0].first() - 5530.15).abs() < 1e-14);
         assert!((operands[0].second() - -1245.15).abs() < 1e-14);
         assert_eq!(operands[0].first(), 5530.15);
@@ -102,16 +102,16 @@ mod tests {
 
     #[test]
     fn nmea_dms() -> Result<(), Error> {
-        let ctx = Minimal::default();
-        let op = Op::new("nmea dms", &ctx)?;
+        let mut ctx = Minimal::default();
+        let op = ctx.op("nmea dms")?;
 
         let mut operands = [Coord::raw(553036., -124509., 0., 0.)];
         let geo = Coord::geo(55.51, -12.7525, 0., 0.);
 
-        op.apply(&ctx, &mut operands, Fwd)?;
+        ctx.apply(op, Fwd, &mut operands)?;
         assert!(operands[0].default_ellps_dist(&geo) < 1e-10);
 
-        op.apply(&ctx, &mut operands, Inv)?;
+        ctx.apply(op, Inv, &mut operands)?;
         assert!((operands[0][0] - 553036.).abs() < 1e-10);
         assert!((operands[0][1] + 124509.).abs() < 1e-10);
 

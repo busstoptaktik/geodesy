@@ -24,17 +24,17 @@ fn common(
     _ctx: &dyn Context,
     operands: &mut [Coord],
     direction: Direction,
-) -> Result<usize, Error> {
+) -> usize {
     let ellps = op.params.ellps[0];
     let a = ellps.semimajor_axis();
     let f = ellps.flattening();
     let es = ellps.eccentricity_squared();
     let abridged = op.params.boolean("abridged");
-    let dx = op.params.real("dx")?;
-    let dy = op.params.real("dy")?;
-    let dz = op.params.real("dz")?;
-    let da = op.params.real("da")?;
-    let df = op.params.real("df")?;
+    let Ok(dx) = op.params.real("dx") else {return 0};
+    let Ok(dy) = op.params.real("dy") else {return 0};
+    let Ok(dz) = op.params.real("dz") else {return 0};
+    let Ok(da) = op.params.real("da") else {return 0};
+    let Ok(df) = op.params.real("df") else {return 0};
     let adffda = ellps.semimajor_axis() * df + ellps.flattening() * da;
     let moped = Molodensky {
         a,
@@ -65,16 +65,16 @@ fn common(
         }
     }
 
-    Ok(n)
+    n
 }
 
 // ----- F O R W A R D -----------------------------------------------------------------
-fn fwd(op: &Op, ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+fn fwd(op: &Op, ctx: &dyn Context, operands: &mut [Coord]) -> usize {
     common(op, ctx, operands, Fwd)
 }
 
 // ----- I N V E R S E -----------------------------------------------------------------
-fn inv(op: &Op, ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+fn inv(op: &Op, ctx: &dyn Context, operands: &mut [Coord]) -> usize {
     common(op, ctx, operands, Inv)
 }
 
@@ -198,7 +198,7 @@ mod tests {
 
     #[test]
     fn molodensky() -> Result<(), Error> {
-        let ctx = Minimal::default();
+        let mut ctx = Minimal::default();
         // ---------------------------------------------------------------------------
         // Test case from OGP Publication 373-7-2: Geomatics Guidance Note number 7,
         // part 2: Transformation from WGS84 to ED50.
@@ -208,7 +208,7 @@ mod tests {
             molodensky ellps_0=WGS84 ellps_1=intl
             dx=84.87 dy=96.49 dz=116.95
         ";
-        let op = Op::new(definition, &ctx)?;
+        let op = ctx.op(definition)?;
 
         // Test point (53.80939444444444, 2.12955, 73 m)
         let lat = Coord::dms_to_dd(53, 48, 33.82);
@@ -230,14 +230,14 @@ mod tests {
         // In the unabridged case, Molodensky replicates Helmert to
         // within 5 mm in the plane and the elevation.
         let mut operands = [WGS84];
-        op.apply(&ctx, &mut operands, Fwd)?;
+        ctx.apply(op, Fwd, &mut operands)?;
         assert!(ED50.default_ellps_dist(&operands[0]) < 0.005);
         assert!((ED50[2] - operands[0][2]).abs() < 0.005);
 
         // The same holds in the reverse unabridged case, where
         // additionally the elevation is even better
         let mut operands = [ED50];
-        op.apply(&ctx, &mut operands, Inv)?;
+        ctx.apply(op, Inv, &mut operands)?;
         assert!(WGS84.default_ellps_3d_dist(&operands[0]) < 0.005);
         assert!((WGS84[2] - operands[0][2]).abs() < 0.001);
 
@@ -247,16 +247,16 @@ mod tests {
             molodensky ellps_0=WGS84 ellps_1=intl
             dx=84.87 dy=96.49 dz=116.95 abridged
         ";
-        let op = Op::new(definition, &ctx)?;
+        let op = ctx.op(definition)?;
 
         let mut operands = [WGS84];
-        op.apply(&ctx, &mut operands, Fwd)?;
+        ctx.apply(op, Fwd, &mut operands)?;
         assert!(ED50.default_ellps_dist(&operands[0]) < 0.1);
         // Heights are worse in the abridged case
         assert!((ED50[2] - operands[0][2]).abs() < 0.075);
 
         let mut operands = [ED50];
-        op.apply(&ctx, &mut operands, Inv)?;
+        ctx.apply(op, Inv, &mut operands)?;
         assert!(WGS84.default_ellps_dist(&operands[0]) < 0.1);
         // Heights are worse in the abridged case
         assert!((WGS84[2] - operands[0][2]).abs() < 0.075);

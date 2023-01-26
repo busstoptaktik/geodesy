@@ -1,6 +1,6 @@
 use geodesy::internal::*;
 
-// ----- U S E R   P R O V I D E D   P R O V I D E R ----------------------------------
+// ----- U S E R   P R O V I D E D   C O N T E X T ----------------------------------
 
 /// A direct copy of the code of the Minimal Context provider, renamed as Maximal.
 /// Here used as a test and demo of how to write/use a user-provided context
@@ -45,7 +45,7 @@ impl Context for Maximal {
     ) -> Result<usize, Error> {
         const BAD_ID_MESSAGE: Error = Error::General("Minimal: Unknown operator id");
         let op = self.operators.get(&op).ok_or(BAD_ID_MESSAGE)?;
-        op.apply(self, operands, direction)
+        Ok(op.apply(self, operands, direction))
     }
 
     fn globals(&self) -> BTreeMap<String, String> {
@@ -111,17 +111,17 @@ mod tests {
 
     #[test]
     fn maximal() -> Result<(), Error> {
-        let mut prv = Maximal::default();
-        let op = prv.op("gridshift grids=test.datum")?;
+        let mut ctx = Maximal::default();
+        let op = ctx.op("gridshift grids=test.datum")?;
         let cph = Coord::geo(55., 12., 0., 0.);
         let mut data = [cph];
 
-        prv.apply(op, Fwd, &mut data)?;
+        ctx.apply(op, Fwd, &mut data)?;
         let res = data[0].to_geo();
         assert!((res[0] - 55.015278).abs() < 1e-6);
         assert!((res[1] - 12.003333).abs() < 1e-6);
 
-        prv.apply(op, Inv, &mut data)?;
+        ctx.apply(op, Inv, &mut data)?;
         assert!((data[0][0] - cph[0]).abs() < 1e-10);
         assert!((data[0][1] - cph[1]).abs() < 1e-10);
 
@@ -130,12 +130,12 @@ mod tests {
         // a somewhat unrelated test comparing RG's TM implementation with PROJ's
         // Guarded by if let Ok, since we do not want to fail this test in case of
         // no access to the proj executable
-        if let Ok(pj) = prv.op("proj proj=utm zone=32") {
-            let rg = prv.op("utm zone=32")?;
+        if let Ok(pj) = ctx.op("proj proj=utm zone=32") {
+            let rg = ctx.op("utm zone=32")?;
             let mut data_rg = [cph];
             let mut data_pj = [cph];
-            prv.apply(rg, Fwd, &mut data_rg)?;
-            prv.apply(pj, Fwd, &mut data_pj)?;
+            ctx.apply(rg, Fwd, &mut data_rg)?;
+            ctx.apply(pj, Fwd, &mut data_pj)?;
             assert!((data_rg[0].hypot2(&data_pj[0]) < 1e-4));
         }
 

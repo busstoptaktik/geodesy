@@ -11,7 +11,7 @@ use super::*;
 
 // ----- W O R K H O R S E ----------------------------------------------------------
 
-fn proj(args: &str, forward: bool, operands: &mut [Coord]) -> Result<usize, Error> {
+fn proj(args: &str, forward: bool, operands: &mut [Coord]) -> usize {
     // Build the command line arguments needed to spawn proj, including '-b' for
     // binary i/o, and '-I' to indicate the inverse operation (if that is the case)
     let mut the_args = "-b ".to_string();
@@ -22,12 +22,12 @@ fn proj(args: &str, forward: bool, operands: &mut [Coord]) -> Result<usize, Erro
     let proj_args: Vec<&str> = the_args.split_whitespace().collect();
 
     // Spawn the process
-    let mut child = Command::new("proj")
+    let Ok(mut child) = Command::new("proj")
         .args(&proj_args)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
-        .spawn()?;
+        .spawn() else {return 0};
 
     // Extract the 2D coordinates from the operands, and convert them into bytes
     // for interprocess communication
@@ -53,7 +53,8 @@ fn proj(args: &str, forward: bool, operands: &mut [Coord]) -> Result<usize, Erro
     // Read the output bytes
     let output = child.wait_with_output().expect("failed to wait on child");
     if output.stdout.len() != buffer_size {
-        return Err(Error::General("proj: Unexpected return size"));
+        warn!("proj: Unexpected return size");
+        return 0;
     }
 
     // Turn the output bytes into doubles and put them properly back into the operands
@@ -78,18 +79,18 @@ fn proj(args: &str, forward: bool, operands: &mut [Coord]) -> Result<usize, Erro
         op[1] = n;
     }
 
-    Ok(operands.len() - errors)
+    operands.len() - errors
 }
 
 // ----- F O R W A R D --------------------------------------------------------------
 
-fn proj_fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+fn proj_fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
     proj(&op.params.text["proj_args"], true, operands)
 }
 
 // ----- I N V E R S E --------------------------------------------------------------
 
-fn proj_inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+fn proj_inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
     proj(&op.params.text["proj_args"], false, operands)
 }
 

@@ -2,24 +2,24 @@ use super::*;
 
 // ----- F O R W A R D -----------------------------------------------------------------
 
-fn fwd(_op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+fn fwd(_op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
     let mut n = 0;
     for o in operands {
         o[0] += 1.;
         n += 1;
     }
-    Ok(n)
+    n
 }
 
 // ----- I N V E R S E -----------------------------------------------------------------
 
-fn inv(_op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> Result<usize, Error> {
+fn inv(_op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
     let mut n = 0;
     for o in operands {
         o[0] -= 1.;
         n += 1;
     }
-    Ok(n)
+    n
 }
 
 // ----- C O N S T R U C T O R ---------------------------------------------------------
@@ -40,15 +40,15 @@ mod tests {
     use super::*;
     #[test]
     fn addone() -> Result<(), Error> {
-        let ctx = Minimal::default();
-        let op = Op::new("addone", &ctx)?;
+        let mut ctx = Minimal::default();
+        let op = ctx.op("addone")?;
         let mut data = crate::some_basic_coordinates();
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
-        op.apply(&ctx, &mut data, Direction::Fwd)?;
+        ctx.apply(op, Fwd, &mut data)?;
         assert_eq!(data[0][0], 56.);
         assert_eq!(data[1][0], 60.);
-        op.apply(&ctx, &mut data, Direction::Inv)?;
+        ctx.apply(op, Inv, &mut data)?;
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
         Ok(())
