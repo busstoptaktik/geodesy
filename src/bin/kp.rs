@@ -70,7 +70,7 @@ fn main() -> Result<(), anyhow::Error> {
         if let Some(dir) = dirs::data_local_dir() {
             eprintln!("data_local_dir: {}", dir.to_str().unwrap_or_default());
         }
-        eprintln!("opt: {:#?}", opt);
+        eprintln!("opt: {opt:#?}");
     }
 
     if opt.args.is_empty() {
@@ -81,8 +81,8 @@ fn main() -> Result<(), anyhow::Error> {
     let op = ctx.op(&opt.args[0])?;
     if opt.verbose > 2 {
         let duration = start.elapsed();
-        println!("Created operation in: {:?}", duration);
-        println!("{:#?}", op);
+        println!("Created operation in: {duration:?}");
+        println!("{op:#?}");
     }
 
     let start = time::Instant::now();
@@ -127,7 +127,7 @@ fn main() -> Result<(), anyhow::Error> {
         }
         // Print output
         if opt.echo {
-            println!("#  {}", line);
+            println!("#  {line}");
         }
         if data[0][0] > 1000. {
             // Projected or cartesian coordinates
@@ -145,7 +145,7 @@ fn main() -> Result<(), anyhow::Error> {
     }
     if opt.verbose > 1 {
         let duration = start.elapsed();
-        println!("Transformed in: {:?}", duration);
+        println!("Transformed in: {duration:?}");
     }
 
     Ok(())

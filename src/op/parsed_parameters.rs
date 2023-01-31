@@ -290,7 +290,7 @@ impl ParsedParameters {
 
         // ellps_{n}
         for i in 0..2 {
-            let key = format!("ellps_{}", i);
+            let key = format!("ellps_{i}");
             if let Some(e) = text.get(&key[..]) {
                 ellps[i] = Ellipsoid::named(e)?;
             }
@@ -302,31 +302,31 @@ impl ParsedParameters {
 
         // lat_{n}
         for i in 0..4 {
-            let key = format!("lat_{}", i);
+            let key = format!("lat_{i}");
             lat[i] = (*real.get(&key[..]).unwrap_or(&0.)).to_radians();
         }
 
         // lon_{n}
         for i in 0..4 {
-            let key = format!("lon_{}", i);
+            let key = format!("lon_{i}");
             lon[i] = (*real.get(&key[..]).unwrap_or(&0.)).to_radians();
         }
 
         // x_{n}
         for i in 0..4 {
-            let key = format!("x_{}", i);
+            let key = format!("x_{i}");
             x[i] = *real.get(&key[..]).unwrap_or(&0.);
         }
 
         // y_{n}
         for i in 0..4 {
-            let key = format!("y_{}", i);
+            let key = format!("y_{i}");
             y[i] = *real.get(&key[..]).unwrap_or(&0.);
         }
 
         // k_{n}
         for i in 0..4 {
-            let key = format!("k_{}", i);
+            let key = format!("k_{i}");
             k[i] = *real.get(&key[..]).unwrap_or(&0.);
         }
 
@@ -393,10 +393,7 @@ pub fn chase(
                 return Ok(Some(String::from(default)));
             }
             if chasing {
-                return Err(Error::Syntax(format!(
-                    "Incomplete definition for '{}'",
-                    key
-                )));
+                return Err(Error::Syntax(format!("Incomplete definition for '{key}'")));
             }
             return Ok(None);
         }

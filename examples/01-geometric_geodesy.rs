@@ -35,11 +35,11 @@ fn main() -> Result<(), Error> {
     let n = GRS80.third_flattening();
     let es = GRS80.eccentricity_squared();
     println!("GRS80 - Ellipsoid parameters");
-    println!("    E   =  {:.4}", E);
-    println!("    b   =  {:.4}", b);
-    println!("    c   =  {:.4}", c);
-    println!("    n   =  {}", n);
-    println!("    es  =  {}", es);
+    println!("    E   =  {E:.4}");
+    println!("    b   =  {b:.4}");
+    println!("    c   =  {c:.4}");
+    println!("    n   =  {n}");
+    println!("    es  =  {es}");
     println!("");
 
     // A geodesic is the shortest line between two points on the

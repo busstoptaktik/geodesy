@@ -100,8 +100,7 @@ fn main() -> Result<(), Error> {
         // Clean up the pile if no aux-file was found
         if aux_file.is_err() {
             eprintln!(
-                "File: {:?} not found - removing the corresponding raw file from pile.",
-                aux_path
+                "File: {aux_path:?} not found - removing the corresponding raw file from pile."
             );
             pile.set_len(pos)?;
             pile.seek(SeekFrom::End(0))?;
@@ -122,7 +121,7 @@ fn main() -> Result<(), Error> {
         let mut aux_out = File::create(aux_out_path)?;
 
         // First line of the new aux file defines the pile-offset of the grid
-        let line = format!("<{}>\nWhence: {}\n", basename, pos);
+        let line = format!("<{basename}>\nWhence: {pos}\n");
         aux_out.write_all(line.as_bytes())?;
 
         // Geometry and geolocation data are restructured. Other information
@@ -162,7 +161,7 @@ fn main() -> Result<(), Error> {
     }
 
     if opt.debug {
-        eprintln!("{:#?}", opt);
+        eprintln!("{opt:#?}");
     }
 
     Ok(())

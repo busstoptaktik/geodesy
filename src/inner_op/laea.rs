@@ -138,7 +138,9 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
         // Another case of PROJ reality hardening
         let asin_argument = 0.5 * rho / rq;
         if asin_argument.abs() > 1.0 {
-            warn!("LAEA: ({}, {}) outside domain", x, y);
+            warn!("LAEA: ({x}, {y}) outside domain");
+            coord[0] = f64::NAN;
+            coord[1] = f64::NAN;
             continue;
         }
 
@@ -271,7 +273,12 @@ mod tests {
         assert!((operands[0][0].to_degrees() - 5.0).abs() < 1e-12);
         assert!((operands[0][1].to_degrees() - 50.).abs() < 1e-12);
 
-        // Missing test points for the poar aspects
+        let p = Coord::raw(1e30, 1e30, 0.0, 0.0);
+        let mut operands = [p];
+        ctx.apply(op, Inv, &mut operands)?;
+        assert!(operands[0][0].is_nan());
+
+        // Missing test points for the polar aspects
 
         Ok(())
     }
