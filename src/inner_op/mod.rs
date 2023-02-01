@@ -1,4 +1,4 @@
-use crate::inner_op_authoring::*;
+use crate::operator_authoring::*;
 
 // ----- B U I L T I N   O P E R A T O R S ---------------------------------------------
 
@@ -18,7 +18,7 @@ mod merc;
 mod molodensky;
 mod nmea;
 mod noop;
-pub(crate) mod pipeline;
+pub(crate) mod pipeline; // Needed by Op for instantiation
 mod proj;
 mod tmerc;
 
@@ -50,7 +50,7 @@ const BUILTIN_OPERATORS: [(&str, OpConstructor); 20] = [
 
 /// Handle instantiation of built-in operators, as defined in
 /// `BUILTIN_OPERATORS` above.
-pub fn builtin(name: &str) -> Result<OpConstructor, Error> {
+pub(crate) fn builtin(name: &str) -> Result<OpConstructor, Error> {
     for p in BUILTIN_OPERATORS {
         if p.0 == name {
             return Ok(p.1);

@@ -1,6 +1,7 @@
 //! Lambert azimuthal equal area: EPSG coordinate operation method 9820, implemented
 //! following [IOGP, 2019](crate::Bibliography::Iogp19), pp. 78-80
-use super::*;
+use crate::operator_authoring::*;
+
 use std::f64::consts::FRAC_PI_2;
 const EPS10: f64 = 1e-10;
 

@@ -1,11 +1,11 @@
 // The Grid struct handles grid characteristics and interpolation.
-// The actual grid may be ither part of the Grid struct, or externally
+// The actual grid may be either part of the Grid struct, or externally
 // provided (presumably by a Context).
 //
 // In principle grid format agnostic, but includes a parser for
 // Gravsoft format geodetic grids.
 
-use crate::internal::*;
+use crate::preamble::*;
 use std::io::BufRead;
 
 #[derive(Debug, Default)]

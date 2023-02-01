@@ -3,11 +3,11 @@
 //
 // Extremely experimental, undocumented, and with too few checks on return
 // values - but (under Windows at least) amazingly, it seems to work...
+use crate::operator_authoring::*;
+
 use std::io::Write;
 use std::mem::size_of;
 use std::process::{Command, Stdio};
-
-use super::*;
 
 // ----- W O R K H O R S E ----------------------------------------------------------
 

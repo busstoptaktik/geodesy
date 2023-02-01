@@ -1,7 +1,6 @@
-use crate::internal::*;
+use crate::context_authoring::*;
 mod minimal;
 mod plain;
-
 pub use minimal::Minimal;
 pub use plain::Plain;
 

@@ -57,7 +57,7 @@ geo:in | cart ... | helmert ... | cart inv ... | geo:out
 
 !*/
 
-use super::*;
+use crate::operator_authoring::*;
 
 const POST_DEFAULT: [f64; 4] = [0., 1., 2., 3.];
 const MULT_DEFAULT: [f64; 4] = [1., 1., 1., 1.];

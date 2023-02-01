@@ -1,9 +1,10 @@
-use super::internal::*;
-
 mod op_descriptor;
 mod parameter;
 mod parsed_parameters;
 mod raw_parameters;
+
+use crate::operator_authoring::*;
+use std::collections::BTreeMap;
 
 pub use op_descriptor::OpDescriptor;
 pub use parameter::OpParameter;

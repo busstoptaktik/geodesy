@@ -8,7 +8,7 @@
 // we need to access some of the lower level features of the Rust
 // Geodesy library. Since they are mostly for library-internal use,
 // they are wrapped up in this dedicated module
-use geodesy::inner_op_authoring::*;
+use geodesy::operator_authoring::*;
 
 // The functionality of the operator is straightforward: It simply
 // adds 42 to the first element of any coordinate tuple thrown at it.

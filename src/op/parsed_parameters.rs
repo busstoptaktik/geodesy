@@ -7,6 +7,7 @@
 
 #![allow(clippy::needless_range_loop)]
 use crate::math::FourierCoefficients;
+use std::collections::BTreeSet;
 
 use super::*;
 

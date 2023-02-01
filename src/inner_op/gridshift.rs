@@ -1,5 +1,5 @@
 // Datum shift using grid interpolation.
-use super::*;
+use crate::operator_authoring::*;
 
 // ----- F O R W A R D --------------------------------------------------------------
 
@@ -90,7 +90,7 @@ pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
     let fwd = InnerOp(fwd);
     let inv = InnerOp(inv);
     let descriptor = OpDescriptor::new(def, fwd, Some(inv));
-    let steps = Vec::<Op>::new();
+    let steps = Vec::new();
     let id = OpHandle::new();
 
     Ok(Op {
@@ -109,7 +109,7 @@ mod tests {
 
     #[test]
     fn gridshift() -> Result<(), Error> {
-        let mut ctx = Minimal::default();
+        let mut ctx = Plain::default();
         let op = ctx.op("gridshift grids=test.datum")?;
         let cph = Coord::geo(55., 12., 0., 0.);
         let mut data = [cph];

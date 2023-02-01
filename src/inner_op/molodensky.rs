@@ -15,7 +15,7 @@
 //!    [DOI](https://doi.org/10.1080/00396265.2016.1191748)
 //!
 #![allow(non_snake_case)]
-use super::*;
+use crate::operator_authoring::*;
 
 // ----- C O M M O N -------------------------------------------------------------------
 

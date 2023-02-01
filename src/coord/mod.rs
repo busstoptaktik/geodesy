@@ -1,4 +1,4 @@
-use super::internal::*;
+use crate::preamble::*;
 use std::ops::{Add, Div, Index, IndexMut, Mul, Sub};
 
 mod conversions;

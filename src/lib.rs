@@ -21,28 +21,27 @@ pub use crate::Direction::Inv;
 /// The bread-and-butter, shrink-wrapped for external use
 pub mod preamble {
     pub use crate::context::Context;
-    pub use crate::grid::Grid;
+    pub use crate::context::Minimal;
+    pub use crate::context::Plain;
+    pub use crate::coord::Coord;
+    pub use crate::ellipsoid::Ellipsoid;
     pub use crate::op::Op;
     pub use crate::op::OpHandle;
-    pub use crate::Coord;
     pub use crate::Direction;
     pub use crate::Direction::Fwd;
     pub use crate::Direction::Inv;
-    pub use crate::Ellipsoid;
     pub use crate::Error;
-    pub use crate::Minimal;
-    pub use crate::Plain;
 }
 
 /// Preamble for InnerOp modules (built-in or user defined)
-pub mod inner_op_authoring {
+pub mod operator_authoring {
     pub use crate::preamble::*;
     pub use log::error;
     pub use log::info;
     pub use log::trace;
     pub use log::warn;
 
-    pub use crate::context::Context;
+    pub use crate::grid::Grid;
     pub use crate::inner_op::InnerOp;
     pub use crate::inner_op::OpConstructor;
     pub use crate::math::*;
@@ -52,19 +51,18 @@ pub mod inner_op_authoring {
     pub use crate::op::RawParameters;
 
     #[cfg(test)]
-    pub use crate::some_basic_coordinates;
+    pub fn some_basic_coordinates() -> [Coord; 2] {
+        let copenhagen = Coord::raw(55., 12., 0., 0.);
+        let stockholm = Coord::raw(59., 18., 0., 0.);
+        [copenhagen, stockholm]
+    }
 }
 
-/// Preamble for crate-internal modules, and authoring of Context providers
-pub mod internal {
-    pub use crate::context::Context;
+/// Preamble for Contexts (built-in or user defined)
+pub mod context_authoring {
     pub use crate::context::BUILTIN_ADAPTORS;
-    pub use crate::inner_op_authoring::*;
+    pub use crate::operator_authoring::*;
     pub use std::collections::BTreeMap;
-    pub use std::collections::BTreeSet;
-    pub use std::path::PathBuf;
-
-    pub use uuid::Uuid;
 }
 
 use thiserror::Error;
@@ -119,13 +117,6 @@ pub enum Error {
 pub enum Direction {
     Fwd,
     Inv,
-}
-
-#[cfg(test)]
-pub fn some_basic_coordinates() -> [Coord; 2] {
-    let copenhagen = Coord::raw(55., 12., 0., 0.);
-    let stockholm = Coord::raw(59., 18., 0., 0.);
-    [copenhagen, stockholm]
 }
 
 #[cfg(doc)]

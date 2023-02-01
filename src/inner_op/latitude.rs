@@ -1,5 +1,5 @@
 /// Auxiliary latitudes
-use super::*;
+use crate::operator_authoring::*;
 
 // ----- F O R W A R D -----------------------------------------------------------------
 

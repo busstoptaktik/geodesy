@@ -1,4 +1,4 @@
-use super::*;
+use crate::operator_authoring::*;
 use std::collections::BTreeSet;
 
 // ----- F O R W A R D -----------------------------------------------------------------
@@ -98,11 +98,7 @@ pub fn push(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error>
     let def = &parameters.definition;
     let params = ParsedParameters::new(parameters, &PUSH_POP_GAMUT)?;
 
-    let descriptor = OpDescriptor::new(
-        def,
-        InnerOp(noop_placeholder),
-        Some(InnerOp(noop_placeholder)),
-    );
+    let descriptor = OpDescriptor::new(def, InnerOp::default(), Some(InnerOp::default()));
     let steps = Vec::new();
     let id = OpHandle::new();
 
@@ -118,11 +114,7 @@ pub fn pop(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     let def = &parameters.definition;
     let params = ParsedParameters::new(parameters, &PUSH_POP_GAMUT)?;
 
-    let descriptor = OpDescriptor::new(
-        def,
-        InnerOp(noop_placeholder),
-        Some(InnerOp(noop_placeholder)),
-    );
+    let descriptor = OpDescriptor::new(def, InnerOp::default(), Some(InnerOp::default()));
     let steps = Vec::new();
     let id = OpHandle::new();
 

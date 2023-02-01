@@ -4,7 +4,7 @@ mod geodesics;
 mod latitudes;
 mod meridians;
 
-use super::internal::*;
+use crate::preamble::*;
 
 /// Representation of a (potentially triaxial) ellipsoid.
 #[derive(Clone, Copy, Debug, PartialEq)]

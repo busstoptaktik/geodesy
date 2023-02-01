@@ -1,13 +1,13 @@
-use super::*;
-use crate::context::Context;
+use crate::context_authoring::*;
+use std::path::PathBuf;
 
 // ----- T H E   P L A I N   C O N T E X T ---------------------------------------------
 
-/// A context provider, supporting built in and run-time defined operators, external grids,
-/// and macros.
+/// A context provider, supporting built in and run-time defined operators,
+/// external grids, and macros.
 /// Sufficient for most uses, especially geodetic grid development.
-/// May get somewhat clunky when working with large numbers of grids and macros, as each grid
-/// and macro resides in individual files.
+/// May get somewhat clunky when working with large numbers of grids or macros,
+/// as each reside in its own file.
 #[derive(Debug)]
 pub struct Plain {
     constructors: BTreeMap<String, OpConstructor>,

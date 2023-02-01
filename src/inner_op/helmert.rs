@@ -5,7 +5,7 @@
 ///
 /// While generally also applicable to 2D coordinates, this functionality is not yet
 /// implemented.
-use super::*;
+use crate::operator_authoring::*;
 
 // ----- C O M M O N -------------------------------------------------------------------
 

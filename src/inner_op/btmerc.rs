@@ -1,5 +1,5 @@
 //! Transverse Mercator, following to Bowring (1989)
-use super::*;
+use crate::operator_authoring::*;
 
 // ----- F O R W A R D -----------------------------------------------------------------
 
