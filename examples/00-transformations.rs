@@ -115,7 +115,7 @@ fn main() -> anyhow::Result<()> {
     // for the rare cases where it is preferable, we demonstrate its use below, by
     // repeating the exercises above, while swapping the roles of the `Op`/`OpHandle`
     // and the `Context`.
-
+    use geodesy::operator_authoring::Op;
     // Create an `Op`, turning geographical coordinates into UTM zone 32 coordinates
     let utm32 = Op::new("utm zone=32", &ctx)?;
     // Now, let's use the utm32-operator to transform some data
