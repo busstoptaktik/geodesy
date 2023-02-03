@@ -3,7 +3,7 @@
 // See also 00-transformations.rs
 // Run with:
 // cargo run --example 02-user_defined_macros
-use geodesy::preamble::*;
+use geodesy::prelude::*;
 
 fn main() -> anyhow::Result<()> {
     let mut ctx = Minimal::default();

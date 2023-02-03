@@ -19,7 +19,7 @@ pub use crate::Direction::Fwd;
 pub use crate::Direction::Inv;
 
 /// The bread-and-butter, shrink-wrapped for external use
-pub mod preamble {
+pub mod prelude {
     pub use crate::context::Context;
     pub use crate::context::Minimal;
     pub use crate::context::Plain;
@@ -34,7 +34,7 @@ pub mod preamble {
 
 /// Preamble for InnerOp modules (built-in or user defined)
 pub mod operator_authoring {
-    pub use crate::preamble::*;
+    pub use crate::prelude::*;
     pub use log::error;
     pub use log::info;
     pub use log::trace;

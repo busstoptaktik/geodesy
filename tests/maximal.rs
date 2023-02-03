@@ -109,7 +109,7 @@ impl Context for Maximal {
 #[cfg(test)]
 mod tests {
     use super::Maximal;
-    use geodesy::preamble::*;
+    use geodesy::prelude::*;
 
     #[test]
     fn maximal() -> Result<(), Error> {

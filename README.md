@@ -4,7 +4,7 @@
 
 ```rust
 // Find the UTM coordinates of some Scandinavian capitals
-use geodesy::preamble::*;
+use geodesy::prelude::*;
 fn main() -> anyhow::Result<()> {
     let mut context = Minimal::new();
     let utm33 = context.op("utm zone=33")?;

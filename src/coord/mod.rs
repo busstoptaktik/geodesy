@@ -1,4 +1,4 @@
-use crate::preamble::*;
+use crate::prelude::*;
 use std::ops::{Add, Div, Index, IndexMut, Mul, Sub};
 
 mod conversions;

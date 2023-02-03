@@ -55,7 +55,7 @@ Talking architecture and design philosophy out of thin air is at best counterpro
 ```rust
 fn main() {
     // [0] Conventional shorthand for accessing the major functionality
-    use geodesy::preamble::*;
+    use geodesy::prelude::*;
 
     // [1] Build some context
     let mut ctx = Minimal::default();

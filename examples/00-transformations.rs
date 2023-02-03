@@ -4,7 +4,7 @@
 // Run with:
 // cargo run --example 00-transformations
 
-use geodesy::preamble::*;
+use geodesy::prelude::*;
 
 // Use Anyhow for convenient error handling
 fn main() -> anyhow::Result<()> {

@@ -1,8 +1,8 @@
 /*! Plonketi Plonk! !*/
 //! How to append a postscript to the help message generated.
-// use geodesy::preamble::*;
+// use geodesy::prelude::*;
 use clap::Parser;
-use geodesy::preamble::*;
+use geodesy::prelude::*;
 use log::{debug, trace};
 use std::path::PathBuf;
 

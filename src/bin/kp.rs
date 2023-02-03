@@ -1,6 +1,6 @@
 use anyhow::bail;
 use clap::Parser;
-use geodesy::preamble::*;
+use geodesy::prelude::*;
 use simple_logger::SimpleLogger;
 use std::io::BufRead;
 use std::path::PathBuf;

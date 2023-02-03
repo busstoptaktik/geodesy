@@ -5,7 +5,7 @@
 // In principle grid format agnostic, but includes a parser for
 // Gravsoft format geodetic grids.
 
-use crate::preamble::*;
+use crate::prelude::*;
 use std::io::BufRead;
 
 #[derive(Debug, Default)]

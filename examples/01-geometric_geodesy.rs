@@ -9,7 +9,7 @@
 // snake case warnings of for this entire file.
 #![allow(non_snake_case)]
 
-use geodesy::preamble::*;
+use geodesy::prelude::*;
 
 fn main() -> Result<(), Error> {
     // In example 00, we saw that the `Context` data structure is the
