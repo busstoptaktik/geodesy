@@ -1,4 +1,4 @@
-//! Transverse Mercator, following to Bowring (1989)
+//! Transverse Mercator, following [Bowring (1989)](crate::Bibliography::Bow89)
 use crate::operator_authoring::*;
 
 // ----- F O R W A R D -----------------------------------------------------------------
@@ -35,7 +35,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
         coord[0] = x_0 + k_0 * N * ((c * sd).atanh() + z * (1. + oo * (36. * cc - 29.) / 10.));
 
         // Northing
-        let m = ellps.meridional_distance(lat, Fwd);
+        let m = ellps.meridian_latitude_to_distance(lat);
         let znos4 = z * N * dlon * s / 4.;
         let ecc = 4. * eps * cc;
         coord[1] = y_0 + k_0 * (m + N * theta_2 + znos4 * (9. + ecc + oo * (20. * cc - 11.)));
@@ -61,7 +61,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
     for coord in operands {
         // Footpoint latitude, i.e. the latitude of a point on the central meridian
         // having the same northing as the point of interest
-        let lat = ellps.meridional_distance((coord[1] - y_0) / k_0, Inv);
+        let lat = ellps.meridian_distance_to_latitude((coord[1] - y_0) / k_0);
         let t = lat.tan();
         let c = lat.cos();
         let cc = c * c;

@@ -2,51 +2,6 @@ use super::*;
 
 // ----- Geodesics -------------------------------------------------------------
 impl Ellipsoid {
-    /// The distance, *M*, along a meridian from the equator to the given
-    /// latitude is a special case of a geodesic length.
-    ///
-    /// This implementation follows the
-    /// [remarkably simple algorithm](crate::Bibliography::Bow83) by Bowring (1983).
-    /// The forward case computes the meridian distance given a latitude.
-    /// The inverse case computes the latitude given a meridian distance.
-    ///
-    /// See also
-    /// [Wikipedia: Transverse Mercator](https://en.wikipedia.org/wiki/Transverse_Mercator:_Bowring_series).
-    ///
-    /// [Deakin et al](crate::Bibliography::Dea12) provides a higher order (*n⁸*) derivation.
-    ///
-    #[must_use]
-    #[allow(non_snake_case)] // make it possible to mimic math notation from the original paper
-    #[allow(clippy::many_single_char_names)] // ditto
-    pub fn meridional_distance(&self, latitude: f64, direction: Direction) -> f64 {
-        let n = self.third_flattening();
-        let m = 1. + n * n / 8.;
-
-        // Rectifying radius - truncated after the n⁴ term
-        let A = self.a * m * m / (1. + n);
-
-        if direction == Direction::Fwd {
-            let B = 9. * (1. - 3. * n * n / 8.0);
-            let (s, c) = (2. * latitude).sin_cos();
-            let x = 1. + 13. / 12. * n * c;
-            let y = 0. + 13. / 12. * n * s;
-            let r = y.hypot(x);
-            let v = y.atan2(x);
-            let theta = latitude - B * r.powf(-2. / 13.) * (2. * v / 13.).sin();
-            return A * theta;
-        }
-
-        let C = 1. - 9. * n * n / 16.;
-        let theta = latitude / A;
-        let (s, c) = (2. * theta).sin_cos();
-        let x = 1. - 155. / 84. * n * c;
-        let y = 0. + 155. / 84. * n * s;
-        let r = y.hypot(x);
-        let v = y.atan2(x);
-
-        theta + 63. / 4. * C * r.powf(8. / 155.) * (8. / 155. * v).sin()
-    }
-
     /// For general geodesics, we use the algorithm by Vincenty
     /// ([1975](crate::Bibliography::Vin75)), with updates by the same author
     /// ([1976](crate::Bibliography::Vin76)).
