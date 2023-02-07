@@ -12,7 +12,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
             coord[1] = ellps.latitude_geographic_to_geocentric(coord[1]);
             successes += 1;
         }
-    } else if op.params.boolean("reduced") {
+    } else if op.params.boolean("reduced") || op.params.boolean("parametric") {
         for coord in operands {
             coord[1] = ellps.latitude_geographic_to_reduced(coord[1]);
             successes += 1;
@@ -60,7 +60,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
             coord[1] = ellps.latitude_geocentric_to_geographic(coord[1]);
             successes += 1;
         }
-    } else if op.params.boolean("reduced") {
+    } else if op.params.boolean("reduced") || op.params.boolean("parametric") {
         for coord in operands {
             coord[1] = ellps.latitude_reduced_to_geographic(coord[1]);
             successes += 1;
@@ -101,10 +101,11 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
 
 // Example...
 #[rustfmt::skip]
-pub const GAMUT: [OpParameter; 7] = [
+pub const GAMUT: [OpParameter; 8] = [
     OpParameter::Flag { key: "inv" },
     OpParameter::Flag { key: "geocentric" },
     OpParameter::Flag { key: "reduced" },
+    OpParameter::Flag { key: "parametric" },
     OpParameter::Flag { key: "conformal" },
     OpParameter::Flag { key: "authalic" },
     OpParameter::Flag { key: "rectifying" },
@@ -170,6 +171,14 @@ mod tests {
 
         // Reduced (alias parametric)
         let op = ctx.op("latitude reduced ellps=GRS80")?;
+        let mut operands = [Coord::geo(55., 12., 0., 0.)];
+        ctx.apply(op, Fwd, &mut operands)?;
+        assert!((operands[0][1].to_degrees() - 54.909_538_187_092_245).abs() < 1e-12);
+        ctx.apply(op, Inv, &mut operands)?;
+        assert!((operands[0][1].to_degrees() - 55.).abs() < 1e-12);
+
+        // And vice versa: Parametric (alias Reduced)
+        let op = ctx.op("latitude parametric ellps=GRS80")?;
         let mut operands = [Coord::geo(55., 12., 0., 0.)];
         ctx.apply(op, Fwd, &mut operands)?;
         assert!((operands[0][1].to_degrees() - 54.909_538_187_092_245).abs() < 1e-12);
