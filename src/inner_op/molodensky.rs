@@ -19,7 +19,7 @@ use crate::operator_authoring::*;
 
 // ----- C O M M O N -------------------------------------------------------------------
 
-fn common(op: &Op, _ctx: &dyn Context, operands: &mut [Coord], direction: Direction) -> usize {
+fn common(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet, direction: Direction) -> usize {
     let ellps = op.params.ellps[0];
     let a = ellps.semimajor_axis();
     let f = ellps.flattening();
@@ -47,8 +47,9 @@ fn common(op: &Op, _ctx: &dyn Context, operands: &mut [Coord], direction: Direct
 
     let n = operands.len();
 
-    for coord in operands {
-        let par = calc_molodensky_params(&moped, coord);
+    for i in 0..n {
+        let mut coord = operands.get(i);
+        let par = calc_molodensky_params(&moped, &coord);
         if direction == Fwd {
             coord[0] += par[0];
             coord[1] += par[1];
@@ -58,18 +59,19 @@ fn common(op: &Op, _ctx: &dyn Context, operands: &mut [Coord], direction: Direct
             coord[1] -= par[1];
             coord[2] -= par[2];
         }
+        operands.set(i, &coord);
     }
 
     n
 }
 
 // ----- F O R W A R D -----------------------------------------------------------------
-fn fwd(op: &Op, ctx: &dyn Context, operands: &mut [Coord]) -> usize {
+fn fwd(op: &Op, ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     common(op, ctx, operands, Fwd)
 }
 
 // ----- I N V E R S E -----------------------------------------------------------------
-fn inv(op: &Op, ctx: &dyn Context, operands: &mut [Coord]) -> usize {
+fn inv(op: &Op, ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     common(op, ctx, operands, Inv)
 }
 

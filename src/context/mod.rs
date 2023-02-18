@@ -23,7 +23,7 @@ pub trait Context {
         &self,
         op: OpHandle,
         direction: Direction,
-        operands: &mut [Coord],
+        operands: &mut dyn CoordinateSet,
     ) -> Result<usize, Error>;
 
     /// Globally defined default values (typically just `ellps=GRS80`)

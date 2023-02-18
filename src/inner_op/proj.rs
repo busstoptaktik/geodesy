@@ -11,7 +11,7 @@ use std::process::{Command, Stdio};
 
 // ----- W O R K H O R S E ----------------------------------------------------------
 
-fn proj(args: &str, forward: bool, operands: &mut [Coord]) -> usize {
+fn proj(args: &str, forward: bool, operands: &mut dyn CoordinateSet) -> usize {
     // Build the command line arguments needed to spawn proj, including '-b' for
     // binary i/o, and '-I' to indicate the inverse operation (if that is the case)
     let mut the_args = "-b ".to_string();
@@ -31,9 +31,11 @@ fn proj(args: &str, forward: bool, operands: &mut [Coord]) -> usize {
 
     // Extract the 2D coordinates from the operands, and convert them into bytes
     // for interprocess communication
-    let buffer_size = 2 * operands.len() * size_of::<f64>();
+    let length = operands.len();
+    let buffer_size = 2 * length * size_of::<f64>();
     let mut coo = Vec::with_capacity(buffer_size);
-    for op in operands.iter() {
+    for i in 0..length {
+        let op = operands.get(i);
         coo.extend_from_slice(&op[0].to_ne_bytes());
         coo.extend_from_slice(&op[1].to_ne_bytes());
     }
@@ -59,7 +61,7 @@ fn proj(args: &str, forward: bool, operands: &mut [Coord]) -> usize {
 
     // Turn the output bytes into doubles and put them properly back into the operands
     let mut errors = 0_usize;
-    for (i, op) in operands.iter_mut().enumerate() {
+    for i in 0..length {
         let start = 16 * i;
         let ebytes: [u8; 8] = output.stdout[start..start + 8].try_into().unwrap_or([0; 8]);
         let nbytes: [u8; 8] = output.stdout[start + 8..start + 16]
@@ -75,8 +77,10 @@ fn proj(args: &str, forward: bool, operands: &mut [Coord]) -> usize {
             n = f64::NAN;
             errors += 1;
         }
-        op[0] = e;
-        op[1] = n;
+        let mut coord = operands.get(i);
+        coord[0] = e;
+        coord[1] = n;
+        operands.set(i, &coord);
     }
 
     operands.len() - errors
@@ -84,13 +88,13 @@ fn proj(args: &str, forward: bool, operands: &mut [Coord]) -> usize {
 
 // ----- F O R W A R D --------------------------------------------------------------
 
-fn proj_fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
+fn proj_fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     proj(&op.params.text["proj_args"], true, operands)
 }
 
 // ----- I N V E R S E --------------------------------------------------------------
 
-fn proj_inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
+fn proj_inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     proj(&op.params.text["proj_args"], false, operands)
 }
 
