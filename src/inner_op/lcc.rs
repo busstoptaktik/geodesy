@@ -8,7 +8,7 @@ const EPS10: f64 = 1e-10;
 
 // Forward Lambert conformal conic, following the PROJ implementation,
 // cf.  https://proj.org/operations/projections/lcc.html
-fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
+fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let a = op.params.ellps[0].semimajor_axis();
     let e = op.params.ellps[0].eccentricity();
     let lon_0 = op.params.lon[0];
@@ -19,8 +19,10 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
     let Ok(c) = op.params.real("c") else { return 0 };
     let Ok(rho0) = op.params.real("rho0") else { return 0 };
     let mut successes = 0_usize;
+    let length = operands.len();
 
-    for coord in operands {
+    for i in 0..length {
+        let mut coord = operands.get(i);
         let lam = coord[0] - lon_0;
         let phi = coord[1];
         let mut rho = 0.;
@@ -28,7 +30,8 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
         // Close to one of the poles?
         if (phi.abs() - FRAC_PI_2).abs() < EPS10 {
             if phi * n <= 0. {
-                *coord = Coord::nan();
+                coord = Coord::nan();
+                operands.set(i, &coord);
                 continue;
             }
         } else {
@@ -37,13 +40,14 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
         let sc = (lam * n).sin_cos();
         coord[0] = a * k_0 * rho * sc.0 + x_0;
         coord[1] = a * k_0 * (rho0 - rho * sc.1) + y_0;
+        operands.set(i, &coord);
         successes += 1;
     }
     successes
 }
 
 // ----- I N V E R S E -----------------------------------------------------------------
-fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
+fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let a = op.params.ellps[0].semimajor_axis();
     let e = op.params.ellps[0].eccentricity();
     let lon_0 = op.params.lon[0];
@@ -54,8 +58,10 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
     let Ok(c) = op.params.real("c") else { return 0 };
     let Ok(rho0) = op.params.real("rho0") else { return 0 };
     let mut successes = 0_usize;
+    let length = operands.len();
 
-    for coord in operands {
+    for i in 0..length {
+        let mut coord = operands.get(i);
         let mut x = (coord[0] - x_0) / (a * k_0);
         let mut y = rho0 - (coord[1] - y_0) / (a * k_0);
 
@@ -65,6 +71,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
         if rho == 0. {
             coord[0] = 0.;
             coord[1] = FRAC_PI_2.copysign(n);
+            operands.set(i, &coord);
             successes += 1;
             continue;
         }
@@ -79,11 +86,13 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
         let ts0 = (rho / c).powf(1. / n);
         let phi = crate::math::pj_phi2(ts0, e);
         if phi.is_infinite() || phi.is_nan() {
-            *coord = Coord::nan();
+            coord = Coord::nan();
+            operands.set(i, &coord);
             continue;
         }
         coord[0] = x.atan2(y) / n + lon_0;
         coord[1] = phi;
+        operands.set(i, &coord);
         successes += 1;
     }
     successes

@@ -64,7 +64,7 @@ const MULT_DEFAULT: [f64; 4] = [1., 1., 1., 1.];
 
 // ----- F O R W A R D --------------------------------------------------------------
 
-fn fwd(op: &Op, _ctx: &dyn Context, data: &mut [Coord]) -> usize {
+fn fwd(op: &Op, _ctx: &dyn Context, data: &mut dyn CoordinateSet) -> usize {
     let n = data.len();
     if op.params.boolean("noop") {
         return n;
@@ -78,20 +78,22 @@ fn fwd(op: &Op, _ctx: &dyn Context, data: &mut [Coord]) -> usize {
         post[3] as usize,
     ];
     let mult = op.params.series("mult").unwrap_or(&MULT_DEFAULT);
-    for o in data {
-        *o = Coord([
-            o[post[0]] * mult[0],
-            o[post[1]] * mult[1],
-            o[post[2]] * mult[2],
-            o[post[3]] * mult[3],
+    for i in 0..n {
+        let mut coord = data.get(i);
+        coord = Coord([
+            coord[post[0]] * mult[0],
+            coord[post[1]] * mult[1],
+            coord[post[2]] * mult[2],
+            coord[post[3]] * mult[3],
         ]);
+        data.set(i, &coord);
     }
     n
 }
 
 // ----- I N V E R S E --------------------------------------------------------------
 
-fn inv(op: &Op, _ctx: &dyn Context, data: &mut [Coord]) -> usize {
+fn inv(op: &Op, _ctx: &dyn Context, data: &mut dyn CoordinateSet) -> usize {
     let n = data.len();
     if op.params.boolean("noop") {
         return n;
@@ -108,12 +110,13 @@ fn inv(op: &Op, _ctx: &dyn Context, data: &mut [Coord]) -> usize {
     let mult = op.params.series("mult").unwrap_or(&MULT_DEFAULT);
     let mult = [1. / mult[0], 1. / mult[1], 1. / mult[2], 1. / mult[3]];
 
-    for o in data {
+    for i in 0..n {
+        let coord = data.get(i);
         let mut c = Coord::default();
-        for i in 0..4_usize {
-            c[post[i]] = o[i] * mult[post[i]];
+        for j in 0..4_usize {
+            c[post[j]] = coord[j] * mult[post[j]];
         }
-        *o = c;
+        data.set(i, &c);
     }
 
     n

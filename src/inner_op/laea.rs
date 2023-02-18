@@ -9,7 +9,7 @@ const EPS10: f64 = 1e-10;
 
 // ----- F O R W A R D -----------------------------------------------------------------
 
-fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
+fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     // Oblique aspect: [IOGP, 2019](crate::Bibliography::Iogp19), pp. 78-80
     let Ok(xi_0) = op.params.real("xi_0") else { return 0 };
     let Ok(qp)   = op.params.real("qp")   else { return 0 };
@@ -30,10 +30,12 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
     let (sin_xi_0, cos_xi_0) = xi_0.sin_cos();
 
     let mut successes = 0_usize;
+    let n = operands.len();
 
     // The polar aspects are fairly simple
     if north_polar || south_polar {
-        for coord in operands {
+        for i in 0..n {
+            let mut coord = operands.get(i);
             let sign = if north_polar { -1.0 } else { 1.0 };
 
             let lat = coord[1];
@@ -45,12 +47,14 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
 
             coord[0] = x_0 + rho * sin_lon;
             coord[1] = y_0 + sign * rho * cos_lon;
+            operands.set(i, &coord);
             successes += 1;
         }
         return successes;
     }
 
-    for coord in operands {
+    for i in 0..n {
+        let mut coord = operands.get(i);
         let lon = coord[0];
         let lat = coord[1];
         let (sin_lon, cos_lon) = (lon - lon_0).sin_cos();
@@ -71,6 +75,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
 
         // Northing
         coord[1] = y_0 + (b / d) * (cos_xi_0 * sin_xi - sin_xi_0 * cos_xi * cos_lon);
+        operands.set(i, &coord);
 
         successes += 1;
     }
@@ -80,7 +85,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
 
 // ----- I N V E R S E -----------------------------------------------------------------
 
-fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
+fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     // Oblique aspect: [IOGP, 2019](crate::Bibliography::Iogp19), pp. 78-80
     let Ok(xi_0) = op.params.real("xi_0") else { return 0 };
     let Ok(rq)   = op.params.real("rq")   else { return 0 };
@@ -103,10 +108,12 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
     let (sin_xi_0, cos_xi_0) = xi_0.sin_cos();
 
     let mut successes = 0_usize;
+    let n = operands.len();
 
     // The polar aspects are not as simple as in the forward case
     if north_polar || south_polar {
-        for coord in operands {
+        for i in 0..n {
+            let mut coord = operands.get(i);
             let sign = if north_polar { -1.0 } else { 1.0 };
 
             let x = coord[0];
@@ -119,12 +126,14 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
 
             coord[0] = lon_0 + (x - x_0).atan2(sign * (y - y_0));
             coord[1] = ellps.latitude_authalic_to_geographic(xi, &authalic);
+            operands.set(i, &coord);
             successes += 1;
         }
         return successes;
     }
 
-    for coord in operands {
+    for i in 0..n {
+        let mut coord = operands.get(i);
         let x = coord[0];
         let y = coord[1];
         let rho = ((x - x_0) / d).hypot(d * (y - y_0));
@@ -132,6 +141,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
         if rho < EPS10 {
             coord[0] = 0.0;
             coord[1] = lat_0;
+            operands.set(i, &coord);
             successes += 1;
             continue;
         }
@@ -142,6 +152,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
             warn!("LAEA: ({x}, {y}) outside domain");
             coord[0] = f64::NAN;
             coord[1] = f64::NAN;
+            operands.set(i, &coord);
             continue;
         }
 
@@ -154,6 +165,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
         let num = (x - x_0) * sin_c;
         let denom = d * rho * cos_xi_0 * cos_c - d * d * (y - y_0) * sin_xi_0 * sin_c;
         coord[0] = num.atan2(denom) + lon_0;
+        operands.set(i, &coord);
 
         successes += 1;
     }

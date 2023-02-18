@@ -3,7 +3,7 @@ use crate::operator_authoring::*;
 
 // ----- F O R W A R D -----------------------------------------------------------------
 
-fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
+fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let ellps = op.params.ellps[0];
     let a = ellps.semimajor_axis();
     let k_0 = op.params.k[0];
@@ -13,7 +13,9 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
     let lon_0 = op.params.lon[0];
 
     let mut successes = 0_usize;
-    for coord in operands {
+    let length = operands.len();
+    for i in 0..length {
+        let mut coord = operands.get(i);
         // Longitude
         coord[0] = (coord[0] - lon_0) * k_0 * a - x_0;
 
@@ -21,6 +23,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
         let lat = coord[1] + lat_0;
         coord[1] = a * k_0 * ellps.latitude_geographic_to_isometric(lat) - y_0;
 
+        operands.set(i, &coord);
         successes += 1;
     }
 
@@ -29,7 +32,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
 
 // ----- I N V E R S E -----------------------------------------------------------------
 
-fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
+fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let ellps = op.params.ellps[0];
     let a = ellps.semimajor_axis();
     let k_0 = op.params.k[0];
@@ -39,7 +42,10 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
     let lon_0 = op.params.lon[0];
 
     let mut successes = 0_usize;
-    for coord in operands {
+    let length = operands.len();
+    for i in 0..length {
+        let mut coord = operands.get(i);
+
         // Easting -> Longitude
         let x = coord[0] + x_0;
         coord[0] = x / (a * k_0) - lon_0;
@@ -48,6 +54,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
         let y = coord[1] + y_0;
         let psi = y / (a * k_0);
         coord[1] = ellps.latitude_isometric_to_geographic(psi) - lat_0;
+        operands.set(i, &coord);
         successes += 1;
     }
 

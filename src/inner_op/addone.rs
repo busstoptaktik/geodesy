@@ -2,24 +2,30 @@ use crate::operator_authoring::*;
 
 // ----- F O R W A R D -----------------------------------------------------------------
 
-fn fwd(_op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
-    let mut n = 0;
-    for o in operands {
+fn fwd(_op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
+    let n = operands.len();
+    let mut successes = 0;
+    for i in 0..n {
+        let mut o = operands.get(i);
         o[0] += 1.;
-        n += 1;
+        successes += 1;
+        operands.set(i, &o);
     }
-    n
+    successes
 }
 
 // ----- I N V E R S E -----------------------------------------------------------------
 
-fn inv(_op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
-    let mut n = 0;
-    for o in operands {
+fn inv(_op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
+    let n = operands.len();
+    let mut successes = 0;
+    for i in 0..n {
+        let mut o = operands.get(i);
         o[0] -= 1.;
-        n += 1;
+        successes += 1;
+        operands.set(i, &o);
     }
-    n
+    successes
 }
 
 // ----- C O N S T R U C T O R ---------------------------------------------------------

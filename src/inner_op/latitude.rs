@@ -3,18 +3,23 @@ use crate::operator_authoring::*;
 
 // ----- F O R W A R D -----------------------------------------------------------------
 
-fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
+fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let mut successes = 0_usize;
+    let n = operands.len();
     let ellps = op.params.ellps[0];
 
     if op.params.boolean("geocentric") {
-        for coord in operands {
+        for i in 0..n {
+            let mut coord = operands.get(i);
             coord[1] = ellps.latitude_geographic_to_geocentric(coord[1]);
+            operands.set(i, &coord);
             successes += 1;
         }
     } else if op.params.boolean("reduced") || op.params.boolean("parametric") {
-        for coord in operands {
+        for i in 0..n {
+            let mut coord = operands.get(i);
             coord[1] = ellps.latitude_geographic_to_reduced(coord[1]);
+            operands.set(i, &coord);
             successes += 1;
         }
     } else if op.params.boolean("conformal") {
@@ -22,8 +27,10 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
             return 0;
         };
 
-        for coord in operands {
+        for i in 0..n {
+            let mut coord = operands.get(i);
             coord[1] = ellps.latitude_geographic_to_conformal(coord[1], coefficients);
+            operands.set(i, &coord);
             successes += 1;
         }
     } else if op.params.boolean("rectifying") {
@@ -31,8 +38,10 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
             return 0;
         };
 
-        for coord in operands {
+        for i in 0..n {
+            let mut coord = operands.get(i);
             coord[1] = ellps.latitude_geographic_to_rectifying(coord[1], coefficients);
+            operands.set(i, &coord);
             successes += 1;
         }
     } else if op.params.boolean("authalic") {
@@ -40,8 +49,10 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
             return 0;
         };
 
-        for coord in operands {
+        for i in 0..n {
+            let mut coord = operands.get(i);
             coord[1] = ellps.latitude_geographic_to_authalic(coord[1], coefficients);
+            operands.set(i, &coord);
             successes += 1;
         }
     }
@@ -51,18 +62,23 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
 
 // ----- I N V E R S E -----------------------------------------------------------------
 
-fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
+fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let mut successes = 0_usize;
+    let n = operands.len();
     let ellps = op.params.ellps[0];
 
     if op.params.boolean("geocentric") {
-        for coord in operands {
+        for i in 0..n {
+            let mut coord = operands.get(i);
             coord[1] = ellps.latitude_geocentric_to_geographic(coord[1]);
+            operands.set(i, &coord);
             successes += 1;
         }
     } else if op.params.boolean("reduced") || op.params.boolean("parametric") {
-        for coord in operands {
+        for i in 0..n {
+            let mut coord = operands.get(i);
             coord[1] = ellps.latitude_reduced_to_geographic(coord[1]);
+            operands.set(i, &coord);
             successes += 1;
         }
     } else if op.params.boolean("conformal") {
@@ -70,8 +86,10 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
             return 0;
         };
 
-        for coord in operands {
+        for i in 0..n {
+            let mut coord = operands.get(i);
             coord[1] = ellps.latitude_conformal_to_geographic(coord[1], coefficients);
+            operands.set(i, &coord);
             successes += 1;
         }
     } else if op.params.boolean("rectifying") {
@@ -79,8 +97,10 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
             return 0;
         };
 
-        for coord in operands {
+        for i in 0..n {
+            let mut coord = operands.get(i);
             coord[1] = ellps.latitude_rectifying_to_geographic(coord[1], coefficients);
+            operands.set(i, &coord);
             successes += 1;
         }
     } else if op.params.boolean("authalic") {
@@ -88,8 +108,10 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
             return 0;
         };
 
-        for coord in operands {
+        for i in 0..n {
+            let mut coord = operands.get(i);
             coord[1] = ellps.latitude_authalic_to_geographic(coord[1], coefficients);
+            operands.set(i, &coord);
             successes += 1;
         }
     }

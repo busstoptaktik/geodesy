@@ -6,6 +6,7 @@ mod coord;
 mod ellipsoid;
 mod grid;
 mod inner_op;
+mod coordinate_set;
 mod math;
 mod op;
 
@@ -14,6 +15,7 @@ pub use crate::context::Context;
 pub use crate::context::Minimal;
 pub use crate::context::Plain;
 pub use crate::coord::Coord;
+pub use crate::coordinate_set::CoordinateSet;
 pub use crate::ellipsoid::Ellipsoid;
 pub use crate::Direction::Fwd;
 pub use crate::Direction::Inv;
@@ -24,6 +26,7 @@ pub mod prelude {
     pub use crate::context::Minimal;
     pub use crate::context::Plain;
     pub use crate::coord::Coord;
+    pub use crate::coordinate_set::CoordinateSet;
     pub use crate::ellipsoid::Ellipsoid;
     pub use crate::op::OpHandle;
     pub use crate::Direction;

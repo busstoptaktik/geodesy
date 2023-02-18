@@ -5,7 +5,7 @@ use crate::operator_authoring::*;
 // ----- F O R W A R D -----------------------------------------------------------------
 
 // Forward transverse mercator, following Engsager & Poder(2007)
-fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
+fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     // Make all precomputed parameters directly accessible
     let ellps = op.params.ellps[0];
     let lat_0 = op.params.lat[0];
@@ -28,8 +28,10 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
         return 0;
     };
 
+    let n = operands.len();
     let mut successes = 0_usize;
-    for coord in operands {
+    for i in 0..n {
+        let mut coord = operands.get(i);
         // --- 1. Geographical -> Conformal latitude, rotated longitude
 
         // The conformal latitude
@@ -83,6 +85,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
         coord[0] = qs * lon + x_0; // Easting
         coord[1] = qs * lat + zb; // Northing
         successes += 1;
+        operands.set(i, &coord);
     }
 
     info!("Successes: {successes}");
@@ -92,7 +95,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
 // ----- I N V E R S E -----------------------------------------------------------------
 
 // Inverse Transverse Mercator, following Engsager & Poder (2007) (currently Bowring stands in!)
-fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
+fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     // Make all precomputed parameters directly accessible
     let ellps = op.params.ellps[0];
     let lon_0 = op.params.lon[0];
@@ -114,8 +117,11 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
         return 0;
     };
 
+    let n = operands.len();
     let mut successes = 0_usize;
-    for coord in operands {
+    for i in 0..n {
+        let mut coord = operands.get(i);
+
         // --- 1. Normalize N, E
 
         let mut lon = (coord[0] - x_0) / qs;
@@ -150,6 +156,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
         (coord[0], coord[1]) = (lon, lat);
 
         successes += 1;
+        operands.set(i, &coord);
     }
 
     info!("Successes: {successes}");
