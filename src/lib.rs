@@ -26,8 +26,8 @@ pub mod prelude {
     pub use crate::context::Plain;
     pub use crate::coordinate::coor2d::Coor2D;
     pub use crate::coordinate::coord::Coord;
-    pub use crate::coordinate::Coordinate;
     pub use crate::coordinate::AngularUnits;
+    pub use crate::coordinate::Coordinate;
     pub use crate::coordinate::CoordinateSet;
     pub use crate::ellipsoid::Ellipsoid;
     pub use crate::op::OpHandle;
