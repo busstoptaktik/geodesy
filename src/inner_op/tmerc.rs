@@ -348,6 +348,48 @@ mod tests {
         Ok(())
     }
 
+    // Same as above, but using the 2D Coor2D data structure
+    #[test]
+    fn coor2d() -> Result<(), Error> {
+        // Validation values from PROJ:
+        // echo 12 55 0 0 | cct -d18 +proj=utm +zone=32 | clip
+        #[rustfmt::skip]
+        let geo = [
+            Coor2D::geo( 55.,  12., 0., 0.),
+            Coor2D::geo(-55.,  12., 0., 0.),
+            Coor2D::geo( 55., -6., 0., 0.),
+            Coor2D::geo(-55., -6., 0., 0.)
+        ];
+
+        #[rustfmt::skip]
+        let projected = [
+            Coor2D::raw( 691_875.632_139_661, 6_098_907.825_005_012, 0., 0.),
+            Coor2D::raw( 691_875.632_139_661,-6_098_907.825_005_012, 0., 0.),
+            Coor2D::raw(-455_673.814_189_040, 6_198_246.671_090_279, 0., 0.),
+            Coor2D::raw(-455_673.814_189_040,-6_198_246.671_090_279, 0., 0.)
+        ];
+
+        let mut ctx = Minimal::default();
+        let definition = "tmerc k_0=0.9996 lon_0=9 x_0=500000";
+        let op = ctx.op(definition)?;
+
+        let mut operands = geo.clone();
+        ctx.apply(op, Fwd, &mut operands)?;
+
+        for i in 0..operands.len() {
+            dbg!(operands[i]);
+            dbg!(projected[i]);
+            assert!(operands[i].hypot2(&projected[i]) < 1e-6);
+        }
+
+        ctx.apply(op, Inv, &mut operands)?;
+        for i in 0..operands.len() {
+            assert!(operands[i].hypot2(&geo[i]) < 5e-6);
+        }
+
+        Ok(())
+    }
+
     #[test]
     fn utm() -> Result<(), Error> {
         let mut ctx = Minimal::default();
