@@ -15,7 +15,7 @@ use crate::operator_authoring::*;
 fn helmert_common(
     op: &Op,
     _ctx: &dyn Context,
-    operands: &mut [Coord],
+    operands: &mut dyn CoordinateSet,
     direction: Direction,
 ) -> usize {
     // Translation, Rotation, Scale
@@ -46,7 +46,9 @@ fn helmert_common(
 
     let mut prev_t = std::f64::NAN;
     let n = operands.len();
-    for c in operands {
+    for i in 0..n {
+        let mut c = operands.get(i);
+
         // Time varying case?
         if dynamic && !fixed_t {
             // Necessary to update parameters?
@@ -78,6 +80,7 @@ fn helmert_common(
                 c[0] = SS * x + TT[0];
                 c[1] = SS * y + TT[1];
                 c[2] = SS * z + TT[2];
+                operands.set(i, &c);
                 continue;
             }
 
@@ -85,6 +88,7 @@ fn helmert_common(
             c[0] = SS * c[0] + TT[0];
             c[1] = SS * c[1] + TT[1];
             c[2] = SS * c[2] + TT[2];
+            operands.set(i, &c);
             continue;
         }
 
@@ -105,19 +109,20 @@ fn helmert_common(
             c[1] = y;
             c[2] = z;
         }
+        operands.set(i, &c);
     }
     n
 }
 
 // ----- F O R W A R D --------------------------------------------------------------
 
-fn helmert_fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
+fn helmert_fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     helmert_common(op, _ctx, operands, Direction::Fwd)
 }
 
 // ----- I N V E R S E --------------------------------------------------------------
 
-fn helmert_inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
+fn helmert_inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     helmert_common(op, _ctx, operands, Direction::Inv)
 }
 
@@ -347,14 +352,14 @@ mod tests {
         let mut operands = [Coord::origin()];
 
         ctx.apply(op, Fwd, &mut operands)?;
-        assert_eq!(operands[0].first(), -87.);
-        assert_eq!(operands[0].second(), -96.);
-        assert_eq!(operands[0].third(), -120.);
+        assert_eq!(operands[0][0], -87.);
+        assert_eq!(operands[0][1], -96.);
+        assert_eq!(operands[0][2], -120.);
 
         ctx.apply(op, Inv, &mut operands)?;
-        assert_eq!(operands[0].first(), 0.);
-        assert_eq!(operands[0].second(), 0.);
-        assert_eq!(operands[0].third(), 0.);
+        assert_eq!(operands[0][0], 0.);
+        assert_eq!(operands[0][1], 0.);
+        assert_eq!(operands[0][2], 0.);
         Ok(())
     }
 

@@ -22,15 +22,18 @@ use crate::operator_authoring::*;
 
 // ----- F O R W A R D -----------------------------------------------------------------
 
-fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
+fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let dms = op.params.boolean("dms");
     let mut successes = 0_usize;
-    for o in operands {
+    let length = operands.len();
+    for i in 0..length {
+        let mut o = operands.get(i);
         if dms {
-            *o = Coord::nmeass(o[0], o[1], o[2], o[3]);
+            o = Coord::nmeass(o[0], o[1], o[2], o[3]);
         } else {
-            *o = Coord::nmea(o[0], o[1], o[2], o[3]);
+            o = Coord::nmea(o[0], o[1], o[2], o[3]);
         }
+        operands.set(i, &o);
         successes += 1;
     }
 
@@ -39,19 +42,22 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
 
 // ----- I N V E R S E -----------------------------------------------------------------
 
-fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
+fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let dms = op.params.boolean("dms");
     let mut successes = 0_usize;
-    for o in operands {
+    let length = operands.len();
+    for i in 0..length {
+        let mut o = operands.get(i);
         if dms {
-            let longitude = Coord::dd_to_nmeass(o[0].to_degrees());
-            let latitude = Coord::dd_to_nmeass(o[1].to_degrees());
-            *o = Coord::raw(latitude, longitude, o[2], o[3]);
+            let longitude = angular::dd_to_nmeass(o[0].to_degrees());
+            let latitude = angular::dd_to_nmeass(o[1].to_degrees());
+            o = Coord::raw(latitude, longitude, o[2], o[3]);
         } else {
-            let longitude = Coord::dd_to_nmea(o[0].to_degrees());
-            let latitude = Coord::dd_to_nmea(o[1].to_degrees());
-            *o = Coord::raw(latitude, longitude, o[2], o[3]);
+            let longitude = angular::dd_to_nmea(o[0].to_degrees());
+            let latitude = angular::dd_to_nmea(o[1].to_degrees());
+            o = Coord::raw(latitude, longitude, o[2], o[3]);
         }
+        operands.set(i, &o);
         successes += 1;
     }
 
@@ -86,17 +92,17 @@ mod tests {
 
         // Forward: nmea to internal
         ctx.apply(op, Fwd, &mut operands)?;
-        assert!((operands[0].first().to_degrees() - -12.7525).abs() < 1e-14);
-        assert!((operands[0].second().to_degrees() - 55.5025).abs() < 1e-14);
-        assert_eq!(operands[0].third(), 0.0);
+        assert!((operands[0][0].to_degrees() - -12.7525).abs() < 1e-14);
+        assert!((operands[0][1].to_degrees() - 55.5025).abs() < 1e-14);
+        assert_eq!(operands[0][2], 0.0);
 
         // Inverse + roundtrip: Internal to nmea
         ctx.apply(op, Inv, &mut operands)?;
-        assert!((operands[0].first() - 5530.15).abs() < 1e-14);
-        assert!((operands[0].second() - -1245.15).abs() < 1e-14);
-        assert_eq!(operands[0].first(), 5530.15);
-        assert_eq!(operands[0].second(), -1245.15);
-        assert_eq!(operands[0].third(), 0.);
+        assert!((operands[0][0] - 5530.15).abs() < 1e-14);
+        assert!((operands[0][1] - -1245.15).abs() < 1e-14);
+        assert_eq!(operands[0][0], 5530.15);
+        assert_eq!(operands[0][1], -1245.15);
+        assert_eq!(operands[0][2], 0.);
         Ok(())
     }
 

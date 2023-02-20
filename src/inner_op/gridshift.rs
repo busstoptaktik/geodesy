@@ -3,29 +3,30 @@ use crate::operator_authoring::*;
 
 // ----- F O R W A R D --------------------------------------------------------------
 
-fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
+fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let grid = &op.params.grids["grid"];
     let mut successes = 0_usize;
+    let n = operands.len();
 
     // Geoid
     if grid.bands == 1 {
-        for coord in operands {
-            let d = grid.interpolation(coord, None);
+        for i in 0..n {
+            let mut coord = operands.get(i);
+            let d = grid.interpolation(&coord, None);
             coord[2] -= d[0];
             successes += 1;
+            operands.set(i, &coord);
         }
         return successes;
     }
 
     // Datum shift
-    for coord in operands {
-        let d = grid.interpolation(coord, None);
-        if grid.bands == 1 {
-            coord[2] -= d[0];
-            continue;
-        }
+    for i in 0..n {
+        let mut coord = operands.get(i);
+        let d = grid.interpolation(&coord, None);
         coord[0] += d[0];
         coord[1] += d[1];
+        operands.set(i, &coord);
         successes += 1;
     }
     successes
@@ -33,26 +34,30 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
 
 // ----- I N V E R S E --------------------------------------------------------------
 
-fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
+fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let grid = &op.params.grids["grid"];
     let mut successes = 0_usize;
+    let n = operands.len();
 
     // Geoid
     if grid.bands == 1 {
-        for coord in operands {
-            let t = grid.interpolation(coord, None);
+        for i in 0..n {
+            let mut coord = operands.get(i);
+            let t = grid.interpolation(&coord, None);
             coord[2] += t[0];
+            operands.set(i, &coord);
             successes += 1;
         }
         return successes;
     }
 
     // Datum shift - here we need to iterate in the inverse case
-    for coord in operands {
-        let mut t = *coord - grid.interpolation(coord, None);
+    for i in 0..n {
+        let coord = operands.get(i);
+        let mut t = coord - grid.interpolation(&coord, None);
 
         for _ in 0..10 {
-            let d = t - *coord + grid.interpolation(&t, None);
+            let d = t - coord + grid.interpolation(&t, None);
             t = t - d;
             // i.e. d.dot(d).sqrt() < 1e-10
             if d.dot(d) < 1e-20 {
@@ -60,7 +65,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
             }
         }
 
-        *coord = t;
+        operands.set(i, &t);
         successes += 1;
     }
 

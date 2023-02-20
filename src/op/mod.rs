@@ -35,7 +35,12 @@ pub struct Op {
 
 impl Op {
     // operate fwd/inv, taking operator inversion into account.
-    pub fn apply(&self, ctx: &dyn Context, operands: &mut [Coord], direction: Direction) -> usize {
+    pub fn apply(
+        &self,
+        ctx: &dyn Context,
+        operands: &mut dyn CoordinateSet,
+        direction: Direction,
+    ) -> usize {
         let forward = direction == Direction::Fwd;
         // Short form of (inverted && !forward) || (forward && !inverted)
         if self.descriptor.inverted != forward {

@@ -5,7 +5,7 @@ use crate::operator_authoring::*;
 // ----- F O R W A R D -----------------------------------------------------------------
 
 // Forward transverse mercator, following Engsager & Poder(2007)
-fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
+fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     // Make all precomputed parameters directly accessible
     let ellps = op.params.ellps[0];
     let lat_0 = op.params.lat[0];
@@ -28,8 +28,10 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
         return 0;
     };
 
+    let n = operands.len();
     let mut successes = 0_usize;
-    for coord in operands {
+    for i in 0..n {
+        let mut coord = operands.get(i);
         // --- 1. Geographical -> Conformal latitude, rotated longitude
 
         // The conformal latitude
@@ -67,7 +69,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
         ];
 
         // Evaluate and apply the differential term
-        let dc = clenshaw_complex_sin_optimized_for_tmerc(trig, hyp, &tm.fwd);
+        let dc = clenshaw::complex_sin_optimized_for_tmerc(trig, hyp, &tm.fwd);
         lat += dc[0];
         lon += dc[1];
 
@@ -83,6 +85,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
         coord[0] = qs * lon + x_0; // Easting
         coord[1] = qs * lat + zb; // Northing
         successes += 1;
+        operands.set(i, &coord);
     }
 
     info!("Successes: {successes}");
@@ -92,7 +95,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
 // ----- I N V E R S E -----------------------------------------------------------------
 
 // Inverse Transverse Mercator, following Engsager & Poder (2007) (currently Bowring stands in!)
-fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
+fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     // Make all precomputed parameters directly accessible
     let ellps = op.params.ellps[0];
     let lon_0 = op.params.lon[0];
@@ -114,8 +117,11 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
         return 0;
     };
 
+    let n = operands.len();
     let mut successes = 0_usize;
-    for coord in operands {
+    for i in 0..n {
+        let mut coord = operands.get(i);
+
         // --- 1. Normalize N, E
 
         let mut lon = (coord[0] - x_0) / qs;
@@ -130,10 +136,10 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
 
         // --- 2. Normalized N, E -> complex spherical LAT, LNG
 
-        let dc = clenshaw_complex_sin([2. * lat, 2. * lon], &tm.inv);
+        let dc = clenshaw::complex_sin([2. * lat, 2. * lon], &tm.inv);
         lat += dc[0];
         lon += dc[1];
-        lon = gudermannian(lon);
+        lon = gudermannian::fwd(lon);
 
         // --- 3. Complex spherical LAT -> Gaussian LAT, LNG
 
@@ -145,11 +151,12 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
 
         // --- 4. Gaussian LAT, LNG -> ellipsoidal LAT, LNG
 
-        let lon = normalize_angle_symmetric(lon + lon_0);
+        let lon = angular::normalize_symmetric(lon + lon_0);
         let lat = ellps.latitude_conformal_to_geographic(lat, conformal);
         (coord[0], coord[1]) = (lon, lat);
 
         successes += 1;
+        operands.set(i, &coord);
     }
 
     info!("Successes: {successes}");
@@ -283,7 +290,7 @@ fn precompute(op: &mut Op) {
     let z = ellps.latitude_geographic_to_conformal(lat_0, &conformal);
     // Origin northing minus true northing at the origin latitude
     // i.e. true northing = N - zb
-    let zb = y_0 - qs * (z + clenshaw_sin(2. * z, &tm.fwd));
+    let zb = y_0 - qs * (z + clenshaw::sin(2. * z, &tm.fwd));
     op.params.real.insert("zb", zb);
     info!("Zombie parameter: {zb}");
 }
@@ -318,6 +325,48 @@ mod tests {
             Coord::raw( 691_875.632_139_661,-6_098_907.825_005_012, 0., 0.),
             Coord::raw(-455_673.814_189_040, 6_198_246.671_090_279, 0., 0.),
             Coord::raw(-455_673.814_189_040,-6_198_246.671_090_279, 0., 0.)
+        ];
+
+        let mut ctx = Minimal::default();
+        let definition = "tmerc k_0=0.9996 lon_0=9 x_0=500000";
+        let op = ctx.op(definition)?;
+
+        let mut operands = geo.clone();
+        ctx.apply(op, Fwd, &mut operands)?;
+
+        for i in 0..operands.len() {
+            dbg!(operands[i]);
+            dbg!(projected[i]);
+            assert!(operands[i].hypot2(&projected[i]) < 1e-6);
+        }
+
+        ctx.apply(op, Inv, &mut operands)?;
+        for i in 0..operands.len() {
+            assert!(operands[i].hypot2(&geo[i]) < 5e-6);
+        }
+
+        Ok(())
+    }
+
+    // Same as above, but using the 2D Coor2D data structure
+    #[test]
+    fn coor2d() -> Result<(), Error> {
+        // Validation values from PROJ:
+        // echo 12 55 0 0 | cct -d18 +proj=utm +zone=32 | clip
+        #[rustfmt::skip]
+        let geo = [
+            Coor2D::geo( 55.,  12., 0., 0.),
+            Coor2D::geo(-55.,  12., 0., 0.),
+            Coor2D::geo( 55., -6., 0., 0.),
+            Coor2D::geo(-55., -6., 0., 0.)
+        ];
+
+        #[rustfmt::skip]
+        let projected = [
+            Coor2D::raw( 691_875.632_139_661, 6_098_907.825_005_012, 0., 0.),
+            Coor2D::raw( 691_875.632_139_661,-6_098_907.825_005_012, 0., 0.),
+            Coor2D::raw(-455_673.814_189_040, 6_198_246.671_090_279, 0., 0.),
+            Coor2D::raw(-455_673.814_189_040,-6_198_246.671_090_279, 0., 0.)
         ];
 
         let mut ctx = Minimal::default();

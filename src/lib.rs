@@ -2,7 +2,7 @@
 
 mod bibliography;
 mod context;
-mod coord;
+mod coordinate;
 mod ellipsoid;
 mod grid;
 mod inner_op;
@@ -13,7 +13,8 @@ mod op;
 pub use crate::context::Context;
 pub use crate::context::Minimal;
 pub use crate::context::Plain;
-pub use crate::coord::Coord;
+pub use crate::coordinate::coord::Coord;
+pub use crate::coordinate::CoordinateSet;
 pub use crate::ellipsoid::Ellipsoid;
 pub use crate::Direction::Fwd;
 pub use crate::Direction::Inv;
@@ -23,13 +24,23 @@ pub mod prelude {
     pub use crate::context::Context;
     pub use crate::context::Minimal;
     pub use crate::context::Plain;
-    pub use crate::coord::Coord;
+    pub use crate::coordinate::coor2d::Coor2D;
+    pub use crate::coordinate::coord::Coord;
+    pub use crate::coordinate::Coordinate;
+    pub use crate::coordinate::AngularUnits;
+    pub use crate::coordinate::CoordinateSet;
     pub use crate::ellipsoid::Ellipsoid;
     pub use crate::op::OpHandle;
     pub use crate::Direction;
     pub use crate::Direction::Fwd;
     pub use crate::Direction::Inv;
     pub use crate::Error;
+    #[cfg(test)]
+    pub fn some_basic_coordinates() -> [Coord; 2] {
+        let copenhagen = Coord::raw(55., 12., 0., 0.);
+        let stockholm = Coord::raw(59., 18., 0., 0.);
+        [copenhagen, stockholm]
+    }
 }
 
 /// Preamble for InnerOp modules (built-in or user defined)
@@ -49,13 +60,6 @@ pub mod operator_authoring {
     pub use crate::op::OpParameter;
     pub use crate::op::ParsedParameters;
     pub use crate::op::RawParameters;
-
-    #[cfg(test)]
-    pub fn some_basic_coordinates() -> [Coord; 2] {
-        let copenhagen = Coord::raw(55., 12., 0., 0.);
-        let stockholm = Coord::raw(59., 18., 0., 0.);
-        [copenhagen, stockholm]
-    }
 }
 
 /// Preamble for Contexts (built-in or user defined)

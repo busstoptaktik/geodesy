@@ -4,7 +4,7 @@ use crate::operator_authoring::*;
 // ----- F O R W A R D -----------------------------------------------------------------
 
 // Forward transverse mercator, following Bowring (1989)
-fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
+fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let ellps = op.params.ellps[0];
     let eps = ellps.second_eccentricity_squared();
     let lat_0 = op.params.lat[0];
@@ -14,7 +14,10 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
     let k_0 = op.params.k[0];
 
     let mut successes = 0_usize;
-    for coord in operands {
+    let n = operands.len();
+    for i in 0..n {
+        let mut coord = operands.get(i);
+
         let lat = coord[1] + lat_0;
         let (s, c) = lat.sin_cos();
         let cc = c * c;
@@ -39,6 +42,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
         let znos4 = z * N * dlon * s / 4.;
         let ecc = 4. * eps * cc;
         coord[1] = y_0 + k_0 * (m + N * theta_2 + znos4 * (9. + ecc + oo * (20. * cc - 11.)));
+        operands.set(i, &coord);
         successes += 1;
     }
 
@@ -48,7 +52,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
 // ----- I N V E R S E -----------------------------------------------------------------
 
 // Inverse transverse mercator, following Bowring (1989)
-fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
+fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let ellps = op.params.ellps[0];
     let eps = ellps.second_eccentricity_squared();
     let lat_0 = op.params.lat[0];
@@ -58,7 +62,9 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
     let k_0 = op.params.k[0];
 
     let mut successes = 0_usize;
-    for coord in operands {
+    let n = operands.len();
+    for i in 0..n {
+        let mut coord = operands.get(i);
         // Footpoint latitude, i.e. the latitude of a point on the central meridian
         // having the same northing as the point of interest
         let lat = ellps.meridian_distance_to_latitude((coord[1] - y_0) / k_0);
@@ -80,6 +86,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut [Coord]) -> usize {
         let approx = lon_0 + theta_4;
         let coef = eps / 60. * xx * x * c;
         coord[0] = approx - coef * (10. - 4. * xx / cc + xx * cc);
+        operands.set(i, &coord);
 
         successes += 1;
     }

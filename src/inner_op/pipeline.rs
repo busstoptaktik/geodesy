@@ -3,7 +3,7 @@ use std::collections::BTreeSet;
 
 // ----- F O R W A R D -----------------------------------------------------------------
 
-fn pipeline_fwd(op: &Op, ctx: &dyn Context, operands: &mut [Coord]) -> usize {
+fn pipeline_fwd(op: &Op, ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let mut stack = Vec::new();
     let mut n = usize::MAX;
     for step in &op.steps {
@@ -27,7 +27,7 @@ fn pipeline_fwd(op: &Op, ctx: &dyn Context, operands: &mut [Coord]) -> usize {
 
 // ----- I N V E R S E -----------------------------------------------------------------
 
-fn pipeline_inv(op: &Op, ctx: &dyn Context, operands: &mut [Coord]) -> usize {
+fn pipeline_inv(op: &Op, ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let mut stack = Vec::new();
     let mut n = usize::MAX;
     for step in op.steps.iter().rev() {
@@ -130,16 +130,20 @@ pub fn pop(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
 
 fn do_the_push(
     stack: &mut Vec<Vec<f64>>,
-    operands: &mut [Coord],
+    operands: &mut dyn CoordinateSet,
     flags: &BTreeSet<&'static str>,
 ) -> usize {
+    let n = operands.len();
     const ELEMENTS: [&str; 4] = ["v_1", "v_2", "v_3", "v_4"];
-    for i in [0, 1, 2, 3] {
-        if !flags.contains(ELEMENTS[i]) {
+    for j in [0, 1, 2, 3] {
+        if !flags.contains(ELEMENTS[j]) {
             continue;
         }
-        // Extract the i'th coordinate from all operands
-        let all: Vec<f64> = operands.iter().map(|x| x[i]).collect();
+
+        let mut all = Vec::with_capacity(n);
+        for i in 0..n {
+            all.push(operands.get(i)[j]);
+        }
         stack.push(all);
     }
     operands.len()
@@ -147,27 +151,33 @@ fn do_the_push(
 
 fn do_the_pop(
     stack: &mut Vec<Vec<f64>>,
-    operands: &mut [Coord],
+    operands: &mut dyn CoordinateSet,
     flags: &BTreeSet<&'static str>,
 ) -> usize {
+    let n = operands.len();
     const ELEMENTS: [&str; 4] = ["v_4", "v_3", "v_2", "v_1"];
-    for i in [0, 1, 2, 3] {
-        if !flags.contains(ELEMENTS[i]) {
+    for j in [0, 1, 2, 3] {
+        if !flags.contains(ELEMENTS[j]) {
             continue;
         }
 
         // Stack underflow?
         if stack.is_empty() {
-            for op in operands {
-                op[3 - i] = f64::NAN;
+            for i in 0..n {
+                let mut op = operands.get(i);
+                op[3 - j] = f64::NAN;
+                operands.set(i, &op);
             }
+            warn!("Stack underflow in pipeline");
             return 0;
         }
 
-        // Insert the top-of-stack elements into the i'th coordinate of all operands
+        // Insert the top-of-stack elements into the j'th coordinate of all operands
         let v = stack.pop().unwrap();
-        for j in 0..operands.len() {
-            operands[j][3 - i] = v[j]
+        for (i, value) in v.iter().enumerate() {
+            let mut op = operands.get(i);
+            op[3 - j] = *value;
+            operands.set(i, &op);
         }
     }
     operands.len()

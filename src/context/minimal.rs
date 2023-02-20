@@ -36,7 +36,7 @@ impl Context for Minimal {
         &self,
         op: OpHandle,
         direction: Direction,
-        operands: &mut [Coord],
+        operands: &mut dyn CoordinateSet,
     ) -> Result<usize, Error> {
         const BAD_ID_MESSAGE: Error = Error::General("Minimal: Unknown operator id");
         let op = self.operators.get(&op).ok_or(BAD_ID_MESSAGE)?;
