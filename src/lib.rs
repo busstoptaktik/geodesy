@@ -25,6 +25,7 @@ pub mod prelude {
     pub use crate::context::Minimal;
     pub use crate::context::Plain;
     pub use crate::coordinate::coor2d::Coor2D;
+    pub use crate::coordinate::coor32::Coor32;
     pub use crate::coordinate::coord::Coord;
     pub use crate::coordinate::AngularUnits;
     pub use crate::coordinate::Coordinate;
