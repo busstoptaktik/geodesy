@@ -210,10 +210,10 @@ let macro_text = "cart ellps=$ellps_0 | helmert: x=$x y=$y z=$z |  cart inv ellp
 ctx.register_macro("geo:helmert", macro_text);
 
 // Instantiate the geo:helmert macro with replacement values
-// for the parameters left, right, x, y, z
+// for the parameters ellps_0, ellps_1, x, y, z
 ed50_wgs84 = ctx.op("geo:helmert ellps_0=intl ellps_1=GRS80 x=-87 y=-96 z=-120").unwrap();
 // Note that the syntax is identical to that used for built-in operators, but macros are
-// recognized by having a ':' anywhere in their name
+// recognized by having a ':'-sigil anywhere in their name
 
 // ... and use:
 ctx.apply(ed50_wgs84, Fwd, data);
@@ -222,7 +222,7 @@ ctx.apply(ed50_wgs84, Fwd, data);
 Then a user defined operator:
 
 ```rust
-use geodesy::operator_construction::*;
+use geodesy::operator_authoring::*;
 
 // See examples/03-user-defined-operators.rs for implementation details
 pub struct MyNewOperator {
@@ -247,7 +247,7 @@ Essentially, once they are registered, macros and user defined operators work ex
 
 Also, the user defined operators overshadow the built-in names for any subsequent instantiations. So testing alternative implementations of built-in operators is as easy as registering a new operator with the same name as a built-in.
 
-By design, however, macros cannot overshadow built-ins: To trigger the macro argument expansion mechanism, macros need to indicate their macro-identity by including a `:` in their name, in contrast to the built-in names.
+By design, however, macros cannot overshadow built-ins: To trigger the macro argument expansion mechanism, macros need to indicate their macro-identity by including a `:`-sigil in their name, in contrast to the built-in names.
 
 ### Going ellipsoidal
 

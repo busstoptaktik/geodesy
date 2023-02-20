@@ -1,6 +1,6 @@
 use super::*;
 
-impl<T> CoordinateAngularUnitConversions for &mut T
+impl<T> AngularUnits for &mut T
 where
     T: CoordinateSet,
 {
@@ -168,23 +168,23 @@ mod tests {
         assert_eq!(cph[1], 18.);
     }
 
-    // Test the "CoordinateAngularUnitConversions"
+    // Test the "AngularUnits" conversion trait
     #[test]
     fn angular() {
         let mut operands = some_basic_coordinates();
         let cph = operands.get(0);
 
-        // Note the different usage patterns when using CoordinateAngularUnitConversions
-        // with a Coord and a CoordinateSet: For the latter, the blanket implementation
+        // Note the different usage patterns when using the AngularUnits trait with
+        // a Coord and a CoordinateSet: For the latter, the blanket implementation
         // is for an `&mut T where T: CoordinateSet`, and we just mutate the contents
         // in situ. For the former, we mutate and return the mutated `Coord`.
         operands.to_radians();
         let cph = cph.to_radians();
-        assert_eq!(cph[0].to_radians(), operands.get(0)[0]);
-        assert_eq!(cph[1].to_radians(), operands.get(0)[1]);
+        assert_eq!(cph[0], operands.get(0)[0]);
+        assert_eq!(cph[1], operands.get(0)[1]);
 
         operands.to_arcsec();
-        assert_eq!(cph[0].to_radians().to_degrees() * 3600., operands.get(0)[0]);
-        assert_eq!(cph[1].to_radians().to_degrees() * 3600., operands.get(0)[1]);
+        assert_eq!(cph[0].to_degrees() * 3600., operands.get(0)[0]);
+        assert_eq!(cph[1].to_degrees() * 3600., operands.get(0)[1]);
     }
 }

@@ -44,7 +44,7 @@ fn main() -> anyhow::Result<()> {
 
     ctx.apply(ed50_etrs89, Inv, &mut data)?;
 
-    // geo_all(data) transforms all elements in data from the internal GIS
+    // data.to_geo() transforms all elements in data from the internal GIS
     // format (lon/lat in radians) to lat/lon in degrees.
     data.to_geo();
     println!("Back to ed50:");
