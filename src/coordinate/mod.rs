@@ -55,7 +55,7 @@ pub trait Coordinate {
     fn dot(&self, other: Self) -> f64;
 }
 
-pub trait CoordinateAngularUnitConversions {
+pub trait AngularUnits {
     /// Transform the first two elements of a `Coord` from degrees to radians
     fn to_radians(self) -> Self;
 

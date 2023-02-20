@@ -83,7 +83,7 @@ impl Div for Coord {
 
 // ----- A N G U L A R   U N I T S -------------------------------------------
 
-impl CoordinateAngularUnitConversions for Coord {
+impl AngularUnits for Coord {
     /// Transform the first two elements of a `Coord` from degrees to radians
     #[must_use]
     fn to_radians(self) -> Self {

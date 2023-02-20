@@ -2,7 +2,7 @@ use super::*;
 use crate::math::angular;
 use std::ops::{Index, IndexMut};
 
-/// Generic 4D Coor2Dinate tuple, with no fixed interpretation of the elements
+/// Generic 2D Coordinate tuple, with no fixed interpretation of the elements
 #[derive(Debug, Default, PartialEq, Copy, Clone)]
 pub struct Coor2D(pub [f64; 2]);
 
@@ -23,7 +23,7 @@ impl IndexMut<usize> for Coor2D {
 
 // ----- A N G U L A R   U N I T S -------------------------------------------
 
-impl CoordinateAngularUnitConversions for Coor2D {
+impl AngularUnits for Coor2D {
     /// Transform the first two elements of a `Coor2D` from degrees to radians
     #[must_use]
     fn to_radians(self) -> Self {
