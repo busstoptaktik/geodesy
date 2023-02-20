@@ -28,9 +28,9 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         return 0;
     };
 
-    let n = operands.len();
+    let the_slice = 0..operands.len();
     let mut successes = 0_usize;
-    for i in 0..n {
+    for i in the_slice {
         let mut coord = operands.get(i);
         // --- 1. Geographical -> Conformal latitude, rotated longitude
 
@@ -117,9 +117,9 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         return 0;
     };
 
-    let n = operands.len();
+    let the_slice = 0..operands.len();
     let mut successes = 0_usize;
-    for i in 0..n {
+    for i in the_slice {
         let mut coord = operands.get(i);
 
         // --- 1. Normalize N, E

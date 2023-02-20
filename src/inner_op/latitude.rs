@@ -6,17 +6,18 @@ use crate::operator_authoring::*;
 fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let mut successes = 0_usize;
     let n = operands.len();
+    let sliced = 0..n;
     let ellps = op.params.ellps[0];
 
     if op.params.boolean("geocentric") {
-        for i in 0..n {
+        for i in sliced {
             let mut coord = operands.get(i);
             coord[1] = ellps.latitude_geographic_to_geocentric(coord[1]);
             operands.set(i, &coord);
             successes += 1;
         }
     } else if op.params.boolean("reduced") || op.params.boolean("parametric") {
-        for i in 0..n {
+        for i in sliced {
             let mut coord = operands.get(i);
             coord[1] = ellps.latitude_geographic_to_reduced(coord[1]);
             operands.set(i, &coord);
@@ -27,7 +28,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
             return 0;
         };
 
-        for i in 0..n {
+        for i in sliced {
             let mut coord = operands.get(i);
             coord[1] = ellps.latitude_geographic_to_conformal(coord[1], coefficients);
             operands.set(i, &coord);
@@ -38,7 +39,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
             return 0;
         };
 
-        for i in 0..n {
+        for i in sliced {
             let mut coord = operands.get(i);
             coord[1] = ellps.latitude_geographic_to_rectifying(coord[1], coefficients);
             operands.set(i, &coord);
@@ -49,7 +50,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
             return 0;
         };
 
-        for i in 0..n {
+        for i in sliced {
             let mut coord = operands.get(i);
             coord[1] = ellps.latitude_geographic_to_authalic(coord[1], coefficients);
             operands.set(i, &coord);
