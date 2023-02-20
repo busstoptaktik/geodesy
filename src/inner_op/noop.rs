@@ -4,7 +4,7 @@ use crate::operator_authoring::*;
 // ----- F O R W A R D --------------------------------------------------------------
 
 fn fwd(_op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
-        operands.len()
+    operands.len()
 }
 
 // ----- I N V E R S E --------------------------------------------------------------

@@ -69,7 +69,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         ];
 
         // Evaluate and apply the differential term
-        let dc = clenshaw_complex_sin_optimized_for_tmerc(trig, hyp, &tm.fwd);
+        let dc = clenshaw::complex_sin_optimized_for_tmerc(trig, hyp, &tm.fwd);
         lat += dc[0];
         lon += dc[1];
 
@@ -136,10 +136,10 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
 
         // --- 2. Normalized N, E -> complex spherical LAT, LNG
 
-        let dc = clenshaw_complex_sin([2. * lat, 2. * lon], &tm.inv);
+        let dc = clenshaw::complex_sin([2. * lat, 2. * lon], &tm.inv);
         lat += dc[0];
         lon += dc[1];
-        lon = gudermannian(lon);
+        lon = gudermannian::fwd(lon);
 
         // --- 3. Complex spherical LAT -> Gaussian LAT, LNG
 
@@ -151,7 +151,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
 
         // --- 4. Gaussian LAT, LNG -> ellipsoidal LAT, LNG
 
-        let lon = normalize_angle_symmetric(lon + lon_0);
+        let lon = angular::normalize_symmetric(lon + lon_0);
         let lat = ellps.latitude_conformal_to_geographic(lat, conformal);
         (coord[0], coord[1]) = (lon, lat);
 
@@ -290,7 +290,7 @@ fn precompute(op: &mut Op) {
     let z = ellps.latitude_geographic_to_conformal(lat_0, &conformal);
     // Origin northing minus true northing at the origin latitude
     // i.e. true northing = N - zb
-    let zb = y_0 - qs * (z + clenshaw_sin(2. * z, &tm.fwd));
+    let zb = y_0 - qs * (z + clenshaw::sin(2. * z, &tm.fwd));
     op.params.real.insert("zb", zb);
     info!("Zombie parameter: {zb}");
 }

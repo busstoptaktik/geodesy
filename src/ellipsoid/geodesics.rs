@@ -189,8 +189,7 @@ impl Ellipsoid {
     ///
     /// ```rust
     /// // Compute the distance between Copenhagen and Paris
-    /// use geodesy::Ellipsoid;
-    /// use geodesy::Coord;
+    /// use geodesy::prelude::*;
     /// if let Ok(ellps) = Ellipsoid::named("GRS80") {
     ///     let p0 = Coord::geo(55., 12., 0., 0.);
     ///     let p1 = Coord::geo(49., 2., 0., 0.);
@@ -208,8 +207,6 @@ impl Ellipsoid {
 
 #[cfg(test)]
 mod tests {
-    use crate::Error;
-
     use super::*;
     #[test]
     fn geodesics() -> Result<(), Error> {

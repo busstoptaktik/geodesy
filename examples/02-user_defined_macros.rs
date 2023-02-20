@@ -46,7 +46,7 @@ fn main() -> anyhow::Result<()> {
 
     // geo_all(data) transforms all elements in data from the internal GIS
     // format (lon/lat in radians) to lat/lon in degrees.
-    Coord::geo_all(&mut data);
+    data.to_geo();
     println!("Back to ed50:");
     for coord in data {
         println!("    {:?}", coord);
