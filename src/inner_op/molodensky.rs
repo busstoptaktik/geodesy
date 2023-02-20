@@ -19,7 +19,12 @@ use crate::operator_authoring::*;
 
 // ----- C O M M O N -------------------------------------------------------------------
 
-fn common(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet, direction: Direction) -> usize {
+fn common(
+    op: &Op,
+    _ctx: &dyn Context,
+    operands: &mut dyn CoordinateSet,
+    direction: Direction,
+) -> usize {
     let ellps = op.params.ellps[0];
     let a = ellps.semimajor_axis();
     let f = ellps.flattening();
@@ -192,6 +197,7 @@ fn calc_molodensky_params(op: &Molodensky, coord: &Coord) -> Coord {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::math::angular;
 
     #[test]
     fn molodensky() -> Result<(), Error> {
@@ -208,8 +214,8 @@ mod tests {
         let op = ctx.op(definition)?;
 
         // Test point (53.80939444444444, 2.12955, 73 m)
-        let lat = Coord::dms_to_dd(53, 48, 33.82);
-        let lon = Coord::dms_to_dd(2, 7, 46.38);
+        let lat = angular::dms_to_dd(53, 48, 33.82);
+        let lon = angular::dms_to_dd(2, 7, 46.38);
         let WGS84 = Coord::geo(lat, lon, 73., 0.0);
 
         // Commented out test coordinates from EPSG are not of terribly high

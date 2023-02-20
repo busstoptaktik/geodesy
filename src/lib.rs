@@ -2,11 +2,10 @@
 
 mod bibliography;
 mod context;
-mod coord;
+mod coordinate;
 mod ellipsoid;
 mod grid;
 mod inner_op;
-mod coordinate_set;
 mod math;
 mod op;
 
@@ -14,8 +13,8 @@ mod op;
 pub use crate::context::Context;
 pub use crate::context::Minimal;
 pub use crate::context::Plain;
-pub use crate::coord::Coord;
-pub use crate::coordinate_set::CoordinateSet;
+pub use crate::coordinate::coord::Coord;
+pub use crate::coordinate::CoordinateSet;
 pub use crate::ellipsoid::Ellipsoid;
 pub use crate::Direction::Fwd;
 pub use crate::Direction::Inv;
@@ -25,8 +24,11 @@ pub mod prelude {
     pub use crate::context::Context;
     pub use crate::context::Minimal;
     pub use crate::context::Plain;
-    pub use crate::coord::Coord;
-    pub use crate::coordinate_set::CoordinateSet;
+    pub use crate::coordinate::coor2d::Coor2D;
+    pub use crate::coordinate::coord::Coord;
+    pub use crate::coordinate::Coordinate;
+    pub use crate::coordinate::CoordinateAngularUnitConversions;
+    pub use crate::coordinate::CoordinateSet;
     pub use crate::ellipsoid::Ellipsoid;
     pub use crate::op::OpHandle;
     pub use crate::Direction;

@@ -352,14 +352,14 @@ mod tests {
         let mut operands = [Coord::origin()];
 
         ctx.apply(op, Fwd, &mut operands)?;
-        assert_eq!(operands[0].first(), -87.);
-        assert_eq!(operands[0].second(), -96.);
-        assert_eq!(operands[0].third(), -120.);
+        assert_eq!(operands[0][0], -87.);
+        assert_eq!(operands[0][1], -96.);
+        assert_eq!(operands[0][2], -120.);
 
         ctx.apply(op, Inv, &mut operands)?;
-        assert_eq!(operands[0].first(), 0.);
-        assert_eq!(operands[0].second(), 0.);
-        assert_eq!(operands[0].third(), 0.);
+        assert_eq!(operands[0][0], 0.);
+        assert_eq!(operands[0][1], 0.);
+        assert_eq!(operands[0][2], 0.);
         Ok(())
     }
 

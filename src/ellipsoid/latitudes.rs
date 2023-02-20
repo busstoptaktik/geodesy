@@ -40,7 +40,7 @@ impl Ellipsoid {
     #[must_use]
     pub fn latitude_geographic_to_isometric(&self, geographic: f64) -> f64 {
         let e = self.eccentricity();
-        inverse_gudermannian(geographic) - (e * geographic.sin()).atanh() * e
+        gudermannian::inv(geographic) - (e * geographic.sin()).atanh() * e
     }
 
     /// Isometric latitude, 𝜓 to geographic latitude, 𝜙.
@@ -67,7 +67,7 @@ impl Ellipsoid {
         coefficients: &FourierCoefficients,
     ) -> f64 {
         coefficients.etc[0]
-            * (geographic_latitude + clenshaw_sin(2. * geographic_latitude, &coefficients.fwd))
+            * (geographic_latitude + clenshaw::sin(2. * geographic_latitude, &coefficients.fwd))
     }
 
     /// Rectifying latitude, 𝜇, to geographic, 𝜙
@@ -77,7 +77,7 @@ impl Ellipsoid {
         coefficients: &FourierCoefficients,
     ) -> f64 {
         let rlat = rectifying_latitude / coefficients.etc[0];
-        rlat + clenshaw_sin(2. * rlat, &coefficients.inv)
+        rlat + clenshaw::sin(2. * rlat, &coefficients.inv)
     }
 
     // --- Conformal latitude ---
@@ -93,7 +93,7 @@ impl Ellipsoid {
         geographic_latitude: f64,
         coefficients: &FourierCoefficients,
     ) -> f64 {
-        geographic_latitude + clenshaw_sin(2. * geographic_latitude, &coefficients.fwd)
+        geographic_latitude + clenshaw::sin(2. * geographic_latitude, &coefficients.fwd)
     }
 
     /// Conformal latitude, 𝜒, to geographic, 𝜙
@@ -102,7 +102,7 @@ impl Ellipsoid {
         conformal_latitude: f64,
         coefficients: &FourierCoefficients,
     ) -> f64 {
-        conformal_latitude + clenshaw_sin(2. * conformal_latitude, &coefficients.inv)
+        conformal_latitude + clenshaw::sin(2. * conformal_latitude, &coefficients.inv)
     }
 
     // --- Authalic latitude ---
@@ -118,7 +118,7 @@ impl Ellipsoid {
         geographic_latitude: f64,
         coefficients: &FourierCoefficients,
     ) -> f64 {
-        geographic_latitude + clenshaw_sin(2. * geographic_latitude, &coefficients.fwd)
+        geographic_latitude + clenshaw::sin(2. * geographic_latitude, &coefficients.fwd)
     }
 
     /// Authalic latitude, 𝜉, to geographic, 𝜙
@@ -127,7 +127,7 @@ impl Ellipsoid {
         authalic_latitude: f64,
         coefficients: &FourierCoefficients,
     ) -> f64 {
-        authalic_latitude + clenshaw_sin(2. * authalic_latitude, &coefficients.inv)
+        authalic_latitude + clenshaw::sin(2. * authalic_latitude, &coefficients.inv)
     }
 
     // --- Internal ---

@@ -172,11 +172,11 @@ fn do_the_pop(
             return 0;
         }
 
-        // Insert the top-of-stack elements into the i'th coordinate of all operands
+        // Insert the top-of-stack elements into the j'th coordinate of all operands
         let v = stack.pop().unwrap();
-        for i in 0..n {
+        for (i, value) in v.iter().enumerate() {
             let mut op = operands.get(i);
-            op[3 - j] = v[i];
+            op[3 - j] = *value;
             operands.set(i, &op);
         }
     }
