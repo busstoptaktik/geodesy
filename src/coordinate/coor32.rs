@@ -1,6 +1,5 @@
 /// Tiny coordinate type: 2D, 32 bits, only one fourth the weight of a Coord.
 /// Probably only useful for small scale world maps, without too much zoom.
-
 use super::*;
 use crate::math::angular;
 use std::ops::{Index, IndexMut};
@@ -157,7 +156,7 @@ impl Coor32 {
     ///
     /// ```rust
     /// use geodesy::prelude::*;
-    /// let t = 1000 as f32;
+    /// let t = 1000.;
     /// let p0 = Coor32::origin();
     /// let p1 = Coor32::raw(t, t, 0., 0.);
     /// assert_eq!(p0.hypot2(&p1), t.hypot(t));
