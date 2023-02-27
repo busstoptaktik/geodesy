@@ -28,10 +28,11 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         return 0;
     };
 
-    let the_slice = 0..operands.len();
+    let range = 0..operands.len();
     let mut successes = 0_usize;
-    for i in the_slice {
+    for i in range {
         let mut coord = operands.get(i);
+
         // --- 1. Geographical -> Conformal latitude, rotated longitude
 
         // The conformal latitude
@@ -117,9 +118,9 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         return 0;
     };
 
-    let the_slice = 0..operands.len();
+    let range = 0..operands.len();
     let mut successes = 0_usize;
-    for i in the_slice {
+    for i in range {
         let mut coord = operands.get(i);
 
         // --- 1. Normalize N, E
@@ -280,7 +281,8 @@ fn precompute(op: &mut Op) {
         conformal
     );
 
-    // The Fourier series for the transverse mercator coordinates, from [Engsager & Poder, 2007](crate::Bibliography::Eng07),
+    // The Fourier series for the transverse mercator coordinates,
+    // from [Engsager & Poder, 2007](crate::Bibliography::Eng07),
     // with extensions to 6th order by [Karney, 2011](crate::Bibliography::Kar11).
     let tm = fourier_coefficients(n, &TRANSVERSE_MERCATOR);
     op.params.fourier_coefficients.insert("tm", tm);
