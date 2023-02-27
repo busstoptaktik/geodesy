@@ -4,7 +4,8 @@ impl<T> AngularUnits for &mut T
 where
     T: CoordinateSet,
 {
-    /// Transform the first two elements of a `Coord` from degrees to radians
+    /// Transform the first two elements of a all `Coord`s in a
+    /// coordinate set from degrees to radians
     fn to_radians(self) -> Self {
         for i in 0..self.len() {
             self.set(i, &self.get(i).to_radians());
@@ -12,7 +13,8 @@ where
         self
     }
 
-    /// Transform the first two elements of a `Coord` from radians to degrees
+    /// Transform the first two elements of a all `Coord`s in a
+    /// coordinate set from radians to degrees
     #[must_use]
     fn to_degrees(self) -> Self {
         for i in 0..self.len() {
@@ -21,8 +23,8 @@ where
         self
     }
 
-    /// Transform the first two elements of a `Coord` from radians to seconds
-    /// of arc.
+    /// Transform the first two elements of a all `Coord`s in a
+    /// coordinate set from radians to seconds of arc.
     #[must_use]
     fn to_arcsec(self) -> Self {
         for i in 0..self.len() {
@@ -30,7 +32,9 @@ where
         }
         self
     }
-    /// Transform the internal lon/lat/h/t-in-radians to lat/lon/h/t-in-degrees
+
+    /// Transform all `Coord`s in a coordinate set from the internal
+    /// lon/lat/h/t-in-radians to lat/lon/h/t-in-degrees
     fn to_geo(self) -> Self {
         for i in 0..self.len() {
             self.set(i, &self.get(i).to_geo());
@@ -40,10 +44,23 @@ where
 }
 
 // ----- CoordinateSet implementations for plain Coord containers ------------
-
 impl<const N: usize> CoordinateSet for [Coord; N] {
     fn len(&self) -> usize {
         N
+    }
+
+    fn get(&self, index: usize) -> Coord {
+        self[index]
+    }
+
+    fn set(&mut self, index: usize, value: &Coord) {
+        self[index] = *value;
+    }
+}
+
+impl CoordinateSet for &mut [Coord] {
+    fn len(&self) -> usize {
+        (**self).len()
     }
 
     fn get(&self, index: usize) -> Coord {
