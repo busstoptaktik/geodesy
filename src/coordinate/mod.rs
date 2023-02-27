@@ -124,8 +124,8 @@ impl<T> CoordinateMetadata for T where T: ?Sized {}
 
 pub trait CoordinateSet: CoordinateMetadata {
     fn len(&self) -> usize;
-    fn get(&self, index: usize) -> DirectPosition;
-    fn set(&mut self, index: usize, value: &DirectPosition);
+    fn get_coord(&self, index: usize) -> DirectPosition;
+    fn set_coord(&mut self, index: usize, value: &DirectPosition);
     fn is_empty(&self) -> bool {
         self.len() == 0
     }

@@ -11,22 +11,22 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     // Geoid
     if grid.bands == 1 {
         for i in 0..n {
-            let mut coord = operands.get(i);
+            let mut coord = operands.get_coord(i);
             let d = grid.interpolation(&coord, None);
             coord[2] -= d[0];
             successes += 1;
-            operands.set(i, &coord);
+            operands.set_coord(i, &coord);
         }
         return successes;
     }
 
     // Datum shift
     for i in 0..n {
-        let mut coord = operands.get(i);
+        let mut coord = operands.get_coord(i);
         let d = grid.interpolation(&coord, None);
         coord[0] += d[0];
         coord[1] += d[1];
-        operands.set(i, &coord);
+        operands.set_coord(i, &coord);
         successes += 1;
     }
     successes
@@ -42,10 +42,10 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     // Geoid
     if grid.bands == 1 {
         for i in 0..n {
-            let mut coord = operands.get(i);
+            let mut coord = operands.get_coord(i);
             let t = grid.interpolation(&coord, None);
             coord[2] += t[0];
-            operands.set(i, &coord);
+            operands.set_coord(i, &coord);
             successes += 1;
         }
         return successes;
@@ -53,7 +53,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
 
     // Datum shift - here we need to iterate in the inverse case
     for i in 0..n {
-        let coord = operands.get(i);
+        let coord = operands.get_coord(i);
         let mut t = coord - grid.interpolation(&coord, None);
 
         for _ in 0..10 {
@@ -65,7 +65,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
             }
         }
 
-        operands.set(i, &t);
+        operands.set_coord(i, &t);
         successes += 1;
     }
 

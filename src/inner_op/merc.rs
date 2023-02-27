@@ -15,7 +15,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let mut successes = 0_usize;
     let length = operands.len();
     for i in 0..length {
-        let mut coord = operands.get(i);
+        let mut coord = operands.get_coord(i);
         // Longitude
         coord[0] = (coord[0] - lon_0) * k_0 * a - x_0;
 
@@ -23,7 +23,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         let lat = coord[1] + lat_0;
         coord[1] = a * k_0 * ellps.latitude_geographic_to_isometric(lat) - y_0;
 
-        operands.set(i, &coord);
+        operands.set_coord(i, &coord);
         successes += 1;
     }
 
@@ -44,7 +44,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let mut successes = 0_usize;
     let length = operands.len();
     for i in 0..length {
-        let mut coord = operands.get(i);
+        let mut coord = operands.get_coord(i);
 
         // Easting -> Longitude
         let x = coord[0] + x_0;
@@ -54,7 +54,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         let y = coord[1] + y_0;
         let psi = y / (a * k_0);
         coord[1] = ellps.latitude_isometric_to_geographic(psi) - lat_0;
-        operands.set(i, &coord);
+        operands.set_coord(i, &coord);
         successes += 1;
     }
 

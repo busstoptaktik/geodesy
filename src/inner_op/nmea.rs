@@ -27,13 +27,13 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let mut successes = 0_usize;
     let length = operands.len();
     for i in 0..length {
-        let mut o = operands.get(i);
+        let mut o = operands.get_coord(i);
         if dms {
             o = Coord::nmeass(o[0], o[1], o[2], o[3]);
         } else {
             o = Coord::nmea(o[0], o[1], o[2], o[3]);
         }
-        operands.set(i, &o);
+        operands.set_coord(i, &o);
         successes += 1;
     }
 
@@ -47,7 +47,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let mut successes = 0_usize;
     let length = operands.len();
     for i in 0..length {
-        let mut o = operands.get(i);
+        let mut o = operands.get_coord(i);
         if dms {
             let longitude = angular::dd_to_nmeass(o[0].to_degrees());
             let latitude = angular::dd_to_nmeass(o[1].to_degrees());
@@ -57,7 +57,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
             let latitude = angular::dd_to_nmea(o[1].to_degrees());
             o = Coord::raw(latitude, longitude, o[2], o[3]);
         }
-        operands.set(i, &o);
+        operands.set_coord(i, &o);
         successes += 1;
     }
 

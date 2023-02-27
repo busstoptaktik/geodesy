@@ -18,9 +18,9 @@ use geodesy::operator_authoring::*;
 fn add42(_op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let n = operands.len();
     for i in 0..n {
-        let mut coord = operands.get(i);
+        let mut coord = operands.get_coord(i);
         coord[0] += 42.;
-        operands.set(i, &coord);
+        operands.set_coord(i, &coord);
     }
     n
 }
@@ -29,9 +29,9 @@ fn add42(_op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usiz
 fn sub42(_op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let n = operands.len();
     for i in 0..n {
-        let mut coord = operands.get(i);
+        let mut coord = operands.get_coord(i);
         coord[0] -= 42.;
-        operands.set(i, &coord);
+        operands.set_coord(i, &coord);
     }
     n
 }

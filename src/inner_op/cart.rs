@@ -7,12 +7,12 @@ fn cart_fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> us
     let n = operands.len();
     let mut successes = 0;
     for i in 0..n {
-        let mut coord = operands.get(i);
+        let mut coord = operands.get_coord(i);
         coord = op.params.ellps[0].cartesian(&coord);
         if !coord.0.iter().any(|c| c.is_nan()) {
             successes += 1;
         }
-        operands.set(i, &coord);
+        operands.set_coord(i, &coord);
     }
     successes
 }
@@ -39,7 +39,7 @@ fn cart_inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> us
     let mut successes = 0;
     #[allow(non_snake_case)]
     for i in 0..n {
-        let mut coord = operands.get(i);
+        let mut coord = operands.get_coord(i);
         let X = coord[0];
         let Y = coord[1];
         let Z = coord[2];
@@ -59,7 +59,7 @@ fn cart_inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> us
             let phi = std::f64::consts::FRAC_PI_2.copysign(Z);
             let h = Z.abs() - b;
             coord = Coord::raw(lam, phi, h, t);
-            operands.set(i, &coord);
+            operands.set_coord(i, &coord);
             continue;
         }
 
@@ -84,7 +84,7 @@ fn cart_inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> us
         let h = (p * CC.abs() + Z.abs() * S1.abs() - a * CC.hypot(ar * S1)) / CC.hypot(S1);
         // Bowring's height formula works better close to the ellipsoid, but requires a (sin, cos)-pair
         coord = Coord::raw(lam, phi, h, t);
-        operands.set(i, &coord);
+        operands.set_coord(i, &coord);
 
         if ![lam, phi, h, t].iter().any(|c| c.is_nan()) {
             successes += 1;

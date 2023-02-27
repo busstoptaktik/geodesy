@@ -6,10 +6,10 @@ fn fwd(_op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize 
     let n = operands.len();
     let mut successes = 0;
     for i in 0..n {
-        let mut o = operands.get(i);
+        let mut o = operands.get_coord(i);
         o[0] += 1.;
         successes += 1;
-        operands.set(i, &o);
+        operands.set_coord(i, &o);
     }
     successes
 }
@@ -20,10 +20,10 @@ fn inv(_op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize 
     let n = operands.len();
     let mut successes = 0;
     for i in 0..n {
-        let mut o = operands.get(i);
+        let mut o = operands.get_coord(i);
         o[0] -= 1.;
         successes += 1;
-        operands.set(i, &o);
+        operands.set_coord(i, &o);
     }
     successes
 }

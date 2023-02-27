@@ -142,7 +142,7 @@ fn do_the_push(
 
         let mut all = Vec::with_capacity(n);
         for i in 0..n {
-            all.push(operands.get(i)[j]);
+            all.push(operands.get_coord(i)[j]);
         }
         stack.push(all);
     }
@@ -164,9 +164,9 @@ fn do_the_pop(
         // Stack underflow?
         if stack.is_empty() {
             for i in 0..n {
-                let mut op = operands.get(i);
+                let mut op = operands.get_coord(i);
                 op[3 - j] = f64::NAN;
-                operands.set(i, &op);
+                operands.set_coord(i, &op);
             }
             warn!("Stack underflow in pipeline");
             return 0;
@@ -175,9 +175,9 @@ fn do_the_pop(
         // Insert the top-of-stack elements into the j'th coordinate of all operands
         let v = stack.pop().unwrap();
         for (i, value) in v.iter().enumerate() {
-            let mut op = operands.get(i);
+            let mut op = operands.get_coord(i);
             op[3 - j] = *value;
-            operands.set(i, &op);
+            operands.set_coord(i, &op);
         }
     }
     operands.len()

@@ -22,7 +22,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let length = operands.len();
 
     for i in 0..length {
-        let mut coord = operands.get(i);
+        let mut coord = operands.get_coord(i);
         let lam = coord[0] - lon_0;
         let phi = coord[1];
         let mut rho = 0.;
@@ -31,7 +31,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         if (phi.abs() - FRAC_PI_2).abs() < EPS10 {
             if phi * n <= 0. {
                 coord = Coord::nan();
-                operands.set(i, &coord);
+                operands.set_coord(i, &coord);
                 continue;
             }
         } else {
@@ -40,7 +40,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         let sc = (lam * n).sin_cos();
         coord[0] = a * k_0 * rho * sc.0 + x_0;
         coord[1] = a * k_0 * (rho0 - rho * sc.1) + y_0;
-        operands.set(i, &coord);
+        operands.set_coord(i, &coord);
         successes += 1;
     }
     successes
@@ -61,7 +61,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let length = operands.len();
 
     for i in 0..length {
-        let mut coord = operands.get(i);
+        let mut coord = operands.get_coord(i);
         let mut x = (coord[0] - x_0) / (a * k_0);
         let mut y = rho0 - (coord[1] - y_0) / (a * k_0);
 
@@ -71,7 +71,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         if rho == 0. {
             coord[0] = 0.;
             coord[1] = FRAC_PI_2.copysign(n);
-            operands.set(i, &coord);
+            operands.set_coord(i, &coord);
             successes += 1;
             continue;
         }
@@ -87,12 +87,12 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         let phi = crate::math::pj_phi2(ts0, e);
         if phi.is_infinite() || phi.is_nan() {
             coord = Coord::nan();
-            operands.set(i, &coord);
+            operands.set_coord(i, &coord);
             continue;
         }
         coord[0] = x.atan2(y) / n + lon_0;
         coord[1] = phi;
-        operands.set(i, &coord);
+        operands.set_coord(i, &coord);
         successes += 1;
     }
     successes

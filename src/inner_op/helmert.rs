@@ -47,7 +47,7 @@ fn helmert_common(
     let mut prev_t = std::f64::NAN;
     let n = operands.len();
     for i in 0..n {
-        let mut c = operands.get(i);
+        let mut c = operands.get_coord(i);
 
         // Time varying case?
         if dynamic && !fixed_t {
@@ -80,7 +80,7 @@ fn helmert_common(
                 c[0] = SS * x + TT[0];
                 c[1] = SS * y + TT[1];
                 c[2] = SS * z + TT[2];
-                operands.set(i, &c);
+                operands.set_coord(i, &c);
                 continue;
             }
 
@@ -88,7 +88,7 @@ fn helmert_common(
             c[0] = SS * c[0] + TT[0];
             c[1] = SS * c[1] + TT[1];
             c[2] = SS * c[2] + TT[2];
-            operands.set(i, &c);
+            operands.set_coord(i, &c);
             continue;
         }
 
@@ -109,7 +109,7 @@ fn helmert_common(
             c[1] = y;
             c[2] = z;
         }
-        operands.set(i, &c);
+        operands.set_coord(i, &c);
     }
     n
 }

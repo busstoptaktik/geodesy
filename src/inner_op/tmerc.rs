@@ -31,7 +31,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let range = 0..operands.len();
     let mut successes = 0_usize;
     for i in range {
-        let mut coord = operands.get(i);
+        let mut coord = operands.get_coord(i);
 
         // --- 1. Geographical -> Conformal latitude, rotated longitude
 
@@ -86,7 +86,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         coord[0] = qs * lon + x_0; // Easting
         coord[1] = qs * lat + zb; // Northing
         successes += 1;
-        operands.set(i, &coord);
+        operands.set_coord(i, &coord);
     }
 
     info!("Successes: {successes}");
@@ -121,7 +121,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let range = 0..operands.len();
     let mut successes = 0_usize;
     for i in range {
-        let mut coord = operands.get(i);
+        let mut coord = operands.get_coord(i);
 
         // --- 1. Normalize N, E
 
@@ -157,7 +157,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         (coord[0], coord[1]) = (lon, lat);
 
         successes += 1;
-        operands.set(i, &coord);
+        operands.set_coord(i, &coord);
     }
 
     info!("Successes: {successes}");

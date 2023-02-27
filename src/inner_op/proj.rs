@@ -35,7 +35,7 @@ fn proj(args: &str, forward: bool, operands: &mut dyn CoordinateSet) -> usize {
     let buffer_size = 2 * length * size_of::<f64>();
     let mut coo = Vec::with_capacity(buffer_size);
     for i in 0..length {
-        let op = operands.get(i);
+        let op = operands.get_coord(i);
         coo.extend_from_slice(&op[0].to_ne_bytes());
         coo.extend_from_slice(&op[1].to_ne_bytes());
     }
@@ -77,10 +77,10 @@ fn proj(args: &str, forward: bool, operands: &mut dyn CoordinateSet) -> usize {
             n = f64::NAN;
             errors += 1;
         }
-        let mut coord = operands.get(i);
+        let mut coord = operands.get_coord(i);
         coord[0] = e;
         coord[1] = n;
-        operands.set(i, &coord);
+        operands.set_coord(i, &coord);
     }
 
     operands.len() - errors

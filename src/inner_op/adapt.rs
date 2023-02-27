@@ -79,14 +79,14 @@ fn fwd(op: &Op, _ctx: &dyn Context, data: &mut dyn CoordinateSet) -> usize {
     ];
     let mult = op.params.series("mult").unwrap_or(&MULT_DEFAULT);
     for i in 0..n {
-        let mut coord = data.get(i);
+        let mut coord = data.get_coord(i);
         coord = Coord([
             coord[post[0]] * mult[0],
             coord[post[1]] * mult[1],
             coord[post[2]] * mult[2],
             coord[post[3]] * mult[3],
         ]);
-        data.set(i, &coord);
+        data.set_coord(i, &coord);
     }
     n
 }
@@ -111,12 +111,12 @@ fn inv(op: &Op, _ctx: &dyn Context, data: &mut dyn CoordinateSet) -> usize {
     let mult = [1. / mult[0], 1. / mult[1], 1. / mult[2], 1. / mult[3]];
 
     for i in 0..n {
-        let coord = data.get(i);
+        let coord = data.get_coord(i);
         let mut c = Coord::default();
         for j in 0..4_usize {
             c[post[j]] = coord[j] * mult[post[j]];
         }
-        data.set(i, &c);
+        data.set_coord(i, &c);
     }
 
     n

@@ -53,7 +53,7 @@ fn common(
     let n = operands.len();
 
     for i in 0..n {
-        let mut coord = operands.get(i);
+        let mut coord = operands.get_coord(i);
         let par = calc_molodensky_params(&moped, &coord);
         if direction == Fwd {
             coord[0] += par[0];
@@ -64,7 +64,7 @@ fn common(
             coord[1] -= par[1];
             coord[2] -= par[2];
         }
-        operands.set(i, &coord);
+        operands.set_coord(i, &coord);
     }
 
     n
