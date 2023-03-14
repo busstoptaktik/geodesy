@@ -91,10 +91,10 @@ pub struct DataEpoch(f64);
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Copy, Clone)]
 pub struct MdIdentifier(uuid::Uuid);
 
-#[derive(Debug, Default, PartialEq, PartialOrd, Copy, Clone)]
+#[derive(Debug, Default, PartialEq, PartialOrd, Clone)]
 pub enum Crs {
     #[default]
-    Unknown,
+    Unknown, RegisterItem(String, String)
 }
 
 // ----- Interface: Coordinate Metadata ---------------------------------------
