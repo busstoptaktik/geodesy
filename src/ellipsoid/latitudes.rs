@@ -107,7 +107,7 @@ impl Ellipsoid {
 
     // --- Authalic latitude ---
 
-    /// Obtain the coefficients needed for working with conformal latitudes
+    /// Obtain the coefficients needed for working with authalic latitudes
     pub fn coefficients_for_authalic_latitude_computations(&self) -> FourierCoefficients {
         self.latitude_fourier_coefficients(&constants::AUTHALIC)
     }
