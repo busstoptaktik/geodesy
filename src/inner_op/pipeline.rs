@@ -184,7 +184,12 @@ fn do_the_pop(
 }
 
 pub fn split_into_steps(definition: &str) -> (Vec<String>, String) {
-    let all = definition.replace('\r', "\n").trim().to_string();
+    // Impose line ending sanity
+    let all = definition
+        .replace("\r\n", "\n")
+        .replace('\r', "\n")
+        .trim()
+        .to_string();
 
     // Collect docstrings and remove plain comments
     let mut trimmed = Vec::<String>::new();
@@ -212,7 +217,7 @@ pub fn split_into_steps(definition: &str) -> (Vec<String>, String) {
     // Remove superfluous newlines in the comment-trimmed text
     let trimmed = trimmed.join(" ").replace('\n', " ");
 
-    // Generate trimmed steps with elements spearated by a single space,
+    // Generate trimmed steps with elements separated by a single space,
     // and key-value pairs glued by '=' as in
     //     key1=value1 key2=value2
     // as opposed to e.g.

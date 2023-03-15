@@ -94,7 +94,8 @@ pub struct MdIdentifier(uuid::Uuid);
 #[derive(Debug, Default, PartialEq, PartialOrd, Clone)]
 pub enum Crs {
     #[default]
-    Unknown, RegisterItem(String, String)
+    Unknown,
+    RegisterItem(String, String),
 }
 
 // ----- Interface: Coordinate Metadata ---------------------------------------
