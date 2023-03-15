@@ -184,7 +184,7 @@ fn do_the_pop(
 }
 
 pub fn split_into_steps(definition: &str) -> (Vec<String>, String) {
-    // Impose line ending sanity
+    // Impose some line ending sanity
     let all = definition
         .replace("\r\n", "\n")
         .replace('\r', "\n")
