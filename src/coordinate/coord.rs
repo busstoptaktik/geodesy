@@ -227,7 +227,7 @@ impl Coord {
     ///
     /// # Examples
     ///
-    /// ```rust
+    /// ```
     /// use geodesy::prelude::*;
     /// let t = 1000 as f64;
     /// let p0 = Coord::origin();
@@ -256,7 +256,7 @@ impl Coord {
     ///
     /// # Examples
     ///
-    /// ```rust
+    /// ```
     /// use geodesy::prelude::*;
     /// let t = 1000 as f64;
     /// let p0 = Coord::origin();

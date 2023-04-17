@@ -182,12 +182,12 @@ impl Ellipsoid {
     ///
     /// # See also:
     ///
-    /// [`hypot2`](crate::coord::Coord::hypot2),
-    /// [`hypot3`](crate::coord::Coord::hypot3)
+    /// [`hypot2`](crate::Coord::hypot2),
+    /// [`hypot3`](crate::Coord::hypot3)
     ///
     /// # Examples
     ///
-    /// ```rust
+    /// ```
     /// // Compute the distance between Copenhagen and Paris
     /// use geodesy::prelude::*;
     /// if let Ok(ellps) = Ellipsoid::named("GRS80") {

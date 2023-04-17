@@ -32,7 +32,7 @@ impl AngularUnits for Coor32 {
         Coor32([self[0].to_radians(), self[1].to_radians()])
     }
 
-    /// Transform the first two elements of a `Coor32` from radians to degrees
+    /// Transform the elements of a `Coor32` from radians to degrees
     #[must_use]
     fn to_degrees(self) -> Self {
         Coor32([self[0].to_degrees(), self[1].to_degrees()])
@@ -56,14 +56,15 @@ impl AngularUnits for Coor32 {
 /// Constructors
 #[allow(unused_variables)]
 impl Coordinate for Coor32 {
-    /// A `Coor32` from latitude/longitude/height/time, with the angular input in degrees
+    /// A `Coor32` from latitude/longitude/height/time, with the angular input in degrees,
+    /// and height and time ignored.
     #[must_use]
     fn geo(latitude: f64, longitude: f64, height: f64, time: f64) -> Coor32 {
         Coor32([longitude.to_radians() as f32, latitude.to_radians() as f32])
     }
 
     /// A `Coor32` from longitude/latitude/height/time, with the angular input in seconds
-    /// of arc. Mostly for handling grid shift elements.
+    /// of arc, and height and time ignored. Mostly for handling grid shift elements.
     #[must_use]
     fn arcsec(longitude: f64, latitude: f64, height: f64, time: f64) -> Coor32 {
         Coor32([
@@ -72,20 +73,23 @@ impl Coordinate for Coor32 {
         ])
     }
 
-    /// A `Coor32` from longitude/latitude/height/time, with the angular input in degrees
+    /// A `Coor32` from longitude/latitude/height/time, with the angular input in degrees,
+    /// and height and time ignored.
     #[must_use]
     fn gis(longitude: f64, latitude: f64, height: f64, time: f64) -> Coor32 {
         Coor32([longitude.to_radians() as f32, latitude.to_radians() as f32])
     }
 
-    /// A `Coor32` from longitude/latitude/height/time, with the angular input in radians
+    /// A `Coor32` from longitude/latitude/height/time, with the angular input in radians,
+    /// and height and time ignored.
     #[must_use]
     fn raw(first: f64, second: f64, third: f64, fourth: f64) -> Coor32 {
         Coor32([first as f32, second as f32])
     }
 
     /// A `Coor32` from latitude/longitude/height/time,
-    /// with the angular input in NMEA format: DDDMM.mmmmm
+    /// with the angular input in NMEA format: DDDMM.mmmmm,
+    /// and height and time ignored.
     #[must_use]
     fn nmea(latitude: f64, longitude: f64, height: f64, time: f64) -> Coor32 {
         let longitude = angular::nmea_to_dd(longitude);
@@ -94,7 +98,8 @@ impl Coordinate for Coor32 {
     }
 
     /// A `Coor32` from latitude/longitude/height/time, with
-    /// the angular input in extended NMEA format: DDDMMSS.sssss
+    /// the angular input in extended NMEA format: DDDMMSS.sssss,
+    /// and height and time ignored.
     #[must_use]
     fn nmeass(latitude: f64, longitude: f64, height: f64, time: f64) -> Coor32 {
         let longitude = angular::nmeass_to_dd(longitude);
@@ -144,17 +149,13 @@ impl Coor32 {
     /// in their projected plane. Typically, this distance will differ from
     /// the actual distance in the real world.
     ///
-    /// The distance is computed in the subspace spanned by the first and
-    /// second coordinate of the `Coor32`s
-    ///
     /// # See also:
     ///
-    /// [`hypot3`](Coor32::hypot3),
     /// [`distance`](crate::ellipsoid::Ellipsoid::distance)
     ///
     /// # Examples
     ///
-    /// ```rust
+    /// ```
     /// use geodesy::prelude::*;
     /// let t = 1000.;
     /// let p0 = Coor32::origin();

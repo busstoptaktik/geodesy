@@ -24,13 +24,13 @@ impl IndexMut<usize> for Coor2D {
 // ----- A N G U L A R   U N I T S -------------------------------------------
 
 impl AngularUnits for Coor2D {
-    /// Transform the first two elements of a `Coor2D` from degrees to radians
+    /// Transform the elements of a `Coor2D` from degrees to radians
     #[must_use]
     fn to_radians(self) -> Self {
         Coor2D([self[0].to_radians(), self[1].to_radians()])
     }
 
-    /// Transform the first two elements of a `Coor2D` from radians to degrees
+    /// Transform the elements of a `Coor2D` from radians to degrees
     #[must_use]
     fn to_degrees(self) -> Self {
         Coor2D([self[0].to_degrees(), self[1].to_degrees()])
@@ -54,7 +54,8 @@ impl AngularUnits for Coor2D {
 /// Constructors
 #[allow(unused_variables)]
 impl Coordinate for Coor2D {
-    /// A `Coor2D` from latitude/longitude/height/time, with the angular input in degrees
+    /// A `Coor2D` from latitude/longitude/height/time, with the angular input in degrees,
+    /// and height and time ignored.
     #[must_use]
     fn geo(latitude: f64, longitude: f64, height: f64, time: f64) -> Coor2D {
         Coor2D([longitude.to_radians(), latitude.to_radians()])
@@ -70,20 +71,23 @@ impl Coordinate for Coor2D {
         ])
     }
 
-    /// A `Coor2D` from longitude/latitude/height/time, with the angular input in degrees
+    /// A `Coor2D` from longitude/latitude/height/time, with the angular input in degrees.
+    /// and height and time ignored.
     #[must_use]
     fn gis(longitude: f64, latitude: f64, height: f64, time: f64) -> Coor2D {
         Coor2D([longitude.to_radians(), latitude.to_radians()])
     }
 
-    /// A `Coor2D` from longitude/latitude/height/time, with the angular input in radians
+    /// A `Coor2D` from longitude/latitude/height/time, with the angular input in radians,
+    /// and third and fourth arguments ignored.
     #[must_use]
     fn raw(first: f64, second: f64, third: f64, fourth: f64) -> Coor2D {
         Coor2D([first, second])
     }
 
     /// A `Coor2D` from latitude/longitude/height/time,
-    /// with the angular input in NMEA format: DDDMM.mmmmm
+    /// with the angular input in NMEA format: DDDMM.mmmmm,
+    /// and height and time ignored.
     #[must_use]
     fn nmea(latitude: f64, longitude: f64, height: f64, time: f64) -> Coor2D {
         let longitude = angular::nmea_to_dd(longitude);
@@ -92,7 +96,8 @@ impl Coordinate for Coor2D {
     }
 
     /// A `Coor2D` from latitude/longitude/height/time, with
-    /// the angular input in extended NMEA format: DDDMMSS.sssss
+    /// the angular input in extended NMEA format: DDDMMSS.sssss,
+    /// and height and time ignored.
     #[must_use]
     fn nmeass(latitude: f64, longitude: f64, height: f64, time: f64) -> Coor2D {
         let longitude = angular::nmeass_to_dd(longitude);
@@ -142,17 +147,13 @@ impl Coor2D {
     /// in their projected plane. Typically, this distance will differ from
     /// the actual distance in the real world.
     ///
-    /// The distance is computed in the subspace spanned by the first and
-    /// second Coor2Dinate of the `Coor2D`s
-    ///
     /// # See also:
     ///
-    /// [`hypot3`](Coor2D::hypot3),
     /// [`distance`](crate::ellipsoid::Ellipsoid::distance)
     ///
     /// # Examples
     ///
-    /// ```rust
+    /// ```
     /// use geodesy::prelude::*;
     /// let t = 1000 as f64;
     /// let p0 = Coor2D::origin();
