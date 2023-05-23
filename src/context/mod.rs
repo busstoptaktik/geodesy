@@ -18,6 +18,7 @@ pub trait Context {
 
     /// Instantiate the operation given by `definition`
     fn op(&mut self, definition: &str) -> Result<OpHandle, Error>;
+
     /// Apply operation `op` to `operands`
     fn apply(
         &self,
