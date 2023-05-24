@@ -237,7 +237,6 @@ geo:in | gridshift grids=ed50.datum | geo:out
 
 **See also:** PROJ documentation, [`hgridshift`](https://proj.org/operations/transformations/hgridshift.html) and [`vgridshift`](https://proj.org/operations/transformations/vgridshift.html). RG combines the functionality of the two: The dimensionality of the grid determines whether a plane or a vertical transformation is carried out.
 
-
 ---
 
 ### Operator `laea`
