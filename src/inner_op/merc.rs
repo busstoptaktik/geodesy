@@ -16,10 +16,10 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let length = operands.len();
     for i in 0..length {
         let mut coord = operands.get_coord(i);
-        // Longitude
+        // Easting
         coord[0] = (coord[0] - lon_0) * k_0 * a - x_0;
 
-        // Latitude
+        // Northing
         let lat = coord[1] + lat_0;
         coord[1] = a * k_0 * ellps.latitude_geographic_to_isometric(lat) - y_0;
 
