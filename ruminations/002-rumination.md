@@ -33,11 +33,13 @@ $ echo 553036. -124509 | kp "dms:in | geo:out"
 - [`nmea`](#operator-nmea-dm-nmeass-and-dms): degree/minutes encoding with obvious extension to seconds.
 - [`nmeass`](#operator-nmea-dm-nmeass-and-dms): DDMMSS.sss encoding, sub-entry under `nmea`
 - [`noop`](#operator-noop): The no-operation
+- [`omerc`](#operator-omerc): The oblique Mercator projection
 - [`pop`](#operator-pop): Pop a dimension from the stack into the operands
 - [`proj`](#operator-proj): Invoke the `proj` executable to support all the projections PROJ supports.
 - [`push`](#operator-push): Push a dimension from the operands onto the stack
 - [`tmerc`](#operator-tmerc): The transverse Mercator projection
 - [`utm`](#operator-utm): The UTM projection
+- [`webmerc`](#operator-webmerc): The Web Pseudomercator projection
 
 ### Prologue
 
@@ -441,6 +443,42 @@ geo:in | noop all these parameters are=ignored | geo:out
 
 ---
 
+### Operator `omerc`
+
+**Purpose:** Projection from geographic to oblique mercator coordinates
+
+**Description:**
+
+| Argument | Description |
+|----------|-------------|
+| `inv` | Inverse operation: transverse-mercator to geographic |
+| `ellps=name` | Use ellipsoid `name` for the conversion |
+| `lonc` | Longitude of the projection center |
+| `latc` | Latitude of the projection center |
+| `k_0` | Scaling factor (on the initial line) |
+| `x_0` | False easting  |
+| `y_0` | False northing |
+| `alpha` | Azimuth of the initial line |
+| `gamma` | Angle from the rectified grid to the oblique grid |
+| `variant` | Use the "variant B" formulation (changes the interpretation of `x_0` and `y_0`) |
+| `laborde` | Approximate the Laborde formultaion using "variant B" with `gamma = alpha`) |
+
+**Example**: EPSG Guidance Note 7-2 implementation of Projected coordinate system
+*Timbalai 1948 / R.S.O. Borneo*
+
+```js
+omerc ellps=evrstSS variant
+x_0=590476.87 y_0=442857.65
+latc=4 lonc=115
+k_0=0.99984 alpha=53:18:56.9537 gamma_c=53:07:48.3685
+```
+
+**See also:** [PROJ documentation](https://proj.org/operations/projections/omerc.html): *Oblique Mercator*.
+The parameter names differ slightly between PROJ and RG: PROJ's `lat_0` is `latc` here, to match `lonc`,
+and RG does not support PROJ's "indirectly given azimuth" case.
+
+---
+
 ### Operator `pop`
 
 **Purpose:** Pop a coordinate dimension from the stack
@@ -544,6 +582,30 @@ utm zone=32
 ```
 
 **See also:** [PROJ documentation](https://proj.org/operations/projections/utm.html): *Universal Transverse Mercator*. The current implementations differ between PROJ and RG. Within each 6 degrees wide zone, the differences should be immaterial.
+
+---
+
+### Operator `webmerc`
+
+**Purpose:** Projection from geographic to web pseudomercator coordinates
+
+**Description:**
+
+| Argument | Description |
+|----------|-------------|
+| `inv` | Inverse operation: Mercator to geographic |
+| `ellps=name` | Use ellipsoid `name` for the conversion. Defaults to `WGS84` |
+
+**Example**:
+
+```js
+webmerc
+```
+
+**See also:**
+
+- [PROJ documentation](https://proj.org/operations/projections/webmerc.html): *Mercator*. The current implementation closely follows the PROJ version.
+- [`merc`](#operator-merc)
 
 ### Document History
 
