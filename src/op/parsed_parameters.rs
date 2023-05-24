@@ -197,12 +197,28 @@ impl ParsedParameters {
 
                 OpParameter::Real { key, default } => {
                     if let Some(value) = chase(globals, &locals, key)? {
-                        if let Ok(v) = value.parse::<f64>() {
-                            real.insert(key, v);
-                            continue;
+                        let mut elements = Vec::<f64>::new();
+                        for element in value.split(':') {
+                            if let Ok(v) = element.parse::<f64>() {
+                                elements.push(v);
+                                continue;
+                            }
+                            warn!("Cannot parse {key}:{value} as a real number or sexagesimal angle");
+                            return Err(Error::BadParam(key.to_string(), value.to_string()));
                         }
-                        warn!("Cannot parse {key}:{value} as a real number");
-                        return Err(Error::BadParam(key.to_string(), value));
+
+                        // Make sure we have at least 3 elements available, to make the sexagesimal
+                        // converter happy
+                        elements.push(0.0);
+                        elements.push(0.0);
+
+                        // Sexagesimal conversion if we have more than one element. Otherwise it
+                        // decays gracefully to plain real/f64 conversion
+                        let sign = elements[0].signum();
+                        let v = sign * (elements[0].abs() + (elements[1] + elements[2]/60.0)/60.0);
+                        dbg!(v);
+                        real.insert(key, v);
+                        continue;
                     }
 
                     // If we're here, the key was not found
