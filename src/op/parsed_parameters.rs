@@ -203,7 +203,9 @@ impl ParsedParameters {
                                 elements.push(v);
                                 continue;
                             }
-                            warn!("Cannot parse {key}:{value} as a real number or sexagesimal angle");
+                            warn!(
+                                "Cannot parse {key}:{value} as a real number or sexagesimal angle"
+                            );
                             return Err(Error::BadParam(key.to_string(), value.to_string()));
                         }
 
@@ -215,7 +217,8 @@ impl ParsedParameters {
                         // Sexagesimal conversion if we have more than one element. Otherwise it
                         // decays gracefully to plain real/f64 conversion
                         let sign = elements[0].signum();
-                        let v = sign * (elements[0].abs() + (elements[1] + elements[2]/60.0)/60.0);
+                        let v =
+                            sign * (elements[0].abs() + (elements[1] + elements[2] / 60.0) / 60.0);
                         dbg!(v);
                         real.insert(key, v);
                         continue;
