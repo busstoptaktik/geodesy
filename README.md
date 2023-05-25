@@ -2,6 +2,25 @@
 
 ## Abstract
 
+"Rust Geodesy" is (unsurprisingly) a Geodesy library written in the Rust programming language.
+
+Rust Geodesy provides a number of **features** to support a number of **objectives**.
+
+The most important **features** are
+
+- a number of geodetic **transformation primitives**
+- a number of primitives for **operations on the ellipsoid**
+- a way of **composing** these primitives into more complex operations.
+
+The most important **objectives** are
+
+- to support new, and hopefully better, abstractions,
+- for building better, simpler, and more tractable, geospatial **standards, transformations, and software**.
+
+If any of this resonates with you, read on after this minimal usage example...
+
+## Example
+
 ```rust
 // Find the UTM coordinates of some Scandinavian capitals
 use geodesy::prelude::*;
@@ -18,8 +37,6 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 ```
-
----
 
 ## Concrete
 
