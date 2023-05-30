@@ -269,6 +269,49 @@ mod tests {
         assert!(
             (ellps.prime_vertical_radius_of_curvature(0.0) - ellps.semimajor_axis()).abs() < 1.0e-4
         );
+
+        // Regression test: Curvatures for a random range of latitudes
+        let latitudes = [
+            50f64, 51.0, 52.0, 53.0, 54.0, 55.0, 56.0, 57.0, 58.0, 59.0, 60.0,
+        ];
+        let prime_vertical_radii_of_curvature = [
+            6390702.044256360,
+            6391069.984921544,
+            6391435.268276582,
+            6391797.447784556,
+            6392156.080476415,
+            6392510.727498910,
+            6392860.954658516,
+            6393206.332960654,
+            6393546.439143487,
+            6393880.856205599,
+            6394209.173926849,
+        ];
+
+        let meridian_radii_of_curvature = [
+            6372955.9257095090,
+            6374056.7459167000,
+            6375149.7412608800,
+            6376233.5726736350,
+            6377306.9111838430,
+            6378368.4395775950,
+            6379416.8540488490,
+            6380450.8658386090,
+            6381469.2028603740,
+            6382470.6113096075,
+            6383453.8572549970,
+        ];
+        // println!("lat; N; M; R");
+
+        for (i, lat) in latitudes.iter().enumerate() {
+            let n = ellps.prime_vertical_radius_of_curvature(lat.to_radians());
+            let m = ellps.meridian_radius_of_curvature(lat.to_radians());
+            // let r = (n*m).sqrt();
+            assert!((n - prime_vertical_radii_of_curvature[i]).abs() < 1e-9);
+            assert!((m - meridian_radii_of_curvature[i]).abs() < 1e-9);
+
+            // println!("{lat}; {n}; {m}; {r}");
+        }
         Ok(())
     }
 }
