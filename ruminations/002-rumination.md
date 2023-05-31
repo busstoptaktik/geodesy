@@ -21,6 +21,7 @@ $ echo 553036. -124509 | kp "dms:in | geo:out"
 - [A brief `kp` HOWTO](#a-brief-kp-howto)
 - [`adapt`](#operator-adapt): The order-and-unit adaptor
 - [`cart`](#operator-cart): The geographical-to-cartesian converter
+- [`curvature`](#operator-curvature): Radii of curvature
 - [`dm`](#operator-nmea-dm-nmeass-and-dms): DDMM.mmm encoding, sub-entry under `nmea`
 - [`dms`](#operator-nmea-dm-nmeass-and-dms): DDMMSS.sss encoding, sub-entry under `nmea`
 - [`gridshift`](#operator-gridshift): NADCON style datum shifts in 1, 2, and 3 dimensions
@@ -152,6 +153,35 @@ geo:in | cart ellps=intl | helmert x=-87 y=-96 z=-120 | cart inv ellps=GRS80 | g
 ```
 
 cf. [Rumination no. 001](/ruminations/001-rumination.md) for details about this perennial pipeline.
+
+---
+
+### Operator `curvature`
+
+**Purpose:**
+Convert from geographic latitude to a selection of radii of curvature cases
+
+**Description:**
+
+| Argument | Description |
+|----------|-------------|
+| `ellps=name` | Use ellipsoid `name` for the conversion|
+| `prime` | $N$, radius of curvature in the prime vertical|
+| `meridian` | $M$, the meridian radius of curvature|
+| `gauss` | Gaussian mean $R_a = \sqrt{M\times N}$|
+| `mean` | Mean radius of curvature $R_m = \frac{2}{1/M + 1/N}$|
+| `azimuthal` | Radius of curvature in the direction $\alpha$. $R_\alpha = \frac{1}{\cos^2\alpha/M+\sin^2\alpha/N}$|
+
+Contrary to most other operators, in most cases `curvature` reads only the first dimension of the input coordinate, which is considered to be the latitude, $\varphi$ **in degrees**.
+
+In the `curvature azimuthal` case, the two first dimensions are read, and considered a latitude, azimuth pair $(\varphi, \alpha)$, both expected to be **given in degrees**
+
+**Example**:
+
+```sh
+curvature prime ellps=GRS80
+```
+**See also:** The [Earth radius](https://en.wikipedia.org/wiki/Earth_radius) article on Wikipedia
 
 ---
 
