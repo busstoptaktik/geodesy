@@ -136,7 +136,7 @@ pub const GAMUT: [OpParameter; 8] = [
 ];
 
 pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
-    let mut op = Op::plain(parameters, InnerOp(fwd), InnerOp(inv), &GAMUT, ctx)?;
+    let mut op = Op::plain(parameters, InnerOp(fwd), Some(InnerOp(inv)), &GAMUT, ctx)?;
     let ellps = op.params.ellps[0];
 
     let mut number_of_flags = 0_usize;

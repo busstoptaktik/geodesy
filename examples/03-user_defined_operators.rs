@@ -41,7 +41,7 @@ pub const GAMUT: [OpParameter; 1] = [OpParameter::Flag { key: "inv" }];
 
 // And this is the constructor, generating the object, the `Context` needs to instantiate an actual instance
 pub fn add42_constructor(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
-    Op::plain(parameters, InnerOp(add42), InnerOp(sub42), &GAMUT, ctx)
+    Op::plain(parameters, InnerOp(add42), Some(InnerOp(sub42)), &GAMUT, ctx)
 }
 
 fn main() -> anyhow::Result<()> {

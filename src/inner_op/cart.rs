@@ -105,7 +105,7 @@ pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
     Op::plain(
         parameters,
         InnerOp(cart_fwd),
-        InnerOp(cart_inv),
+        Some(InnerOp(cart_inv)),
         &GAMUT,
         ctx,
     )

@@ -21,7 +21,7 @@ pub const GAMUT: [OpParameter; 0] = [
 ];
 
 pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
-    Op::plain(parameters, InnerOp(fwd), InnerOp(inv), &GAMUT, ctx)
+    Op::plain(parameters, InnerOp(fwd), Some(InnerOp(inv)), &GAMUT, ctx)
 }
 
 // ----- T E S T S ------------------------------------------------------------------

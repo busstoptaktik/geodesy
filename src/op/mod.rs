@@ -62,13 +62,13 @@ impl Op {
     pub fn plain(
         parameters: &RawParameters,
         fwd: InnerOp,
-        inv: InnerOp,
+        inv: Option<InnerOp>,
         gamut: &[OpParameter],
         _ctx: &dyn Context,
     ) -> Result<Op, Error> {
         let def = parameters.definition.as_str();
         let params = ParsedParameters::new(parameters, gamut)?;
-        let descriptor = OpDescriptor::new(def, fwd, Some(inv));
+        let descriptor = OpDescriptor::new(def, fwd, inv);
         let steps = Vec::<Op>::new();
         let id = OpHandle::new();
 
