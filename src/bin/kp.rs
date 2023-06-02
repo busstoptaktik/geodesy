@@ -102,7 +102,7 @@ fn main() -> Result<(), anyhow::Error> {
         args.extend(["0"; 4]);
         let mut b: Vec<f64> = vec![];
         for e in args {
-            b.push(e.parse().unwrap_or(std::f64::NAN))
+            b.push(parse_sexagesimal(e));
         }
         let coord = Coord::raw(b[0], b[1], b[2], b[3]);
         let mut data = [coord];

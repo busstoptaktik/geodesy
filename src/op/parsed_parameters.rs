@@ -197,29 +197,10 @@ impl ParsedParameters {
 
                 OpParameter::Real { key, default } => {
                     if let Some(value) = chase(globals, &locals, key)? {
-                        let mut elements = Vec::<f64>::new();
-                        for element in value.split(':') {
-                            if let Ok(v) = element.parse::<f64>() {
-                                elements.push(v);
-                                continue;
-                            }
-                            warn!(
-                                "Cannot parse {key}:{value} as a real number or sexagesimal angle"
-                            );
+                        let v = crate::math::parse_sexagesimal(&value);
+                        if v.is_nan() {
                             return Err(Error::BadParam(key.to_string(), value.to_string()));
                         }
-
-                        // Make sure we have at least 3 elements available, to make the sexagesimal
-                        // converter happy
-                        elements.push(0.0);
-                        elements.push(0.0);
-
-                        // Sexagesimal conversion if we have more than one element. Otherwise it
-                        // decays gracefully to plain real/f64 conversion
-                        let sign = elements[0].signum();
-                        let v =
-                            sign * (elements[0].abs() + (elements[1] + elements[2] / 60.0) / 60.0);
-                        dbg!(v);
                         real.insert(key, v);
                         continue;
                     }
@@ -241,12 +222,13 @@ impl ParsedParameters {
                     let mut elements = Vec::<f64>::new();
                     if let Some(value) = chase(globals, &locals, key)? {
                         for element in value.split(',') {
-                            if let Ok(v) = element.parse::<f64>() {
-                                elements.push(v);
-                                continue;
+                            let v = crate::math::parse_sexagesimal(&element);
+                            if v.is_nan() {
+                                warn!("Cannot parse {key}:{value} as a series");
+                                return Err(Error::BadParam(key.to_string(), value.to_string()));
                             }
-                            warn!("Cannot parse {key}:{value} as a series");
-                            return Err(Error::BadParam(key.to_string(), value.to_string()));
+                            elements.push(v);
+                            continue;
                         }
                         series.insert(key, elements);
                         continue;
@@ -261,12 +243,13 @@ impl ParsedParameters {
                             continue;
                         }
                         for element in value.split(',') {
-                            if let Ok(v) = element.parse::<f64>() {
-                                elements.push(v);
-                                continue;
+                            let v = crate::math::parse_sexagesimal(&element);
+                            if v.is_nan() {
+                                warn!("Cannot parse {key}:{value} as a series");
+                                return Err(Error::BadParam(key.to_string(), value.to_string()));
                             }
-                            warn!("Cannot parse {key}:{value} as a series");
-                            return Err(Error::BadParam(key.to_string(), value.to_string()));
+                            elements.push(v);
+                            continue;
                         }
                         series.insert(key, elements);
                         continue;
@@ -451,24 +434,25 @@ mod tests {
     use super::*;
 
     #[rustfmt::skip]
-    const GAMUT: [OpParameter; 7] = [
+    const GAMUT: [OpParameter; 9] = [
         OpParameter::Flag    { key: "flag" },
-        OpParameter::Natural { key: "natural",  default: Some(0) },
-        OpParameter::Integer { key: "integer",  default: Some(-1)},
-        OpParameter::Real    { key: "real",     default: Some(1.25) },
-        OpParameter::Series  { key: "series",   default: Some("1,2,3,4") },
-        OpParameter::Text    { key: "text",     default: Some("text") },
-        OpParameter::Text    { key: "ellps_0",  default: Some("6400000, 300") },
+        OpParameter::Natural { key: "natural",     default: Some(0) },
+        OpParameter::Integer { key: "integer",     default: Some(-1)},
+        OpParameter::Real    { key: "real",        default: Some(1.25) },
+        OpParameter::Real    { key: "sexagesimal", default: Some(1.25) },
+        OpParameter::Series  { key: "series",      default: Some("1,2,3,4") },
+        OpParameter::Series  { key: "bad_series",  default: Some("1:2:3,2:3:4") },
+        OpParameter::Text    { key: "text",        default: Some("text") },
+        OpParameter::Text    { key: "ellps_0",     default: Some("6400000, 300") },
     ];
 
     #[test]
     fn basic() -> Result<(), Error> {
-        let invocation = String::from("cucumber flag ellps_0=123 , 456 natural=$indirection");
+        let invocation = String::from("cucumber flag ellps_0=123 , 456 natural=$indirection sexagesimal=1:30:36");
         let mut globals = BTreeMap::<String, String>::new();
         globals.insert("indirection".to_string(), "123".to_string());
         let raw = RawParameters::new(&invocation, &globals);
         let p = ParsedParameters::new(&raw, &GAMUT)?;
-        // println!("{:#?}", p);
 
         // Booleans correctly parsed?
         assert!(
@@ -489,6 +473,7 @@ mod tests {
         assert_eq!(series[3], 4.);
 
         // Etc.
+        assert_eq!(*p.real.get("sexagesimal").unwrap(), 1.51);
         assert_eq!(*p.natural.get("natural").unwrap(), 123_usize);
         assert_eq!(*p.integer.get("integer").unwrap(), -1);
         assert_eq!(*p.text.get("text").unwrap(), "text");
@@ -497,6 +482,11 @@ mod tests {
             p.ellps[0].semimajor_axis(),
             Ellipsoid::new(123., 1. / 456.).semimajor_axis()
         );
+
+
+        let invocation = String::from("cucumber bad_series=no, numbers, here");
+        let raw = RawParameters::new(&invocation, &globals);
+        assert!(matches!(ParsedParameters::new(&raw, &GAMUT), Err(Error::BadParam(_, _))));
 
         Ok(())
     }

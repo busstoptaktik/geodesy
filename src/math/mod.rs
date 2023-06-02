@@ -1,3 +1,5 @@
+use log::warn;
+
 /// The order of the Fourier series used to compute e.g. auxiliary latitudes
 pub const POLYNOMIAL_ORDER: usize = 6;
 
@@ -399,12 +401,73 @@ pub(crate) fn sinhpsi_to_tanphi(taup: f64, e: f64) -> f64 {
     f64::NAN
 }
 
+
+/// Parse sexagesimal degrees, i.e. degrees, minutes and seconds in the
+/// format 45:30:36, 45:30:36N,-45:30:36 etc.
+pub fn parse_sexagesimal(angle: &str) -> f64 {
+    // Degrees, minutes, and seconds
+    let mut dms = [0.0, 0.0, 0.0];
+    let mut angle = angle.trim();
+
+    // Empty?
+    let n = angle.len();
+    if n==0 {
+        return f64::NAN;
+    }
+
+    // Handle NSEW indicators
+    let mut postfix_sign = 1.0;
+    if "wWsSeEnN".contains(&angle[n - 1..]) {
+        if "wWsS".contains(&angle[n - 1..]) {
+            postfix_sign = -1.0;
+        }
+        angle = &angle[..n-1];
+    }
+
+    // Split into as many elements as given: D, D:M, D:M:S
+    for (i, element) in angle.split(':').enumerate() {
+        if i < 3 {
+            if let Ok(v) = element.parse::<f64>() {
+                dms[i] = v;
+                continue;
+            }
+        }
+        // More than 3 elements?
+        warn!(
+            "Cannot parse {angle} as a real number or sexagesimal angle"
+        );
+        return f64::NAN;
+    }
+
+    // Sexagesimal conversion if we have more than one element. Otherwise
+    // decay gracefully to plain real/f64 conversion
+    let sign = dms[0].signum() * postfix_sign;
+    sign * (dms[0].abs() + (dms[1] + dms[2] / 60.0) / 60.0)
+}
+
+
+
 // ----- Tests ---------------------------------------------------------------------
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::{Ellipsoid, Error};
+
+    #[test]
+    fn test_parse_sexagesimal() -> Result<(), Error> {
+        assert_eq!(1.51, parse_sexagesimal("1:30:36"));
+        assert_eq!(-1.51, parse_sexagesimal("-1:30:36"));
+        assert_eq!(1.51, parse_sexagesimal("1:30:36N"));
+        assert_eq!(-1.51, parse_sexagesimal("1:30:36S"));
+        assert_eq!(1.51, parse_sexagesimal("1:30:36e"));
+        assert_eq!(-1.51, parse_sexagesimal("1:30:36w"));
+        assert!(parse_sexagesimal("q1:30:36w").is_nan());
+
+        Ok(())
+    }
+
+
     #[test]
     fn test_horner() -> Result<(), Error> {
         // Coefficients for 3x² + 2x + 1

@@ -36,6 +36,7 @@ pub mod prelude {
     pub use crate::Direction::Fwd;
     pub use crate::Direction::Inv;
     pub use crate::Error;
+    pub use crate::math::parse_sexagesimal;
     #[cfg(test)]
     pub fn some_basic_coordinates() -> [Coord; 2] {
         let copenhagen = Coord::raw(55., 12., 0., 0.);
