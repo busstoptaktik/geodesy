@@ -10,6 +10,7 @@ mod addone;
 mod btmerc;
 mod cart;
 mod curvature;
+mod geodesic;
 mod gridshift;
 mod helmert;
 mod laea;
@@ -26,13 +27,14 @@ mod tmerc;
 mod webmerc;
 
 #[rustfmt::skip]
-const BUILTIN_OPERATORS: [(&str, OpConstructor); 23] = [
+const BUILTIN_OPERATORS: [(&str, OpConstructor); 24] = [
     ("adapt",      OpConstructor(adapt::new)),
     ("addone",     OpConstructor(addone::new)),
     ("btmerc",     OpConstructor(btmerc::new)),
     ("butm",       OpConstructor(btmerc::utm)),
     ("cart",       OpConstructor(cart::new)),
     ("curvature",  OpConstructor(curvature::new)),
+    ("geodesic",   OpConstructor(geodesic::new)),
     ("gridshift",  OpConstructor(gridshift::new)),
     ("helmert",    OpConstructor(helmert::new)),
     ("laea",       OpConstructor(laea::new)),

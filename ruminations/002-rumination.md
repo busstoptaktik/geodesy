@@ -24,6 +24,7 @@ $ echo 553036. -124509 | kp "dms:in | geo:out"
 - [`curvature`](#operator-curvature): Radii of curvature
 - [`dm`](#operator-nmea-dm-nmeass-and-dms): DDMM.mmm encoding, sub-entry under `nmea`
 - [`dms`](#operator-nmea-dm-nmeass-and-dms): DDMMSS.sss encoding, sub-entry under `nmea`
+- [`geodesic`](#operator-geodesic): Origin, Distance, Azimuth, Destination and v.v.
 - [`gridshift`](#operator-gridshift): NADCON style datum shifts in 1, 2, and 3 dimensions
 - [`helmert`](#operator-helmert): The Helmert (similarity) transformation
 - [`laea`](#operator-laea): The Lambert Authalic Equal Area projection
@@ -231,6 +232,63 @@ geo:in | cart ellps=intl | helmert x=-87 y=-96 z=-120 | cart inv ellps=GRS80 | g
 ```
 
 **See also:** [PROJ documentation](https://proj.org/operations/transformations/helmert.html): *Helmert transform*. In general the two implementations should behave identically although the RG version implements neither the 4 parameter 2D Helmert variant, nor the 10 parameter 3D Molodensky-Badekas variant.
+
+---
+
+### Operator `geodesic`
+
+**Purpose:**
+Solve the two classical *geodetic main problems:*
+
+- Determine where you are, given an origin, a bearing and the distance travelled
+- Knowing where you are, determine which bearing and distance will bring you back to the origin
+
+**Description:**
+
+| Argument | Description |
+|----------|-------------|
+| `ellps=name` | Use ellipsoid `name` for the computations|
+| `reversible` | in the forward case, provide output suitable for roundtripping|
+| `inv`        | swap forward and inverse mode |
+
+**In the forward case,** `geodesic` reads *one* 2D coordinate tuple, an azimuth and a distance from its 4D input. The tuple is expected to be in degrees and in latitude-longitude order. The azimuth is expected to be in degrees, and the distance in meters.
+
+The 4D output represents the characteristics of a geodesic between the points:
+
+- The forward azimuth at the origin
+- The forward azimuth at the destination
+- The distance between the points, and
+- The return azimuth from the destination to the origin
+
+
+**In the inverse case,** `geodesic` reads *a pair* of 2D coordinate tuples from its 4D input. The tuples are expected to be in degrees and in latitude-longitude order. The first pair represents the origin of a geodesic, the second represents its destination.
+
+If the `reversible` option *is not* selected, the 4D output represents the characteristics of a geodesic between the points:
+
+- The forward azimuth at the origin
+- The forward azimuth at the destination
+- The distance between the two points, and
+- The return azimuth from the destination to the origin
+
+If the `reversible` option *is* selected, the 4D output represents the characteristics of a geodesic between the points *in a way suitable for roundtrip testing*:
+
+- The latitude of the destination point, in degrees
+- The longitude of the destination point, in degrees
+- The return azimuth from the destination to the origin
+- The distance between the two points
+
+i.e. the format expected by *the forward case.*
+
+
+
+**Example**:
+
+```sh
+geodesic reversible ellps=GRS80
+```
+
+**See also:** The [Earth radius](https://en.wikipedia.org/wiki/Earth_radius) article on Wikipedia
+
 
 ---
 
