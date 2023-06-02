@@ -139,7 +139,7 @@ mod tests {
 
         // Unknown ellipsoid name
         let op = ctx.op("curvature ellps=non_existing meridian");
-        assert!(matches!(op, Err(Error::NotFound(_,_))));
+        assert!(matches!(op, Err(Error::NotFound(_, _))));
 
         // Regression test: Curvatures for a random range of latitudes
         let latitudes = [

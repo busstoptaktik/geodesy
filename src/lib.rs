@@ -31,12 +31,12 @@ pub mod prelude {
     pub use crate::coordinate::Coordinate;
     pub use crate::coordinate::CoordinateSet;
     pub use crate::ellipsoid::Ellipsoid;
+    pub use crate::math::parse_sexagesimal;
     pub use crate::op::OpHandle;
     pub use crate::Direction;
     pub use crate::Direction::Fwd;
     pub use crate::Direction::Inv;
     pub use crate::Error;
-    pub use crate::math::parse_sexagesimal;
     #[cfg(test)]
     pub fn some_basic_coordinates() -> [Coord; 2] {
         let copenhagen = Coord::raw(55., 12., 0., 0.);

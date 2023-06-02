@@ -401,7 +401,6 @@ pub(crate) fn sinhpsi_to_tanphi(taup: f64, e: f64) -> f64 {
     f64::NAN
 }
 
-
 /// Parse sexagesimal degrees, i.e. degrees, minutes and seconds in the
 /// format 45:30:36, 45:30:36N,-45:30:36 etc.
 pub fn parse_sexagesimal(angle: &str) -> f64 {
@@ -411,7 +410,7 @@ pub fn parse_sexagesimal(angle: &str) -> f64 {
 
     // Empty?
     let n = angle.len();
-    if n==0 {
+    if n == 0 {
         return f64::NAN;
     }
 
@@ -421,7 +420,7 @@ pub fn parse_sexagesimal(angle: &str) -> f64 {
         if "wWsS".contains(&angle[n - 1..]) {
             postfix_sign = -1.0;
         }
-        angle = &angle[..n-1];
+        angle = &angle[..n - 1];
     }
 
     // Split into as many elements as given: D, D:M, D:M:S
@@ -433,9 +432,7 @@ pub fn parse_sexagesimal(angle: &str) -> f64 {
             }
         }
         // More than 3 elements?
-        warn!(
-            "Cannot parse {angle} as a real number or sexagesimal angle"
-        );
+        warn!("Cannot parse {angle} as a real number or sexagesimal angle");
         return f64::NAN;
     }
 
@@ -444,8 +441,6 @@ pub fn parse_sexagesimal(angle: &str) -> f64 {
     let sign = dms[0].signum() * postfix_sign;
     sign * (dms[0].abs() + (dms[1] + dms[2] / 60.0) / 60.0)
 }
-
-
 
 // ----- Tests ---------------------------------------------------------------------
 
@@ -466,7 +461,6 @@ mod tests {
 
         Ok(())
     }
-
 
     #[test]
     fn test_horner() -> Result<(), Error> {

@@ -199,7 +199,7 @@ impl ParsedParameters {
                     if let Some(value) = chase(globals, &locals, key)? {
                         let v = crate::math::parse_sexagesimal(&value);
                         if v.is_nan() {
-                            return Err(Error::BadParam(key.to_string(), value.to_string()));
+                            return Err(Error::BadParam(key.to_string(), value));
                         }
                         real.insert(key, v);
                         continue;
@@ -222,7 +222,7 @@ impl ParsedParameters {
                     let mut elements = Vec::<f64>::new();
                     if let Some(value) = chase(globals, &locals, key)? {
                         for element in value.split(',') {
-                            let v = crate::math::parse_sexagesimal(&element);
+                            let v = crate::math::parse_sexagesimal(element);
                             if v.is_nan() {
                                 warn!("Cannot parse {key}:{value} as a series");
                                 return Err(Error::BadParam(key.to_string(), value.to_string()));
@@ -243,7 +243,7 @@ impl ParsedParameters {
                             continue;
                         }
                         for element in value.split(',') {
-                            let v = crate::math::parse_sexagesimal(&element);
+                            let v = crate::math::parse_sexagesimal(element);
                             if v.is_nan() {
                                 warn!("Cannot parse {key}:{value} as a series");
                                 return Err(Error::BadParam(key.to_string(), value.to_string()));
@@ -448,7 +448,9 @@ mod tests {
 
     #[test]
     fn basic() -> Result<(), Error> {
-        let invocation = String::from("cucumber flag ellps_0=123 , 456 natural=$indirection sexagesimal=1:30:36");
+        let invocation = String::from(
+            "cucumber flag ellps_0=123 , 456 natural=$indirection sexagesimal=1:30:36",
+        );
         let mut globals = BTreeMap::<String, String>::new();
         globals.insert("indirection".to_string(), "123".to_string());
         let raw = RawParameters::new(&invocation, &globals);
@@ -483,10 +485,12 @@ mod tests {
             Ellipsoid::new(123., 1. / 456.).semimajor_axis()
         );
 
-
         let invocation = String::from("cucumber bad_series=no, numbers, here");
         let raw = RawParameters::new(&invocation, &globals);
-        assert!(matches!(ParsedParameters::new(&raw, &GAMUT), Err(Error::BadParam(_, _))));
+        assert!(matches!(
+            ParsedParameters::new(&raw, &GAMUT),
+            Err(Error::BadParam(_, _))
+        ));
 
         Ok(())
     }
