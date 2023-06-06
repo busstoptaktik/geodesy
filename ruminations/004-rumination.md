@@ -60,13 +60,13 @@ Context style data types are annoying, but experience from work on both PROJ and
 
 ### Solution #2: The OS interface abstraction
 
-In Rust Geodesy, the OS interface is handled by a structure called "the Context". To make the Context less annoying than a PROJ context, it has been given much more functionality, so it's not just a bolted on afterthought, *but the actual API* for accessing the system functionality.
+In Rust Geodesy, the OS interface is handled by a structure called "the Context". To make the Context less annoying than a PROJ context, it has been given much more functionality, so it's not just a bolted on afterthought, **but the actual API** for accessing the system functionality.
 
 To (potentially) reduce the annoying aspect even further, there is not just one Context implementation, but two - `Minimal` and `Plain`, respectively. `Minimal` is much in the style of "classic" PROJ, while `Plain` in principle provides access to externally defined transformations from e.g. the EPSG registry (i.e. "resolver" functionality). Unlike PROJ, however, the definitions used by `Plain` are to be represented in user provided plain text files, not in a SQLite file database.
 
 Hence, Rust Geodesy does not depend on external database functionality. The Context functionality is, however, represented by a Trait, not by fixed data structures, so users wishing to support PROJ's SQLite representation of the EPSG registry, can implement their own Context, supporting that.
 
-In a sense, this reflects the modularity of the transformation operator implementation onto the Context implementation: You can use one of the built ins, or you can provide your own. This allows for a very slim core functionality, that can be expanded as needed in actual use cases. In PROJ, the introduction of SQLite as a dependency resulted in much whining: The unreasonable expectations/unfounded entitlement is smoke thick over at <https://github.com/OSGeo/PROJ/issues/1552>. But since RG has the good fortune of being able to learn from PROJ,  why build a monolithic Context/resolver-architecture, when we don't have to? The operator architecture is modular, after all.
+In a sense, this reflects the modularity of the transformation operator implementation onto the Context implementation: You can use one of the built ins, or you can provide your own. This allows for a very slim core functionality, that can be expanded as needed in actual use cases. In PROJ, the introduction of SQLite as a dependency resulted in much whining: The unreasonable expectations/unfounded entitlement is smoke thick over at <https://github.com/OSGeo/PROJ/issues/1552>. But since RG has the good fortune of being able to learn from PROJ,  why build a monolithic Context/resolver-architecture, when we don't have to? The operator architecture is modular, after all, so why not the Context as well?
 
 ### Problem #3: The geodetic registry interface ("the resolver")
 
@@ -74,7 +74,7 @@ In PROJ, much automation effort is spent trying to guess the most appropriate tr
 
 PROJ is built on the idea that the users should know what system (e.g. represented as an EPSG CRS code) their data are comming from, and which system they want them transformed to. RG on the other hand is built on the much simpler idea, that the users should know which transformation they want to apply.
 
-The crux of it is that it is questionable whether the idea of constructing a resolver really is plausible? At least the resolver's task is not always empirically unique, but the selection of the proper transformation must be supported by heuristics. This has lead PROJ users to trouble forcing the proper transformation to be used (supported, but not highlighted by PROJ), as seen e.g. [here](https://lists.osgeo.org/pipermail/proj/2021-October/010369.html):
+The crux of it is that it is questionable whether the idea of constructing a resolver really is plausible? At least the resolver's task is not always empirically unique, but the selection of the proper transformation must be supported by heuristics. This has lead PROJ users into trouble forcing the proper transformation to be used (supported, but not highlighted by PROJ), as seen e.g. [here](https://lists.osgeo.org/pipermail/proj/2021-October/010369.html):
 > I know PROJ7 knows about time-dependent transformations, I just can't seem
 to figure out how to use that to get my GCP coordinates in today's MGA2020
 grid
@@ -85,19 +85,19 @@ grid
 
 [here](https://lists.osgeo.org/pipermail/proj/2021-November/010440.html):
 
-> We're trying to adjust proj to use a specific transformation between two
-CRSes *by default*
+> We're trying to adjust proj to use a specific transformation between two CRSes *by default*
 
 and [here](https://github.com/OSGeo/PROJ/issues/2318) where, despite his herculean efforts of making the heuristics as perfect as possible, even Even Rouault himself must describe the situation as "complex":
 
 > This area is complex and I must confess I generally have troubles to predict how the code I've written always behave in all situations
 
-One might object that resolving to building on user selection of the exact transformation, rather than a set of input- and output CRS is to ignore the troubles of the non-expert users, who are left to ask their friendly geodesist colleague which transformation to select. I will, however, insist that this is not terribly different from having to ask the same person about "what CRS am I supposed to use for input and output here?". The real difference is that the friendly geodesist colleague actually gets a chance to provide the most useful advice for the task at hand.
+One might object that resolving to building on user selection of the exact transformation, rather than a set of input- and output CRS is to ignore the troubles of the non-expert users, who are left to ask their friendly geodesist colleague which transformation to select.
+
+I will, however, insist that this is not terribly different from having to ask the same person about "what CRS am I supposed to use for input and output here?". The real difference is that the friendly geodesist colleague actually gets a chance to provide the most useful advice for the task at hand, by providing the EPSG-id of the proper transformation, rather than a set of EPSG-ids for the input- and output systems respectively.
 
 ### Solution #3: The geodetic registry interface ("the resolver")
 
 Where PROJ supports both "find the proper transformation given input and output CRS", and "use this transformation - do not ask any questions", RG deems the concept of a resolver implausible in the general case, and leaves the implementation of one up the end user, by whom it may be implemented as part of a `Context` data structure.
-
 
 ### Document History
 
@@ -106,3 +106,4 @@ Major revisions and additions:
 - 2022-05-17: Initial version
 - 2022-05-22: Draft level additions
 - 2022-06-19: A few more additions. Still draft level
+- 2023-06-06: Minor corrections

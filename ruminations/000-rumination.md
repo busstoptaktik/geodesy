@@ -4,7 +4,7 @@
 
 Thomas Knudsen <knudsen.thomas@gmail.com>
 
-2021-07-31. Last [revision](#document-history) 2022-03-24
+2021-07-31. Last [revision](#document-history) 2023-06-06
 
 ### Abstract
 
@@ -22,7 +22,7 @@ println!({:?}, data);
 
 #### What is Rust Geodesy?
 
-Rust Geodesy, RG, is a geodetic software system, not entirely unlike [PROJ](https://proj.org), but with much more limited transformation functionality: While PROJ is mature, well supported, well tested, and production ready, RG is neither of these. This is partially due to RG being a new born baby, partially due to its aiming at a (much) different set of use cases.
+Rust Geodesy, RG, is a geodetic software system, not entirely unlike [PROJ](https://proj.org), but with much more limited projection functionality: While PROJ is mature, well supported, well tested, and production ready, RG is neither of these. This is partially due to RG being a new born baby, partially due to its aiming at a (much) different set of use cases.
 
 So when I liberally insert comparisons with PROJ in the following, it is for elucidation, not for mocking - neither of PROJ, nor of RG: I have spent much pleasant and instructive time with PROJ, both as a PROJ core developer and as a PROJ user (more about that in an upcomming *Rumination on RG*). But I have also spent much pleasant time learning Rust and developing RG, so I feel deeply connected to both PROJ and RG.
 
@@ -41,7 +41,7 @@ The motivation for these aims, i.e. the **why** of the project, is the **wish to
 
 The development work driven by this motivation is supported by a few basic design principles, the **how** of the project:
 
-- An architectural scaffolding of four dimensional data flow paths, enabling the constrution of complex operations from simpler elements
+- An architectural scaffolding of four dimensional data flow paths, enabling the construction of complex operations from simpler elements
 - A design philosophy of keeping things flexible by not overspecifying
 - An architectural focus on run-time extensibility and adaptability
 - A geodetic focus on transformations, i.e. relations *between* systems, rather than definition *of* systems
@@ -101,7 +101,7 @@ Note that although RG provides `Minimal`, and a few other built-in `Context`s, a
 
 The intention with this is to make it possible for an application program to supply a `Context`, providing access to external resources **in precisely the form they are available in the execution environment of the application program**.
 
-So forget about discussions on whether transformation definitions should be read from a local SQLite file database, a conection to an external database, or from a local text file: These discussions can be laid to rest simply by providing a `Context` accessing resources in whichever form is most convenient for the case at hand.
+So forget about discussions on whether transformation definitions should be read from a local SQLite file database, a conection to an external database, or from a local text file: **These unfruitful discussions can be laid to rest simply by providing a `Context` accessing resources in whichever form is most convenient for the case at hand.**
 
 ---
 
@@ -136,7 +136,11 @@ let stockholm  = Coord::geo(59., 18., 0., 0.);
 let mut data = [copenhagen, stockholm];
 ```
 
-At comments `[3]` and `[4]` we produce the input data we want to transform. The RG coordinate type is called `Coord`, and covers more or less everything called a `CoordinateTuple` according to the ISO-19111 standard. In other words, anything we would colloquially call *the coordinates* of something.
+At comments `[3]` and `[4]` we produce the input data we want to transform. The RG operators operate on any data structure implementing the `CoordinateSet` trait, a close representation of the ISO-19111 fundamental object of the same name.
+
+A `CoordinateSet` is a collection of `CoordinateTuples` (the ISO-19111 lingo for what's colloquially called "the coordinates of something") referred to the same ISO-19111 `Coordinate reference System (CRS)`.
+
+Natively, RG implements the `CoordinateSet` trait for any array, slice or `Vec` of any of the three built in `CoordinateTuple` implementations: The primary, 4D `Coord`, the 2D `Coor2D`, and the ultra-compact 2D, 32 bits `Coor32`. It can be extended to any other coordinate representation at runtime, by implementing the `CoordinateSet` trait for that representation.
 
 Internally, RG represents angular coordinates in radians, and follows the traditional GIS coordinate order of *longitude before latitude*. Externally, however, you may pick-and-choose. In this case, we choose human readable angles in degrees, and the traditional coordinate order used in geodesy and navigation: *latitude before longitude*. The `Coord::geo(...)` function translates that into the internal representation. It has siblings `Coord::gis(...)` and `Coord::raw(...)` which handles GIS coordinate order and raw numbers, respectively. The latter is useful for projected coordinates, cartesian coordinates, and for coordinates with angles in radians. We may also simply give a `Coord` as a naked array of four double precision floating point numbers:
 
@@ -146,7 +150,7 @@ let somewhere = Coord([1., 42., 3., 4.]);
 
 The `Coord` data type does not enforce any special interpretation of what kind of coordinate it stores: That is entirely up to the `Op`erator to interpret. A `Coord` simply consists of 4 numbers with no other implied interpretation than their relative order, given by the names *first, second, third, and fourth*, respectively.
 
-RG `Op`erators take *arrays of `Coord`* as input, rather than individual elements, so at comment `[4]` we collect the elements into an array.
+RG `Op`erators take *containers of `Coord`* (or of any other `CoordinateTuple` representation) as input, rather than individual elements. So at comment `[4]` we collect the elements into an array.
 
 ---
 
@@ -293,7 +297,7 @@ In `[Knudsen et al, 2019]` we identified a small number of operations collective
 
 As per 2022-05-08, these are all implemented in RG. The grid shift operators are, however, implemented for static transformations only. Time varying versions are yet to come. These are very important for transformations in areas affected by post-glacial rebound, so this is an important item on the to-do list.
 
-Also, a number of additional projections are in the pipeline.
+Also, a number of additional operators are in the pipeline.
 
 #### Physical geodesy
 
@@ -383,3 +387,4 @@ Major revisions and additions:
 - 2021-08-08: Added a section briefly describing GYS
 - 2021-08-26: Extended prologue
 - 2022-03-24: Total rewrite
+- 2023-06-06: Describe the `CoordinateSet` trait

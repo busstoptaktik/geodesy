@@ -4,7 +4,7 @@
 
 Thomas Knudsen <knudsen.thomas@gmail.com>
 
-2021-08-20. Last [revision](#document-history) 2022-05-08
+2021-08-20. Last [revision](#document-history) 2023-06-06
 
 ### Abstract
 
@@ -88,7 +88,7 @@ If in doubt, use `kp --help` or read [Rumination 003: `kp` - the RG Coordinate P
 
 **Purpose:** Adapt source coordinate order and angular units to target ditto, using a declarative approach.
 
-**Description:** Let us first introduce the **coordinate traits** *eastish, northish, upish, futursh*, and their geometrical inverses *westish, southish, downish, pastish*, with mostly evident meaning:
+**Description:** Let us first introduce the **coordinate traits** *eastish, northish, upish, futurish*, and their geometrical inverses *westish, southish, downish, pastish*, with mostly evident meaning:
 
 A coordinate is
 
@@ -102,7 +102,7 @@ A coordinate is
 
 Also, we introduce the 3 common angular representations *degrees, gradians, radians*, conventionally abbreviated as `deg`, `gon` and `rad`.
 
-The Rust Geodesy internal format of a four dimensional coordinate tuple is `e, n, u, f`, and the internal unit of measure for angular coordinates is radians. In `adapt`, terms, this is described as `enut_rad`.
+The Rust Geodesy internal format of a four dimensional coordinate tuple is `e, n, u, f`, and the internal unit of measure for angular coordinates is radians. In `adapt`, terms, this is described as `enuf_rad`.
 
 `adapt` covers much of the same ground as the `PROJ` operators [`axisswap`](https://proj.org/operations/conversions/axisswap.html) and [`unitconvert`](https://proj.org/operations/conversions/unitconvert.html), but using a declarative, rather than imperative, approach: You never tell `adapt` how you want things done, only what kind of result you want. You tell it where you want to go `from`, and where you want to go `to` (and in most cases actually only one of those). Then `adapt` figures out how to fulfill that wish.
 
@@ -182,6 +182,7 @@ In the `curvature azimuthal` case, the two first dimensions are read, and consid
 ```sh
 curvature prime ellps=GRS80
 ```
+
 **See also:** The [Earth radius](https://en.wikipedia.org/wiki/Earth_radius) article on Wikipedia
 
 ---
@@ -196,7 +197,7 @@ In strictly mathematical terms, the Helmert (or *similarity*) transformation tra
 
 So mathematically we may think of this as "*transforming* the coordinates from one well defined basis to another". But geodetically, it is more correct to think of the operation as *aligning* rather than *transforming,* since geodetic reference frames are very far from the absolute platonic ideals implied in the mathematical idea of bases.
 
-Rather, geodetic reference frames are empirical constructions, realised using datum specific rules for survey and adjustment. Hence, coordinate tuples subjected to a given similarity transform, do not magically become realised using the survey rules of the target datum. But they gain a degree of interoperability with coordinate tuples from the target: The transformed (aligned) values represent our best knowledge about *what coordinates we would obtain,* if we re-surveyed the same physical point, using the survey rules of the target datum.
+Rather, geodetic reference frames are empirical constructions, realised using datum specific rules for survey and adjustment. Hence, coordinate tuples subjected to a given similarity transform, *do not* magically become realised using the survey rules of the target datum. But they gain a degree of *interoperability* with coordinate tuples from the target: The transformed (aligned) values represent our best knowledge about **what coordinates we would obtain,** if we re-surveyed the same physical point, using the survey rules of the target datum.
 
 **Warning:**
 Two different conventions are common in Helmert transformations involving rotations. In some cases the rotations define a rotation of the reference frame. This is called the "coordinate frame" convention (EPSG methods 1032 and 9607). In other cases, the rotations define a rotation of the vector from the origin to the position indicated by the coordinate tuple. This is called the "position vector" convention (EPSG methods 1033 and 9606).
@@ -245,8 +246,8 @@ Solve the two classical *geodetic main problems:*
 
 **Description:**
 
-| Argument | Description |
-|----------|-------------|
+| Argument     | Description |
+|--------------|-------------|
 | `ellps=name` | Use ellipsoid `name` for the computations|
 | `reversible` | in the forward case, provide output suitable for roundtripping|
 | `inv`        | swap forward and inverse mode |
@@ -259,7 +260,6 @@ The 4D output represents the characteristics of a geodesic between the points:
 - The forward azimuth at the destination
 - The distance between the points, and
 - The return azimuth from the destination to the origin
-
 
 **In the inverse case,** `geodesic` reads *a pair* of 2D coordinate tuples from its 4D input. The tuples are expected to be in degrees and in latitude-longitude order. The first pair represents the origin of a geodesic, the second represents its destination.
 
@@ -279,8 +279,6 @@ If the `reversible` option *is* selected, the 4D output represents the character
 
 i.e. the format expected by *the forward case.*
 
-
-
 **Example**:
 
 ```sh
@@ -288,7 +286,6 @@ geodesic reversible ellps=GRS80
 ```
 
 **See also:** The [Earth radius](https://en.wikipedia.org/wiki/Earth_radius) article on Wikipedia
-
 
 ---
 
@@ -333,14 +330,14 @@ geo:in | gridshift grids=ed50.datum | geo:out
 
 **Description:**
 
-| Argument | Description |
-|----------|-------------|
-| `inv` | Inverse operation: LAEA to geographic |
+| Argument     | Description |
+|--------------|-------------|
+| `inv`        | Inverse operation: LAEA to geographic |
 | `ellps=name` | Use ellipsoid `name` for the conversion |
-| `lon_0` | Longitude of the projection center |
-| `lat_0` | Latitude of the projection center |
-| `x_0` | False easting  |
-| `y_0` | False northing |
+| `lon_0`      | Longitude of the projection center |
+| `lat_0`      | Latitude of the projection center |
+| `x_0`        | False easting  |
+| `y_0`        | False northing |
 
 **Example**:
 
@@ -367,14 +364,14 @@ The RG implementation closely follows the IOGP (2019) exposition, but utilizes t
 **Description:**
 
 | Argument | Description |
-|----------|-------------|
-| `inv` | Inverse operation: auxiliary to geographic |
+|--------------|-------------|
+| `inv`        | Inverse operation: auxiliary to geographic |
 | `ellps=name` | Use ellipsoid `name` for the conversion |
-| `authalic` | Convert to authalic latitude |
-| `conformal` | Convert to conformal latitude |
+| `authalic`   | Convert to authalic latitude |
+| `conformal`  | Convert to conformal latitude |
 | `geocentric` | Convert to geocentric latitude |
 | `parametric` | Convert to parametric latitude |
-| `reduced` | (synonym for `parametric`) |
+| `reduced`    | (synonym for `parametric`) |
 | `rectifying` | Convert to rectifying latitude |
 
 **Example**:
@@ -393,17 +390,17 @@ latitude geocentric ellps=GRS80
 
 **Description:**
 
-| Argument | Description |
-|----------|-------------|
-| `inv` | Inverse operation: LCC to geographic |
+| Argument     | Description |
+|--------------|-------------|
+| `inv`        | Inverse operation: LCC to geographic |
 | `ellps=name` | Use ellipsoid `name` for the conversion |
-| `k_0` | Scaling factor |
-| `lon_0` | Longitude of the projection center |
-| `lat_0` | Latitude of the projection center |
-| `lat_1` | First standard parallel |
-| `lat_2` | Second standard parallel (optional) |
-| `x_0` | False easting  |
-| `y_0` | False northing |
+| `k_0`        | Scaling factor |
+| `lon_0`      | Longitude of the projection center |
+| `lat_0`      | Latitude of the projection center |
+| `lat_1`      | First standard parallel |
+| `lat_2`      | Second standard parallel (optional) |
+| `x_0`        | False easting  |
+| `y_0`        | False northing |
 
 **Example**:
 
@@ -538,7 +535,7 @@ geo:in | noop all these parameters are=ignored | geo:out
 
 | Argument | Description |
 |----------|-------------|
-| `inv` | Inverse operation: transverse-mercator to geographic |
+| `inv` | swap forward and inverse operations |
 | `ellps=name` | Use ellipsoid `name` for the conversion |
 | `lonc` | Longitude of the projection center |
 | `latc` | Latitude of the projection center |
@@ -632,7 +629,7 @@ Take a copy of one or more coordinate dimensions and push it onto the stack. If 
 
 | Argument | Description |
 |----------|-------------|
-| `inv` | Inverse operation: transverse-mercator to geographic |
+| `inv` | Swap forward and inverse operations |
 | `ellps=name` | Use ellipsoid `name` for the conversion |
 | `lon_0` | Longitude of the projection center |
 | `lat_0` | Latitude of the projection center |
@@ -658,7 +655,7 @@ tmerc lon_0=9 k_0=0.9996 x_0=500000
 
 | Argument | Description |
 |----------|-------------|
-| `inv` | Inverse operation: transverse-mercator to geographic |
+| `inv` | Swap forward and inverse operations |
 | `ellps=name` | Use ellipsoid `name` for the conversion |
 | `zone=nn` | zone number `nn`. Between 1-60 |
 
@@ -680,7 +677,7 @@ utm zone=32
 
 | Argument | Description |
 |----------|-------------|
-| `inv` | Inverse operation: Mercator to geographic |
+| `inv` | Swap forward and inverse operations |
 | `ellps=name` | Use ellipsoid `name` for the conversion. Defaults to `WGS84` |
 
 **Example**:
@@ -702,3 +699,6 @@ Major revisions and additions:
 - 2021-08-21: All relevant operators described
 - 2021-08-23: nmea, dm, nmeass, dms
 - 2022-05-08: reflect syntax changes + a few minor corrections
+- 2023-06-06: A number of minor corrections + note that since last
+  registered update on 2022-05-08. a large number of new operators
+  have been included and described
