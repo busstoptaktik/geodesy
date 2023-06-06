@@ -180,8 +180,9 @@ pub const GAMUT: [OpParameter; 7] = [
 ];
 
 #[rustfmt::skip]
-pub const UTM_GAMUT: [OpParameter; 3] = [
+pub const UTM_GAMUT: [OpParameter; 4] = [
     OpParameter::Flag { key: "inv" },
+    OpParameter::Flag { key: "south" },
     OpParameter::Text { key: "ellps", default: Some("GRS80") },
     OpParameter::Natural { key: "zone", default: None },
 ];
@@ -212,10 +213,14 @@ pub fn utm(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     params.lat[0] = 0.0;
 
     // The false easting is 500000 m by definition of UTM
-    params.x[0] = 500000.0;
+    params.x[0] = 500_000.0;
 
     // The false northing is 0 m by definition of UTM
-    params.x[0] = 500000.0;
+    params.y[0] = 0.0;
+    // or 10_000_000 m if using the southern aspect
+    if params.boolean("south") {
+        params.y[0] = 10_000_000.0;
+    }
 
     let descriptor = OpDescriptor::new(def, InnerOp(fwd), Some(InnerOp(inv)));
     let steps = Vec::<Op>::new();
@@ -426,6 +431,42 @@ mod tests {
         for i in 0..operands.len() {
             assert!(operands[i].hypot2(&geo[i]) < 10e-8);
         }
+
+        Ok(())
+    }
+
+    #[test]
+    fn utm_south() -> Result<(), Error> {
+        let mut ctx = Minimal::default();
+        let op = ctx.op("utm zone=32 south")?;
+
+        #[rustfmt::skip]
+        let geo = [
+            Coord::geo( 55.,  12., 0., 0.),
+            Coord::geo(-55.,  12., 0., 0.),
+            Coord::geo( 55., -6., 0., 0.),
+            Coord::geo(-55., -6., 0., 0.)
+        ];
+
+        #[rustfmt::skip]
+        let projected = [
+            Coord::raw( 691_875.632_139_661, 1e7+6_098_907.825_005_012, 0., 0.),
+            Coord::raw( 691_875.632_139_661, 1e7-6_098_907.825_005_012, 0., 0.),
+            Coord::raw(-455_673.814_189_040, 1e7+6_198_246.671_090_279, 0., 0.),
+            Coord::raw(-455_673.814_189_040, 1e7-6_198_246.671_090_279, 0., 0.)
+        ];
+
+        let mut operands = geo.clone();
+        ctx.apply(op, Fwd, &mut operands)?;
+        for i in 0..operands.len() {
+            assert!(operands[i].hypot2(&projected[i]) < 5e-3);
+        }
+
+        ctx.apply(op, Inv, &mut operands)?;
+        for i in 0..operands.len() {
+            assert!(operands[i].hypot2(&geo[i]) < 10e-8);
+        }
+
         Ok(())
     }
 }
