@@ -2,7 +2,6 @@ use crate::context_authoring::*;
 mod minimal;
 pub use minimal::Minimal;
 
-#[cfg(with_plain)]
 mod plain;
 #[cfg(with_plain)]
 pub use plain::Plain;

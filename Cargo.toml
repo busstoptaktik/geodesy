@@ -56,6 +56,8 @@ required-features = ["binary"]
 #   echo 55 12 | cargo run --features binary --bin kp -- "geo:in | utm zone=33"
 # or (since kp is set as the default-run)
 #   echo 55 12 | cargo run --features binary -- "geo:in | utm zone=33"
+# Build example
+#   cargo b --bin kp --features=with_plain,binary
 
 [profile.release]
 strip = true # Automatically strip symbols from the binary.

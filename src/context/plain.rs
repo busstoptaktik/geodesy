@@ -1,3 +1,5 @@
+#![cfg(with_plain)]
+
 use crate::context_authoring::*;
 use std::path::PathBuf;
 
