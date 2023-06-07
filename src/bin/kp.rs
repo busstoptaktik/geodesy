@@ -58,7 +58,6 @@ fn main() -> Result<(), anyhow::Error> {
     log::trace!("This is KP");
 
     let opt = Cli::parse();
-    println!("args: {:?}", opt.args);
 
     let mut ctx = Minimal::new();
 
@@ -67,6 +66,7 @@ fn main() -> Result<(), anyhow::Error> {
     }
 
     if opt.debug {
+        eprintln!("args: {:?}", opt.args);
         if let Some(dir) = dirs::data_local_dir() {
             eprintln!("data_local_dir: {}", dir.to_str().unwrap_or_default());
         }
