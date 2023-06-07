@@ -12,6 +12,7 @@ mod op;
 // The bread-and-butter
 pub use crate::context::Context;
 pub use crate::context::Minimal;
+#[cfg(with_plain)]
 pub use crate::context::Plain;
 pub use crate::coordinate::coord::Coord;
 pub use crate::coordinate::CoordinateSet;
@@ -23,6 +24,7 @@ pub use crate::Direction::Inv;
 pub mod prelude {
     pub use crate::context::Context;
     pub use crate::context::Minimal;
+    #[cfg(with_plain)]
     pub use crate::context::Plain;
     pub use crate::coordinate::coor2d::Coor2D;
     pub use crate::coordinate::coor32::Coor32;

@@ -64,7 +64,7 @@ run-example EXAMPLE:
 
 # Run default application and all examples.
 run-all:
-    cargo run -- --help
+    cargo run --features=binary -- --help
     cargo run --example 00-transformations
     cargo run --example 01-geometric_geodesy
     cargo run --example 02-user_defined_macros
@@ -73,7 +73,10 @@ run-all:
 # Compact format log for changelog report
 changes:
     git log --pretty=format:"%as: %s (%an)"
-    # git log --pretty=format:"%as: %s (%an)" > CHANGELOG
+
+# Update CHANGELOG file
+changelog:
+    git log --pretty=format:"%as: %s (%an)" > CHANGELOG
 
 # Some invisible oddities for general amusement
 

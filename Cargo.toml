@@ -15,27 +15,47 @@ default-run = "kp"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[features]
-js = ["uuid/js"]
 
 [dependencies]
-# Core functionality
-dirs = "4.0"
-# memmap = "0.7"
+# Library functionality
 uuid = { version = "1", features = ["v4"] }
 
 # Command line program helpers
-clap = { version = "3.1.18", features = ["derive"] }
-simple_logger = "1.13"
-anyhow = "1.0"
+clap = { version = "3.1.18", features = ["derive"], optional = true }
+simple_logger = {version = "1.13", optional = true }
+anyhow = { version = "1.0", optional = true }
+
+# CLI + plain
+dirs = { version = "4.0", optional = true }
 
 # Library level logging and error handling
 log = "0.4"
 thiserror = "1.0"
 
 [dev-dependencies]
-# mockall = "0.11.1"
+# Needed for building doc-tests
+anyhow = { version = "1.0" }
 
+# Needed for building examples
+clap = { version = "3.1.18", features = ["derive"] }
+simple_logger = {version = "1.13" }
+dirs = { version = "4.0" }
+
+[lib]
+name = "geodesy"
+
+[features]
+js = ["uuid/js"]
+binary = ["dirs", "clap", "simple_logger", "anyhow"]
+with_plain = ["dirs"]
+
+[[bin]]
+name = "kp"
+required-features = ["binary"]
+# Invocation example:
+#   echo 55 12 | cargo run --features binary --bin kp -- "geo:in | utm zone=33"
+# or (since kp is set as the default-run)
+#   echo 55 12 | cargo run --features binary -- "geo:in | utm zone=33"
 
 [profile.release]
 strip = true # Automatically strip symbols from the binary.

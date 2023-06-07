@@ -1,7 +1,10 @@
 use crate::context_authoring::*;
 mod minimal;
-mod plain;
 pub use minimal::Minimal;
+
+#[cfg(with_plain)]
+mod plain;
+#[cfg(with_plain)]
 pub use plain::Plain;
 
 // ----- T H E   C O N T E X T   T R A I T ---------------------------------------------

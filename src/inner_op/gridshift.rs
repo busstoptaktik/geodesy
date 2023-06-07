@@ -109,6 +109,7 @@ pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
 // ----- T E S T S ------------------------------------------------------------------
 
 #[cfg(test)]
+#[cfg(with_plain)]
 mod tests {
     use super::*;
 
