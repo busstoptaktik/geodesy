@@ -2,7 +2,8 @@
 
 - update `Cargo.toml` with new version id, e.g. `"0.11.0"`
 - `just check-all`
-- `just changes` generates a new `CHANGELOG`
+- `just changes` preview a new `CHANGELOG`
+- `just changelog` generate a new `CHANGELOG`
 - `git commit ...`
 - `git push`
 - `git tag v0.11.0`
