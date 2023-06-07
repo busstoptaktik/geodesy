@@ -19,10 +19,18 @@ The most important **objectives** are
 
 If any of this resonates with you, read on after this minimal usage example...
 
-## Example
+## Usage
+
+Add Geodesy to your `Cargo.toml` file
+
+```toml
+[dependencies]
+geodesy = "0.10.0"
+```
+
+Then try this minimal example, computing the UTM coordinates of some Scandinavian capitals
 
 ```rust
-// Find the UTM coordinates of some Scandinavian capitals
 use geodesy::prelude::*;
 fn main() -> anyhow::Result<()> {
     let mut context = Minimal::new();
@@ -52,7 +60,7 @@ fn main() -> anyhow::Result<()> {
 
 But fundamentally, *RG* is born as a *geodesy*, rather than *cartography* library. And while PROJ benefits from four decades of *reality hardening*, RG, being a platform for experiments, does not have operational robustness as a main focus. Hence, viewing *RG* as *another PROJ*, or *PROJ [RiiR](https://acronyms.thefreedictionary.com/RIIR)*, will lead to bad disappointment. At best, you may catch a weak mirage of a *potential* [shape of jazz to come](https://en.wikipedia.org/wiki/The_Shape_of_Jazz_to_Come) for the PROJ internal dataflow.
 
-That said, being written in Rust, with all the memory safety guarantees Rust provides, *RG* by design avoids a number of pitfalls that are explicitly worked around in the PROJ code base, so the miniscule size of *RG* (as measured in number of code lines) compared to PROJ, is not just a matter of functional pruning, but also a matter of development using a tool wonderfully suited for the task at hand.
+That said, being written in Rust, with all the memory safety guarantees Rust provides, *RG* by design avoids a number of pitfalls that are explicitly worked around in the PROJ code base. So the miniscule size of *RG* compared to PROJ is not just a matter of functional pruning. It is also a matter of development using a tool wonderfully suited for the task at hand.
 
 Also, having the advantage of learning from PROJ experience, both from a user's and a developer's perspective, *RG* is designed to be significantly more extensible than PROJ. So perhaps for a number of applications, and despite its limitations, RG may be sufficient, and perhaps even useful.
 
@@ -77,6 +85,7 @@ The documentation is currently limited, but take a look at:
 - The API documentation at [Docs.rs](https://docs.rs/geodesy)
 - The [`examples`](/examples/)
 - The tests embedded in the [source code](/src/)
+- [This](/ruminations/006-rumination.md) rather concrete and [this](/ruminations/005-rumination.md) more philosophical description of the main discrepancy between geodesy and geomatics, *RG* tries to elucidate and amend.
 
 ## License
 
