@@ -72,6 +72,7 @@ pub trait AngularUnits {
 }
 
 // For Rust Geodesy, a DirectPosition is represented as a geodesy::Coord.
+#[allow(dead_code)]
 type DirectPosition = Coord;
 // The strict connection between the ISO19107 "DirectPosition" datatype
 // and the ISO19111/OGC Topic 2 "CoordinateSet" interface (i.e. trait)
@@ -125,8 +126,8 @@ impl<T> CoordinateMetadata for T where T: ?Sized {}
 
 pub trait CoordinateSet: CoordinateMetadata {
     fn len(&self) -> usize;
-    fn get_coord(&self, index: usize) -> DirectPosition;
-    fn set_coord(&mut self, index: usize, value: &DirectPosition);
+    fn get_coord(&self, index: usize) -> Coord;
+    fn set_coord(&mut self, index: usize, value: &Coord);
     fn is_empty(&self) -> bool {
         self.len() == 0
     }
