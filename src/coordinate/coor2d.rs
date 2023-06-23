@@ -175,6 +175,18 @@ impl Coor2D {
     }
 }
 
+impl Into<Coord> for Coor2D {
+    fn into(self) -> Coord {
+        Coord([self[0], self[1], 0.0, 0.0])
+    }
+}
+
+impl From<Coord> for Coor2D {
+    fn from(xyzt: Coord) -> Self {
+        Coor2D([xyzt[0], xyzt[1]])
+    }
+}
+
 // ----- T E S T S ---------------------------------------------------
 
 #[cfg(test)]
