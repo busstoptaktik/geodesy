@@ -1,4 +1,4 @@
-// Datum shift using grid interpolation.
+/// Datum shift using grid interpolation.
 use crate::operator_authoring::*;
 
 // ----- F O R W A R D --------------------------------------------------------------
@@ -108,14 +108,16 @@ pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
 
 // ----- T E S T S ------------------------------------------------------------------
 
+//#[cfg(with_plain)]
 #[cfg(test)]
-#[cfg(with_plain)]
 mod tests {
     use super::*;
 
     #[test]
     fn gridshift() -> Result<(), Error> {
-        let mut ctx = Plain::default();
+        let test_datum = include_str!("../../geodesy/datum/test.datum");
+        let mut ctx = Minimal::default();
+        ctx.register_resource("test.datum", test_datum);
         let op = ctx.op("gridshift grids=test.datum")?;
         let cph = Coord::geo(55., 12., 0., 0.);
         let mut data = [cph];

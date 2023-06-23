@@ -11,11 +11,14 @@ mod op;
 
 // The bread-and-butter
 pub use crate::context::Context;
-pub use crate::context::Minimal;
+pub use crate::context::minimal::Minimal;
+
 #[cfg(with_plain)]
-pub use crate::context::Plain;
+pub use crate::context::plain::Plain;
+
 pub use crate::coordinate::coord::Coord;
 pub use crate::coordinate::CoordinateSet;
+pub use crate::coordinate::CoordinateMetadata;
 pub use crate::ellipsoid::Ellipsoid;
 pub use crate::Direction::Fwd;
 pub use crate::Direction::Inv;
@@ -23,15 +26,18 @@ pub use crate::Direction::Inv;
 /// The bread-and-butter, shrink-wrapped for external use
 pub mod prelude {
     pub use crate::context::Context;
-    pub use crate::context::Minimal;
+    pub use crate::context::minimal::Minimal;
+
     #[cfg(with_plain)]
-    pub use crate::context::Plain;
+    pub use crate::context::plain::Plain;
+
     pub use crate::coordinate::coor2d::Coor2D;
     pub use crate::coordinate::coor32::Coor32;
     pub use crate::coordinate::coord::Coord;
     pub use crate::coordinate::AngularUnits;
     pub use crate::coordinate::Coordinate;
     pub use crate::coordinate::CoordinateSet;
+    pub use crate::coordinate::CoordinateMetadata;
     pub use crate::ellipsoid::Ellipsoid;
     pub use crate::math::parse_sexagesimal;
     pub use crate::op::OpHandle;
