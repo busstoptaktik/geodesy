@@ -225,7 +225,7 @@ mod tests {
         // The values actually used are taken from a direct 3 parameter
         // Helmert calculation with the same constants:
         // echo 53.80939444444444 2.12955 73 | kp ^
-        //        "geo | cart WGS84 | helmert  x:84.87 y:96.49 z:116.95 | cart inv ellps:intl | geo inv"
+        //        "geo:in | cart WGS84 | helmert  x=84.87 y=96.49 z=116.95 | cart inv ellps=intl | geo:out"
         let lat = 53.8101570592;
         let lon = 2.1309658097;
         let ED50 = Coord::geo(lat, lon, 28.02470, 0.0);

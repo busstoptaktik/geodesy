@@ -69,7 +69,7 @@ fn main() -> Result<(), anyhow::Error> {
 
     // A pipeline
     let pip =
-        "geo:in | cart ellps:intl | helmert x:-87 y:-96 z:-120 | cart inv ellps:GRS80 | geo:out";
+        "cart ellps=intl | helmert x=-87 y=-96 z=-120 | cart inv ellps=GRS80 | geo:out";
     let pip = ctx.op(pip)?;
 
     let copenhagen = Coord::geo(55., 12., 0., 0.);
@@ -81,7 +81,7 @@ fn main() -> Result<(), anyhow::Error> {
 
     ctx.apply(pip, Fwd, &mut data)?;
     for coord in &data {
-        println!("    {:?}", coord.to_geo());
+        println!("    {:?}", coord);
     }
 
     Ok(())
