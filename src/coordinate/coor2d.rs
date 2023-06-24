@@ -175,9 +175,9 @@ impl Coor2D {
     }
 }
 
-impl Into<Coord> for Coor2D {
-    fn into(self) -> Coord {
-        Coord([self[0], self[1], 0.0, 0.0])
+impl From<Coor2D> for Coord {
+    fn from(c: Coor2D) -> Self {
+        Coord([c[0], c[1], 0.0, 0.0])
     }
 }
 

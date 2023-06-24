@@ -1,100 +1,29 @@
 use geodesy::prelude::*;
 use log::{debug, trace};
 
-fn main() -> Result<(), anyhow::Error> {
-    // Filter by setting RUST_LOG to one of {Error, Warn, Info, Debug, Trace}
-    if std::env::var("RUST_LOG").is_err() {
-        simple_logger::init_with_level(log::Level::Error)?;
-    } else {
-        simple_logger::init_with_env()?;
-    }
-
-    debug!("debug message 1");
-    trace!("trace message 1");
-
-    // We use ::new() instead of ::default() in order to gain access to the
-    // BUILTIN_ADAPTORS
-    let mut ctx = geodesy::Minimal::new();
-    trace!("trace message 2");
-    debug!("debug message 2");
-
-    let mut a = [0f64; 10];
-    for (i, item) in [1f64, 2., 3.].into_iter().enumerate() {
-        a[i] = item;
-    }
-
-    // let _oo = ctx.define_operation(&opt.operation)?;
-
-    // A pipeline
-    let pip =
-        "geo:in | cart ellps:intl | helmert x:-87 y:-96 z:-120 | cart inv ellps:GRS80 | geo:out";
-    let pip = ctx.op(pip)?;
-
-    let copenhagen = Coord::geo(55., 12., 0., 0.);
-    let stockholm = Coord::geo(59., 18., 0., 0.);
-    let mut data = [copenhagen, stockholm];
-    for coord in data {
-        println!("    {:?}", coord.to_geo());
-    }
-
-    ctx.apply(pip, Fwd, &mut data)?;
-    for coord in &data {
-        println!("    {:?}", coord.to_geo());
-    }
-
-    let a = Abscissa{the_abscissa: 3.0};
-    let b: Abscissa = copenhagen.into();
-    let c: Coord = b.into();
-    let d: Abscissa = c.into();
-    let e = a;
-
-    let mut collection = AbscissaCollection{
-        first_abscissa: a,
-        second_abscissa: b,
-        third_abscissa: d,
-        fourth_abscissa: e
-    };
-
-    for index in 0..collection.len() {
-        dbg!(collection[index]);
-    }
-
-    collection[2] = Abscissa{the_abscissa: 44.0};
-    assert_eq!(collection[2].the_abscissa, 44.0);
-
-    Ok(())
-}
-
-
-
-pub trait CoordinateItem: From<Coord> + Into<Coord> {}
-
-
+// This is out one-dimensional user defined coordinate type "Abscissa"
 #[derive(Debug, Default, PartialEq, PartialOrd, Copy, Clone)]
-struct Abscissa {
-    the_abscissa: f64
-}
+struct Abscissa(f64);
 
+// From<Coord> and Into<Coord> are useful when implementing
+// the CoordinateSet trait below
 impl From<Coord> for Abscissa {
     fn from(xyzt: Coord) -> Self {
-        Abscissa{the_abscissa: xyzt[0]}
+        Abscissa(xyzt[0])
     }
 }
 
-impl Into<Coord> for Abscissa {
-    fn into(self) -> Coord {
-        Coord([self.the_abscissa, 0.0, 0.0, 0.0])
+// This gives us Into<Coord> for Abscissa for free
+impl From<Abscissa> for Coord {
+    fn from(a: Abscissa) -> Self {
+        Coord([a.0, 0.0, 0.0, 0.0])
     }
 }
 
-
-pub trait AltCoordinateSet<T,C>: CoordinateMetadata + IndexMut<usize> {}
-
-
-use std::ops::IndexMut;
-use std::ops::Index;
-
-
+// The AbscissaCollection type contains 4 Abscissae, indexed in an
+// utterly idiotic way. It is implemented like this only in order
+// to show that the CoordinateSet may be implemented for even
+// utterly odd collection types
 #[derive(Debug, Default, PartialEq, PartialOrd, Clone)]
 struct AbscissaCollection {
     first_abscissa: Abscissa,
@@ -102,6 +31,11 @@ struct AbscissaCollection {
     third_abscissa: Abscissa,
     fourth_abscissa: Abscissa,
 }
+
+// We simplify the implementation of the CoordinateSet trait
+// by implementing the Index and IndexMut traits
+use std::ops::Index;
+use std::ops::IndexMut;
 
 impl Index<usize> for AbscissaCollection {
     type Output = Abscissa;
@@ -111,7 +45,7 @@ impl Index<usize> for AbscissaCollection {
             1 => &self.second_abscissa,
             2 => &self.third_abscissa,
             3 => &self.fourth_abscissa,
-            _ => panic!()
+            _ => panic!(),
         }
     }
 }
@@ -123,11 +57,14 @@ impl IndexMut<usize> for AbscissaCollection {
             1 => &mut self.second_abscissa,
             2 => &mut self.third_abscissa,
             3 => &mut self.fourth_abscissa,
-            _ => panic!()
+            _ => panic!(),
         }
     }
 }
 
+// Having the Index & IndexMut traits implemented for AbscissaCollection
+// and the From<Coord> and Into<Coord> implemented for Abscissa, it is
+// next to trivial to implement the CoordinateSet trait
 impl CoordinateSet for AbscissaCollection {
     fn get_coord(&self, index: usize) -> Coord {
         self[index].into()
@@ -138,5 +75,55 @@ impl CoordinateSet for AbscissaCollection {
     fn len(&self) -> usize {
         4
     }
+}
 
+fn main() -> Result<(), anyhow::Error> {
+    // Filter by setting RUST_LOG to one of {Error, Warn, Info, Debug, Trace}
+    if std::env::var("RUST_LOG").is_err() {
+        simple_logger::init_with_level(log::Level::Error)?;
+    } else {
+        simple_logger::init_with_env()?;
+    }
+
+    debug!("User defined coordinate types and containers");
+
+    // We use ::new() instead of ::default() in order to gain access to the
+    // BUILTIN_ADAPTORS (geo:in, geo:out etc.)
+    let mut ctx = geodesy::Minimal::new();
+    trace!("have context");
+
+    let copenhagen = Coord([55., 12., 0., 0.]);
+
+    let a = Abscissa(3.0);
+    let b: Abscissa = copenhagen.into(); // Coord to Abscissa
+    let c: Coord = b.into(); // Abscissa to Coord
+    let d: Abscissa = c.into(); // ... and back to Abscissa
+    let e = a;
+
+    let mut collection = AbscissaCollection {
+        first_abscissa: a,
+        second_abscissa: b,
+        third_abscissa: d,
+        fourth_abscissa: e,
+    };
+
+    for index in 0..collection.len() {
+        println!("{:?}", collection[index]);
+    }
+
+    collection[2] = Abscissa(44.0);
+    assert_eq!(collection[2].0, 44.0);
+
+    trace!("Instantiating 'addone' operator");
+    let add_one = ctx.op("addone")?;
+
+    trace!("Adding one");
+    ctx.apply(add_one, Fwd, &mut collection)?;
+
+    for i in 0..collection.len() {
+        println!("{:?}", collection[i]);
+    }
+    assert_eq!(collection[2].0, 45.0);
+
+    Ok(())
 }

@@ -68,8 +68,7 @@ fn main() -> Result<(), anyhow::Error> {
     // let _oo = ctx.define_operation(&opt.operation)?;
 
     // A pipeline
-    let pip =
-        "cart ellps=intl | helmert x=-87 y=-96 z=-120 | cart inv ellps=GRS80 | geo:out";
+    let pip = "cart ellps=intl | helmert x=-87 y=-96 z=-120 | cart inv ellps=GRS80 | geo:out";
     let pip = ctx.op(pip)?;
 
     let copenhagen = Coord::geo(55., 12., 0., 0.);
