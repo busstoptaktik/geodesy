@@ -76,20 +76,27 @@ fn main() -> anyhow::Result<()> {
         println!("    {:?}", coord);
     }
 
-    // Same again, but using slices - in two different ways
+    // To geo again, but using slices - in two different ways
+    println!("Sliced to_geo:");
     let mut data = [osl, cph, sth, hel];
-    let mut slice = &mut data[..2];
-    for coord in (&mut slice).into_iter() {
-        println!("    sliced {:?}", coord.to_geo());
+    let slice = &mut data[..2];
+    for coord in slice {
+        println!("    {:?}", coord.to_geo());
     }
     for coord in (&mut data[2..]).into_iter() {
-        println!("    sliced {:?}", coord.to_geo());
+        println!("    {:?}", coord.to_geo());
     }
 
-
-    // To get rid of roundtrip-roundoff noise, let's make a fresh
-    // version of the input data for the next example:
+    // ctx.apply(...) with slices (a step towards parallel operation)
+    println!("Sliced utm32:");
     let mut data = [osl, cph, sth, hel];
+    let slice = &mut data[..];
+    let (mut first, mut last) = slice.split_at_mut(2);
+    ctx.apply(utm32, Fwd, &mut first)?;
+    ctx.apply(utm32, Fwd, &mut last)?;
+    for coord in data {
+        println!("    {:?}", coord);
+    }
 
     // Now a slightly more complex case: Transforming the coordinates,
     // which we consider given in WGS84, back to the older ED50 datum.
@@ -100,6 +107,7 @@ fn main() -> anyhow::Result<()> {
     // coordinates to cartesian, and back. Hence, we need a pipeline
     // of 3 steps:
     let pipeline = "cart ellps=intl | helmert x=-87 y=-96 z=-120 | cart inv=true ellps=GRS80";
+    let mut data = [osl, cph, sth, hel];
     let ed50_wgs84 = ctx.op(pipeline)?;
 
     // Since the forward transformation goes *from* ed50 to wgs84, we use
@@ -129,6 +137,9 @@ fn main() -> anyhow::Result<()> {
     // for the rare cases where it is preferable, we demonstrate its use below, by
     // repeating the exercises above, while swapping the roles of the `Op`/`OpHandle`
     // and the `Context`.
+    println!("------------------------------------");
+    println!(" Doing the same in the wrong way... ");
+    println!("------------------------------------");
     use geodesy::operator_authoring::Op;
     // Create an `Op`, turning geographical coordinates into UTM zone 32 coordinates
     let utm32 = Op::new("utm zone=32", &ctx)?;
@@ -145,14 +156,12 @@ fn main() -> anyhow::Result<()> {
 
     println!("Roundtrip to geo:");
     for coord in data {
-        println!("    {:?}", Coord::to_geo(coord));
+        println!("    {:?}", coord.to_geo());
     }
-
-    // Make a fresh version of the input data for the next example:
-    let mut data = [osl, cph, sth, hel];
 
     // EPSG:1134
     let ed50_wgs84 = Op::new(pipeline, &ctx)?;
+    let mut data = [osl, cph, sth, hel];
     ed50_wgs84.apply(&ctx, &mut data, Inv);
     println!("ed50:");
     for coord in data {
