@@ -290,9 +290,9 @@ mod tests {
         let op = ctx.op(definition)?;
 
         // Validation value from EPSG
-        let geo = [Coor2D::geo(5.3872535833, 115.8055054444, 0., 0.)];
+        let geo = [Coor2D::geo(5.3872535833, 115.8055054444)];
 
-        let projected = [Coor2D::raw(679245.7281740266, 596562.7774687681, 0., 0.)];
+        let projected = [Coor2D::raw(679245.7281740266, 596562.7774687681)];
 
         // Forward
         let mut operands = geo.clone();

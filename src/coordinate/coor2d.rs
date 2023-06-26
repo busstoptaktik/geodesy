@@ -52,19 +52,18 @@ impl AngularUnits for Coor2D {
 // ----- C O N S T R U C T O R S ---------------------------------------------
 
 /// Constructors
-#[allow(unused_variables)]
-impl Coordinate for Coor2D {
+impl Coor2D {
     /// A `Coor2D` from latitude/longitude/height/time, with the angular input in degrees,
     /// and height and time ignored.
     #[must_use]
-    fn geo(latitude: f64, longitude: f64, height: f64, time: f64) -> Coor2D {
+    pub fn geo(latitude: f64, longitude: f64) -> Coor2D {
         Coor2D([longitude.to_radians(), latitude.to_radians()])
     }
 
     /// A `Coor2D` from longitude/latitude/height/time, with the angular input in seconds
     /// of arc. Mostly for handling grid shift elements.
     #[must_use]
-    fn arcsec(longitude: f64, latitude: f64, height: f64, time: f64) -> Coor2D {
+    pub fn arcsec(longitude: f64, latitude: f64) -> Coor2D {
         Coor2D([
             longitude.to_radians() / 3600.,
             latitude.to_radians() / 3600.,
@@ -74,14 +73,14 @@ impl Coordinate for Coor2D {
     /// A `Coor2D` from longitude/latitude/height/time, with the angular input in degrees.
     /// and height and time ignored.
     #[must_use]
-    fn gis(longitude: f64, latitude: f64, height: f64, time: f64) -> Coor2D {
+    pub fn gis(longitude: f64, latitude: f64) -> Coor2D {
         Coor2D([longitude.to_radians(), latitude.to_radians()])
     }
 
     /// A `Coor2D` from longitude/latitude/height/time, with the angular input in radians,
     /// and third and fourth arguments ignored.
     #[must_use]
-    fn raw(first: f64, second: f64, third: f64, fourth: f64) -> Coor2D {
+    pub fn raw(first: f64, second: f64) -> Coor2D {
         Coor2D([first, second])
     }
 
@@ -89,7 +88,7 @@ impl Coordinate for Coor2D {
     /// with the angular input in NMEA format: DDDMM.mmmmm,
     /// and height and time ignored.
     #[must_use]
-    fn nmea(latitude: f64, longitude: f64, height: f64, time: f64) -> Coor2D {
+    pub fn nmea(latitude: f64, longitude: f64) -> Coor2D {
         let longitude = angular::nmea_to_dd(longitude);
         let latitude = angular::nmea_to_dd(latitude);
         Coor2D([longitude.to_radians(), latitude.to_radians()])
@@ -99,27 +98,27 @@ impl Coordinate for Coor2D {
     /// the angular input in extended NMEA format: DDDMMSS.sssss,
     /// and height and time ignored.
     #[must_use]
-    fn nmeass(latitude: f64, longitude: f64, height: f64, time: f64) -> Coor2D {
+    pub fn nmeass(latitude: f64, longitude: f64) -> Coor2D {
         let longitude = angular::nmeass_to_dd(longitude);
         let latitude = angular::nmeass_to_dd(latitude);
-        Coor2D::geo(latitude, longitude, 0., 0.)
+        Coor2D::geo(latitude, longitude)
     }
 
     /// A `Coor2D` consisting of 2 `NaN`s
     #[must_use]
-    fn nan() -> Coor2D {
+    pub fn nan() -> Coor2D {
         Coor2D([f64::NAN, f64::NAN])
     }
 
     /// A `Coor2D` consisting of 2 `0`s
     #[must_use]
-    fn origin() -> Coor2D {
+    pub fn origin() -> Coor2D {
         Coor2D([0., 0.])
     }
 
     /// A `Coor2D` consisting of 2 `1`s
     #[must_use]
-    fn ones() -> Coor2D {
+    pub fn ones() -> Coor2D {
         Coor2D([1., 1.])
     }
 
@@ -127,13 +126,13 @@ impl Coordinate for Coor2D {
 
     /// Multiply by a scalar
     #[must_use]
-    fn scale(&self, factor: f64) -> Coor2D {
+    pub fn scale(&self, factor: f64) -> Coor2D {
         Coor2D([self[0] * factor, self[1] * factor])
     }
 
     /// Scalar product
     #[must_use]
-    fn dot(&self, other: Coor2D) -> f64 {
+    pub fn dot(&self, other: Coor2D) -> f64 {
         self[0] * other[0] + self[1] * other[1]
     }
 }
@@ -157,7 +156,7 @@ impl Coor2D {
     /// use geodesy::prelude::*;
     /// let t = 1000 as f64;
     /// let p0 = Coor2D::origin();
-    /// let p1 = Coor2D::raw(t, t, 0., 0.);
+    /// let p1 = Coor2D::raw(t, t);
     /// assert_eq!(p0.hypot2(&p1), t.hypot(t));
     /// ```
     #[must_use]
@@ -196,15 +195,15 @@ mod tests {
     fn distances() {
         let lat = angular::dms_to_dd(55, 30, 36.);
         let lon = angular::dms_to_dd(12, 45, 36.);
-        let dms = Coor2D::geo(lat, lon, 0., 2020.);
-        let geo = Coor2D::geo(55.51, 12.76, 0., 2020.);
+        let dms = Coor2D::geo(lat, lon);
+        let geo = Coor2D::geo(55.51, 12.76);
         assert!(geo.default_ellps_dist(&dms) < 1e-10);
     }
 
     #[test]
     fn coor2d() {
-        let c = Coor2D::raw(12., 55., 100., 0.).to_radians();
-        let d = Coor2D::gis(12., 55., 100., 0.);
+        let c = Coor2D::raw(12., 55.).to_radians();
+        let d = Coor2D::gis(12., 55.);
         assert_eq!(c, d);
         assert_eq!(d[0], 12f64.to_radians());
         let e = d.to_degrees();
@@ -213,7 +212,7 @@ mod tests {
 
     #[test]
     fn array() {
-        let b = Coor2D::raw(7., 8., 9., 10.);
+        let b = Coor2D::raw(7., 8.);
         let c = [b[0], b[1], f64::NAN, f64::NAN];
         assert_eq!(b[0], c[0]);
     }

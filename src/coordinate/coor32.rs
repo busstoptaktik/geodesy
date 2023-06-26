@@ -54,19 +54,18 @@ impl AngularUnits for Coor32 {
 // ----- C O N S T R U C T O R S ---------------------------------------------
 
 /// Constructors
-#[allow(unused_variables)]
-impl Coordinate for Coor32 {
+impl Coor32 {
     /// A `Coor32` from latitude/longitude/height/time, with the angular input in degrees,
     /// and height and time ignored.
     #[must_use]
-    fn geo(latitude: f64, longitude: f64, height: f64, time: f64) -> Coor32 {
+    pub fn geo(latitude: f64, longitude: f64) -> Coor32 {
         Coor32([longitude.to_radians() as f32, latitude.to_radians() as f32])
     }
 
     /// A `Coor32` from longitude/latitude/height/time, with the angular input in seconds
     /// of arc, and height and time ignored. Mostly for handling grid shift elements.
     #[must_use]
-    fn arcsec(longitude: f64, latitude: f64, height: f64, time: f64) -> Coor32 {
+    pub fn arcsec(longitude: f64, latitude: f64) -> Coor32 {
         Coor32([
             (longitude.to_radians() / 3600.) as f32,
             (latitude.to_radians() / 3600.) as f32,
@@ -76,14 +75,14 @@ impl Coordinate for Coor32 {
     /// A `Coor32` from longitude/latitude/height/time, with the angular input in degrees,
     /// and height and time ignored.
     #[must_use]
-    fn gis(longitude: f64, latitude: f64, height: f64, time: f64) -> Coor32 {
+    pub fn gis(longitude: f64, latitude: f64) -> Coor32 {
         Coor32([longitude.to_radians() as f32, latitude.to_radians() as f32])
     }
 
     /// A `Coor32` from longitude/latitude/height/time, with the angular input in radians,
     /// and height and time ignored.
     #[must_use]
-    fn raw(first: f64, second: f64, third: f64, fourth: f64) -> Coor32 {
+    pub fn raw(first: f64, second: f64) -> Coor32 {
         Coor32([first as f32, second as f32])
     }
 
@@ -91,7 +90,7 @@ impl Coordinate for Coor32 {
     /// with the angular input in NMEA format: DDDMM.mmmmm,
     /// and height and time ignored.
     #[must_use]
-    fn nmea(latitude: f64, longitude: f64, height: f64, time: f64) -> Coor32 {
+    pub fn nmea(latitude: f64, longitude: f64) -> Coor32 {
         let longitude = angular::nmea_to_dd(longitude);
         let latitude = angular::nmea_to_dd(latitude);
         Coor32([longitude.to_radians() as f32, latitude.to_radians() as f32])
@@ -101,27 +100,27 @@ impl Coordinate for Coor32 {
     /// the angular input in extended NMEA format: DDDMMSS.sssss,
     /// and height and time ignored.
     #[must_use]
-    fn nmeass(latitude: f64, longitude: f64, height: f64, time: f64) -> Coor32 {
+    pub fn nmeass(latitude: f64, longitude: f64) -> Coor32 {
         let longitude = angular::nmeass_to_dd(longitude);
         let latitude = angular::nmeass_to_dd(latitude);
-        Coor32::geo(latitude, longitude, 0., 0.)
+        Coor32::geo(latitude, longitude)
     }
 
     /// A `Coor32` consisting of 2 `NaN`s
     #[must_use]
-    fn nan() -> Coor32 {
+    pub fn nan() -> Coor32 {
         Coor32([f32::NAN, f32::NAN])
     }
 
     /// A `Coor32` consisting of 2 `0`s
     #[must_use]
-    fn origin() -> Coor32 {
+    pub fn origin() -> Coor32 {
         Coor32([0., 0.])
     }
 
     /// A `Coor32` consisting of 2 `1`s
     #[must_use]
-    fn ones() -> Coor32 {
+    pub fn ones() -> Coor32 {
         Coor32([1., 1.])
     }
 
@@ -129,13 +128,13 @@ impl Coordinate for Coor32 {
 
     /// Multiply by a scalar
     #[must_use]
-    fn scale(&self, factor: f64) -> Coor32 {
+    pub fn scale(&self, factor: f64) -> Coor32 {
         Coor32([self[0] * factor as f32, self[1] * factor as f32])
     }
 
     /// Scalar product
     #[must_use]
-    fn dot(&self, other: Coor32) -> f64 {
+    pub fn dot(&self, other: Coor32) -> f64 {
         self[0] as f64 * other[0] as f64 + self[1] as f64 * other[1] as f64
     }
 }
@@ -159,7 +158,7 @@ impl Coor32 {
     /// use geodesy::prelude::*;
     /// let t = 1000.;
     /// let p0 = Coor32::origin();
-    /// let p1 = Coor32::raw(t, t, 0., 0.);
+    /// let p1 = Coor32::raw(t, t);
     /// assert_eq!(p0.hypot2(&p1), t.hypot(t));
     /// ```
     #[must_use]
@@ -186,15 +185,15 @@ mod tests {
     fn distances() {
         let lat = angular::dms_to_dd(55, 30, 36.);
         let lon = angular::dms_to_dd(12, 45, 36.);
-        let dms = Coor32::geo(lat, lon, 0., 2020.);
-        let geo = Coor32::geo(55.51, 12.76, 0., 2020.);
+        let dms = Coor32::geo(lat, lon);
+        let geo = Coor32::geo(55.51, 12.76);
         assert!(geo.default_ellps_dist(&dms) < 1e-10);
     }
 
     #[test]
     fn coor32() {
-        let c = Coor32::raw(12., 55., 100., 0.).to_radians();
-        let d = Coor32::gis(12., 55., 100., 0.);
+        let c = Coor32::raw(12., 55.).to_radians();
+        let d = Coor32::gis(12., 55.);
         assert_eq!(c, d);
         assert_eq!(d[0], 12f32.to_radians());
         let e = d.to_degrees();
@@ -203,7 +202,7 @@ mod tests {
 
     #[test]
     fn array() {
-        let b = Coor32::raw(7., 8., 9., 10.);
+        let b = Coor32::raw(7., 8.);
         let c = [b[0], b[1], f32::NAN, f32::NAN];
         assert_eq!(b[0], c[0]);
     }

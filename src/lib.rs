@@ -16,7 +16,7 @@ pub use crate::context::Context;
 #[cfg(with_plain)]
 pub use crate::context::plain::Plain;
 
-pub use crate::coordinate::coord::Coor4D;
+pub use crate::coordinate::coor4d::Coor4D;
 pub use crate::coordinate::CoordinateMetadata;
 pub use crate::coordinate::CoordinateSet;
 pub use crate::ellipsoid::Ellipsoid;
@@ -33,9 +33,8 @@ pub mod prelude {
 
     pub use crate::coordinate::coor2d::Coor2D;
     pub use crate::coordinate::coor32::Coor32;
-    pub use crate::coordinate::coord::Coor4D;
+    pub use crate::coordinate::coor4d::Coor4D;
     pub use crate::coordinate::AngularUnits;
-    pub use crate::coordinate::Coordinate;
     pub use crate::coordinate::CoordinateMetadata;
     pub use crate::coordinate::CoordinateSet;
     pub use crate::ellipsoid::Ellipsoid;

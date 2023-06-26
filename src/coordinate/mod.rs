@@ -1,60 +1,8 @@
 use crate::prelude::*;
 pub mod coor2d;
 pub mod coor32;
-pub mod coord;
+pub mod coor4d;
 pub mod set;
-
-/// Coordinate constructors
-pub trait Coordinate {
-    /// A `Coord` from latitude/longitude/height/time, with the angular input in degrees
-    #[must_use]
-    fn geo(latitude: f64, longitude: f64, height: f64, time: f64) -> Self;
-
-    /// A `Coord` from longitude/latitude/height/time, with the angular input in seconds
-    /// of arc. Mostly for handling grid shift elements.
-    #[must_use]
-    fn arcsec(longitude: f64, latitude: f64, height: f64, time: f64) -> Self;
-
-    /// A `Coord` from longitude/latitude/height/time, with the angular input in degrees
-    #[must_use]
-    fn gis(longitude: f64, latitude: f64, height: f64, time: f64) -> Self;
-
-    /// A `Coord` from longitude/latitude/height/time, with the angular input in radians
-    #[must_use]
-    fn raw(first: f64, second: f64, third: f64, fourth: f64) -> Self;
-
-    /// A `Coord` from latitude/longitude/height/time,
-    /// with the angular input in NMEA format: DDDMM.mmmmm
-    #[must_use]
-    fn nmea(latitude: f64, longitude: f64, height: f64, time: f64) -> Self;
-
-    /// A `Coord` from latitude/longitude/height/time, with
-    /// the angular input in extended NMEA format: DDDMMSS.sssss
-    #[must_use]
-    fn nmeass(latitude: f64, longitude: f64, height: f64, time: f64) -> Self;
-
-    /// A `Coord` consisting of 4 `NaN`s
-    #[must_use]
-    fn nan() -> Self;
-
-    /// A `Coord` consisting of 4 `0`s
-    #[must_use]
-    fn origin() -> Self;
-
-    /// A `Coord` consisting of 4 `1`s
-    #[must_use]
-    fn ones() -> Self;
-
-    /// Arithmetic (also see the operator trait implementations `add, sub, mul, div`)
-
-    /// Multiply by a scalar
-    #[must_use]
-    fn scale(&self, factor: f64) -> Self;
-
-    /// Scalar product
-    #[must_use]
-    fn dot(&self, other: Self) -> f64;
-}
 
 pub trait AngularUnits {
     /// Transform the first two elements of a `Coord` from degrees to radians

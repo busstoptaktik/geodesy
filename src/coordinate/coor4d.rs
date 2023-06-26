@@ -118,17 +118,17 @@ impl AngularUnits for Coor4D {
 // ----- C O N S T R U C T O R S ---------------------------------------------
 
 /// Constructors
-impl Coordinate for Coor4D {
+impl Coor4D {
     /// A `Coor4D` from latitude/longitude/height/time, with the angular input in degrees
     #[must_use]
-    fn geo(latitude: f64, longitude: f64, height: f64, time: f64) -> Coor4D {
+    pub fn geo(latitude: f64, longitude: f64, height: f64, time: f64) -> Coor4D {
         Coor4D([longitude.to_radians(), latitude.to_radians(), height, time])
     }
 
     /// A `Coor4D` from longitude/latitude/height/time, with the angular input in seconds
     /// of arc. Mostly for handling grid shift elements.
     #[must_use]
-    fn arcsec(longitude: f64, latitude: f64, height: f64, time: f64) -> Coor4D {
+    pub fn arcsec(longitude: f64, latitude: f64, height: f64, time: f64) -> Coor4D {
         Coor4D([
             longitude.to_radians() / 3600.,
             latitude.to_radians() / 3600.,
@@ -139,20 +139,20 @@ impl Coordinate for Coor4D {
 
     /// A `Coor4D` from longitude/latitude/height/time, with the angular input in degrees
     #[must_use]
-    fn gis(longitude: f64, latitude: f64, height: f64, time: f64) -> Coor4D {
+    pub fn gis(longitude: f64, latitude: f64, height: f64, time: f64) -> Coor4D {
         Coor4D([longitude.to_radians(), latitude.to_radians(), height, time])
     }
 
     /// A `Coor4D` from longitude/latitude/height/time, with the angular input in radians
     #[must_use]
-    fn raw(first: f64, second: f64, third: f64, fourth: f64) -> Coor4D {
+    pub fn raw(first: f64, second: f64, third: f64, fourth: f64) -> Coor4D {
         Coor4D([first, second, third, fourth])
     }
 
     /// A `Coor4D` from latitude/longitude/height/time,
     /// with the angular input in NMEA format: DDDMM.mmmmm
     #[must_use]
-    fn nmea(latitude: f64, longitude: f64, height: f64, time: f64) -> Coor4D {
+    pub fn nmea(latitude: f64, longitude: f64, height: f64, time: f64) -> Coor4D {
         let longitude = angular::nmea_to_dd(longitude);
         let latitude = angular::nmea_to_dd(latitude);
         Coor4D([longitude.to_radians(), latitude.to_radians(), height, time])
@@ -161,7 +161,7 @@ impl Coordinate for Coor4D {
     /// A `Coor4D` from latitude/longitude/height/time, with
     /// the angular input in extended NMEA format: DDDMMSS.sssss
     #[must_use]
-    fn nmeass(latitude: f64, longitude: f64, height: f64, time: f64) -> Coor4D {
+    pub fn nmeass(latitude: f64, longitude: f64, height: f64, time: f64) -> Coor4D {
         let longitude = angular::nmeass_to_dd(longitude);
         let latitude = angular::nmeass_to_dd(latitude);
         Coor4D::geo(latitude, longitude, height, time)
@@ -169,19 +169,19 @@ impl Coordinate for Coor4D {
 
     /// A `Coor4D` consisting of 4 `NaN`s
     #[must_use]
-    fn nan() -> Coor4D {
+    pub fn nan() -> Coor4D {
         Coor4D([f64::NAN, f64::NAN, f64::NAN, f64::NAN])
     }
 
     /// A `Coor4D` consisting of 4 `0`s
     #[must_use]
-    fn origin() -> Coor4D {
+    pub fn origin() -> Coor4D {
         Coor4D([0., 0., 0., 0.])
     }
 
     /// A `Coor4D` consisting of 4 `1`s
     #[must_use]
-    fn ones() -> Coor4D {
+    pub fn ones() -> Coor4D {
         Coor4D([1., 1., 1., 1.])
     }
 
@@ -189,7 +189,7 @@ impl Coordinate for Coor4D {
 
     /// Multiply by a scalar
     #[must_use]
-    fn scale(&self, factor: f64) -> Coor4D {
+    pub fn scale(&self, factor: f64) -> Coor4D {
         let mut result = Coor4D::nan();
         for i in 0..4 {
             result[i] = self[i] * factor;
@@ -199,7 +199,7 @@ impl Coordinate for Coor4D {
 
     /// Scalar product
     #[must_use]
-    fn dot(&self, other: Coor4D) -> f64 {
+    pub fn dot(&self, other: Coor4D) -> f64 {
         let mut result = 0_f64;
         for i in 0..4 {
             result += self[i] * other[i];
