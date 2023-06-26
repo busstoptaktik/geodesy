@@ -139,6 +139,18 @@ impl Coor32 {
     }
 }
 
+impl From<Coor32> for Coor4D {
+    fn from(c: Coor32) -> Self {
+        Coor4D([c[0] as f64, c[1] as f64, 0.0, f64::NAN])
+    }
+}
+
+impl From<Coor4D> for Coor32 {
+    fn from(xyzt: Coor4D) -> Self {
+        Coor32::raw(xyzt[0], xyzt[1])
+    }
+}
+
 // ----- D I S T A N C E S ---------------------------------------------------
 
 impl Coor32 {
