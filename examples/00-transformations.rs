@@ -36,8 +36,10 @@ fn main() -> anyhow::Result<()> {
     let cph_raw = Coord::raw(12_f64.to_radians(), 55_f64.to_radians(), 0., 0.0);
     // But since a coordinate tuple is really just an array of 4 double
     // precision numbers, you may also generate it directly using plain
-    // Rust syntax.
-    let cph_direct = Coord([12_f64.to_radians(), 55_f64.to_radians(), 0., 0.0]);
+    // Rust syntax. Note that Coord, like f64, provides the to_radians
+    // method. So compared to cph_raw above, we can use a slightly more
+    // compact notation.
+    let cph_direct = Coord([12., 55., 0., 0.]).to_radians();
     // The three versions of Copenhagen coordinates should be identical.
     assert_eq!(cph, cph_raw);
     assert_eq!(cph, cph_direct);
@@ -67,11 +69,23 @@ fn main() -> anyhow::Result<()> {
     // to geographic coordinates
     ctx.apply(utm32, Inv, &mut data)?;
     println!("Roundtrip to geo:");
-    for coord in data {
-        // Note the use of `to_geo`, which transforms lon/lat in radians
-        // to lat/lon in degrees
-        println!("    {:?}", Coord::to_geo(coord));
+    // Note the use of `to_geo`, which transforms lon/lat in radians
+    // to lat/lon in degrees. It is defined for Coord as well as for
+    // arrays, vectors and slices of Coord
+    for coord in data.to_geo() {
+        println!("    {:?}", coord);
     }
+
+    // Same again, but using slices - in two different ways
+    let mut data = [osl, cph, sth, hel];
+    let mut slice = &mut data[..2];
+    for coord in (&mut slice).into_iter() {
+        println!("    sliced {:?}", coord.to_geo());
+    }
+    for coord in (&mut data[2..]).into_iter() {
+        println!("    sliced {:?}", coord.to_geo());
+    }
+
 
     // To get rid of roundtrip-roundoff noise, let's make a fresh
     // version of the input data for the next example:
