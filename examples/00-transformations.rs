@@ -36,7 +36,7 @@ fn main() -> anyhow::Result<()> {
     let cph_raw = Coor4D::raw(12_f64.to_radians(), 55_f64.to_radians(), 0., 0.0);
     // But since a coordinate tuple is really just an array of 4 double
     // precision numbers, you may also generate it directly using plain
-    // Rust syntax. Note that Coord, like f64, provides the to_radians
+    // Rust syntax. Note that Coor4D, like f64, provides the to_radians
     // method. So compared to cph_raw above, we can use a slightly more
     // compact notation.
     let cph_direct = Coor4D([12., 55., 0., 0.]).to_radians();
@@ -70,8 +70,8 @@ fn main() -> anyhow::Result<()> {
     ctx.apply(utm32, Inv, &mut data)?;
     println!("Roundtrip to geo:");
     // Note the use of `to_geo`, which transforms lon/lat in radians
-    // to lat/lon in degrees. It is defined for Coord as well as for
-    // arrays, vectors and slices of Coord
+    // to lat/lon in degrees. It is defined for Coor4D as well as for
+    // arrays, vectors and slices of Coor4D
     for coord in data.to_geo() {
         println!("    {:?}", coord);
     }
@@ -115,7 +115,7 @@ fn main() -> anyhow::Result<()> {
     ctx.apply(ed50_wgs84, Inv, &mut data)?;
     println!("ed50:");
     for coord in data {
-        // Again, use the `Coord::to_geo` method to get output following the
+        // Again, use the `Coor4D::to_geo` method to get output following the
         // geodesy/navigation convention for angular unit/coordinate order
         println!("    {:?}", Coor4D::to_geo(coord));
     }

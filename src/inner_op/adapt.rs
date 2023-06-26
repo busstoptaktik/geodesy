@@ -330,7 +330,10 @@ mod tests {
         let mut ctx = Minimal::default();
         let gonify = ctx.op("adapt from = neuf_deg   to = enuf_gon")?;
 
-        let mut data = [Coor4D::raw(90., 180., 0., 0.), Coor4D::raw(45., 90., 0., 0.)];
+        let mut data = [
+            Coor4D::raw(90., 180., 0., 0.),
+            Coor4D::raw(45., 90., 0., 0.),
+        ];
 
         assert_eq!(ctx.apply(gonify, Fwd, &mut data)?, 2);
         assert!((data[0][0] - 200.0).abs() < 1e-10);

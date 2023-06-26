@@ -84,19 +84,19 @@ impl Div for Coor4D {
 // ----- A N G U L A R   U N I T S -------------------------------------------
 
 impl AngularUnits for Coor4D {
-    /// Transform the first two elements of a `Coord` from degrees to radians
+    /// Transform the first two elements of a `Coor4D` from degrees to radians
     #[must_use]
     fn to_radians(self) -> Self {
         Coor4D::raw(self[0].to_radians(), self[1].to_radians(), self[2], self[3])
     }
 
-    /// Transform the first two elements of a `Coord` from radians to degrees
+    /// Transform the first two elements of a `Coor4D` from radians to degrees
     #[must_use]
     fn to_degrees(self) -> Self {
         Coor4D::raw(self[0].to_degrees(), self[1].to_degrees(), self[2], self[3])
     }
 
-    /// Transform the first two elements of a `Coord` from radians to seconds
+    /// Transform the first two elements of a `Coor4D` from radians to seconds
     /// of arc.
     #[must_use]
     fn to_arcsec(self) -> Self {
@@ -119,13 +119,13 @@ impl AngularUnits for Coor4D {
 
 /// Constructors
 impl Coordinate for Coor4D {
-    /// A `Coord` from latitude/longitude/height/time, with the angular input in degrees
+    /// A `Coor4D` from latitude/longitude/height/time, with the angular input in degrees
     #[must_use]
     fn geo(latitude: f64, longitude: f64, height: f64, time: f64) -> Coor4D {
         Coor4D([longitude.to_radians(), latitude.to_radians(), height, time])
     }
 
-    /// A `Coord` from longitude/latitude/height/time, with the angular input in seconds
+    /// A `Coor4D` from longitude/latitude/height/time, with the angular input in seconds
     /// of arc. Mostly for handling grid shift elements.
     #[must_use]
     fn arcsec(longitude: f64, latitude: f64, height: f64, time: f64) -> Coor4D {
@@ -137,19 +137,19 @@ impl Coordinate for Coor4D {
         ])
     }
 
-    /// A `Coord` from longitude/latitude/height/time, with the angular input in degrees
+    /// A `Coor4D` from longitude/latitude/height/time, with the angular input in degrees
     #[must_use]
     fn gis(longitude: f64, latitude: f64, height: f64, time: f64) -> Coor4D {
         Coor4D([longitude.to_radians(), latitude.to_radians(), height, time])
     }
 
-    /// A `Coord` from longitude/latitude/height/time, with the angular input in radians
+    /// A `Coor4D` from longitude/latitude/height/time, with the angular input in radians
     #[must_use]
     fn raw(first: f64, second: f64, third: f64, fourth: f64) -> Coor4D {
         Coor4D([first, second, third, fourth])
     }
 
-    /// A `Coord` from latitude/longitude/height/time,
+    /// A `Coor4D` from latitude/longitude/height/time,
     /// with the angular input in NMEA format: DDDMM.mmmmm
     #[must_use]
     fn nmea(latitude: f64, longitude: f64, height: f64, time: f64) -> Coor4D {
@@ -158,7 +158,7 @@ impl Coordinate for Coor4D {
         Coor4D([longitude.to_radians(), latitude.to_radians(), height, time])
     }
 
-    /// A `Coord` from latitude/longitude/height/time, with
+    /// A `Coor4D` from latitude/longitude/height/time, with
     /// the angular input in extended NMEA format: DDDMMSS.sssss
     #[must_use]
     fn nmeass(latitude: f64, longitude: f64, height: f64, time: f64) -> Coor4D {
@@ -167,19 +167,19 @@ impl Coordinate for Coor4D {
         Coor4D::geo(latitude, longitude, height, time)
     }
 
-    /// A `Coord` consisting of 4 `NaN`s
+    /// A `Coor4D` consisting of 4 `NaN`s
     #[must_use]
     fn nan() -> Coor4D {
         Coor4D([f64::NAN, f64::NAN, f64::NAN, f64::NAN])
     }
 
-    /// A `Coord` consisting of 4 `0`s
+    /// A `Coor4D` consisting of 4 `0`s
     #[must_use]
     fn origin() -> Coor4D {
         Coor4D([0., 0., 0., 0.])
     }
 
-    /// A `Coord` consisting of 4 `1`s
+    /// A `Coor4D` consisting of 4 `1`s
     #[must_use]
     fn ones() -> Coor4D {
         Coor4D([1., 1., 1., 1.])
@@ -218,11 +218,11 @@ impl Coor4D {
     /// the actual distance in the real world.
     ///
     /// The distance is computed in the subspace spanned by the first and
-    /// second coordinate of the `Coord`s
+    /// second coordinate of the `Coor4D`s
     ///
     /// # See also:
     ///
-    /// [`hypot3`](Coord::hypot3),
+    /// [`hypot3`](Coor4D::hypot3),
     /// [`distance`](crate::ellipsoid::Ellipsoid::distance)
     ///
     /// # Examples
@@ -230,8 +230,8 @@ impl Coor4D {
     /// ```
     /// use geodesy::prelude::*;
     /// let t = 1000 as f64;
-    /// let p0 = Coord::origin();
-    /// let p1 = Coord::raw(t, t, 0., 0.);
+    /// let p0 = Coor4D::origin();
+    /// let p1 = Coor4D::raw(t, t, 0., 0.);
     /// assert_eq!(p0.hypot2(&p1), t.hypot(t));
     /// ```
     #[must_use]
@@ -247,11 +247,11 @@ impl Coor4D {
     /// in the real world.
     ///
     /// The distance is computed in the subspace spanned by the first,
-    /// second and third coordinate of the `Coord`s
+    /// second and third coordinate of the `Coor4D`s
     ///
     /// # See also:
     ///
-    /// [`hypot2`](Coord::hypot2),
+    /// [`hypot2`](Coor4D::hypot2),
     /// [`distance`](crate::ellipsoid::Ellipsoid::distance)
     ///
     /// # Examples
@@ -259,8 +259,8 @@ impl Coor4D {
     /// ```
     /// use geodesy::prelude::*;
     /// let t = 1000 as f64;
-    /// let p0 = Coord::origin();
-    /// let p1 = Coord::raw(t, t, t, 0.);
+    /// let p0 = Coor4D::origin();
+    /// let p1 = Coor4D::raw(t, t, t, 0.);
     /// assert_eq!(p0.hypot3(&p1), t.hypot(t).hypot(t));
     /// ```
     #[must_use]

@@ -182,8 +182,8 @@ impl Ellipsoid {
     ///
     /// # See also:
     ///
-    /// [`hypot2`](crate::Coord::hypot2),
-    /// [`hypot3`](crate::Coord::hypot3)
+    /// [`hypot2`](crate::Coor4D::hypot2),
+    /// [`hypot3`](crate::Coor4D::hypot3)
     ///
     /// # Examples
     ///
@@ -191,8 +191,8 @@ impl Ellipsoid {
     /// // Compute the distance between Copenhagen and Paris
     /// use geodesy::prelude::*;
     /// if let Ok(ellps) = Ellipsoid::named("GRS80") {
-    ///     let p0 = Coord::geo(55., 12., 0., 0.);
-    ///     let p1 = Coord::geo(49., 2., 0., 0.);
+    ///     let p0 = Coor4D::geo(55., 12., 0., 0.);
+    ///     let p1 = Coor4D::geo(49., 2., 0., 0.);
     ///     let d = ellps.distance(&p0, &p1);
     ///     assert!((d - 956_066.231_959).abs() < 1e-5);
     /// }

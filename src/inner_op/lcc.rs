@@ -281,7 +281,7 @@ mod tests {
         // Validation value from PROJ:
         // echo 12 40 0 0 | cct -d12 proj=lcc lat_1=39 lat_0=35 lon_0=10 -- | clip
         let geo = [Coor4D::geo(40., 12., 0., 0.)];
-        let projected = [Coor4D::raw(170800.011728740647, 557172.361112929415, 0., 0.)];
+        let projected = [Coor4D([170800.011728740647, 557172.361112929415, 0., 0.])];
 
         let mut operands = geo.clone();
         ctx.apply(op, Fwd, &mut operands)?;
@@ -305,7 +305,12 @@ mod tests {
         // Validation value from PROJ:
         // echo 12 40 0 0 | cct -d12 proj=lcc lat_1=33 lat_2=45 lat_0=35 lon_0=10 -- | clip
         let geo = [Coor4D::geo(40., 12., 0., 0.)];
-        let projected = [Coor4D::raw(169863.026093938359, 554155.440793916583, 0., 0.)];
+        let projected = [Coor4D::raw(
+            169863.026093938359,
+            554155.440793916583,
+            0.,
+            0.,
+        )];
 
         let mut operands = geo.clone();
         ctx.apply(op, Fwd, &mut operands)?;
@@ -329,7 +334,7 @@ mod tests {
         // Validation value from PROJ:
         // echo 12 40 0 0 | cct -d12 proj=lcc lat_1=33 lat_2=45 lat_0=35 lon_0=10  x_0=12345 y_0=67890 -- | clip
         let geo = [Coor4D::geo(40., 12., 0., 0.)];
-        let projected = [Coor4D::raw(182208.026093938301, 622045.440793916583, 0., 0.)];
+        let projected = [Coor4D([182208.026093938301, 622045.440793916583, 0., 0.])];
 
         let mut operands = geo.clone();
         ctx.apply(op, Fwd, &mut operands)?;
@@ -353,7 +358,7 @@ mod tests {
         // Validation value from PROJ:
         // echo 12 40 0 0 | cct -d12 proj=lcc lat_1=33 lat_2=45 lat_0=35 lon_0=10  x_0=12345 y_0=67890 k_0=0.99 -- | clip
         let geo = [Coor4D::geo(40., 12., 0., 0.)];
-        let projected = [Coor4D::raw(180509.395832998911, 616503.886385977501, 0., 0.)];
+        let projected = [Coor4D([180509.395832998911, 616503.886385977501, 0., 0.])];
 
         let mut operands = geo.clone();
         ctx.apply(op, Fwd, &mut operands)?;
