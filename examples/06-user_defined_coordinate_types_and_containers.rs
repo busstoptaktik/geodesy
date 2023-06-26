@@ -7,16 +7,16 @@ struct Abscissa(f64);
 
 // From<Coord> and Into<Coord> are useful when implementing
 // the CoordinateSet trait below
-impl From<Coord> for Abscissa {
-    fn from(xyzt: Coord) -> Self {
+impl From<Coor4D> for Abscissa {
+    fn from(xyzt: Coor4D) -> Self {
         Abscissa(xyzt[0])
     }
 }
 
 // This gives us Into<Coord> for Abscissa for free
-impl From<Abscissa> for Coord {
+impl From<Abscissa> for Coor4D {
     fn from(a: Abscissa) -> Self {
-        Coord([a.0, 0.0, 0.0, 0.0])
+        Coor4D([a.0, 0.0, 0.0, 0.0])
     }
 }
 
@@ -66,10 +66,10 @@ impl IndexMut<usize> for AbscissaCollection {
 // and the From<Coord> and Into<Coord> implemented for Abscissa, it is
 // next to trivial to implement the CoordinateSet trait
 impl CoordinateSet for AbscissaCollection {
-    fn get_coord(&self, index: usize) -> Coord {
+    fn get_coord(&self, index: usize) -> Coor4D {
         self[index].into()
     }
-    fn set_coord(&mut self, index: usize, value: &Coord) {
+    fn set_coord(&mut self, index: usize, value: &Coor4D) {
         self[index] = (*value).into();
     }
     fn len(&self) -> usize {
@@ -92,11 +92,11 @@ fn main() -> Result<(), anyhow::Error> {
     let mut ctx = geodesy::Minimal::new();
     trace!("have context");
 
-    let copenhagen = Coord([55., 12., 0., 0.]);
+    let copenhagen = Coor4D([55., 12., 0., 0.]);
 
     let a = Abscissa(3.0);
     let b: Abscissa = copenhagen.into(); // Coord to Abscissa
-    let c: Coord = b.into(); // Abscissa to Coord
+    let c: Coor4D = b.into(); // Abscissa to Coord
     let d: Abscissa = c.into(); // ... and back to Abscissa
     let e = a;
 

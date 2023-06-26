@@ -122,19 +122,19 @@ mod tests {
         // Validation value from PROJ: echo 12 55 0 0 | cct -d18 +proj=merc
         // followed by quadrant tests from PROJ builtins.gie
         let geo = [
-            Coord::geo(55., 12., 0., 0.),
-            Coord::geo(1., 2., 0., 0.),
-            Coord::geo(-1., 2., 0., 0.),
-            Coord::geo(1., -2., 0., 0.),
-            Coord::geo(-1., -2., 0., 0.),
+            Coor4D::geo(55., 12., 0., 0.),
+            Coor4D::geo(1., 2., 0., 0.),
+            Coor4D::geo(-1., 2., 0., 0.),
+            Coor4D::geo(1., -2., 0., 0.),
+            Coor4D::geo(-1., -2., 0., 0.),
         ];
 
         let projected = [
-            Coord::raw(1335833.889519282850, 7326837.714873877354, 0., 0.),
-            Coord::raw(222638.981586547, 110579.965218249, 0., 0.),
-            Coord::raw(222638.981586547, -110579.965218249, 0., 0.),
-            Coord::raw(-222638.981586547, 110579.965218249, 0., 0.),
-            Coord::raw(-222638.981586547, -110579.965218249, 0., 0.),
+            Coor4D::raw(1335833.889519282850, 7326837.714873877354, 0., 0.),
+            Coor4D::raw(222638.981586547, 110579.965218249, 0., 0.),
+            Coor4D::raw(222638.981586547, -110579.965218249, 0., 0.),
+            Coor4D::raw(-222638.981586547, 110579.965218249, 0., 0.),
+            Coor4D::raw(-222638.981586547, -110579.965218249, 0., 0.),
         ];
 
         // Forward
@@ -160,9 +160,9 @@ mod tests {
         let op = ctx.op(definition)?;
 
         // Validation value from PROJ: echo 12 55 0 0 | cct -d18 +proj=merc +lat_ts=56
-        let geo = [Coord::geo(55., 12., 0., 0.)];
+        let geo = [Coor4D::geo(55., 12., 0., 0.)];
 
-        let projected = [Coord::raw(
+        let projected = [Coor4D::raw(
             748_713.257_925_886_777,
             4_106_573.862_841_270_398,
             0.,

@@ -119,7 +119,7 @@ mod tests {
         let mut ctx = Minimal::default();
         ctx.register_resource("test.datum", test_datum);
         let op = ctx.op("gridshift grids=test.datum")?;
-        let cph = Coord::geo(55., 12., 0., 0.);
+        let cph = Coor4D::geo(55., 12., 0., 0.);
         let mut data = [cph];
 
         ctx.apply(op, Fwd, &mut data)?;

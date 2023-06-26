@@ -115,7 +115,7 @@ mod tests {
     fn maximal() -> Result<(), Error> {
         let mut ctx = Maximal::default();
         let op = ctx.op("gridshift grids=test.datum")?;
-        let cph = Coord::geo(55., 12., 0., 0.);
+        let cph = Coor4D::geo(55., 12., 0., 0.);
         let mut data = [cph];
 
         ctx.apply(op, Fwd, &mut data)?;
@@ -127,7 +127,7 @@ mod tests {
         assert!((data[0][0] - cph[0]).abs() < 1e-10);
         assert!((data[0][1] - cph[1]).abs() < 1e-10);
 
-        let cph = Coord::geo(55., 12., 0., 0.);
+        let cph = Coor4D::geo(55., 12., 0., 0.);
 
         // a somewhat unrelated test comparing RG's TM implementation with PROJ's
         // Guarded by if let Ok, since we do not want to fail this test in case of

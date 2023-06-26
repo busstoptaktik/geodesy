@@ -30,7 +30,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         // Close to one of the poles?
         if (phi.abs() - FRAC_PI_2).abs() < EPS10 {
             if phi * n <= 0. {
-                coord = Coord::nan();
+                coord = Coor4D::nan();
                 operands.set_coord(i, &coord);
                 continue;
             }
@@ -86,7 +86,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         let ts0 = (rho / c).powf(1. / n);
         let phi = crate::math::pj_phi2(ts0, e);
         if phi.is_infinite() || phi.is_nan() {
-            coord = Coord::nan();
+            coord = Coor4D::nan();
             operands.set_coord(i, &coord);
             continue;
         }
@@ -219,15 +219,15 @@ mod tests {
         //     echo 14 59 0 0 | cct -d18 proj=lcc lat_1=57 lon_0=12  -- | clip
 
         let geo = [
-            Coord::geo(55., 12., 0., 0.),
-            Coord::geo(55., 10., 0., 0.),
-            Coord::geo(59., 14., 0., 0.),
+            Coor4D::geo(55., 12., 0., 0.),
+            Coor4D::geo(55., 10., 0., 0.),
+            Coor4D::geo(59., 14., 0., 0.),
         ];
 
         let projected = [
-            Coord::raw(-0.000000000101829246, -222728.122307816054672003, 0., 0.),
-            Coord::raw(-128046.4724386522429995, -220853.7001605064142495, 0., 0.),
-            Coord::raw(115005.41456620067765471, 224484.5143763388914522, 0., 0.),
+            Coor4D::raw(-0.000000000101829246, -222728.122307816054672003, 0., 0.),
+            Coor4D::raw(-128046.4724386522429995, -220853.7001605064142495, 0., 0.),
+            Coor4D::raw(115005.41456620067765471, 224484.5143763388914522, 0., 0.),
         ];
 
         let mut operands = geo.clone();
@@ -251,8 +251,8 @@ mod tests {
 
         // Validation value from PROJ:
         // echo 12 40 0 0 | cct -d12 proj=lcc lat_1=33 lat_2=45 lon_0=10 -- | clip
-        let geo = [Coord::geo(40., 12., 0., 0.)];
-        let projected = [Coord::raw(
+        let geo = [Coor4D::geo(40., 12., 0., 0.)];
+        let projected = [Coor4D::raw(
             169863.026093938301,
             4735925.219292450696,
             0.,
@@ -280,8 +280,8 @@ mod tests {
 
         // Validation value from PROJ:
         // echo 12 40 0 0 | cct -d12 proj=lcc lat_1=39 lat_0=35 lon_0=10 -- | clip
-        let geo = [Coord::geo(40., 12., 0., 0.)];
-        let projected = [Coord::raw(170800.011728740647, 557172.361112929415, 0., 0.)];
+        let geo = [Coor4D::geo(40., 12., 0., 0.)];
+        let projected = [Coor4D::raw(170800.011728740647, 557172.361112929415, 0., 0.)];
 
         let mut operands = geo.clone();
         ctx.apply(op, Fwd, &mut operands)?;
@@ -304,8 +304,8 @@ mod tests {
 
         // Validation value from PROJ:
         // echo 12 40 0 0 | cct -d12 proj=lcc lat_1=33 lat_2=45 lat_0=35 lon_0=10 -- | clip
-        let geo = [Coord::geo(40., 12., 0., 0.)];
-        let projected = [Coord::raw(169863.026093938359, 554155.440793916583, 0., 0.)];
+        let geo = [Coor4D::geo(40., 12., 0., 0.)];
+        let projected = [Coor4D::raw(169863.026093938359, 554155.440793916583, 0., 0.)];
 
         let mut operands = geo.clone();
         ctx.apply(op, Fwd, &mut operands)?;
@@ -328,8 +328,8 @@ mod tests {
 
         // Validation value from PROJ:
         // echo 12 40 0 0 | cct -d12 proj=lcc lat_1=33 lat_2=45 lat_0=35 lon_0=10  x_0=12345 y_0=67890 -- | clip
-        let geo = [Coord::geo(40., 12., 0., 0.)];
-        let projected = [Coord::raw(182208.026093938301, 622045.440793916583, 0., 0.)];
+        let geo = [Coor4D::geo(40., 12., 0., 0.)];
+        let projected = [Coor4D::raw(182208.026093938301, 622045.440793916583, 0., 0.)];
 
         let mut operands = geo.clone();
         ctx.apply(op, Fwd, &mut operands)?;
@@ -352,8 +352,8 @@ mod tests {
 
         // Validation value from PROJ:
         // echo 12 40 0 0 | cct -d12 proj=lcc lat_1=33 lat_2=45 lat_0=35 lon_0=10  x_0=12345 y_0=67890 k_0=0.99 -- | clip
-        let geo = [Coord::geo(40., 12., 0., 0.)];
-        let projected = [Coord::raw(180509.395832998911, 616503.886385977501, 0., 0.)];
+        let geo = [Coor4D::geo(40., 12., 0., 0.)];
+        let projected = [Coor4D::raw(180509.395832998911, 616503.886385977501, 0., 0.)];
 
         let mut operands = geo.clone();
         ctx.apply(op, Fwd, &mut operands)?;

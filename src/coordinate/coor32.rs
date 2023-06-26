@@ -171,8 +171,8 @@ impl Coor32 {
     /// for test authoring
     pub fn default_ellps_dist(&self, other: &Self) -> f64 {
         Ellipsoid::default().distance(
-            &Coord([self[0] as f64, self[1] as f64, 0., 0.]),
-            &Coord([other[0] as f64, other[1] as f64, 0., 0.]),
+            &Coor4D([self[0] as f64, self[1] as f64, 0., 0.]),
+            &Coor4D([other[0] as f64, other[1] as f64, 0., 0.]),
         )
     }
 }

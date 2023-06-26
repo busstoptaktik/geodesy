@@ -169,9 +169,9 @@ mod tests {
         let op = ctx.op("proj proj=utm zone=32")?;
 
         // Test values: geo, utm and roundtrip (another copy of geo)
-        let mut geo = [Coord::geo(55., 12., 0., 0.)];
-        let utm = [Coord::raw(691875.63214, 6098907.82501, 0., 0.)];
-        let rtp = [Coord::geo(55., 12., 0., 0.)];
+        let mut geo = [Coor4D::geo(55., 12., 0., 0.)];
+        let utm = [Coor4D::raw(691875.63214, 6098907.82501, 0., 0.)];
+        let rtp = [Coor4D::geo(55., 12., 0., 0.)];
 
         ctx.apply(op, Fwd, &mut geo)?;
         assert!(geo[0].hypot2(&utm[0]) < 1e-5);
@@ -183,9 +183,9 @@ mod tests {
         let op = ctx.op("proj inv proj=utm zone=32")?;
 
         // Test values: utm and geo swaps roles here
-        let geo = [Coord::geo(55., 12., 0., 0.)];
-        let mut utm = [Coord::raw(691875.63214, 6098907.82501, 0., 0.)];
-        let rtp = [Coord::raw(691875.63214, 6098907.82501, 0., 0.)];
+        let geo = [Coor4D::geo(55., 12., 0., 0.)];
+        let mut utm = [Coor4D::raw(691875.63214, 6098907.82501, 0., 0.)];
+        let rtp = [Coor4D::raw(691875.63214, 6098907.82501, 0., 0.)];
 
         // Now, we get the inverse utm projection when calling the operator in the Fwd direction
         ctx.apply(op, Fwd, &mut utm)?;

@@ -104,7 +104,7 @@ fn main() -> Result<(), anyhow::Error> {
         for e in args {
             b.push(parse_sexagesimal(e));
         }
-        let coord = Coord::raw(b[0], b[1], b[2], b[3]);
+        let coord = Coor4D::raw(b[0], b[1], b[2], b[3]);
         let mut data = [coord];
 
         // Transformation - this is the actual geodetic content
@@ -152,16 +152,16 @@ fn main() -> Result<(), anyhow::Error> {
 }
 
 /// Distance between input and output after a forward-inverse roundtrip
-fn roundtrip_distance(op: &str, dim: usize, mut input: Coord, mut result: Coord) -> f64 {
+fn roundtrip_distance(op: &str, dim: usize, mut input: Coor4D, mut result: Coor4D) -> f64 {
     // Try to figure out what kind of coordinates we're working with
     if op.starts_with("geo") {
         // Latitude, longitude...
-        input = Coord::geo(input[0], input[1], input[2], input[3]);
-        result = Coord::geo(result[0], result[1], result[2], result[3]);
+        input = Coor4D::geo(input[0], input[1], input[2], input[3]);
+        result = Coor4D::geo(result[0], result[1], result[2], result[3]);
     } else if op.starts_with("gis") {
         // Longitude, latitude...
-        input = Coord::gis(input[0], input[1], input[2], input[3]);
-        result = Coord::gis(result[0], result[1], result[2], result[3]);
+        input = Coor4D::gis(input[0], input[1], input[2], input[3]);
+        result = Coor4D::gis(result[0], result[1], result[2], result[3]);
     } else if dim < 3 {
         // 2D linear
         return input.hypot2(&result);

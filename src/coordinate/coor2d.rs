@@ -169,20 +169,20 @@ impl Coor2D {
     /// for test authoring
     pub fn default_ellps_dist(&self, other: &Self) -> f64 {
         Ellipsoid::default().distance(
-            &Coord([self[0], self[1], 0., 0.]),
-            &Coord([other[0], other[1], 0., 0.]),
+            &Coor4D([self[0], self[1], 0., 0.]),
+            &Coor4D([other[0], other[1], 0., 0.]),
         )
     }
 }
 
-impl From<Coor2D> for Coord {
+impl From<Coor2D> for Coor4D {
     fn from(c: Coor2D) -> Self {
-        Coord([c[0], c[1], 0.0, 0.0])
+        Coor4D([c[0], c[1], 0.0, 0.0])
     }
 }
 
-impl From<Coord> for Coor2D {
-    fn from(xyzt: Coord) -> Self {
+impl From<Coor4D> for Coor2D {
+    fn from(xyzt: Coor4D) -> Self {
         Coor2D([xyzt[0], xyzt[1]])
     }
 }

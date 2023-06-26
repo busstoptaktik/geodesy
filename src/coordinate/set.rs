@@ -44,38 +44,38 @@ where
 }
 
 // ----- CoordinateSet implementations for plain Coord containers ------------
-impl<const N: usize> CoordinateSet for [Coord; N] {
+impl<const N: usize> CoordinateSet for [Coor4D; N] {
     fn len(&self) -> usize {
         N
     }
-    fn get_coord(&self, index: usize) -> Coord {
+    fn get_coord(&self, index: usize) -> Coor4D {
         self[index]
     }
-    fn set_coord(&mut self, index: usize, value: &Coord) {
+    fn set_coord(&mut self, index: usize, value: &Coor4D) {
         self[index] = *value;
     }
 }
 
-impl CoordinateSet for &mut [Coord] {
+impl CoordinateSet for &mut [Coor4D] {
     fn len(&self) -> usize {
         (**self).len()
     }
-    fn get_coord(&self, index: usize) -> Coord {
+    fn get_coord(&self, index: usize) -> Coor4D {
         self[index]
     }
-    fn set_coord(&mut self, index: usize, value: &Coord) {
+    fn set_coord(&mut self, index: usize, value: &Coor4D) {
         self[index] = *value;
     }
 }
 
-impl CoordinateSet for Vec<Coord> {
+impl CoordinateSet for Vec<Coor4D> {
     fn len(&self) -> usize {
         self.len()
     }
-    fn get_coord(&self, index: usize) -> Coord {
+    fn get_coord(&self, index: usize) -> Coor4D {
         self[index]
     }
-    fn set_coord(&mut self, index: usize, value: &Coord) {
+    fn set_coord(&mut self, index: usize, value: &Coor4D) {
         self[index] = *value;
     }
 }
@@ -86,10 +86,10 @@ impl<const N: usize> CoordinateSet for [Coor2D; N] {
     fn len(&self) -> usize {
         N
     }
-    fn get_coord(&self, index: usize) -> Coord {
-        Coord([self[index][0], self[index][1], 0., f64::NAN])
+    fn get_coord(&self, index: usize) -> Coor4D {
+        Coor4D([self[index][0], self[index][1], 0., f64::NAN])
     }
-    fn set_coord(&mut self, index: usize, value: &Coord) {
+    fn set_coord(&mut self, index: usize, value: &Coor4D) {
         self[index] = Coor2D([value[0], value[1]]);
     }
 }
@@ -98,10 +98,10 @@ impl CoordinateSet for Vec<Coor2D> {
     fn len(&self) -> usize {
         self.len()
     }
-    fn get_coord(&self, index: usize) -> Coord {
-        Coord([self[index][0], self[index][1], 0., f64::NAN])
+    fn get_coord(&self, index: usize) -> Coor4D {
+        Coor4D([self[index][0], self[index][1], 0., f64::NAN])
     }
-    fn set_coord(&mut self, index: usize, value: &Coord) {
+    fn set_coord(&mut self, index: usize, value: &Coor4D) {
         self[index] = Coor2D([value[0], value[1]]);
     }
 }

@@ -13,7 +13,7 @@ impl Ellipsoid {
     #[must_use]
     #[allow(non_snake_case)] // make it possible to mimic math notation from original paper
     #[allow(clippy::many_single_char_names)] // ditto
-    pub fn cartesian(&self, geographic: &Coord) -> Coord {
+    pub fn cartesian(&self, geographic: &Coor4D) -> Coor4D {
         let lam = geographic[0];
         let phi = geographic[1];
         let h = geographic[2];
@@ -29,7 +29,7 @@ impl Ellipsoid {
         let Y = (N + h) * cosphi * sinlam;
         let Z = (N * (1.0 - self.eccentricity_squared()) + h) * sinphi;
 
-        Coord::raw(X, Y, Z, t)
+        Coor4D::raw(X, Y, Z, t)
     }
 
     /// Cartesian to geogaphic conversion.
@@ -40,7 +40,7 @@ impl Ellipsoid {
     #[must_use]
     #[allow(non_snake_case)] // make it possible to mimic math notation from original paper
     #[allow(clippy::many_single_char_names)] // ditto
-    pub fn geographic(&self, cartesian: &Coord) -> Coord {
+    pub fn geographic(&self, cartesian: &Coor4D) -> Coor4D {
         let X = cartesian[0];
         let Y = cartesian[1];
         let Z = cartesian[2];
@@ -64,7 +64,7 @@ impl Ellipsoid {
             let phi = FRAC_PI_2.copysign(Z);
             // We have forced phi to one of the poles, so the height is |Z| - b
             let h = Z.abs() - self.semiminor_axis();
-            return Coord::raw(lam, phi, h, t);
+            return Coor4D::raw(lam, phi, h, t);
         }
 
         // HM eq. (5-36) and (5-37), with some added numerical efficiency due to
@@ -100,7 +100,7 @@ impl Ellipsoid {
         // as more accurate than the commonly used h = p / cosphi - N;
         let h = p * cosphi + Z * sinphi - self.a * self.a / N;
 
-        Coord::raw(lam, phi, h, t)
+        Coor4D::raw(lam, phi, h, t)
     }
 }
 
@@ -114,7 +114,7 @@ mod tests {
     fn geo_to_cart() -> Result<(), Error> {
         let ellps = Ellipsoid::named("GRS80")?;
         // Roundtrip geographic <-> cartesian
-        let geo = Coord::geo(55., 12., 100., 0.);
+        let geo = Coor4D::geo(55., 12., 100., 0.);
         let cart = ellps.cartesian(&geo);
         let geo2 = ellps.geographic(&cart);
         assert!((geo[0] - geo2[0]).abs() < 1.0e-12);
