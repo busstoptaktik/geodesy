@@ -2,7 +2,7 @@ use super::*;
 use crate::math::angular;
 use std::ops::{Add, Div, Index, IndexMut, Mul, Sub};
 
-/// Generic 4D coordinate tuple, with no fixed interpretation of the elements
+/// Generic 3D coordinate tuple, with no fixed interpretation of the elements
 #[derive(Debug, Default, PartialEq, Copy, Clone)]
 pub struct Coor3D(pub [f64; 3]);
 
@@ -160,13 +160,13 @@ impl Coor3D {
         Coor3D::geo(latitude, longitude, height)
     }
 
-    /// A `Coor3D` consisting of 4 `NaN`s
+    /// A `Coor3D` consisting of 3 `NaN`s
     #[must_use]
     pub fn nan() -> Coor3D {
         Coor3D([f64::NAN, f64::NAN, f64::NAN])
     }
 
-    /// A `Coor3D` consisting of 4 `0`s
+    /// A `Coor3D` consisting of 3 `0`s
     #[must_use]
     pub fn origin() -> Coor3D {
         Coor3D([0., 0., 0.])
