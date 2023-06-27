@@ -33,6 +33,7 @@ pub mod prelude {
 
     pub use crate::coordinate::coor2d::Coor2D;
     pub use crate::coordinate::coor32::Coor32;
+    pub use crate::coordinate::coor3d::Coor3D;
     pub use crate::coordinate::coor4d::Coor4D;
     pub use crate::coordinate::AngularUnits;
     pub use crate::coordinate::CoordinateMetadata;

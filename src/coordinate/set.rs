@@ -80,6 +80,43 @@ impl CoordinateSet for Vec<Coor4D> {
     }
 }
 
+// ----- CoordinateSet implementations for some Coor3D containers ------------
+impl<const N: usize> CoordinateSet for [Coor3D; N] {
+    fn len(&self) -> usize {
+        N
+    }
+    fn get_coord(&self, index: usize) -> Coor4D {
+        Coor4D([self[index][0], self[index][1], self[index][2], f64::NAN])
+    }
+    fn set_coord(&mut self, index: usize, value: &Coor4D) {
+        self[index] = Coor3D([value[0], value[1], value[2]]);
+    }
+}
+
+impl CoordinateSet for &mut [Coor3D] {
+    fn len(&self) -> usize {
+        (**self).len()
+    }
+    fn get_coord(&self, index: usize) -> Coor4D {
+        Coor4D([self[index][0], self[index][1], self[index][2], f64::NAN])
+    }
+    fn set_coord(&mut self, index: usize, value: &Coor4D) {
+        self[index] = Coor3D([value[0], value[1], value[2]]);
+    }
+}
+
+impl CoordinateSet for Vec<Coor3D> {
+    fn len(&self) -> usize {
+        self.len()
+    }
+    fn get_coord(&self, index: usize) -> Coor4D {
+        Coor4D([self[index][0], self[index][1], self[index][2], f64::NAN])
+    }
+    fn set_coord(&mut self, index: usize, value: &Coor4D) {
+        self[index] = Coor3D([value[0], value[1], value[2]]);
+    }
+}
+
 // ----- CoordinateSet implementations for some Coor2D containers ------------
 
 impl<const N: usize> CoordinateSet for [Coor2D; N] {

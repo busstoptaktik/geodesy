@@ -1,6 +1,7 @@
 use crate::prelude::*;
 pub mod coor2d;
 pub mod coor32;
+pub mod coor3d;
 pub mod coor4d;
 pub mod set;
 
