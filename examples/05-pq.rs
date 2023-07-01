@@ -71,8 +71,8 @@ fn main() -> Result<(), anyhow::Error> {
     let pip = "cart ellps=intl | helmert x=-87 y=-96 z=-120 | cart inv ellps=GRS80 | geo:out";
     let pip = ctx.op(pip)?;
 
-    let copenhagen = Coord::geo(55., 12., 0., 0.);
-    let stockholm = Coord::geo(59., 18., 0., 0.);
+    let copenhagen = Coor4D::geo(55., 12., 0., 0.);
+    let stockholm = Coor4D::geo(59., 18., 0., 0.);
     let mut data = [copenhagen, stockholm];
     for coord in data {
         println!("    {:?}", coord.to_geo());

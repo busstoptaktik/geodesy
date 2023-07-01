@@ -46,8 +46,8 @@ fn main() -> Result<(), Error> {
     // surface of the ellipsoid. Let's compute the distance and
     // azimuth between the approximate locations of the airports
     // of Copenhagen (CPH) and Paris (CDG).
-    let CPH = Coord::geo(55., 12., 0., 0.);
-    let CDG = Coord::geo(49., 2., 0., 0.);
+    let CPH = Coor4D::geo(55., 12., 0., 0.);
+    let CDG = Coor4D::geo(49., 2., 0., 0.);
 
     // By historical convention the "from A to B" situation is considered
     // the inverse sense of the geodesic problem - hence `geodesic_inv`:

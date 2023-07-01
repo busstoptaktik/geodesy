@@ -275,7 +275,7 @@ mod tests {
         let op = ctx.op("laea ellps=GRS80 lat_0=52 lon_0=10  x_0=4321000 y_0=3210000")?;
 
         // The test point from IOGP
-        let p = Coord::geo(50.0, 5.0, 0.0, 0.0);
+        let p = Coor4D::geo(50.0, 5.0, 0.0, 0.0);
         let mut operands = [p];
 
         // Forward
@@ -286,7 +286,7 @@ mod tests {
         assert!((operands[0][0].to_degrees() - 5.0).abs() < 1e-12);
         assert!((operands[0][1].to_degrees() - 50.).abs() < 1e-12);
 
-        let p = Coord::raw(1e30, 1e30, 0.0, 0.0);
+        let p = Coor4D::raw(1e30, 1e30, 0.0, 0.0);
         let mut operands = [p];
         ctx.apply(op, Inv, &mut operands)?;
         assert!(operands[0][0].is_nan());

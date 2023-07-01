@@ -80,7 +80,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, data: &mut dyn CoordinateSet) -> usize {
     let mult = op.params.series("mult").unwrap_or(&MULT_DEFAULT);
     for i in 0..n {
         let mut coord = data.get_coord(i);
-        coord = Coord([
+        coord = Coor4D([
             coord[post[0]] * mult[0],
             coord[post[1]] * mult[1],
             coord[post[2]] * mult[2],
@@ -112,7 +112,7 @@ fn inv(op: &Op, _ctx: &dyn Context, data: &mut dyn CoordinateSet) -> usize {
 
     for i in 0..n {
         let coord = data.get_coord(i);
-        let mut c = Coord::default();
+        let mut c = Coor4D::default();
         for j in 0..4_usize {
             c[post[j]] = coord[j] * mult[post[j]];
         }
@@ -330,7 +330,10 @@ mod tests {
         let mut ctx = Minimal::default();
         let gonify = ctx.op("adapt from = neuf_deg   to = enuf_gon")?;
 
-        let mut data = [Coord::raw(90., 180., 0., 0.), Coord::raw(45., 90., 0., 0.)];
+        let mut data = [
+            Coor4D::raw(90., 180., 0., 0.),
+            Coor4D::raw(45., 90., 0., 0.),
+        ];
 
         assert_eq!(ctx.apply(gonify, Fwd, &mut data)?, 2);
         assert!((data[0][0] - 200.0).abs() < 1e-10);
@@ -358,8 +361,8 @@ mod tests {
         let degify = ctx.op("adapt inv from = neuf_deg   to = enuf_gon")?;
 
         let mut data = [
-            Coord::raw(200., 100., 0., 0.),
-            Coord::raw(100., 50., 0., 0.),
+            Coor4D::raw(200., 100., 0., 0.),
+            Coor4D::raw(100., 50., 0., 0.),
         ];
 
         assert_eq!(ctx.apply(degify, Fwd, &mut data)?, 2);

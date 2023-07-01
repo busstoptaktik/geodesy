@@ -12,7 +12,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let mut successes = 0_usize;
     for i in sliced {
         let args = operands.get_coord(i);
-        let origin = Coord::geo(args[0], args[1], 0.0, 0.0);
+        let origin = Coor4D::geo(args[0], args[1], 0.0, 0.0);
         let azimuth = args[2].to_radians();
         let distance = args[3];
 
@@ -20,11 +20,11 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
 
         // No convergence?
         if destination[3] > 990.0 {
-            operands.set_coord(i, &Coord::nan());
+            operands.set_coord(i, &Coor4D::nan());
             continue;
         }
 
-        let result = Coord([destination[1], destination[0], args[0], args[1]]);
+        let result = Coor4D([destination[1], destination[0], args[0], args[1]]);
         operands.set_coord(i, &result);
         successes += 1;
     }
@@ -43,8 +43,8 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
 
     let mut successes = 0_usize;
     for i in sliced {
-        let mut from = Coord::origin();
-        let mut to = Coord::origin();
+        let mut from = Coor4D::origin();
+        let mut to = Coor4D::origin();
 
         let coord = operands.get_coord(i);
         from[0] = coord[1].to_radians();
@@ -56,7 +56,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
 
         // No convergence?
         if geodesic[3] > 990.0 {
-            operands.set_coord(i, &Coord::nan());
+            operands.set_coord(i, &Coor4D::nan());
             continue;
         }
         geodesic[3] = (geodesic[1] + 180.0) % 360.0;
@@ -65,7 +65,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         let return_azi = geodesic[3];
 
         if reversible {
-            operands.set_coord(i, &Coord::raw(coord[2], coord[3], return_azi, distance));
+            operands.set_coord(i, &Coor4D::raw(coord[2], coord[3], return_azi, distance));
             continue;
         }
 
@@ -102,14 +102,14 @@ mod tests {
         let mut ctx = Minimal::default();
 
         // Approximate coordinates of Copenhagen and Paris airports
-        let cph_cdg = Coord::raw(55., 12., 49., 2.);
+        let cph_cdg = Coor4D::raw(55., 12., 49., 2.);
 
         // A geodesic from Copenhagen to Paris
         let op = ctx.op("geodesic")?;
         let mut operands = [cph_cdg];
         ctx.apply(op, Inv, &mut operands)?;
 
-        let expected = Coord([
+        let expected = Coor4D([
             -130.1540604203936,
             -138.05257941840648,
             956066.2319619625,
@@ -126,7 +126,7 @@ mod tests {
         let mut operands = [cph_cdg];
         ctx.apply(op, Inv, &mut operands)?;
 
-        let expected = Coord([49.0, 2.0, 41.94742058159352, 956066.2319619625]);
+        let expected = Coor4D([49.0, 2.0, 41.94742058159352, 956066.2319619625]);
 
         assert!((operands[0][0] - expected[0]).abs() < 1e-9);
         assert!((operands[0][1] - expected[1]).abs() < 1e-9);

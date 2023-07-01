@@ -36,8 +36,8 @@ fn main() -> anyhow::Result<()> {
     let mut context = Minimal::new();
     let utm33 = context.op("utm zone=33")?;
 
-    let cph = Coord::geo(55., 12., 0., 0.); // Copenhagen
-    let sth = Coord::geo(59., 18., 0., 0.); // Stockholm
+    let cph = Coor4D::geo(55., 12., 0., 0.); // Copenhagen
+    let sth = Coor4D::geo(59., 18., 0., 0.); // Stockholm
     let mut data = [cph, sth];
 
     context.apply(utm33, Fwd, &mut data)?;

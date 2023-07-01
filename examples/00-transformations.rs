@@ -23,23 +23,23 @@ fn main() -> anyhow::Result<()> {
     // in latitude/longitude order, to the GIS convention of longitude/latitude.
 
     // Here using the GIS convention - longitude before latitude
-    let cph = Coord::gis(12., 55., 0., 0.); // Copenhagen
-    let osl = Coord::gis(10., 60., 0., 0.); // Oslo
+    let cph = Coor4D::gis(12., 55., 0., 0.); // Copenhagen
+    let osl = Coor4D::gis(10., 60., 0., 0.); // Oslo
 
     // And here using the geodesy/navigation convention - latitude before longitude
-    let sth = Coord::geo(59., 18., 0., 0.); // Stockholm
-    let hel = Coord::geo(60., 25., 0., 0.); // Helsinki
+    let sth = Coor4D::geo(59., 18., 0., 0.); // Stockholm
+    let hel = Coor4D::geo(60., 25., 0., 0.); // Helsinki
 
     // `gis` and `geo` have a sibling `raw` which generates coordinate tuples
     // from raw numbers, in case your point coordinates are already given in
     // radians.
-    let cph_raw = Coord::raw(12_f64.to_radians(), 55_f64.to_radians(), 0., 0.0);
+    let cph_raw = Coor4D::raw(12_f64.to_radians(), 55_f64.to_radians(), 0., 0.0);
     // But since a coordinate tuple is really just an array of 4 double
     // precision numbers, you may also generate it directly using plain
-    // Rust syntax. Note that Coord, like f64, provides the to_radians
+    // Rust syntax. Note that Coor4D, like f64, provides the to_radians
     // method. So compared to cph_raw above, we can use a slightly more
     // compact notation.
-    let cph_direct = Coord([12., 55., 0., 0.]).to_radians();
+    let cph_direct = Coor4D([12., 55., 0., 0.]).to_radians();
     // The three versions of Copenhagen coordinates should be identical.
     assert_eq!(cph, cph_raw);
     assert_eq!(cph, cph_direct);
@@ -70,8 +70,8 @@ fn main() -> anyhow::Result<()> {
     ctx.apply(utm32, Inv, &mut data)?;
     println!("Roundtrip to geo:");
     // Note the use of `to_geo`, which transforms lon/lat in radians
-    // to lat/lon in degrees. It is defined for Coord as well as for
-    // arrays, vectors and slices of Coord
+    // to lat/lon in degrees. It is defined for Coor4D as well as for
+    // arrays, vectors and slices of Coor4D
     for coord in data.to_geo() {
         println!("    {:?}", coord);
     }
@@ -115,9 +115,9 @@ fn main() -> anyhow::Result<()> {
     ctx.apply(ed50_wgs84, Inv, &mut data)?;
     println!("ed50:");
     for coord in data {
-        // Again, use the `Coord::to_geo` method to get output following the
+        // Again, use the `Coor4D::to_geo` method to get output following the
         // geodesy/navigation convention for angular unit/coordinate order
-        println!("    {:?}", Coord::to_geo(coord));
+        println!("    {:?}", Coor4D::to_geo(coord));
     }
 
     // Finally an example of handling bad syntax:
@@ -165,7 +165,7 @@ fn main() -> anyhow::Result<()> {
     ed50_wgs84.apply(&ctx, &mut data, Inv);
     println!("ed50:");
     for coord in data {
-        println!("    {:?}", Coord::to_geo(coord));
+        println!("    {:?}", Coor4D::to_geo(coord));
     }
 
     // Handling bad syntax:

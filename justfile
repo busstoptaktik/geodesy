@@ -69,6 +69,9 @@ run-all:
     cargo run --example 01-geometric_geodesy
     cargo run --example 02-user_defined_macros
     cargo run --example 03-user_defined_operators
+    cargo run --example 04-rotating_the_earth
+    cargo run --example 05-pq
+    cargo run --example 06-user_defined_coordinate_types_and_containers
 
 # Compact format log for changelog report
 changes:

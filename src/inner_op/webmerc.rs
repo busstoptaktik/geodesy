@@ -89,9 +89,9 @@ mod tests {
 
         // Validation value from PROJ: echo 12 55 0 0 | cct -d18 +proj=webmerc
         // followed by quadrant tests from PROJ builtins.gie
-        let geo = [Coord::geo(55., 12., 0., 0.)];
+        let geo = [Coor4D::geo(55., 12., 0., 0.)];
 
-        let projected = [Coord::raw(
+        let projected = [Coor4D::raw(
             1335833.889519282849505544,
             7361866.113051188178360462,
             0.,

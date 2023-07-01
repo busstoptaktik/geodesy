@@ -29,7 +29,7 @@ pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    const GDA94: Coord = Coord([-4052051.7643, 4212836.2017, -2545106.0245, 0.0]);
+    const GDA94: Coor4D = Coor4D([-4052051.7643, 4212836.2017, -2545106.0245, 0.0]);
 
     #[test]
     fn no_change() -> Result<(), Error> {

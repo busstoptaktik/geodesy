@@ -338,10 +338,10 @@ fn rotation_matrix(r: &[f64], exact: bool, position_vector: bool) -> [[f64; 3]; 
 #[cfg(test)]
 mod tests {
     use super::*;
-    const GDA94: Coord = Coord([-4052051.7643, 4212836.2017, -2545106.0245, 0.0]);
-    const GDA2020A: Coord = Coord([-4052052.7379, 4212835.9897, -2545104.5898, 0.0]);
-    const GDA2020B: Coord = Coord([-4052052.7373, 4212835.9835, -2545104.5867, 2020.0]);
-    const ITRF2014: Coord = Coord([-4052052.6588, 4212835.9938, -2545104.6946, 2018.0]);
+    const GDA94: Coor4D = Coor4D([-4052051.7643, 4212836.2017, -2545106.0245, 0.0]);
+    const GDA2020A: Coor4D = Coor4D([-4052052.7379, 4212835.9897, -2545104.5898, 0.0]);
+    const GDA2020B: Coor4D = Coor4D([-4052052.7373, 4212835.9835, -2545104.5867, 2020.0]);
+    const ITRF2014: Coor4D = Coor4D([-4052052.6588, 4212835.9938, -2545104.6946, 2018.0]);
 
     #[test]
     fn translation() -> Result<(), Error> {
@@ -349,7 +349,7 @@ mod tests {
         let op = ctx.op("helmert x=-87 y=-96 z=-120")?;
 
         // EPSG:1134 - 3 parameter, ED50/WGS84, s = sqrt(27) m
-        let mut operands = [Coord::origin()];
+        let mut operands = [Coor4D::origin()];
 
         ctx.apply(op, Fwd, &mut operands)?;
         assert_eq!(operands[0][0], -87.);

@@ -139,7 +139,7 @@ struct Molodensky {
     abridged: bool,
 }
 
-fn calc_molodensky_params(op: &Molodensky, coord: &Coord) -> Coord {
+fn calc_molodensky_params(op: &Molodensky, coord: &Coor4D) -> Coor4D {
     let lam = coord[0];
     let phi = coord[1];
     let h = coord[2];
@@ -160,13 +160,13 @@ fn calc_molodensky_params(op: &Molodensky, coord: &Coord) -> Coord {
         // delta lambda
         let dlam_denom = N * cphi;
         if dlam_denom == 0.0 {
-            return Coord::nan();
+            return Coor4D::nan();
         }
         let dlam = (op.dy * clam - op.dx * slam) / dlam_denom;
 
         // delta h
         let dh = fac * cphi + (op.dz + op.adffda * sphi) * sphi - op.da;
-        return Coord::raw(dlam, dphi, dh, 0.0);
+        return Coor4D::raw(dlam, dphi, dh, 0.0);
     }
 
     // delta phi
@@ -174,14 +174,14 @@ fn calc_molodensky_params(op: &Molodensky, coord: &Coord) -> Coord {
         + (M / (1.0 - op.f) + N * (1.0 - op.f)) * op.df * sphi * cphi;
     let dphi_denom = M + h;
     if dphi_denom == 0.0 {
-        return Coord::nan();
+        return Coor4D::nan();
     }
     dphi /= dphi_denom;
 
     // delta lambda
     let dlam_denom = (N + h) * cphi;
     if dlam_denom == 0.0 {
-        return Coord::nan();
+        return Coor4D::nan();
     }
     let dlam = (op.dy * clam - op.dx * slam) / dlam_denom;
 
@@ -189,7 +189,7 @@ fn calc_molodensky_params(op: &Molodensky, coord: &Coord) -> Coord {
     let dh =
         fac * cphi + op.dz * sphi - (op.a / N) * op.da + N * (1.0 - op.f) * op.df * sphi * sphi;
 
-    Coord::raw(dlam, dphi, dh, 0.)
+    Coor4D::raw(dlam, dphi, dh, 0.)
 }
 
 // ----- T E S T S ---------------------------------------------------------------------
@@ -216,7 +216,7 @@ mod tests {
         // Test point (53.80939444444444, 2.12955, 73 m)
         let lat = angular::dms_to_dd(53, 48, 33.82);
         let lon = angular::dms_to_dd(2, 7, 46.38);
-        let WGS84 = Coord::geo(lat, lon, 73., 0.0);
+        let WGS84 = Coor4D::geo(lat, lon, 73., 0.0);
 
         // Commented out test coordinates from EPSG are not of terribly high
         // resolution: 3 decimals on the seconds, corresponding to 30 mm.
@@ -228,7 +228,7 @@ mod tests {
         //        "geo:in | cart WGS84 | helmert  x=84.87 y=96.49 z=116.95 | cart inv ellps=intl | geo:out"
         let lat = 53.8101570592;
         let lon = 2.1309658097;
-        let ED50 = Coord::geo(lat, lon, 28.02470, 0.0);
+        let ED50 = Coor4D::geo(lat, lon, 28.02470, 0.0);
 
         // In the unabridged case, Molodensky replicates Helmert to
         // within 5 mm in the plane and the elevation.

@@ -16,7 +16,10 @@ pub use crate::context::Context;
 #[cfg(with_plain)]
 pub use crate::context::plain::Plain;
 
-pub use crate::coordinate::coord::Coord;
+pub use crate::coordinate::coor2d::Coor2D;
+pub use crate::coordinate::coor32::Coor32;
+pub use crate::coordinate::coor3d::Coor3D;
+pub use crate::coordinate::coor4d::Coor4D;
 pub use crate::coordinate::CoordinateMetadata;
 pub use crate::coordinate::CoordinateSet;
 pub use crate::ellipsoid::Ellipsoid;
@@ -33,9 +36,9 @@ pub mod prelude {
 
     pub use crate::coordinate::coor2d::Coor2D;
     pub use crate::coordinate::coor32::Coor32;
-    pub use crate::coordinate::coord::Coord;
+    pub use crate::coordinate::coor3d::Coor3D;
+    pub use crate::coordinate::coor4d::Coor4D;
     pub use crate::coordinate::AngularUnits;
-    pub use crate::coordinate::Coordinate;
     pub use crate::coordinate::CoordinateMetadata;
     pub use crate::coordinate::CoordinateSet;
     pub use crate::ellipsoid::Ellipsoid;
@@ -46,9 +49,9 @@ pub mod prelude {
     pub use crate::Direction::Inv;
     pub use crate::Error;
     #[cfg(test)]
-    pub fn some_basic_coordinates() -> [Coord; 2] {
-        let copenhagen = Coord::raw(55., 12., 0., 0.);
-        let stockholm = Coord::raw(59., 18., 0., 0.);
+    pub fn some_basic_coordinates() -> [Coor4D; 2] {
+        let copenhagen = Coor4D::raw(55., 12., 0., 0.);
+        let stockholm = Coor4D::raw(59., 18., 0., 0.);
         [copenhagen, stockholm]
     }
 }

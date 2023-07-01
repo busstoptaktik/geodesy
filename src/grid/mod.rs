@@ -73,7 +73,7 @@ impl Grid {
 
     /// Determine whether a given coordinate falls within the grid borders.
     /// "On the border" qualifies as within.
-    pub fn contains(&self, position: Coord) -> bool {
+    pub fn contains(&self, position: Coor4D) -> bool {
         // We start by assuming that the last row (latitude) is the southernmost
         let mut min = self.lat_1;
         let mut max = self.lat_0;
@@ -110,7 +110,7 @@ impl Grid {
     // It is, however, one of the cases where a more extensive use of abstractions
     // leads to a significantly larger code base, much harder to maintain and
     // comprehend.
-    pub fn interpolation(&self, coord: &Coord, grid: Option<&[f32]>) -> Coord {
+    pub fn interpolation(&self, coord: &Coor4D, grid: Option<&[f32]>) -> Coor4D {
         let grid = grid.unwrap_or(&self.grid);
 
         // The interpolation coordinate relative to the grid origin
@@ -141,16 +141,16 @@ impl Grid {
         let rlat = (coord[1] - (self.lat_0 + row as f64 * self.dlat)) / self.dlat.abs();
 
         // Interpolate
-        let mut left = Coord::origin();
+        let mut left = Coor4D::origin();
         for i in 0..self.bands {
             left[i] = (1. - rlat) * grid[ll + i] as f64 + rlat * grid[ul + i] as f64;
         }
-        let mut right = Coord::origin();
+        let mut right = Coor4D::origin();
         for i in 0..self.bands {
             right[i] = (1. - rlat) * grid[lr + i] as f64 + rlat * grid[ur + i] as f64;
         }
 
-        let mut result = Coord::origin();
+        let mut result = Coor4D::origin();
         for i in 0..self.bands {
             result[i] = (1. - rlon) * left[i] + rlon * right[i];
         }
@@ -291,7 +291,7 @@ mod tests {
         normalize_gravsoft_grid_values(&mut geoid_header, &mut geoid_grid);
         let geoid = Grid::plain(&geoid_header, Some(&geoid_grid), None)?;
 
-        let c = Coord::geo(58.75, 08.25, 0., 0.);
+        let c = Coor4D::geo(58.75, 08.25, 0., 0.);
         assert_eq!(geoid.contains(c), false);
 
         let n = geoid.interpolation(&c, None);
@@ -301,7 +301,7 @@ mod tests {
         assert!(c.default_ellps_dist(&d.to_arcsec().to_radians()) < 1.0);
 
         // Extrapolation
-        let c = Coord::geo(100., 50., 0., 0.);
+        let c = Coor4D::geo(100., 50., 0., 0.);
         // ...with output converted back to arcsec
         let d = datum.interpolation(&c, None).to_arcsec();
 
@@ -314,7 +314,7 @@ mod tests {
         assert!((50.0 - d[0]).hypot(100.0 - d[1]) < 1e-4);
 
         // Interpolation
-        let c = Coord::geo(55.06, 12.03, 0., 0.);
+        let c = Coor4D::geo(55.06, 12.03, 0., 0.);
         // Check that we're not extrapolating
         assert_eq!(datum.contains(c), true);
         // ...with output converted back to arcsec

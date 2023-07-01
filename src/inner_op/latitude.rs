@@ -186,7 +186,7 @@ mod tests {
 
         // Geocentric
         let op = ctx.op("latitude geocentric ellps=GRS80")?;
-        let mut operands = [Coord::geo(55., 12., 0., 0.)];
+        let mut operands = [Coor4D::geo(55., 12., 0., 0.)];
         ctx.apply(op, Fwd, &mut operands)?;
         assert!((operands[0][1].to_degrees() - 54.818_973_308_324_5).abs() < 1e-12);
         ctx.apply(op, Inv, &mut operands)?;
@@ -194,7 +194,7 @@ mod tests {
 
         // Reduced (alias parametric)
         let op = ctx.op("latitude reduced ellps=GRS80")?;
-        let mut operands = [Coord::geo(55., 12., 0., 0.)];
+        let mut operands = [Coor4D::geo(55., 12., 0., 0.)];
         ctx.apply(op, Fwd, &mut operands)?;
         assert!((operands[0][1].to_degrees() - 54.909_538_187_092_245).abs() < 1e-12);
         ctx.apply(op, Inv, &mut operands)?;
@@ -202,7 +202,7 @@ mod tests {
 
         // And vice versa: Parametric (alias Reduced)
         let op = ctx.op("latitude parametric ellps=GRS80")?;
-        let mut operands = [Coord::geo(55., 12., 0., 0.)];
+        let mut operands = [Coor4D::geo(55., 12., 0., 0.)];
         ctx.apply(op, Fwd, &mut operands)?;
         assert!((operands[0][1].to_degrees() - 54.909_538_187_092_245).abs() < 1e-12);
         ctx.apply(op, Inv, &mut operands)?;
@@ -210,7 +210,7 @@ mod tests {
 
         // Conformal
         let op = ctx.op("latitude conformal ellps=GRS80")?;
-        let mut operands = [Coord::geo(55., 12., 0., 0.)];
+        let mut operands = [Coor4D::geo(55., 12., 0., 0.)];
         ctx.apply(op, Fwd, &mut operands)?;
         assert!((operands[0][1].to_degrees() - 54.819_109_023_689_023_275).abs() < 1e-12);
         ctx.apply(op, Inv, &mut operands)?;
@@ -218,7 +218,7 @@ mod tests {
 
         // Rectifying
         let op = ctx.op("latitude rectifying ellps=GRS80")?;
-        let mut operands = [Coord::geo(55., 12., 0., 0.)];
+        let mut operands = [Coor4D::geo(55., 12., 0., 0.)];
         ctx.apply(op, Fwd, &mut operands)?;
         assert!((operands[0][1].to_degrees() - 54.772_351_809_646_84).abs() < 1e-12);
         ctx.apply(op, Inv, &mut operands)?;
@@ -226,7 +226,7 @@ mod tests {
 
         // Authalic
         let op = ctx.op("latitude authalic ellps=GRS80")?;
-        let mut operands = [Coord::geo(55., 12., 0., 0.)];
+        let mut operands = [Coor4D::geo(55., 12., 0., 0.)];
         ctx.apply(op, Fwd, &mut operands)?;
         assert!((operands[0][1].to_degrees() - 54.879_361_594_517_796).abs() < 1e-12);
         ctx.apply(op, Inv, &mut operands)?;

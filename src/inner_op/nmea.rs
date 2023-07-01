@@ -29,9 +29,9 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     for i in 0..length {
         let mut o = operands.get_coord(i);
         if dms {
-            o = Coord::nmeass(o[0], o[1], o[2], o[3]);
+            o = Coor4D::nmeass(o[0], o[1], o[2], o[3]);
         } else {
-            o = Coord::nmea(o[0], o[1], o[2], o[3]);
+            o = Coor4D::nmea(o[0], o[1], o[2], o[3]);
         }
         operands.set_coord(i, &o);
         successes += 1;
@@ -51,11 +51,11 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         if dms {
             let longitude = angular::dd_to_nmeass(o[0].to_degrees());
             let latitude = angular::dd_to_nmeass(o[1].to_degrees());
-            o = Coord::raw(latitude, longitude, o[2], o[3]);
+            o = Coor4D::raw(latitude, longitude, o[2], o[3]);
         } else {
             let longitude = angular::dd_to_nmea(o[0].to_degrees());
             let latitude = angular::dd_to_nmea(o[1].to_degrees());
-            o = Coord::raw(latitude, longitude, o[2], o[3]);
+            o = Coor4D::raw(latitude, longitude, o[2], o[3]);
         }
         operands.set_coord(i, &o);
         successes += 1;
@@ -88,7 +88,7 @@ mod tests {
         let mut ctx = Minimal::default();
         let op = ctx.op("nmea")?;
 
-        let mut operands = [Coord::raw(5530.15, -1245.15, 0., 0.)];
+        let mut operands = [Coor4D::raw(5530.15, -1245.15, 0., 0.)];
 
         // Forward: nmea to internal
         ctx.apply(op, Fwd, &mut operands)?;
@@ -111,8 +111,8 @@ mod tests {
         let mut ctx = Minimal::default();
         let op = ctx.op("nmea dms")?;
 
-        let mut operands = [Coord::raw(553036., -124509., 0., 0.)];
-        let geo = Coord::geo(55.51, -12.7525, 0., 0.);
+        let mut operands = [Coor4D::raw(553036., -124509., 0., 0.)];
+        let geo = Coor4D::geo(55.51, -12.7525, 0., 0.);
 
         ctx.apply(op, Fwd, &mut operands)?;
         assert!(operands[0].default_ellps_dist(&geo) < 1e-10);
