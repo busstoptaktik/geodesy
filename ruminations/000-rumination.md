@@ -9,10 +9,10 @@ Thomas Knudsen <knudsen.thomas@gmail.com>
 ### Abstract
 
 ```rust
-let utm32 = ctx.op("utm zone=32").unwrap();
-ctx.apply(utm32, Fwd, &mut data);
+let utm32 = ctx.op("utm zone=32")?;
+ctx.apply(utm32, Fwd, &mut data)?;
 println!("{:?}", data);
-ctx.apply(utm32, Inv, &mut data);
+ctx.apply(utm32, Inv, &mut data)?;
 println!("{:?}", data);
 ```
 
