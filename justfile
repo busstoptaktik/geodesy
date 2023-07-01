@@ -72,6 +72,8 @@ run-all:
     cargo run --example 04-rotating_the_earth
     cargo run --example 05-pq
     cargo run --example 06-user_defined_coordinate_types_and_containers
+    cargo run --example 07-examples_from_ruminations
+
 
 # Compact format log for changelog report
 changes:

@@ -11,9 +11,9 @@ Thomas Knudsen <knudsen.thomas@gmail.com>
 ```rust
 let utm32 = ctx.op("utm zone=32").unwrap();
 ctx.apply(utm32, Fwd, &mut data);
-println!({:?}, data);
+println!("{:?}", data);
 ctx.apply(utm32, Inv, &mut data);
-println!({:?}, data);
+println!("{:?}", data);
 ```
 
 ---
@@ -53,7 +53,7 @@ or in fewer words: *Don't overdo it*.
 Talking architecture and design philosophy out of thin air is at best counterproductive, so let's start with a brief example, demonstrating the RG idiom for converting geographical coordinates to UTM zone 32 coordinates (for the corresponding operation using the RG coordinate processing command line program `kp`, see [Rumination 003](/ruminations/003-rumination.md)).
 
 ```rust
-fn main() {
+fn main() -> Result<(), anyhow::Error> {
     // [0] Conventional shorthand for accessing the major functionality
     use geodesy::prelude::*;
 
@@ -61,26 +61,29 @@ fn main() {
     let mut ctx = Minimal::default();
 
     // [2] Obtain a handle to the utm-operator
-    let utm32 = ctx.op("utm zone=32").unwrap();
+    let utm32 = ctx.op("utm zone=32")?;
 
     // [3] Coordinates of some Scandinavian capitals
-    let copenhagen = Coord::geo(55., 12., 0., 0.);
-    let stockholm  = Coord::geo(59., 18., 0., 0.);
+    let copenhagen = Coor2D::geo(55., 12.);
+    let stockholm  = Coor2D::geo(59., 18.);
 
     // [4] Put the coordinates into an array
     let mut data = [copenhagen, stockholm];
 
     // [5] Then do the forward conversion, i.e. geo -> utm
-    ctx.apply(utm32, Fwd, &mut data);
+    ctx.apply(utm32, Fwd, &mut data)?;
     for coord in data {
-        println!({:?}, coord);
+        println!("{:?}", coord);
     }
 
     // [6] And go back, i.e. utm -> geo
-    ctx.apply(utm32, Inv, &mut data);
+    ctx.apply(utm32, Inv, &mut data)?;
+    data.to_geo();
     for coord in data {
-        println!({:?}, Coord::to_geo(coord));
+        println!("{:?}", coord);
     }
+
+    Ok(())
 }
 ```
 
@@ -107,7 +110,7 @@ So forget about discussions on whether transformation definitions should be read
 
 ```rust
 // [2] Obtain a handle to the utm-operator
-let utm32 = ctx.op("utm zone=32").unwrap();
+let utm32 = ctx.op("utm zone=32")?;
 ```
 
 At comment `[2]`, we use the `op`(eration) method of the `Context` to instantiate an `Op`erator (closely corresponding to the `PJ` object in PROJ).
@@ -129,10 +132,10 @@ This makes `Operator`s thread-sharable, so the `Context` will eventually (althou
 
 ```rust
 // [3] Coordinates of some Scandinavian capitals
-let copenhagen = Coord::geo(55., 12., 0., 0.);
-let stockholm  = Coord::geo(59., 18., 0., 0.);
+let copenhagen = Coor2D::geo(55., 12.);
+let stockholm  = Coor2D::geo(59., 18.);
 
-// [4] We put the coordinates into an array
+// [4] Put the coordinates into an array
 let mut data = [copenhagen, stockholm];
 ```
 
@@ -140,24 +143,28 @@ At comments `[3]` and `[4]` we produce the input data we want to transform. The 
 
 A `CoordinateSet` is a collection of `CoordinateTuples` (the ISO-19111 lingo for what's colloquially called "the coordinates of something") referred to the same ISO-19111 `Coordinate reference System (CRS)`.
 
-Natively, RG implements the `CoordinateSet` trait for any array, slice or `Vec` of any of the three built in `CoordinateTuple` implementations: The primary, 4D `Coord`, the 2D `Coor2D`, and the ultra-compact 2D, 32 bits `Coor32`. It can be extended to any other coordinate representation at runtime, by implementing the `CoordinateSet` trait for that representation.
+Natively, RG implements the `CoordinateSet` trait for any array, slice or `Vec` of any of the four built in `CoordinateTuple` implementations: The primary, 4D `Coor4D`, the 3D `Coor3D`, the 2D `Coor2D`, and the ultra-compact 32 bits 2D, `Coor32`. These can be extended with any other coordinate representations at compile time, by implementing the `CoordinateSet` trait for those representations.
 
-Internally, RG represents angular coordinates in radians, and follows the traditional GIS coordinate order of *longitude before latitude*. Externally, however, you may pick-and-choose. In this case, we choose human readable angles in degrees, and the traditional coordinate order used in geodesy and navigation: *latitude before longitude*. The `Coord::geo(...)` function translates that into the internal representation. It has siblings `Coord::gis(...)` and `Coord::raw(...)` which handles GIS coordinate order and raw numbers, respectively. The latter is useful for projected coordinates, cartesian coordinates, and for coordinates with angles in radians. We may also simply give a `Coord` as a naked array of four double precision floating point numbers:
+Internally, RG represents angular coordinates in radians, and follows the traditional GIS coordinate order of *longitude before latitude*. Externally, however, you may pick-and-choose. In this case, we choose human readable angles in degrees, and the traditional coordinate order used in geodesy and navigation: *latitude before longitude*. The `Coor2D::geo(...)` function translates that into the internal representation. It has siblings `Coor2D::gis(...)` and `Coor2D::raw(...)` which handles GIS coordinate order and raw numbers, respectively. The latter is useful for projected coordinates, cartesian coordinates, and for coordinates with angles in radians. We may also simply give a `Coor2D` as a naked array of two double precision floating point numbers:
 
 ```rust
-let somewhere = Coord([1., 42., 3., 4.]);
+let somewhere = Coor2D([1., 2.]);
+let elsewhere = Coor3D([1., 2., 3.]);
+let stoneware = Coor4D([1., 2., 3., 42.]);
 ```
 
-The `Coord` data type does not enforce any special interpretation of what kind of coordinate it stores: That is entirely up to the `Op`erator to interpret. A `Coord` simply consists of 4 numbers with no other implied interpretation than their relative order, given by the names *first, second, third, and fourth*, respectively.
+The coordinate data types do not enforce any special interpretation of what kind of coordinates they represent: That is entirely up to the `Op`erator to interpret. A `Coor4D` simply consists of 4 numbers with no other implied interpretation than their relative order, given by the names *first, second, third, and fourth*, respectively.
 
-RG `Op`erators take *containers of `Coord`* (or of any other `CoordinateTuple` representation) as input, rather than individual elements. So at comment `[4]` we collect the elements into an array.
+RG `Op`erators take *containers of `Coor2D`* (or of any other `CoordinateTuple` representation) as input, rather than individual elements. So at comment `[4]` we collect the elements into an array.
 
 ---
 
 ```rust
 // [5] Then do the forward conversion, i.e. geo -> utm
-ctx.apply(utm32, Fwd, &mut data);
-println!({:?}, data);
+ctx.apply(utm32, Fwd, &mut data)?;
+for coord in data {
+    println!("{:?}", coord);
+}
 ```
 
 At comment `[5]`, we do the actual forward conversion to utm coordinates. Behind the scenes, `ctx.apply(...)` is free to split up the input array into chunks, for parallel processing in a number of threads, although in practice this is not yet actually implemented.
@@ -167,19 +174,22 @@ As the action goes on *in place*, we allow `apply(..)` to mutate the input data,
 The printout will show the projected data in (easting, northing)-coordinate order:
 
 ```rust
-Coord([ 691875.6321403517, 6098907.825001632, 0.0, 0.0])
-Coord([1016066.6135867655, 6574904.395327058, 0.0, 0.0])
+Coor2D([691875.6321396609, 6098907.825005002])
+Coor2D([1016066.6137409525, 6574904.395304946])
 ```
 
 ---
 
 ```rust
 // [6] And go back, i.e. utm -> geo
-ctx.apply(utm32, Inv, &mut data);
-println!({:?}, Coord::to_geo(data));
+ctx.apply(utm32, Inv, &mut data)?;
+data.to_geo();
+for coord in data {
+    println!("{:?}", coord);
+}
 ```
 
-At comment `[6]`, we roundtrip back to geographical coordinates. During print out, we let `Coord::to_geo(...)` convert from the internal coordinate representation, to the geodetic convention of "latitude before longitude, and angles in degrees".
+At comment `[6]`, we roundtrip back to geographical coordinates. Before print out, we let the `data::to_geo()` method convert from the internal coordinate representation, to the geodetic convention of "latitude before longitude, and angles in degrees".
 
 ### Simplified pipeline syntax
 
@@ -241,10 +251,10 @@ ctx.register_op("my_new_operator", MyNewOperator::operator);
 // Instantiate
 let my_new_operator_with_foo_as_42 = ctx.operation(
     "my_new_operator foo=42"
-).unwrap();
+)?;
 
 // ... and use:
-ctx.apply(my_new_operator_with_foo_as_42, Fwd, data);
+ctx.apply(my_new_operator_with_foo_as_42, Fwd, data)?;
 ```
 
 Essentially, once they are registered, macros and user defined operators work exactly like the built-ins.
@@ -305,7 +315,7 @@ Plans for invading the domain of physical geodesy are limited, although the `Ell
 
 #### Coordinate descriptors
 
-Combining the generic `Coord`s with `CoordinateDescriptor`s will make it possible to sanity check pipelines, and automate coordinate order and unit conversions.
+Combining the generic coordinate representations with `CoordinateDescriptor`s will make it possible to sanity check pipelines, and automate coordinate order and unit conversions.
 
 #### Logging
 
@@ -316,7 +326,7 @@ The Rust ecosystem includes excellent logging facilities, utilized, but still un
 From the detailed walkthrough of the example above, we can summarize "the philosophy of RG" as:
 
 - **Be flexible:** User defined macros and operators are first class citizens in the RG ecosystem - they are treated exactly as the built-ins, and hence, can be used as vehicles for implementation of new built-in functionality. Even the `Context`, i.e. the interface between the RG internals and external resources, can be swapped out with a user supplied/application specific one.
-- **Don't overspecify:** For example, the `Coord` object is just an ordered set of four numbers, with no specific interpretation implied. It works as a shuttle, ferrying the operand between the steps of a pipeline of `Op`erators: The meaning of the operand is entirely up to the `Op`erator.
+- **Don't overspecify:** For example, the `Coor4D` object is just an ordered set of four numbers, with no specific interpretation implied. It works as a shuttle, ferrying the operand between the steps of a pipeline of `Op`erators: The meaning of the operand is entirely up to the `Op`erator.
 - **Transformations are important. Systems not so much:** RG does not anywhere refer explicitly to input or output system names. Although it can be used to construct transformations between specific reference frames (as in the "ED50 to WGS84" case, in the *user defined macro* example), it doesn't really attribute any meaning to these internally.
 - **Coordinates and data flow pathways are four dimensional:** From end to end, data runs through RG along 4D pathways. Since all geodata capture today is either directly or indirectly based on GNSS, the coordinates are inherently four dimensional. And while much application software ignores this fact, embracing it is the only way to obtain even decimeter accuracy over time scales of just a few years. Contemporary coordinate handling software should never ignore this.
 - **Draw inspiration from good role models, but not zealously:** PROJ and the ISO-19100 series of geospatial standards are important models for the design of RG, but on the other hand, RG is also built to address and investigate some perceived shortcomings in the role models.
@@ -342,18 +352,6 @@ Thomas Knudsen, Kristian Evers, Geir Arne Hjelle, Guðmundur Valsson, Martin Lid
 #### **Note:** ellps implied
 
 In both cases, the use of the GRS80 ellipsoid is implied, but may be expressly stated as  `utm zone=32 ellps=GRS80}` resp. `proj=utm zone=32 ellps=GRS80`
-
-#### **Note:** Idiomatic Rust
-
-In production, we would check the return of `ctx.op(...)`, rather than just `unwrap()`ping:
-
-```rust
-if let Some(utm32) = ctx.op("utm: {zone: 32}") {
-    let copenhagen = C::geo(55., 12., 0., 0.);
-    let stockholm = C::geo(59., 18., 0., 0.);
-    ...
-}
-```
 
 In C, using PROJ, the demo program would resemble this (untested) snippet:
 
@@ -388,3 +386,4 @@ Major revisions and additions:
 - 2021-08-26: Extended prologue
 - 2022-03-24: Total rewrite
 - 2023-06-06: Describe the `CoordinateSet` trait
+- 2023-07-01: `Coord2D`, `Coord4D` described superficially
