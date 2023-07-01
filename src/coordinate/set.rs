@@ -327,7 +327,7 @@ mod tests {
         // Note the different usage patterns when using the AngularUnits trait with
         // a Coor4D and a CoordinateSet: For the latter, the blanket implementation
         // is for an `&mut T where T: CoordinateSet`, and we just mutate the contents
-        // in situ. For the former, we mutate and return the mutated `Coor4D`.
+        // in situ. For the former, we return a newly computed `Coor4D`.
         operands.to_radians();
         let cph = cph.to_radians();
         assert_eq!(cph[0], operands.get_coord(0)[0]);
