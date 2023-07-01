@@ -119,6 +119,24 @@ impl CoordinateSet for Vec<Coor3D> {
 
 // ----- CoordinateSet implementations for some Coor2D containers ------------
 
+/// By default, the CoordinateSet implementations for Coor2D return `0` and `f64::NAN`
+/// as third and fourth coordinate value in `get_coord()`. In the common use case of
+/// handling 2D geographical or projected coordinates in a static reference frame,
+/// this will usually be what you need:
+///
+/// - The `0` as the third coordinate will make transformations behave as if the points
+/// are placed immediately on the reference ellipsoid, `h==0`
+///
+/// - The `f64::NAN` as the fourth coordinate will spill into the plane coordinate
+/// values if passing these static coordinates through any dynamic transformations,
+/// requiring a proper time coordinate, hence giving a very noisy debugging signal
+///
+/// If other fixed values for third and fourth coordinate are needed, the
+/// `CoordinateSet` trait is also blanket-implemented for the tuple
+/// `(T, f64, f64) where T: CoordinateSet`, so any data structure implementing the
+/// `CoordinateSet` trait can be combined with two fixed values for third and fourth
+/// coordinate dimension.
+
 impl<const N: usize> CoordinateSet for [Coor2D; N] {
     fn len(&self) -> usize {
         N
@@ -152,6 +170,44 @@ impl CoordinateSet for Vec<Coor2D> {
     }
     fn set_coord(&mut self, index: usize, value: &Coor4D) {
         self[index] = Coor2D([value[0], value[1]]);
+    }
+}
+
+/// User defined values for third and fourth coordinate dimension.
+/// Intended as a way to supply a fixed height and epoch to a set
+/// of 2D coordinates
+impl<T> CoordinateSet for (T, f64, f64)
+where
+    T: CoordinateSet,
+{
+    fn len(&self) -> usize {
+        self.0.len()
+    }
+    fn get_coord(&self, index: usize) -> Coor4D {
+        let c = self.0.get_coord(index);
+        Coor4D([c[0], c[1], self.1, self.2])
+    }
+    fn set_coord(&mut self, index: usize, value: &Coor4D) {
+        self.0.set_coord(index, value);
+    }
+}
+
+/// User defined values for fourth coordinate dimension.
+/// Intended as a way to supply a fixed epoch to a set
+/// of 3D coordinates
+impl<T> CoordinateSet for (T, f64)
+where
+    T: CoordinateSet,
+{
+    fn len(&self) -> usize {
+        self.0.len()
+    }
+    fn get_coord(&self, index: usize) -> Coor4D {
+        let c = self.0.get_coord(index);
+        Coor4D([c[0], c[1], c[2], self.1])
+    }
+    fn set_coord(&mut self, index: usize, value: &Coor4D) {
+        self.0.set_coord(index, value);
     }
 }
 
