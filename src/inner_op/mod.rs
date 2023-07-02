@@ -10,6 +10,7 @@ mod addone;
 mod btmerc;
 mod cart;
 mod curvature;
+mod deformation;
 mod geodesic;
 mod gridshift;
 mod helmert;
@@ -27,31 +28,32 @@ mod tmerc;
 mod webmerc;
 
 #[rustfmt::skip]
-const BUILTIN_OPERATORS: [(&str, OpConstructor); 24] = [
-    ("adapt",      OpConstructor(adapt::new)),
-    ("addone",     OpConstructor(addone::new)),
-    ("btmerc",     OpConstructor(btmerc::new)),
-    ("butm",       OpConstructor(btmerc::utm)),
-    ("cart",       OpConstructor(cart::new)),
-    ("curvature",  OpConstructor(curvature::new)),
-    ("geodesic",   OpConstructor(geodesic::new)),
-    ("gridshift",  OpConstructor(gridshift::new)),
-    ("helmert",    OpConstructor(helmert::new)),
-    ("laea",       OpConstructor(laea::new)),
-    ("latitude",   OpConstructor(latitude::new)),
-    ("lcc",        OpConstructor(lcc::new)),
-    ("merc",       OpConstructor(merc::new)),
-    ("webmerc",    OpConstructor(webmerc::new)),
-    ("molodensky", OpConstructor(molodensky::new)),
-    ("nmea",       OpConstructor(nmea::new)),
-    ("noop",       OpConstructor(noop::new)),
-    ("omerc",      OpConstructor(omerc::new)),
-    ("tmerc",      OpConstructor(tmerc::new)),
-    ("utm",        OpConstructor(tmerc::utm)),
-    ("pipeline",   OpConstructor(pipeline::new)),
-    ("pop",        OpConstructor(pipeline::pop)),
-    ("proj",       OpConstructor(proj::new)),
-    ("push",       OpConstructor(pipeline::push)),
+const BUILTIN_OPERATORS: [(&str, OpConstructor); 25] = [
+    ("adapt",        OpConstructor(adapt::new)),
+    ("addone",       OpConstructor(addone::new)),
+    ("btmerc",       OpConstructor(btmerc::new)),
+    ("butm",         OpConstructor(btmerc::utm)),
+    ("cart",         OpConstructor(cart::new)),
+    ("curvature",    OpConstructor(curvature::new)),
+    ("deformation",  OpConstructor(deformation::new)),
+    ("geodesic",     OpConstructor(geodesic::new)),
+    ("gridshift",    OpConstructor(gridshift::new)),
+    ("helmert",      OpConstructor(helmert::new)),
+    ("laea",         OpConstructor(laea::new)),
+    ("latitude",     OpConstructor(latitude::new)),
+    ("lcc",          OpConstructor(lcc::new)),
+    ("merc",         OpConstructor(merc::new)),
+    ("webmerc",      OpConstructor(webmerc::new)),
+    ("molodensky",   OpConstructor(molodensky::new)),
+    ("nmea",         OpConstructor(nmea::new)),
+    ("noop",         OpConstructor(noop::new)),
+    ("omerc",        OpConstructor(omerc::new)),
+    ("tmerc",        OpConstructor(tmerc::new)),
+    ("utm",          OpConstructor(tmerc::utm)),
+    ("pipeline",     OpConstructor(pipeline::new)),
+    ("pop",          OpConstructor(pipeline::pop)),
+    ("proj",         OpConstructor(proj::new)),
+    ("push",         OpConstructor(pipeline::push)),
 ];
 // A BTreeMap would have been a better choice for BUILTIN_OPERATORS, except
 // for the annoying fact that it cannot be compile-time const-constructed.

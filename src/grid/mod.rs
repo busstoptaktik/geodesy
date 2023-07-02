@@ -175,17 +175,31 @@ fn normalize_gravsoft_grid_values(header: &mut [f64], grid: &mut [f32]) {
 
     // If we're handling a geoid grid, we're done: Grid values are in meters
     let h = Grid::plain(header, Some(grid), None).unwrap_or_default();
-    if h.bands < 2 {
+    if h.bands == 1 {
         return;
     }
 
-    // The grid values are in minutes-of-arc and in latitude/longitude order.
-    // Swap them and convert into radians.
-    // TODO: handle 3-D data with 3rd coordinate in meters
-    for i in 0..grid.len() {
-        grid[i] = (grid[i] / 3600.0).to_radians();
-        if i % 2 == 1 {
-            grid.swap(i, i - 1);
+    // For horizontal datum shifts, the grid values are in minutes-of-arc
+    // and in latitude/longitude order. Swap them and convert into radians.
+    if h.bands == 2 {
+        for i in 0..grid.len() {
+            grid[i] = (grid[i] / 3600.0).to_radians();
+            if i % 2 == 1 {
+                grid.swap(i, i - 1);
+            }
+        }
+        return;
+    }
+
+    // For deformation grids, the grid values are in millimeters/year
+    // and in latitude/longitude/height order. Swap them and convert
+    // to meters/year
+    if h.bands == 3 {
+        for i in 0..grid.len() {
+            if i % 3 == 0 {
+                grid.swap(i, i + 1);
+            }
+            grid[i] /= 1000.0;
         }
     }
 }
@@ -236,7 +250,7 @@ fn gravsoft_grid_reader(buf: &[u8]) -> Result<(Vec<f64>, Vec<f32>), Error> {
         ));
     }
 
-    if bands > 2 {
+    if bands > 3 {
         return Err(Error::General(
             "Unsupported number of bands in Gravsoft grid",
         ));
