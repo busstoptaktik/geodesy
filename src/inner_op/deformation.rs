@@ -369,8 +369,6 @@ mod tests {
         assert!((inv[3] - expected_length_of_correction) < 0.001);
         assert!((inv[3] - fwd[3]) < 0.001);
 
-        assert!(1 == 0);
-
         Ok(())
     }
 }
