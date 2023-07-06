@@ -1,7 +1,7 @@
 use anyhow::bail;
 use clap::Parser;
 use geodesy::prelude::*;
-use simple_logger::SimpleLogger;
+use log::{error, warn, info, debug, trace};
 use std::io::BufRead;
 use std::path::PathBuf;
 use std::time;
@@ -12,24 +12,24 @@ use std::time;
 /// for something that would otherwise have collided with the name of the
 /// Unix file copying program `cp`.
 
+
 #[derive(Parser, Debug)]
-#[clap(name = "kp")]
-#[clap(author, version, about, long_about = None)]
+#[command(name = "kp")]
+#[command(author, version, about, long_about = None)]
 struct Cli {
+    /// The operation to carry out 'kp "utm zone=32"'
+    operation: String,
+
     /// Inverse.
     /// Use of `inverse` mode excludes the use of `roundtrip` mode.
-    #[clap(short, long = "inv")]
+    #[arg(long = "inv")]
     inverse: bool,
 
     /// Activate debug mode
-    #[clap(short, long)]
+    #[clap(long)]
     debug: bool,
 
-    /// Roundtrip mode - a signature feature of Knud Poder's programs:
-    /// Evaluate the accuracy of the transformation by comparing the
-    /// input argument with its supposedly identical alter ego after
-    /// a forward+inverse transformation pair.
-    /// Use of `roundtrip` mode excludes the use of `inverse` mode.
+    /// Report fwd-inv roundtrip deviation. Excludes the use of `inverse` mode.
     #[clap(short, long)]
     roundtrip: bool,
 
@@ -37,27 +37,27 @@ struct Cli {
     #[clap(short, long)]
     echo: bool,
 
-    /// Verbose mode (-v, -vv, -vvv, etc.)
-    #[clap(short, long, parse(from_occurrences))]
-    verbose: u8,
+    #[clap(flatten)]
+    verbose: clap_verbosity_flag::Verbosity,
 
     /// Output file, stdout if not present
-    #[clap(short, long, parse(from_os_str))]
+    #[clap(short, long)]
     _output: Option<PathBuf>,
 
-    /// First argument is the operation to apply, the remaining the files to operate on
+    /// The files to operate on
     args: Vec<String>,
 }
 
+
 fn main() -> Result<(), anyhow::Error> {
-    SimpleLogger::new()
-        .with_level(log::LevelFilter::Error)
-        .env()
-        .init()
-        .unwrap();
+    let opt = Cli::parse();
+    env_logger::Builder::new()
+        .filter_level(opt.verbose.log_level_filter())
+        .init();
+
     log::trace!("This is KP");
 
-    let opt = Cli::parse();
+    dbg!(&opt);
 
     let mut ctx = Minimal::new();
 
@@ -73,18 +73,17 @@ fn main() -> Result<(), anyhow::Error> {
         eprintln!("opt: {opt:#?}");
     }
 
-    if opt.args.is_empty() {
-        return Ok(());
-    }
+    //if opt.args.is_empty() {
+    //    return Ok(());
+    //}
 
     let start = time::Instant::now();
-    let op = ctx.op(&opt.args[0])?;
-    if opt.verbose > 2 {
-        let duration = start.elapsed();
-        println!("Created operation in: {duration:?}");
-        println!("{op:#?}");
-    }
+    let op = ctx.op(&opt.operation)?;
+    let duration = start.elapsed();
+    trace!("Created operation in: {duration:?}");
+    trace!("{op:#?}");
 
+    let mut coords = Vec::new();
     let start = time::Instant::now();
     for line in std::io::stdin().lock().lines() {
         let line = line?;
@@ -106,47 +105,48 @@ fn main() -> Result<(), anyhow::Error> {
         }
         let coord = Coor4D::raw(b[0], b[1], b[2], b[3]);
         let mut data = [coord];
+        coords.push(coord);
 
-        // Transformation - this is the actual geodetic content
-        if opt.inverse {
-            ctx.apply(op, Inv, &mut data)?;
-            if opt.roundtrip {
-                ctx.apply(op, Fwd, &mut data)?;
-            }
-        } else {
-            ctx.apply(op, Fwd, &mut data)?;
-            if opt.roundtrip {
-                ctx.apply(op, Inv, &mut data)?;
-            }
-        }
-
-        if opt.roundtrip {
-            let d = roundtrip_distance(&opt.args[0], n, coord, data[0]);
-            println!("{}:  d = {:.2} mm", line, 1000. * d);
-            continue;
-        }
+        //// Transformation - this is the actual geodetic content
+        //if opt.inverse {
+        //    ctx.apply(op, Inv, &mut data)?;
+        //    if opt.roundtrip {
+        //        ctx.apply(op, Fwd, &mut data)?;
+        //    }
+        //} else {
+        //    ctx.apply(op, Fwd, &mut data)?;
+        //    if opt.roundtrip {
+        //        ctx.apply(op, Inv, &mut data)?;
+        //    }
+        //}
+//
+        //if opt.roundtrip {
+        //    let d = roundtrip_distance(&opt.args[0], n, coord, data[0]);
+        //    println!("{}:  d = {:.2} mm", line, 1000. * d);
+        //    continue;
+        //}
         // Print output
-        if opt.echo {
-            println!("#  {line}");
-        }
-        if data[0][0] > 1000. {
-            // Projected or cartesian coordinates
-            println!(
-                "{:.5} {:.5} {:.5} {:.5}",
-                data[0][0], data[0][1], data[0][2], data[0][3]
-            );
-        } else {
-            // Angular coordinates
-            println!(
-                "{:.10} {:.10} {:.5} {:.5}",
-                data[0][0], data[0][1], data[0][2], data[0][3]
-            );
-        }
+        //if opt.echo {
+        //    println!("#  {line}");
+        //}
+        //if data[0][0] > 1000. {
+        //    // Projected or cartesian coordinates
+        //    println!(
+        //        "{:.5} {:.5} {:.5} {:.5}",
+        //        data[0][0], data[0][1], data[0][2], data[0][3]
+        //    );
+        //} else {
+        //    // Angular coordinates
+        //    println!(
+        //        "{:.10} {:.10} {:.5} {:.5}",
+        //        data[0][0], data[0][1], data[0][2], data[0][3]
+        //    );
+        //}
     }
-    if opt.verbose > 1 {
-        let duration = start.elapsed();
-        println!("Transformed in: {duration:?}");
-    }
+    ctx.apply(op, Fwd, &mut coords)?;
+
+    let duration = start.elapsed();
+    error!("Transformed in: {duration:?}");
 
     Ok(())
 }
