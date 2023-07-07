@@ -22,12 +22,12 @@ uuid = { version = "1", features = ["v4"] }
 
 # Command line program helpers
 clap = { version = "4.3.11", features = ["derive"], optional = true }
-clap-verbosity-flag = "2.0.1"
-env_logger = "0.10.0"
+clap-verbosity-flag = { version = "2.0.1" }
 anyhow = { version = "1.0", optional = true }
 
 # CLI + plain
 dirs = { version = "4.0", optional = true }
+env_logger = {version="0.10.0", optional = true}
 
 # Library level logging and error handling
 log = "0.4"
@@ -38,8 +38,6 @@ thiserror = "1.0"
 anyhow = { version = "1.0" }
 
 # Needed for building examples
-clap = { version = "3.1.18", features = ["derive"] }
-simple_logger = {version = "1.13" }
 dirs = { version = "4.0" }
 
 [lib]
@@ -47,7 +45,7 @@ name = "geodesy"
 
 [features]
 js = ["uuid/js"]
-binary = ["dirs", "clap", "simple_logger", "anyhow"]
+binary = ["dirs", "clap", "env_logger", "anyhow"]
 with_plain = ["dirs"]
 
 [[bin]]
