@@ -40,6 +40,7 @@ clap = { version = "4.3.11", features = ["derive"] }
 
 # Needed for building examples
 dirs = { version = "4.0" }
+env_logger = {version="0.10.0"}
 
 [lib]
 name = "geodesy"
