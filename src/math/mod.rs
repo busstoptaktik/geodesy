@@ -410,7 +410,7 @@ pub fn parse_sexagesimal(angle: &str) -> f64 {
 
     // Empty?
     let n = angle.len();
-    if n == 0 {
+    if n == 0 || angle == "NaN" {
         return f64::NAN;
     }
 
