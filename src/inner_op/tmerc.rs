@@ -89,7 +89,6 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         operands.set_coord(i, &coord);
     }
 
-    trace!("Successes: {successes}");
     successes
 }
 
@@ -160,7 +159,6 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         operands.set_coord(i, &coord);
     }
 
-    trace!("Successes: {successes}");
     successes
 }
 
@@ -201,7 +199,6 @@ pub fn utm(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
             "UTM: 'zone' must be an integer in the interval 1..60",
         ));
     }
-    trace!("Zone: {zone}");
 
     // The scaling factor is 0.9996 by definition of UTM
     params.k[0] = 0.9996;
@@ -274,24 +271,18 @@ fn precompute(op: &mut Op) {
     // The scaled spherical Earth radius - Qn in Engsager's implementation
     let qs = op.params.k[0] * ellps.semimajor_axis() * ellps.normalized_meridian_arc_unit();
     op.params.real.insert("scaled_radius", qs);
-    trace!("Scaled radius: {qs}");
 
     // The Fourier series for the conformal latitude
     let conformal = ellps.coefficients_for_conformal_latitude_computations();
     op.params
         .fourier_coefficients
         .insert("conformal", conformal);
-    trace!(
-        "Fourier coefficients for conformal latitude: {:#?}",
-        conformal
-    );
 
     // The Fourier series for the transverse mercator coordinates,
     // from [Engsager & Poder, 2007](crate::Bibliography::Eng07),
     // with extensions to 6th order by [Karney, 2011](crate::Bibliography::Kar11).
     let tm = fourier_coefficients(n, &TRANSVERSE_MERCATOR);
     op.params.fourier_coefficients.insert("tm", tm);
-    trace!("Fourier coefficients for TM: {:#?}", conformal);
 
     // Conformal latitude value of the latitude-of-origin - Z in Engsager's notation
     let z = ellps.latitude_geographic_to_conformal(lat_0, &conformal);
@@ -299,7 +290,6 @@ fn precompute(op: &mut Op) {
     // i.e. true northing = N - zb
     let zb = y_0 - qs * (z + clenshaw::sin(2. * z, &tm.fwd));
     op.params.real.insert("zb", zb);
-    trace!("Zombie parameter: {zb}");
 }
 
 pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {

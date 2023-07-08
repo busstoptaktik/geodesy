@@ -2,11 +2,7 @@ use log::{debug, trace};
 
 fn main() -> Result<(), anyhow::Error> {
     // Filter by setting RUST_LOG to one of {Error, Warn, Info, Debug, Trace}
-    if std::env::var("RUST_LOG").is_err() {
-        simple_logger::init_with_level(log::Level::Error)?;
-    } else {
-        simple_logger::init_with_env()?;
-    }
+    env_logger::init();
 
     trace!("Taking off");
     debug!("000");

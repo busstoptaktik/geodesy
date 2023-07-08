@@ -15,33 +15,49 @@ use std::path::PathBuf;
 #[clap(name = "pq")]
 #[clap(author, version, about, long_about = None)]
 struct Cli {
-    /// Inverse
-    #[clap(short, long = "inv")]
-    _inverse: bool,
+    /// Inverse operation
+    #[clap(long = "inv")]
+    inverse: bool,
+
+    /// Specify a fixed height for all coordinates
+    #[clap(short = 'z', long)]
+    height: Option<f64>,
+
+    /// Specify a fixed observation time for all coordinates
+    #[clap(short = 't', long)]
+    time: Option<f64>,
+
+    #[clap(short = 'd', long)]
+    decimals: Option<usize>,
 
     /// Activate debug mode
-    #[clap(short, long)]
+    #[clap(long)]
     debug: bool,
 
-    /// Verbose mode (-v, -vv, -vvv, etc.)
-    #[clap(short, long, parse(from_occurrences))]
-    _verbose: u8,
+    /// Report fwd-inv roundtrip deviation
+    #[clap(short, long)]
+    roundtrip: bool,
+
+    /// Echo input to output
+    #[clap(short, long)]
+    echo: bool,
+
+    #[clap(flatten)]
+    verbose: clap_verbosity_flag::Verbosity,
 
     /// Output file, stdout if not present
-    #[clap(short, long = "output", parse(from_os_str))]
+    #[clap(short, long)]
     _output: Option<PathBuf>,
 
-    /// Operation to apply
-    #[clap(name = "ARGS", parse(from_str))]
-    _operation: Vec<String>,
+    /// The files to operate on
+    args: Vec<String>,
 }
+
 fn main() -> Result<(), anyhow::Error> {
-    // Filter by setting RUST_LOG to one of {Error, Warn, Info, Debug, Trace}
-    if std::env::var("RUST_LOG").is_err() {
-        simple_logger::init_with_level(log::Level::Error)?;
-    } else {
-        simple_logger::init_with_env()?;
-    }
+    let options = Cli::parse();
+    env_logger::Builder::new()
+        .filter_level(options.verbose.log_level_filter())
+        .init();
 
     let opt = Cli::parse();
     println!("{:#?}", opt);
