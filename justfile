@@ -51,12 +51,7 @@ doc:
 
 # Run default application.
 run ARGS:
-    cargo run -- {{ARGS}}
-
-
-# Run pq application.
-pq ARGS:
-    cargo run --bin=pq -- {{ARGS}}
+    cargo run --features=binary -- {{ARGS}}
 
 # Run example based on its unique prefix (e.g. 00, 01, etc.).
 run-example EXAMPLE:

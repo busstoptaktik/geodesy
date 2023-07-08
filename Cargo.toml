@@ -5,7 +5,7 @@ keywords = ["geospatial", "geodesy", "cartography", "geography"]
 categories = ["science"]
 license = "MIT OR Apache-2.0"
 version = "0.10.0"
-
+rust-version = "1.65"  # Uses the let-else construct introduce in 1.65
 authors = ["Thomas Knudsen <knudsen.thomas@gmail.com>"]
 readme = "README.md"
 repository = "https://github.com/busstoptaktik/geodesy/"
@@ -14,7 +14,6 @@ edition = "2021"
 default-run = "kp"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 
 [dependencies]
 # Library functionality
@@ -49,6 +48,7 @@ name = "geodesy"
 js = ["uuid/js"]
 binary = ["dirs", "clap", "env_logger", "anyhow"]
 with_plain = ["dirs"]
+default = ["binary", "with_plain"]
 
 [[bin]]
 name = "kp"

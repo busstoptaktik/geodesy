@@ -2,9 +2,9 @@ use crate::context_authoring::*;
 pub mod minimal;
 pub use minimal::Minimal;
 
-#[cfg(with_plain)]
+#[cfg(feature = "with_plain")]
 pub mod plain;
-#[cfg(with_plain)]
+#[cfg(feature = "with_plain")]
 pub use plain::Plain;
 
 // ----- T H E   C O N T E X T   T R A I T ---------------------------------------------

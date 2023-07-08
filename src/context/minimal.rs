@@ -96,3 +96,34 @@ impl Context for Minimal {
         ))
     }
 }
+
+
+// ----- T E S T S ------------------------------------------------------------------
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn basic() -> Result<(), Error> {
+        let mut ctx = Minimal::new();
+
+        // The "stupid way of adding 1" macro from geodesy/macro/stupid_way.macro
+        ctx.register_resource("stupid:way", "addone | addone | addone inv");
+        let op = ctx.op("stupid:way")?;
+
+        let mut data = some_basic_coordinates();
+        assert_eq!(data[0][0], 55.);
+        assert_eq!(data[1][0], 59.);
+
+        ctx.apply(op, Fwd, &mut data)?;
+        assert_eq!(data[0][0], 56.);
+        assert_eq!(data[1][0], 60.);
+
+        ctx.apply(op, Inv, &mut data)?;
+        assert_eq!(data[0][0], 55.);
+        assert_eq!(data[1][0], 59.);
+
+        Ok(())
+    }
+}

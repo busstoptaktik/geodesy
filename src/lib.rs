@@ -13,7 +13,7 @@ mod op;
 pub use crate::context::minimal::Minimal;
 pub use crate::context::Context;
 
-#[cfg(with_plain)]
+#[cfg(feature = "with_plain")]
 pub use crate::context::plain::Plain;
 
 pub use crate::coordinate::coor2d::Coor2D;
@@ -31,7 +31,7 @@ pub mod prelude {
     pub use crate::context::minimal::Minimal;
     pub use crate::context::Context;
 
-    #[cfg(with_plain)]
+    #[cfg(feature = "with_plain")]
     pub use crate::context::plain::Plain;
 
     pub use crate::coordinate::coor2d::Coor2D;

@@ -1,4 +1,4 @@
-#![cfg(with_plain)]
+#[cfg(feature = "with_plain")]
 
 use crate::context_authoring::*;
 use std::path::PathBuf;
@@ -95,28 +95,57 @@ impl Context for Plain {
     }
 
     fn get_resource(&self, name: &str) -> Result<String, Error> {
+        // There may be an unidentified use case for user registered
+        // resources lacking the ':'-sigil. So we postpone the check
+        // for sigil until we know it is not a run-time user defined
+        // resource we're looking for
         if let Some(result) = self.resources.get(name) {
             return Ok(result.to_string());
         }
 
         // TODO: Check for "known prefixes": 'ellps:', 'datum:', etc.
+        let parts = name.split(':').collect::<Vec<_>>();
+        if parts.len() != 2 {
+            return Err(Error::BadParam("needing prefix:suffix format".to_string(), name.to_string()));
+        }
+        let prefix = parts[0];
+        let suffix = parts[1];
+        let section = "resources";
 
-        // We cannot have ':' in filenames on Windows, so we swap them for '_',
-        // and add the ".macro" extension
-        #[allow(clippy::single_char_pattern)]
-        let name = name.replace(":", "_") + ".macro";
+        // We do not know yet whether the resource is in a separate resource
+        // file or in a resource collection, so we generate file names for
+        // both cases.
+        let resource = prefix.to_string() + "_" + &suffix + ".resource";
+        let collection = prefix.to_string() + ".collection";
+        let tag = "<".to_string() + suffix + ">";
 
-        let section = "macro";
         for path in &self.paths {
-            let mut path = path.clone();
-            path.push(section);
-            path.push(&name);
-            if let Ok(result) = std::fs::read_to_string(path) {
-                return Ok(result);
+            // Is it in a separate file?
+            let mut full_path = path.clone();
+            full_path.push(section);
+            full_path.push(&resource);
+            if let Ok(result) = std::fs::read_to_string(full_path) {
+                return Ok((&result).trim().to_string());
+            }
+
+            // If not, search in a resource collection
+            let mut full_path = path.clone();
+            full_path.push(section);
+            full_path.push(&collection);
+            if let Ok(result) = std::fs::read_to_string(full_path) {
+                let Some(mut start) = result.find(&tag) else {
+                    continue;
+                };
+                start += tag.len();
+                let Some(length) = result[start..].find("<") else {
+                    // Search for end-of-item reached end-of-file
+                    return Ok(result[start..].trim().to_string());
+                };
+                return Ok(result[start..start+length].trim().to_string());
             }
         }
 
-        Err(Error::NotFound(name, ": User defined resource".to_string()))
+        Err(Error::NotFound(name.to_string(), ": User defined resource".to_string()))
     }
 
     fn get_blob(&self, name: &str) -> Result<Vec<u8>, Error> {
@@ -138,10 +167,23 @@ impl Context for Plain {
     }
 
     /// Access grid resources by identifier
-    fn get_grid(&self, _name: &str) -> Result<Grid, Error> {
-        Err(Error::General(
-            "Grid access by identifier not supported by the Plain context provider",
-        ))
+    fn get_grid(&self, name: &str) -> Result<Grid, Error> {
+        let n = PathBuf::from(name);
+        let ext = n
+            .extension()
+            .unwrap_or_default()
+            .to_str()
+            .unwrap_or_default();
+        for path in &self.paths {
+            let mut path = path.clone();
+            path.push(ext);
+            path.push(name);
+            let Ok(grid) = std::fs::read(path) else {
+                continue;
+            };
+            return Grid::gravsoft(&grid);
+        }
+        Err(Error::NotFound(name.to_string(), ": Blob".to_string()))
     }
 }
 
@@ -155,9 +197,18 @@ mod tests {
     fn basic() -> Result<(), Error> {
         let mut ctx = Plain::new();
 
-        // The "stupid way of adding 1" macro from geodesy/macro/stupid_way.macro
+        // Test the check for syntactic correctness (i.e. prefix:suffix-form)
+        assert!(matches!(ctx.get_resource("foo"), Err(Error::BadParam(_,_))));
+        // Do we get the proper error code for non-existing resources?
+        assert!(matches!(ctx.get_resource("foo:bar"), Err(Error::NotFound(_,_))));
+        // ...and the proper error code for non-existing grids?
+        assert!(matches!(ctx.get_grid("foo"), Err(Error::NotFound(_,_))));
+
+        // Try to instantiate the "stupid way of adding 1" macro
+        // from geodesy/resources/stupid_way.resource
         let op = ctx.op("stupid:way")?;
 
+        // ...and it works as expected?
         let mut data = some_basic_coordinates();
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
@@ -169,6 +220,38 @@ mod tests {
         ctx.apply(op, Inv, &mut data)?;
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
+
+        // Now test that the look-up functionality works in general
+
+        // Do we get the end address right in collections?
+        assert!(ctx.get_resource("stupid:way_too")?.ends_with("addone"));
+        // ...also at the end of the file?
+        assert!(ctx.get_resource("stupid:way_too")?.ends_with("addone"));
+        // And do we also get the start address right?
+        assert!(ctx.get_resource("stupid:way_three")?.starts_with("addone"));
+
+        // And just to be sure: once again for the plain resource file
+        assert!(ctx.get_resource("stupid:way")?.starts_with("#"));
+        assert!(ctx.get_resource("stupid:way")?.ends_with("addone"));
+
+        // Now make sure, we can actually also *instantiate* a recipe
+        // from a collection
+        let op = ctx.op("stupid:way_too")?;
+
+        // ...and it works as expected?
+        let mut data = some_basic_coordinates();
+
+        ctx.apply(op, Fwd, &mut data)?;
+        assert_eq!(data[0][0], 57.);
+        assert_eq!(data[1][0], 61.);
+
+        // And finally make sure we can access "sigil-less runtime defined resources"
+        ctx.register_resource("foo", "bar");
+        assert!(ctx.get_resource("foo")?=="bar");
+
+        // We are *not* supposed to be able to instantiate a sigil-less resource
+        ctx.register_resource("baz", "utm zone=32");
+        assert!(ctx.op("baz").is_err());
 
         Ok(())
     }
