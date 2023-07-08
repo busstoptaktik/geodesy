@@ -36,6 +36,7 @@ thiserror = "1.0"
 [dev-dependencies]
 # Needed for building doc-tests
 anyhow = { version = "1.0" }
+clap = { version = "4.3.11", features = ["derive"] }
 
 # Needed for building examples
 dirs = { version = "4.0" }
