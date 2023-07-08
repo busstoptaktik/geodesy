@@ -139,9 +139,11 @@ impl Context for Plain {
                 start += tag.len();
                 let Some(length) = result[start..].find("<") else {
                     // Search for end-of-item reached end-of-file
-                    return Ok(result[start..].trim().to_string());
+                    let result = result[start..].trim().to_string();
+                    return Ok(result);
                 };
-                return Ok(result[start..start+length].trim().to_string());
+                let result = result[start..start+length].trim().to_string();
+                return Ok(result);
             }
         }
 
@@ -245,13 +247,20 @@ mod tests {
         assert_eq!(data[0][0], 57.);
         assert_eq!(data[1][0], 61.);
 
-        // And finally make sure we can access "sigil-less runtime defined resources"
+        // Make sure we can access "sigil-less runtime defined resources"
         ctx.register_resource("foo", "bar");
         assert!(ctx.get_resource("foo")?=="bar");
 
         // We are *not* supposed to be able to instantiate a sigil-less resource
         ctx.register_resource("baz", "utm zone=32");
         assert!(ctx.op("baz").is_err());
+
+        // But this classic should work...
+        let op = ctx.op("geo:in | utm zone=32")?;
+        let mut data = some_basic_coordinates();
+        ctx.apply(op, Fwd, &mut data)?;
+        assert!((data[0][0]-691875.632139660884) < 1e-9);
+        assert!((data[0][1]-6098907.825005002320) < 1e-9);
 
         Ok(())
     }

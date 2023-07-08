@@ -226,6 +226,10 @@ pub fn split_into_steps(definition: &str) -> (Vec<String>, String) {
     let mut trimmed_steps = Vec::<String>::new();
     for mut step in steps {
         step = step.trim();
+        // Ignore empty steps to allow "|" at start of all steps
+        if step.is_empty() {
+            continue;
+        }
         let elements: Vec<_> = step.split_whitespace().collect();
         let joined = elements.join(" ").replace("= ", "=");
         trimmed_steps.push(joined);

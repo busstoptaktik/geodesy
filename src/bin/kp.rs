@@ -84,7 +84,7 @@ fn main() -> Result<(), anyhow::Error> {
 
     // Create context and operator
     let start = time::Instant::now();
-    let mut ctx = Minimal::new();
+    let mut ctx = Plain::new();
     let duration = start.elapsed();
     trace!("Created context in: {duration:?}");
     let op = ctx.op(&options.operation)?;
@@ -161,7 +161,7 @@ fn transform(
     options: &Cli,
     op: OpHandle,
     operands: &mut Vec<Coor4D>,
-    ctx: &Minimal,
+    ctx: &Plain,
 ) -> Result<usize, geodesy::Error> {
     // Transformation - this is the actual geodetic content
 
