@@ -22,8 +22,8 @@ $ echo 553036. -124509 | kp "dms:in | geo:out"
 - [`adapt`](#operator-adapt): The order-and-unit adaptor
 - [`cart`](#operator-cart): The geographical-to-cartesian converter
 - [`curvature`](#operator-curvature): Radii of curvature
-- [`dm`](#operator-nmea-dm-nmeass-and-dms): DDMM.mmm encoding, sub-entry under `nmea`
-- [`dms`](#operator-nmea-dm-nmeass-and-dms): DDMMSS.sss encoding, sub-entry under `nmea`
+- [`dm`](#operator-dm): DDMM.mmm encoding.
+- [`dms`](#operator-dms): DDMMSS.sss encoding.
 - [`geodesic`](#operator-geodesic): Origin, Distance, Azimuth, Destination and v.v.
 - [`gridshift`](#operator-gridshift): NADCON style datum shifts in 1, 2, and 3 dimensions
 - [`helmert`](#operator-helmert): The Helmert (similarity) transformation
@@ -32,8 +32,6 @@ $ echo 553036. -124509 | kp "dms:in | geo:out"
 - [`lcc`](#operator-lcc): The Lambert Conformal Conic projection
 - [`merc`](#operator-merc): The Mercator projection
 - [`molodensky`](#operator-molodensky): The full and abridged Molodensky transformations
-- [`nmea`](#operator-nmea-dm-nmeass-and-dms): degree/minutes encoding with obvious extension to seconds.
-- [`nmeass`](#operator-nmea-dm-nmeass-and-dms): DDMMSS.sss encoding, sub-entry under `nmea`
 - [`noop`](#operator-noop): The no-operation
 - [`omerc`](#operator-omerc): The oblique Mercator projection
 - [`pop`](#operator-pop): Pop a dimension from the stack into the operands
@@ -187,52 +185,51 @@ curvature prime ellps=GRS80
 
 ---
 
-### Operator `helmert`
+### Operator `dm`
 
-**Purpose:**
-Datum shift using a 3, 6, 7 or 14 parameter similarity transformation.
+**Purpose:** Convert from/to the ISO-6709 DDDMM.mmm format.
 
 **Description:**
-In strictly mathematical terms, the Helmert (or *similarity*) transformation transforms coordinates from their original coordinate system, *the source basis,* to a different system, *the target basis.* The target basis may be translated, rotated and/or scaled with respect to the source basis. The inter-axis angles are, however, fixed (hence, the *similarity* moniker).
+While "the real ISO-6709 format" uses a postfix letter from the set `{N, S, W, E}` to indicate the sign of an angular coordinate, here we use common mathematical prefix signs. The output is a coordinate tuple in the RG internal format.
 
-So mathematically we may think of this as "*transforming* the coordinates from one well defined basis to another". But geodetically, it is more correct to think of the operation as *aligning* rather than *transforming,* since geodetic reference frames are very far from the absolute platonic ideals implied in the mathematical idea of bases.
+The ISO-6709 formats are often used in nautical/navigational gear following the industry standard NMEA 0183.
 
-Rather, geodetic reference frames are empirical constructions, realised using datum specific rules for survey and adjustment. Hence, coordinate tuples subjected to a given similarity transform, *do not* magically become realised using the survey rules of the target datum. But they gain a degree of *interoperability* with coordinate tuples from the target: The transformed (aligned) values represent our best knowledge about **what coordinates we would obtain,** if we re-surveyed the same physical point, using the survey rules of the target datum.
+EXAMPLE: convert DDMM.mmm to decimal degrees.
 
-**Warning:**
-Two different conventions are common in Helmert transformations involving rotations. In some cases the rotations define a rotation of the reference frame. This is called the "coordinate frame" convention (EPSG methods 1032 and 9607). In other cases, the rotations define a rotation of the vector from the origin to the position indicated by the coordinate tuple. This is called the "position vector" convention (EPSG methods 1033 and 9606).
-
-Both conventions are common, and trivially converted between as they differ by sign only. To reduce this great source of confusion, the `convention` parameter must be set to either `position vector` or `coordinate_frame` whenever the operation involved rotations. In all other cases, all parameters are optional.
-
-| Parameter | Description |
-|-----------|-------------|
-| `inv` | Inverse operation: output-to-input datum. Mathematically, a sign reversion of all parameters. |
-| `x`  | offset along the first axis  |
-| `y`  | offset along the second axis |
-| `z`  | offset along the third axis  |
-| `rx` | rotation around the first axis  |
-| `ry` | rotation around the second axis |
-| `rz` | rotation around the third axis  |
-| `s`  | scaling factor given in parts-per-million |
-| `dx`  | rate-of-change for offset along the first axis  |
-| `dy`  | rate-of-change for offset along the second axis |
-| `dz`  | rate-of-change for offset along the third axis  |
-| `drx` | rate-of-change for rotation around the first axis  |
-| `dry` | rate-of-change for rotation around the second axis |
-| `drz` | rate-of-change for rotation around the third axis  |
-| `ds`  | rate-of-change for scaling factor |
-| `t_epoch` | origin of the time evolution |
-| `t_obs` | fixed value for observation time. Ignore fourth coordinate |
-| `exact` | Do not use small-angle approximations when constructing the rotation matrix |
-| `convention` | Either `position_vector` or `coordinate_frame`, as described above. Mandatory if any of the rotation parameters are used. |
-
-**Example**:
-
-```js
-geo:in | cart ellps=intl | helmert x=-87 y=-96 z=-120 | cart inv ellps=GRS80 | geo:out
+```sh
+$ echo 5530.15 -1245.15 | kp "dm | geo inv"
+> 55.5025  -12.7525 0 0
 ```
 
-**See also:** [PROJ documentation](https://proj.org/operations/transformations/helmert.html): *Helmert transform*. In general the two implementations should behave identically although the RG version implements neither the 4 parameter 2D Helmert variant, nor the 10 parameter 3D Molodensky-Badekas variant.
+**See also:**
+
+- [NMEA 0183](https://www.nmea.org/content/STANDARDS/NMEA_0183_Standard)
+- NMEA 0183 on [Wikipedia](https://en.wikipedia.org/wiki/NMEA_0183)
+- [GPSd](https://gpsd.gitlab.io/gpsd/NMEA.html) page about NMEA 0183
+
+---
+
+### Operator `dms`
+
+**Purpose:** Convert from/to the ISO-6709 DDDMMSS.sss format.
+
+**Description:**
+While "the real ISO-6709 format" uses a postfix letter from the set `{N, S, W, E}` to indicate the sign of an angular coordinate, here we use common mathematical prefix signs. The output is a coordinate tuple in the RG internal format.
+
+The ISO-6709 formats are often used in nautical/navigational gear following the industry standard NMEA 0183.
+
+EXAMPLE: convert DDDMMSS.sss to decimal degrees.
+
+```sh
+$ echo 553036. -124509 | kp "dms | geo:out"
+> 55.51  -12.7525 0 0
+```
+
+**See also:**
+
+- [NMEA 0183](https://www.nmea.org/content/STANDARDS/NMEA_0183_Standard)
+- NMEA 0183 on [Wikipedia](https://en.wikipedia.org/wiki/NMEA_0183)
+- [GPSd](https://gpsd.gitlab.io/gpsd/NMEA.html) page about NMEA 0183
 
 ---
 
@@ -321,6 +318,55 @@ geo:in | gridshift grids=ed50.datum | geo:out
 ```
 
 **See also:** PROJ documentation, [`hgridshift`](https://proj.org/operations/transformations/hgridshift.html) and [`vgridshift`](https://proj.org/operations/transformations/vgridshift.html). RG combines the functionality of the two: The dimensionality of the grid determines whether a plane or a vertical transformation is carried out.
+
+---
+
+### Operator `helmert`
+
+**Purpose:**
+Datum shift using a 3, 6, 7 or 14 parameter similarity transformation.
+
+**Description:**
+In strictly mathematical terms, the Helmert (or *similarity*) transformation transforms coordinates from their original coordinate system, *the source basis,* to a different system, *the target basis.* The target basis may be translated, rotated and/or scaled with respect to the source basis. The inter-axis angles are, however, fixed (hence, the *similarity* moniker).
+
+So mathematically we may think of this as "*transforming* the coordinates from one well defined basis to another". But geodetically, it is more correct to think of the operation as *aligning* rather than *transforming,* since geodetic reference frames are very far from the absolute platonic ideals implied in the mathematical idea of bases.
+
+Rather, geodetic reference frames are empirical constructions, realised using datum specific rules for survey and adjustment. Hence, coordinate tuples subjected to a given similarity transform, *do not* magically become realised using the survey rules of the target datum. But they gain a degree of *interoperability* with coordinate tuples from the target: The transformed (aligned) values represent our best knowledge about **what coordinates we would obtain,** if we re-surveyed the same physical point, using the survey rules of the target datum.
+
+**Warning:**
+Two different conventions are common in Helmert transformations involving rotations. In some cases the rotations define a rotation of the reference frame. This is called the "coordinate frame" convention (EPSG methods 1032 and 9607). In other cases, the rotations define a rotation of the vector from the origin to the position indicated by the coordinate tuple. This is called the "position vector" convention (EPSG methods 1033 and 9606).
+
+Both conventions are common, and trivially converted between as they differ by sign only. To reduce this great source of confusion, the `convention` parameter must be set to either `position vector` or `coordinate_frame` whenever the operation involved rotations. In all other cases, all parameters are optional.
+
+| Parameter | Description |
+|-----------|-------------|
+| `inv` | Inverse operation: output-to-input datum. Mathematically, a sign reversion of all parameters. |
+| `x`  | offset along the first axis  |
+| `y`  | offset along the second axis |
+| `z`  | offset along the third axis  |
+| `rx` | rotation around the first axis  |
+| `ry` | rotation around the second axis |
+| `rz` | rotation around the third axis  |
+| `s`  | scaling factor given in parts-per-million |
+| `dx`  | rate-of-change for offset along the first axis  |
+| `dy`  | rate-of-change for offset along the second axis |
+| `dz`  | rate-of-change for offset along the third axis  |
+| `drx` | rate-of-change for rotation around the first axis  |
+| `dry` | rate-of-change for rotation around the second axis |
+| `drz` | rate-of-change for rotation around the third axis  |
+| `ds`  | rate-of-change for scaling factor |
+| `t_epoch` | origin of the time evolution |
+| `t_obs` | fixed value for observation time. Ignore fourth coordinate |
+| `exact` | Do not use small-angle approximations when constructing the rotation matrix |
+| `convention` | Either `position_vector` or `coordinate_frame`, as described above. Mandatory if any of the rotation parameters are used. |
+
+**Example**:
+
+```js
+geo:in | cart ellps=intl | helmert x=-87 y=-96 z=-120 | cart inv ellps=GRS80 | geo:out
+```
+
+**See also:** [PROJ documentation](https://proj.org/operations/transformations/helmert.html): *Helmert transform*. In general the two implementations should behave identically although the RG version implements neither the 4 parameter 2D Helmert variant, nor the 10 parameter 3D Molodensky-Badekas variant.
 
 ---
 
@@ -479,37 +525,6 @@ molodensky left_ellps=WGS84 right_ellps=intl dx=84.87 dy=96.49 dz=116.95 abridge
 ```
 
 **See also:** [PROJ documentation](https://proj.org/operations/transformations/molodensky.html): *Molodensky*. The current implementations differ between PROJ and RG: RG implements some minor numerical improvements and the ability to parameterize using two ellipsoids, rather than differences between them.
-
----
-
-### Operator `nmea`, `dm`, `nmeass` and `dms`
-
-**Purpose:** Convert from/to the [NMEA 0183](https://www.nmea.org/content/STANDARDS/NMEA_0183_Standard) DDDMM.mmm format, and from/to its logical extension DDDMMSS.sss.
-
-**Description:**
-This operator can be invoked under the names `nmea`, `dm`, `nmeass` and `dms`. The former 2 handles data in DDDMM.mmm format, the latter 2 in the DDDMMSS.sss format.
-
-While "the real NMEA format" uses a postfix letter from the set `{N, S, W, E}` to indicate the sign of an angular coordinate, here we use common mathematical prefix signs. The output is a coordinate tuple in the RG internal format.
-
-EXAMPLE: convert NMEA to decimal degrees.
-
-```sh
-$ echo 5530.15 -1245.15 | kp "nmea | geo inv"
-> 55.5025  -12.7525 0 0
-```
-
-EXAMPLE: convert dms to decimal degrees.
-
-```sh
-$ echo 553036. -124509 | kp "dms | geo:out"
-> 55.51  -12.7525 0 0
-```
-
-**See also:**
-
-- [NMEA 0183](https://www.nmea.org/content/STANDARDS/NMEA_0183_Standard)
-- NMEA 0183 on [Wikipedia](https://en.wikipedia.org/wiki/NMEA_0183)
-- [GPSd](https://gpsd.gitlab.io/gpsd/NMEA.html) page about NMEA 0183
 
 ---
 
@@ -702,3 +717,4 @@ Major revisions and additions:
 - 2023-06-06: A number of minor corrections + note that since last
   registered update on 2022-05-08. a large number of new operators
   have been included and described
+- 2023-07-09: dm and dms liberated from their NMEA overlord

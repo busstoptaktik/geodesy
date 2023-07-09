@@ -216,21 +216,21 @@ pub mod angular {
         d.signum() as f64 * (d.abs() as f64 + (m / 60.))
     }
 
-    /// Simplistic transformation from the NMEA DDDMM.mmm format to
+    /// Simplistic transformation from the ISO-6709 DDDMM.mmm format to
     /// to degrees-with-decimals. No sanity check: Invalid input,
     /// such as 5575.75 (where the number of minutes exceed 60) leads
     /// to undefined behaviour.
-    pub fn nmea_to_dd(nmea: f64) -> f64 {
-        let sign = nmea.signum();
-        let dm = nmea.abs() as u32;
-        let fraction = nmea.abs() - dm as f64;
+    pub fn iso_dm_to_dd(iso_dm: f64) -> f64 {
+        let sign = iso_dm.signum();
+        let dm = iso_dm.abs() as u32;
+        let fraction = iso_dm.abs() - dm as f64;
         let d = dm / 100;
         let m = (dm - d * 100) as f64 + fraction;
         sign * (d as f64 + (m / 60.))
     }
 
-    /// Transformation from degrees-with-decimals to the NMEA DDDMM.mmm format.
-    pub fn dd_to_nmea(dd: f64) -> f64 {
+    /// Transformation from degrees-with-decimals to the ISO-6709 DDDMM.mmm format.
+    pub fn dd_to_iso_dm(dd: f64) -> f64 {
         let sign = dd.signum();
         let dd = dd.abs();
         let d = dd.floor();
@@ -238,14 +238,14 @@ pub mod angular {
         sign * (d * 100. + m)
     }
 
-    /// Simplistic transformation from the extended NMEA DDDMMSS.sss
+    /// Simplistic transformation from the ISO-6709 DDDMMSS.sss
     /// format to degrees-with-decimals. No sanity check: Invalid input,
     /// such as 557575.75 (where the number of minutes and seconds both
     /// exceed 60) leads to undefined behaviour.
-    pub fn nmeass_to_dd(nmeass: f64) -> f64 {
-        let sign = nmeass.signum();
-        let dms = nmeass.abs() as u32;
-        let fraction = nmeass.abs() - dms as f64;
+    pub fn iso_dms_to_dd(iso_dms: f64) -> f64 {
+        let sign = iso_dms.signum();
+        let dms = iso_dms.abs() as u32;
+        let fraction = iso_dms.abs() - dms as f64;
         let d = dms / 10000;
         let ms = dms - d * 10000;
         let m = ms / 100;
@@ -254,8 +254,8 @@ pub mod angular {
     }
 
     /// Transformation from degrees-with-decimals to the extended
-    /// NMEA DDDMMSS.sss format.
-    pub fn dd_to_nmeass(dd: f64) -> f64 {
+    /// ISO-6709 DDDMMSS.sss format.
+    pub fn dd_to_iso_dms(dd: f64) -> f64 {
         let sign = dd.signum();
         let dd = dd.abs();
         let d = dd.floor();
@@ -529,22 +529,22 @@ mod tests {
         assert_eq!(angular::dms_to_dd(55, 30, 36.), 55.51);
         assert_eq!(angular::dm_to_dd(55, 30.60), 55.51);
 
-        // nmea + nmeass
-        assert!((angular::nmea_to_dd(5530.60) - 55.51).abs() < 1e-10);
-        assert!((angular::nmea_to_dd(15530.60) - 155.51).abs() < 1e-10);
-        assert!((angular::nmea_to_dd(-15530.60) + 155.51).abs() < 1e-10);
-        assert!((angular::nmeass_to_dd(553036.0) - 55.51).abs() < 1e-10);
-        assert_eq!(angular::dd_to_nmea(55.5025), 5530.15);
-        assert_eq!(angular::dd_to_nmea(-55.5025), -5530.15);
-        assert_eq!(angular::dd_to_nmeass(55.5025), 553009.);
-        assert_eq!(angular::dd_to_nmeass(-55.51), -553036.);
+        // iso_dm + iso_dms
+        assert!((angular::iso_dm_to_dd(5530.60) - 55.51).abs() < 1e-10);
+        assert!((angular::iso_dm_to_dd(15530.60) - 155.51).abs() < 1e-10);
+        assert!((angular::iso_dm_to_dd(-15530.60) + 155.51).abs() < 1e-10);
+        assert!((angular::iso_dms_to_dd(553036.0) - 55.51).abs() < 1e-10);
+        assert_eq!(angular::dd_to_iso_dm(55.5025), 5530.15);
+        assert_eq!(angular::dd_to_iso_dm(-55.5025), -5530.15);
+        assert_eq!(angular::dd_to_iso_dms(55.5025), 553009.);
+        assert_eq!(angular::dd_to_iso_dms(-55.51), -553036.);
 
-        assert_eq!(angular::nmea_to_dd(5500.), 55.);
-        assert_eq!(angular::nmea_to_dd(-5500.), -55.);
-        assert_eq!(angular::nmea_to_dd(5530.60), -angular::nmea_to_dd(-5530.60));
+        assert_eq!(angular::iso_dm_to_dd(5500.), 55.);
+        assert_eq!(angular::iso_dm_to_dd(-5500.), -55.);
+        assert_eq!(angular::iso_dm_to_dd(5530.60), -angular::iso_dm_to_dd(-5530.60));
         assert_eq!(
-            angular::nmeass_to_dd(553036.),
-            -angular::nmeass_to_dd(-553036.00)
+            angular::iso_dms_to_dd(553036.),
+            -angular::iso_dms_to_dd(-553036.00)
         );
     }
 }

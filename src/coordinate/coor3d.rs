@@ -143,20 +143,20 @@ impl Coor3D {
     }
 
     /// A `Coor3D` from latitude/longitude/height/time,
-    /// with the angular input in NMEA format: DDDMM.mmmmm
+    /// with the angular input in the ISO-6709 DDDMM.mmmmm format
     #[must_use]
-    pub fn nmea(latitude: f64, longitude: f64, height: f64) -> Coor3D {
-        let longitude = angular::nmea_to_dd(longitude);
-        let latitude = angular::nmea_to_dd(latitude);
+    pub fn iso_dm(latitude: f64, longitude: f64, height: f64) -> Coor3D {
+        let longitude = angular::iso_dm_to_dd(longitude);
+        let latitude = angular::iso_dm_to_dd(latitude);
         Coor3D([longitude.to_radians(), latitude.to_radians(), height])
     }
 
     /// A `Coor3D` from latitude/longitude/height/time, with
-    /// the angular input in extended NMEA format: DDDMMSS.sssss
+    /// the angular input in the ISO-6709 DDDMMSS.sssss format
     #[must_use]
-    pub fn nmeass(latitude: f64, longitude: f64, height: f64) -> Coor3D {
-        let longitude = angular::nmeass_to_dd(longitude);
-        let latitude = angular::nmeass_to_dd(latitude);
+    pub fn iso_dms(latitude: f64, longitude: f64, height: f64) -> Coor3D {
+        let longitude = angular::iso_dms_to_dd(longitude);
+        let latitude = angular::iso_dms_to_dd(latitude);
         Coor3D::geo(latitude, longitude, height)
     }
 

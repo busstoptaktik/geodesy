@@ -19,7 +19,7 @@ mod latitude;
 mod lcc;
 mod merc;
 mod molodensky;
-mod nmea;
+mod iso6709;
 mod noop;
 mod omerc;
 pub(crate) mod pipeline; // Needed by Op for instantiation
@@ -28,7 +28,7 @@ mod tmerc;
 mod webmerc;
 
 #[rustfmt::skip]
-const BUILTIN_OPERATORS: [(&str, OpConstructor); 25] = [
+const BUILTIN_OPERATORS: [(&str, OpConstructor); 26] = [
     ("adapt",        OpConstructor(adapt::new)),
     ("addone",       OpConstructor(addone::new)),
     ("btmerc",       OpConstructor(btmerc::new)),
@@ -36,6 +36,8 @@ const BUILTIN_OPERATORS: [(&str, OpConstructor); 25] = [
     ("cart",         OpConstructor(cart::new)),
     ("curvature",    OpConstructor(curvature::new)),
     ("deformation",  OpConstructor(deformation::new)),
+    ("dm",           OpConstructor(iso6709::dm)),
+    ("dms",          OpConstructor(iso6709::dms)),
     ("geodesic",     OpConstructor(geodesic::new)),
     ("gridshift",    OpConstructor(gridshift::new)),
     ("helmert",      OpConstructor(helmert::new)),
@@ -45,7 +47,6 @@ const BUILTIN_OPERATORS: [(&str, OpConstructor); 25] = [
     ("merc",         OpConstructor(merc::new)),
     ("webmerc",      OpConstructor(webmerc::new)),
     ("molodensky",   OpConstructor(molodensky::new)),
-    ("nmea",         OpConstructor(nmea::new)),
     ("noop",         OpConstructor(noop::new)),
     ("omerc",        OpConstructor(omerc::new)),
     ("tmerc",        OpConstructor(tmerc::new)),

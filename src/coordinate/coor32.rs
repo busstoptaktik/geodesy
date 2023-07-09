@@ -86,23 +86,23 @@ impl Coor32 {
         Coor32([first as f32, second as f32])
     }
 
-    /// A `Coor32` from latitude/longitude/height/time,
-    /// with the angular input in NMEA format: DDDMM.mmmmm,
+    /// A `Coor32` from latitude/longitude/height/time, with
+    /// the angular input in the ISO-6709 DDDMM.mmmmm format,
     /// and height and time ignored.
     #[must_use]
-    pub fn nmea(latitude: f64, longitude: f64) -> Coor32 {
-        let longitude = angular::nmea_to_dd(longitude);
-        let latitude = angular::nmea_to_dd(latitude);
+    pub fn iso_dm(latitude: f64, longitude: f64) -> Coor32 {
+        let longitude = angular::iso_dm_to_dd(longitude);
+        let latitude = angular::iso_dm_to_dd(latitude);
         Coor32([longitude.to_radians() as f32, latitude.to_radians() as f32])
     }
 
-    /// A `Coor32` from latitude/longitude/height/time, with
-    /// the angular input in extended NMEA format: DDDMMSS.sssss,
+    /// A `Coor32` from latitude/longitude/height/time, with the
+    /// angular input in the ISO-6709 DDDMMSS.sssss format,
     /// and height and time ignored.
     #[must_use]
-    pub fn nmeass(latitude: f64, longitude: f64) -> Coor32 {
-        let longitude = angular::nmeass_to_dd(longitude);
-        let latitude = angular::nmeass_to_dd(latitude);
+    pub fn iso_dms(latitude: f64, longitude: f64) -> Coor32 {
+        let longitude = angular::iso_dms_to_dd(longitude);
+        let latitude = angular::iso_dms_to_dd(latitude);
         Coor32::geo(latitude, longitude)
     }
 
