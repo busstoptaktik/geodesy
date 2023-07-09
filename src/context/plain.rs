@@ -113,10 +113,10 @@ impl Context for Plain {
         let section = "resources";
 
         // We do not know yet whether the resource is in a separate resource
-        // file or in a resource collection, so we generate file names for
+        // file or in a resource register, so we generate file names for
         // both cases.
         let resource = prefix.to_string() + "_" + &suffix + ".resource";
-        let collection = prefix.to_string() + ".collection";
+        let register = prefix.to_string() + ".register";
         let tag = "<".to_string() + suffix + ">";
 
         for path in &self.paths {
@@ -128,10 +128,10 @@ impl Context for Plain {
                 return Ok((&result).trim().to_string());
             }
 
-            // If not, search in a resource collection
+            // If not, search in a resource register
             let mut full_path = path.clone();
             full_path.push(section);
-            full_path.push(&collection);
+            full_path.push(&register);
             if let Ok(result) = std::fs::read_to_string(full_path) {
                 let Some(mut start) = result.find(&tag) else {
                     continue;
@@ -225,7 +225,7 @@ mod tests {
 
         // Now test that the look-up functionality works in general
 
-        // Do we get the end address right in collections?
+        // Do we get the end address right in registers?
         assert!(ctx.get_resource("stupid:way_too")?.ends_with("addone"));
         // ...also at the end of the file?
         assert!(ctx.get_resource("stupid:way_too")?.ends_with("addone"));
@@ -237,7 +237,7 @@ mod tests {
         assert!(ctx.get_resource("stupid:way")?.ends_with("addone"));
 
         // Now make sure, we can actually also *instantiate* a recipe
-        // from a collection
+        // from a register
         let op = ctx.op("stupid:way_too")?;
 
         // ...and it works as expected?
