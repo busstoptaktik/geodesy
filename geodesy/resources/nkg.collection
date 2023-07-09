@@ -82,7 +82,9 @@
 #   +step +proj=axisswap +order=2,1
 #
 # The 'dt' of the last deformation step in the DK transformation seems odd:
-# It does not seem to agree with the realization epoch of 1994.704 (i.e. 1994-09-15)
+# It does not seem to agree with the realization epoch of 1994.704 (i.e. 1994-09-15).
+# This is due to a minor adjustment of the DK realization at epoch 2015, in effect
+# solid-body lifting it from the old passive markers onto the active CORS network.
 #
 # The RG implementation here fits extremely well with the PROJ implementation (to
 # at least 12 decimal places) at the test point (55N, 12E) - potentially because the
