@@ -1,9 +1,0 @@
-ellipsoid:
-    description: Maupertius 1738
-    mnemonic: mprts
-    shortcut: 
-        a: 6397300.
-        rf: 191.
-    definition:
-        a: 6397300.
-        rf: 191.

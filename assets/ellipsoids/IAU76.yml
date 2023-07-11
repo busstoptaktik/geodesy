@@ -1,9 +1,0 @@
-ellipsoid:
-    description: IAU 1976
-    mnemonic: IAU76
-    shortcut: 
-        a: 6378140.0
-        rf: 298.257
-    definition:
-        a: 6378140.0
-        rf: 298.257

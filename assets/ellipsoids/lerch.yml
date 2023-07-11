@@ -1,9 +1,0 @@
-ellipsoid:
-    description: Lerch 1979
-    mnemonic: lerch
-    shortcut: 
-        a: 6378139.
-        rf: 298.257
-    definition:
-        a: 6378139.
-        rf: 298.257

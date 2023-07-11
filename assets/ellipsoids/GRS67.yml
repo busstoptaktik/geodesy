@@ -1,9 +1,0 @@
-ellipsoid:
-    description: GRS 67(IUGG 1967)
-    mnemonic: GRS67
-    shortcut: 
-        a: 6378160.0
-        rf: 298.2471674270
-    definition:
-        a: 6378160.0
-        rf: 298.2471674270

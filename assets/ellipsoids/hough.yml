@@ -1,9 +1,0 @@
-ellipsoid:
-    description: Hough
-    mnemonic: hough
-    shortcut: 
-        a: 6378270.0
-        rf: 297.
-    definition:
-        a: 6378270.0
-        rf: 297.

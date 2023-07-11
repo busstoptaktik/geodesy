@@ -1,9 +1,0 @@
-ellipsoid:
-    description: Clarke 1880 mod.
-    mnemonic: clrk80
-    shortcut: 
-        a: 6378249.145
-        rf: 293.4663
-    definition:
-        a: 6378249.145
-        rf: 293.4663

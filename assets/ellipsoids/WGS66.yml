@@ -1,9 +1,0 @@
-ellipsoid:
-    description: WGS 66
-    mnemonic: WGS66
-    shortcut: 
-        a: 6378145.0
-        rf: 298.25
-    definition:
-        a: 6378145.0
-        rf: 298.25

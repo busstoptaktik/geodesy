@@ -1,9 +1,0 @@
-ellipsoid:
-    description: Normal Sphere (r 6370997)
-    mnemonic: sphere
-    shortcut: 
-        a: 6370997.0
-        rf: 0
-    definition:
-        a: 6370997.0
-        b: 6370997.0

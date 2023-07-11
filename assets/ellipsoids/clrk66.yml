@@ -1,9 +1,0 @@
-ellipsoid:
-    description: Clarke 1866
-    mnemonic: clrk66
-    shortcut: 
-        a: 6378206.4
-        rf: 294.979
-    definition:
-        a: 6378206.4
-        b: 6356583.8

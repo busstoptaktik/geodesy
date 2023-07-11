@@ -1,9 +1,0 @@
-ellipsoid:
-    description: PZ-90
-    mnemonic: PZ90
-    shortcut: 
-        a: 6378136.0
-        rf: 298.25784
-    definition:
-        a: 6378136.0
-        rf: 298.25784

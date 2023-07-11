@@ -1,9 +1,0 @@
-ellipsoid:
-    description: Australian Natl & S. Amer. 1969
-    mnemonic: aust_SA
-    shortcut: 
-        a: 6378160.0
-        rf: 298.25
-    definition:
-        a: 6378160.0
-        rf: 298.25

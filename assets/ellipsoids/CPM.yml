@@ -1,9 +1,0 @@
-ellipsoid:
-    description: Comm. des Poids et Mesures 1799
-    mnemonic: CPM
-    shortcut: 
-        a: 6375738.7
-        rf: 334.29
-    definition:
-        a: 6375738.7
-        rf: 334.29

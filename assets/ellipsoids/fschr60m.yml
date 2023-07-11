@@ -1,9 +1,0 @@
-ellipsoid:
-    description: Modified Fischer 1960
-    mnemonic: fschr60m
-    shortcut: 
-        a: 6378155.
-        rf: 298.3
-    definition:
-        a: 6378155.
-        rf: 298.3

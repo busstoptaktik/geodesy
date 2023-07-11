@@ -1,9 +1,0 @@
-ellipsoid:
-    description: Everest 1956
-    mnemonic: evrst56
-    shortcut: 
-        a: 6377301.243
-        rf: 300.8017
-    definition:
-        a: 6377301.243
-        rf: 300.8017

@@ -1,9 +1,0 @@
-ellipsoid:
-    description: Everest (Sabah & Sarawak)
-    mnemonic: evrstSS
-    shortcut: 
-        a: 6377298.556
-        rf: 300.8017
-    definition:
-        a: 6377298.556
-        rf: 300.8017

@@ -1,9 +1,0 @@
-ellipsoid:
-    description: Appl. Physics. 1965
-    mnemonic: APL4.9
-    shortcut: 
-        a: 6378137.0
-        rf: 298.25
-    definition:
-        a: 6378137.0
-        rf: 298.25
