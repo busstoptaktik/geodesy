@@ -547,7 +547,7 @@ geo:in | noop all these parameters are=ignored | geo:out
 Comment out a datum shift step in a pipeline
 
 ```sh
-geo:in | noop helmert dx=84 dy=96 dz=116 | merc
+geo:in | cart | noop helmert x=84 y=96 z=116 | cart inv | merc
 ```
 
 ---
