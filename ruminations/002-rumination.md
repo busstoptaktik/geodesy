@@ -4,7 +4,7 @@
 
 Thomas Knudsen <knudsen.thomas@gmail.com>
 
-2021-08-20. Last [revision](#document-history) 2023-06-06
+2021-08-20. Last [revision](#document-history) 2023-07-09
 
 ### Abstract
 
@@ -66,14 +66,14 @@ Convert the geographical coordinate tuple (55 N, 12 E) to utm, zone 32 coordinat
 
 ```sh
 echo 55 12 0 0 | kp "geo:in | utm zone=32"
-> 691875.6321 6098907.8250 0.0000 0.0000
+> 691875.63214 6098907.82501 0.00000 0.00000
 ```
 
-While RG coordinates are always 4D, `kp` will provide zero-values for any left-out postfix dimensions:
+While RG coordinates are always 4D, `kp` will provide a zero-value for left-out 3rd dimension values, and a NaN-value for left out 4th dimension values:
 
 ```sh
-echo 55 12 | kp "geo:in | utm zone:32"
-> 691875.6321 6098907.8250 0.0000 0.0000
+echo 55 12 | kp "geo:in | utm zone=32"
+> 691875.6321 6098907.82501 0.0000 NaN
 ```
 
 In the examples in the operator descriptions below, we will just give the operator representation, and imply the `echo ... | kp ...` part.
@@ -86,7 +86,7 @@ If in doubt, use `kp --help` or read [Rumination 003: `kp` - the RG Coordinate P
 
 **Purpose:** Adapt source coordinate order and angular units to target ditto, using a declarative approach.
 
-**Description:** Let us first introduce the **coordinate traits** *eastish, northish, upish, futurish*, and their geometrical inverses *westish, southish, downish, pastish*, with mostly evident meaning:
+**Description:** Let us first introduce the **coordinate archetypes** *eastish, northish, upish, futurish*, and their geometrical inverses *westish, southish, downish, pastish*, with mostly evident meaning:
 
 A coordinate is
 
@@ -299,7 +299,7 @@ The `gridshift` operator implements datum shifts by interpolation in correction 
 - For 1-D transformations (vertical datum shift),  the grid derived value is *subtracted* from the operand
 - For 2-D transformations, the grid derived values are *added* to the operand
 
-3-D and time dependent transformations are not yet implemented.
+3-D and time dependent transformations are implemented by the `deformation` operator.
 
 | Parameter | Description |
 |-----------|-------------|
@@ -336,7 +336,7 @@ Rather, geodetic reference frames are empirical constructions, realised using da
 **Warning:**
 Two different conventions are common in Helmert transformations involving rotations. In some cases the rotations define a rotation of the reference frame. This is called the "coordinate frame" convention (EPSG methods 1032 and 9607). In other cases, the rotations define a rotation of the vector from the origin to the position indicated by the coordinate tuple. This is called the "position vector" convention (EPSG methods 1033 and 9606).
 
-Both conventions are common, and trivially converted between as they differ by sign only. To reduce this great source of confusion, the `convention` parameter must be set to either `position vector` or `coordinate_frame` whenever the operation involved rotations. In all other cases, all parameters are optional.
+Both conventions are common, and trivially converted between as they differ by sign only. To reduce this great source of confusion, the `convention` parameter must be set to either `position vector` or `coordinate_frame` whenever the operation involves rotations. In all other cases, all parameters are optional.
 
 | Parameter | Description |
 |-----------|-------------|
@@ -521,7 +521,7 @@ parameters to come across in real life.
 **Example**:
 
 ```js
-molodensky left_ellps=WGS84 right_ellps=intl dx=84.87 dy=96.49 dz=116.95 abridged=false
+molodensky left_ellps=WGS84 right_ellps=intl dx=84.87 dy=96.49 dz=116.95 abridged
 ```
 
 **See also:** [PROJ documentation](https://proj.org/operations/transformations/molodensky.html): *Molodensky*. The current implementations differ between PROJ and RG: RG implements some minor numerical improvements and the ability to parameterize using two ellipsoids, rather than differences between them.
@@ -532,12 +532,22 @@ molodensky left_ellps=WGS84 right_ellps=intl dx=84.87 dy=96.49 dz=116.95 abridge
 
 **Purpose:** Do nothing
 
-**Description:** `noop`, the no-operation, takes no arguments, does nothing and is good at it.
+**Description:** `noop`, the no-operation, takes no arguments, does nothing and is good at it. Any arguments provided are ignored. Probably most useful during development of transformation pipelines, for "commenting out" individual steps.
 
 **Example**:
 
+Ignore all parameters, do nothing
+
 ```sh
 geo:in | noop all these parameters are=ignored | geo:out
+```
+
+**Example**:
+
+Comment out a datum shift step in a pipeline
+
+```sh
+geo:in | noop helmert dx=84 dy=96 dz=116 | merc
 ```
 
 ---
@@ -658,7 +668,7 @@ Take a copy of one or more coordinate dimensions and push it onto the stack. If 
 tmerc lon_0=9 k_0=0.9996 x_0=500000
 ```
 
-**See also:** [PROJ documentation](https://proj.org/operations/projections/tmerc.html): *Transverse Mercator*. The details of the current implementations differ between PROJ and RG.
+**See also:** [PROJ documentation](https://proj.org/operations/projections/tmerc.html): *Transverse Mercator*.
 
 ---
 
@@ -674,13 +684,13 @@ tmerc lon_0=9 k_0=0.9996 x_0=500000
 | `ellps=name` | Use ellipsoid `name` for the conversion |
 | `zone=nn` | zone number `nn`. Between 1-60 |
 
-**Example**: Use UTM zone 32
+**Example**: Use UTM zone 32 on the default ellipsoid
 
 ```js
 utm zone=32
 ```
 
-**See also:** [PROJ documentation](https://proj.org/operations/projections/utm.html): *Universal Transverse Mercator*. The current implementations differ between PROJ and RG. Within each 6 degrees wide zone, the differences should be immaterial.
+**See also:** [PROJ documentation](https://proj.org/operations/projections/utm.html): *Universal Transverse Mercator*.
 
 ---
 
