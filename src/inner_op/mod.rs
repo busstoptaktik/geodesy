@@ -14,12 +14,12 @@ mod deformation;
 mod geodesic;
 mod gridshift;
 mod helmert;
+mod iso6709;
 mod laea;
 mod latitude;
 mod lcc;
 mod merc;
 mod molodensky;
-mod iso6709;
 mod noop;
 mod omerc;
 pub(crate) mod pipeline; // Needed by Op for instantiation

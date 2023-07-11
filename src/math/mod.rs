@@ -541,7 +541,10 @@ mod tests {
 
         assert_eq!(angular::iso_dm_to_dd(5500.), 55.);
         assert_eq!(angular::iso_dm_to_dd(-5500.), -55.);
-        assert_eq!(angular::iso_dm_to_dd(5530.60), -angular::iso_dm_to_dd(-5530.60));
+        assert_eq!(
+            angular::iso_dm_to_dd(5530.60),
+            -angular::iso_dm_to_dd(-5530.60)
+        );
         assert_eq!(
             angular::iso_dms_to_dd(553036.),
             -angular::iso_dms_to_dd(-553036.00)

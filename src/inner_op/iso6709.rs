@@ -67,7 +67,6 @@ fn dm_inv(_op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usi
     successes
 }
 
-
 fn dms_inv(_op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let mut successes = 0_usize;
     let length = operands.len();
@@ -92,11 +91,23 @@ pub const GAMUT: [OpParameter; 1] = [
 ];
 
 pub fn dm(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
-    Op::plain(parameters, InnerOp(dm_fwd), Some(InnerOp(dm_inv)), &GAMUT, ctx)
+    Op::plain(
+        parameters,
+        InnerOp(dm_fwd),
+        Some(InnerOp(dm_inv)),
+        &GAMUT,
+        ctx,
+    )
 }
 
 pub fn dms(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
-    Op::plain(parameters, InnerOp(dms_fwd), Some(InnerOp(dms_inv)), &GAMUT, ctx)
+    Op::plain(
+        parameters,
+        InnerOp(dms_fwd),
+        Some(InnerOp(dms_inv)),
+        &GAMUT,
+        ctx,
+    )
 }
 
 // ----- T E S T S ---------------------------------------------------------------------

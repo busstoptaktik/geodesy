@@ -1,5 +1,4 @@
 #[cfg(feature = "with_plain")]
-
 use crate::context_authoring::*;
 use std::path::PathBuf;
 
@@ -106,7 +105,10 @@ impl Context for Plain {
         // TODO: Check for "known prefixes": 'ellps:', 'datum:', etc.
         let parts = name.split(':').collect::<Vec<_>>();
         if parts.len() != 2 {
-            return Err(Error::BadParam("needing prefix:suffix format".to_string(), name.to_string()));
+            return Err(Error::BadParam(
+                "needing prefix:suffix format".to_string(),
+                name.to_string(),
+            ));
         }
         let prefix = parts[0];
         let suffix = parts[1];
@@ -115,7 +117,7 @@ impl Context for Plain {
         // We do not know yet whether the resource is in a separate resource
         // file or in a resource register, so we generate file names for
         // both cases.
-        let resource = prefix.to_string() + "_" + &suffix + ".resource";
+        let resource = prefix.to_string() + "_" + suffix + ".resource";
         let register = prefix.to_string() + ".register";
         let tag = "<".to_string() + suffix + ">";
 
@@ -125,7 +127,7 @@ impl Context for Plain {
             full_path.push(section);
             full_path.push(&resource);
             if let Ok(result) = std::fs::read_to_string(full_path) {
-                return Ok((&result).trim().to_string());
+                return Ok(result.trim().to_string());
             }
 
             // If not, search in a resource register
@@ -137,17 +139,20 @@ impl Context for Plain {
                     continue;
                 };
                 start += tag.len();
-                let Some(length) = result[start..].find("<") else {
+                let Some(length) = result[start..].find('<') else {
                     // Search for end-of-item reached end-of-file
                     let result = result[start..].trim().to_string();
                     return Ok(result);
                 };
-                let result = result[start..start+length].trim().to_string();
+                let result = result[start..start + length].trim().to_string();
                 return Ok(result);
             }
         }
 
-        Err(Error::NotFound(name.to_string(), ": User defined resource".to_string()))
+        Err(Error::NotFound(
+            name.to_string(),
+            ": User defined resource".to_string(),
+        ))
     }
 
     fn get_blob(&self, name: &str) -> Result<Vec<u8>, Error> {
@@ -200,11 +205,17 @@ mod tests {
         let mut ctx = Plain::new();
 
         // Test the check for syntactic correctness (i.e. prefix:suffix-form)
-        assert!(matches!(ctx.get_resource("foo"), Err(Error::BadParam(_,_))));
+        assert!(matches!(
+            ctx.get_resource("foo"),
+            Err(Error::BadParam(_, _))
+        ));
         // Do we get the proper error code for non-existing resources?
-        assert!(matches!(ctx.get_resource("foo:bar"), Err(Error::NotFound(_,_))));
+        assert!(matches!(
+            ctx.get_resource("foo:bar"),
+            Err(Error::NotFound(_, _))
+        ));
         // ...and the proper error code for non-existing grids?
-        assert!(matches!(ctx.get_grid("foo"), Err(Error::NotFound(_,_))));
+        assert!(matches!(ctx.get_grid("foo"), Err(Error::NotFound(_, _))));
 
         // Try to instantiate the "stupid way of adding 1" macro
         // from geodesy/resources/stupid_way.resource
@@ -249,7 +260,7 @@ mod tests {
 
         // Make sure we can access "sigil-less runtime defined resources"
         ctx.register_resource("foo", "bar");
-        assert!(ctx.get_resource("foo")?=="bar");
+        assert!(ctx.get_resource("foo")? == "bar");
 
         // We are *not* supposed to be able to instantiate a sigil-less resource
         ctx.register_resource("baz", "utm zone=32");
@@ -259,8 +270,8 @@ mod tests {
         let op = ctx.op("geo:in | utm zone=32")?;
         let mut data = some_basic_coordinates();
         ctx.apply(op, Fwd, &mut data)?;
-        assert!((data[0][0]-691875.632139660884) < 1e-9);
-        assert!((data[0][1]-6098907.825005002320) < 1e-9);
+        assert!((data[0][0] - 691875.632139660884) < 1e-9);
+        assert!((data[0][1] - 6098907.825005002320) < 1e-9);
 
         Ok(())
     }
