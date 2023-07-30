@@ -9,10 +9,10 @@ fn main() -> anyhow::Result<()> {
     let mut ctx = Minimal::default();
 
     // Same test coordinates as in example 00.
-    let cph = Coor4D::gis(12., 55., 0., 0.); // Copenhagen
-    let osl = Coor4D::gis(10., 60., 0., 0.); // Oslo
-    let sth = Coor4D::geo(59., 18., 0., 0.); // Stockholm
-    let hel = Coor4D::geo(60., 25., 0., 0.); // Helsinki
+    let cph = Coor3D::gis(12., 55., 0.); // Copenhagen
+    let osl = Coor3D::gis(10., 60., 0.); // Oslo
+    let sth = Coor3D::geo(59., 18., 0.); // Stockholm
+    let hel = Coor3D::geo(60., 25., 0.); // Helsinki
 
     let mut data = [osl, cph, sth, hel];
 

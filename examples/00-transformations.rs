@@ -18,28 +18,28 @@ fn main() -> anyhow::Result<()> {
     // methods of the context data structure.
 
     // We need some coordinates to test the code. The convenience methods
-    // `gis` and `geo` produce 4D coordinate tuples and automatically handle
+    // `gis` and `geo` produce 2D coordinate tuples and automatically handle
     // conversion of the angular parts to radians, and geographical coordinates
     // in latitude/longitude order, to the GIS convention of longitude/latitude.
 
     // Here using the GIS convention - longitude before latitude
-    let cph = Coor4D::gis(12., 55., 0., 0.); // Copenhagen
-    let osl = Coor4D::gis(10., 60., 0., 0.); // Oslo
+    let cph = Coor2D::gis(12., 55.); // Copenhagen
+    let osl = Coor2D::gis(10., 60.); // Oslo
 
     // And here using the geodesy/navigation convention - latitude before longitude
-    let sth = Coor4D::geo(59., 18., 0., 0.); // Stockholm
-    let hel = Coor4D::geo(60., 25., 0., 0.); // Helsinki
+    let sth = Coor2D::geo(59., 18.); // Stockholm
+    let hel = Coor2D::geo(60., 25.); // Helsinki
 
     // `gis` and `geo` have a sibling `raw` which generates coordinate tuples
     // from raw numbers, in case your point coordinates are already given in
     // radians.
-    let cph_raw = Coor4D::raw(12_f64.to_radians(), 55_f64.to_radians(), 0., 0.0);
-    // But since a coordinate tuple is really just an array of 4 double
+    let cph_raw = Coor2D::raw(12_f64.to_radians(), 55_f64.to_radians());
+    // But since a coordinate tuple is really just an array of double
     // precision numbers, you may also generate it directly using plain
-    // Rust syntax. Note that Coor4D, like f64, provides the to_radians
+    // Rust syntax. Note that Coor2D, like f64, provides the to_radians
     // method. So compared to cph_raw above, we can use a slightly more
     // compact notation.
-    let cph_direct = Coor4D([12., 55., 0., 0.]).to_radians();
+    let cph_direct = Coor2D([12., 55.]).to_radians();
     // The three versions of Copenhagen coordinates should be identical.
     assert_eq!(cph, cph_raw);
     assert_eq!(cph, cph_direct);
@@ -48,7 +48,13 @@ fn main() -> anyhow::Result<()> {
     // coordinate tuples, rather than single points. So let's make an array:
     let mut data = [osl, cph, sth, hel];
     // Since all operations are carried out in place, the array needs to
-    // be mutable, hence `let mut`
+    // be mutable, hence `let mut`.
+
+    // Note that on the inside, Rust Geodesy operates in 4 dimensions, but
+    // externally you may use whatever fits the problem at hand. Here, we
+    // use the two-dimensional Coor2D, since we're doing a plain projection
+    // from 2D geographical coordinates (latitude, longitude) to 2D projected
+    // coordinates (northing, easting)
 
     // Let's obtain a handle to a transformation element ("an operation"),
     // turning geographical coordinates into UTM zone 32 coordinates.
@@ -61,6 +67,7 @@ fn main() -> anyhow::Result<()> {
     // direction
     ctx.apply(utm32, Fwd, &mut data)?;
     println!("utm32:");
+    println!("    {:#?}", data);
     for coord in data {
         println!("    {:?}", coord);
     }
@@ -70,8 +77,8 @@ fn main() -> anyhow::Result<()> {
     ctx.apply(utm32, Inv, &mut data)?;
     println!("Roundtrip to geo:");
     // Note the use of `to_geo`, which transforms lon/lat in radians
-    // to lat/lon in degrees. It is defined for Coor4D as well as for
-    // arrays, vectors and slices of Coor4D
+    // to lat/lon in degrees. It is defined for Coor2D as well as for
+    // arrays, vectors and slices of Coor2D
     for coord in data.to_geo() {
         println!("    {:?}", coord);
     }
@@ -107,6 +114,13 @@ fn main() -> anyhow::Result<()> {
     // coordinates to cartesian, and back. Hence, we need a pipeline
     // of 3 steps:
     let pipeline = "cart ellps=intl | helmert x=-87 y=-96 z=-120 | cart inv=true ellps=GRS80";
+
+    // Here we're doing a 3D operation, so we need a 3D coordinate representation
+    let cph = Coor3D::geo(55., 12., 0.); // Copenhagen
+    let osl = Coor3D::geo(60., 10., 0.); // Oslo
+    let sth = Coor3D::geo(59., 18., 0.); // Stockholm
+    let hel = Coor3D::geo(60., 25., 0.); // Helsinki
+
     let mut data = [osl, cph, sth, hel];
     let ed50_wgs84 = ctx.op(pipeline)?;
 
@@ -115,9 +129,7 @@ fn main() -> anyhow::Result<()> {
     ctx.apply(ed50_wgs84, Inv, &mut data)?;
     println!("ed50:");
     for coord in data {
-        // Again, use the `Coor4D::to_geo` method to get output following the
-        // geodesy/navigation convention for angular unit/coordinate order
-        println!("    {:?}", Coor4D::to_geo(coord));
+        println!("    {:?}", coord.to_geo());
     }
 
     // Finally an example of handling bad syntax:
@@ -146,27 +158,26 @@ fn main() -> anyhow::Result<()> {
     // Now, let's use the utm32-operator to transform some data
     utm32.apply(&ctx, &mut data, Fwd);
 
-    println!("utm32:");
-    for coord in data {
-        println!("    {:?}", coord);
-    }
+    // println!("utm32:");
+    // for coord in data {
+    //     println!("    {:?}", coord);
+    // }
 
     // Take the inverse road back to geographic coordinates
     utm32.apply(&ctx, &mut data, Inv);
 
-    println!("Roundtrip to geo:");
-    for coord in data {
-        println!("    {:?}", coord.to_geo());
-    }
+    // println!("Roundtrip to geo:");
+    // println!("    {:#?}", data);
+    // for coord in data {
+    //     println!("    {:?}", coord.to_geo());
+    // }
 
     // EPSG:1134
     let ed50_wgs84 = Op::new(pipeline, &ctx)?;
     let mut data = [osl, cph, sth, hel];
     ed50_wgs84.apply(&ctx, &mut data, Inv);
-    println!("ed50:");
-    for coord in data {
-        println!("    {:?}", Coor4D::to_geo(coord));
-    }
+    // println!("ed50:");
+    // println!("    {:?}", data.to_geo());
 
     // Handling bad syntax:
     println!("Bad syntax example:");

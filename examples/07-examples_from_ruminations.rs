@@ -1,3 +1,8 @@
+// examples/07-examples_from_ruminations.rs
+
+// Run with:
+// cargo run --example 07-examples_from_ruminations
+
 use log::{debug, trace};
 
 fn main() -> Result<(), anyhow::Error> {
@@ -7,9 +12,27 @@ fn main() -> Result<(), anyhow::Error> {
     trace!("Taking off");
     debug!("000");
 
-    println!("Running the example from Rumination 000: Overall architecture and philosophy");
+    println!("\n\nRunning the example from README.md: Quick start");
+    readme_md()?;
+
+    println!("\n\nRunning the example from Rumination 000: Overall architecture and philosophy");
     rumination_000()?;
 
+    Ok(())
+}
+
+fn readme_md() -> Result<(), anyhow::Error> {
+    use geodesy::prelude::*;
+
+    let mut context = Minimal::new();
+    let utm33 = context.op("utm zone=33")?;
+
+    let cph = Coor2D::geo(55., 12.); // Copenhagen
+    let sth = Coor2D::geo(59., 18.); // Stockholm
+    let mut data = [cph, sth];
+
+    context.apply(utm33, Fwd, &mut data)?;
+    println!("{:?}", data);
     Ok(())
 }
 

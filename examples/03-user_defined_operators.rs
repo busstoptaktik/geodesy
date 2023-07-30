@@ -56,10 +56,10 @@ fn main() -> anyhow::Result<()> {
     let add42 = prv.op("add42")?;
 
     // Same test coordinates as in example 00, but no conversion to radians.
-    let cph = Coor4D::raw(12., 55., 0., 0.); // Copenhagen
-    let osl = Coor4D::raw(10., 60., 0., 0.); // Oslo
-    let sth = Coor4D::raw(59., 18., 0., 0.); // Stockholm
-    let hel = Coor4D::raw(60., 25., 0., 0.); // Helsinki
+    let cph = Coor2D::raw(12., 55.); // Copenhagen
+    let osl = Coor2D::raw(10., 60.); // Oslo
+    let sth = Coor2D::raw(59., 18.); // Stockholm
+    let hel = Coor2D::raw(60., 25.); // Helsinki
 
     let mut data = [osl, cph, sth, hel];
 
