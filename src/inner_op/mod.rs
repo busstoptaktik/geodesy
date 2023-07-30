@@ -23,12 +23,11 @@ mod molodensky;
 mod noop;
 mod omerc;
 pub(crate) mod pipeline; // Needed by Op for instantiation
-mod proj;
 mod tmerc;
 mod webmerc;
 
 #[rustfmt::skip]
-const BUILTIN_OPERATORS: [(&str, OpConstructor); 26] = [
+const BUILTIN_OPERATORS: [(&str, OpConstructor); 25] = [
     ("adapt",        OpConstructor(adapt::new)),
     ("addone",       OpConstructor(addone::new)),
     ("btmerc",       OpConstructor(btmerc::new)),
@@ -53,7 +52,6 @@ const BUILTIN_OPERATORS: [(&str, OpConstructor); 26] = [
     ("utm",          OpConstructor(tmerc::utm)),
     ("pipeline",     OpConstructor(pipeline::new)),
     ("pop",          OpConstructor(pipeline::pop)),
-    ("proj",         OpConstructor(proj::new)),
     ("push",         OpConstructor(pipeline::push)),
 ];
 // A BTreeMap would have been a better choice for BUILTIN_OPERATORS, except

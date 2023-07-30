@@ -1,4 +1,4 @@
-// examples/02-user_defined_macros.rs
+// examples/03-user_defined_operators.rs
 
 // See also 00-transformations.rs
 // Run with:

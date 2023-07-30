@@ -1,9 +1,27 @@
-// Operator utilizing the "proj" command line program to provide access to the
-// enormous number of projections available in the PROJ library.
+// examples/08-user_defined_operators_using_proj.rs
+
+// See also 00-transformations.rs, 03-user_defined_operators.rs
+// Run with:
+// cargo run --example 08-user_defined_operators_using_proj
+
+// In this example we implement a user defined operator, that
+// calls the `proj` binary to access the large gamut of projections
+// implemented by the PROJ project.
+//
+// To that end we need to access some of the lower level features
+// of the Rust Geodesy library. Since they are mostly for
+// library-internal use, they are wrapped up in this dedicated
+// module:
+use geodesy::operator_authoring::*;
+
+// ----- O P E R A T O R ------------------------------------------------------------
+
+// Implementation of an operator utilizing the "proj" command line
+// program to provide access to the enormous number of projections
+// available in the PROJ library.
 //
 // Extremely experimental, undocumented, and with too few checks on return
 // values - but (under Windows at least) amazingly, it seems to work...
-use crate::operator_authoring::*;
 
 use std::io::Write;
 use std::mem::size_of;
@@ -105,7 +123,7 @@ pub const GAMUT: [OpParameter; 1] = [
     OpParameter::Flag { key: "inv" },
 ];
 
-pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> {
+pub fn proj_constructor(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> {
     let def = &parameters.definition;
     let given_args = ParsedParameters::new(parameters, &GAMUT)?.given;
     if Command::new("proj").stderr(Stdio::piped()).spawn().is_err() {
@@ -149,51 +167,48 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     })
 }
 
-// ----- T E S T S ------------------------------------------------------------------
+fn main() -> anyhow::Result<()> {
+    let mut prv = geodesy::Minimal::new();
+    prv.register_op("proj", OpConstructor(proj_constructor));
 
-// echo 12 55 | proj -f %.5f +proj=utm +zone=32
-// 691875.63214    6098907.82501
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn proj() -> Result<(), Error> {
-        if Command::new("proj").stderr(Stdio::piped()).spawn().is_err() {
-            return Ok(());
-        }
-
-        // Test projection: utm zone 32
-        let mut ctx = Minimal::default();
-        let op = ctx.op("proj proj=utm zone=32")?;
-
-        // Test values: geo, utm and roundtrip (another copy of geo)
-        let mut geo = [Coor4D::geo(55., 12., 0., 0.)];
-        let utm = [Coor4D::raw(691875.63214, 6098907.82501, 0., 0.)];
-        let rtp = [Coor4D::geo(55., 12., 0., 0.)];
-
-        ctx.apply(op, Fwd, &mut geo)?;
-        assert!(geo[0].hypot2(&utm[0]) < 1e-5);
-
-        ctx.apply(op, Inv, &mut geo)?;
-        assert!(rtp[0].default_ellps_dist(&geo[0]) < 1e-5);
-
-        // Inverted invocation - note "proj inv ..."
-        let op = ctx.op("proj inv proj=utm zone=32")?;
-
-        // Test values: utm and geo swaps roles here
-        let geo = [Coor4D::geo(55., 12., 0., 0.)];
-        let mut utm = [Coor4D::raw(691875.63214, 6098907.82501, 0., 0.)];
-        let rtp = [Coor4D::raw(691875.63214, 6098907.82501, 0., 0.)];
-
-        // Now, we get the inverse utm projection when calling the operator in the Fwd direction
-        ctx.apply(op, Fwd, &mut utm)?;
-        assert!(geo[0].default_ellps_dist(&utm[0]) < 1e-5);
-        // ...and roundtrip back to utm
-        ctx.apply(op, Inv, &mut utm)?;
-        assert!(rtp[0].hypot2(&utm[0]) < 1e-5);
-
-        Ok(())
+    // Check that we can access the `proj` binary - if not, just ignore
+    if Command::new("proj").stderr(Stdio::piped()).spawn().is_err() {
+        println!("Cannot access the proj executable");
+        return Ok(());
     }
+
+    // Test projection: utm zone 32
+    let mut ctx = Minimal::default();
+    let op = ctx.op("proj proj=utm zone=32")?;
+
+    // Test values: geo, utm and roundtrip (another copy of geo)
+    let mut geo = [Coor2D::geo(55., 12.)];
+    let utm = [Coor2D::raw(691875.63214, 6098907.82501)];
+    let rtp = [Coor2D::geo(55., 12.)];
+
+    println!("geo: {:?}", geo[0].to_degrees());
+    ctx.apply(op, Fwd, &mut geo)?;
+    assert!(geo[0].hypot2(&utm[0]) < 1e-5);
+    println!("projected: {:?}", geo[0]);
+
+    ctx.apply(op, Inv, &mut geo)?;
+    assert!(rtp[0].default_ellps_dist(&geo[0]) < 1e-5);
+    println!("roundtrip: {:?}", geo[0].to_degrees());
+
+    // Inverted invocation - note "proj inv ..."
+    let op = ctx.op("proj inv proj=utm zone=32")?;
+
+    // Test values: utm and geo swaps roles here
+    let geo = [Coor2D::geo(55., 12.)];
+    let mut utm = [Coor2D::raw(691875.63214, 6098907.82501)];
+    let rtp = [Coor2D::raw(691875.63214, 6098907.82501)];
+
+    // Now, we get the inverse utm projection when calling the operator in the Fwd direction
+    ctx.apply(op, Fwd, &mut utm)?;
+    assert!(geo[0].default_ellps_dist(&utm[0]) < 1e-5);
+    // ...and roundtrip back to utm
+    ctx.apply(op, Inv, &mut utm)?;
+    assert!(rtp[0].hypot2(&utm[0]) < 1e-5);
+
+    Ok(())
 }

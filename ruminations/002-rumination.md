@@ -35,7 +35,6 @@ $ echo 553036. -124509 | kp "dms:in | geo:out"
 - [`noop`](#operator-noop): The no-operation
 - [`omerc`](#operator-omerc): The oblique Mercator projection
 - [`pop`](#operator-pop): Pop a dimension from the stack into the operands
-- [`proj`](#operator-proj): Invoke the `proj` executable to support all the projections PROJ supports.
 - [`push`](#operator-push): Push a dimension from the operands onto the stack
 - [`tmerc`](#operator-tmerc): The transverse Mercator projection
 - [`utm`](#operator-utm): The UTM projection
@@ -605,24 +604,6 @@ Pop the top(s)-of-stack into one or more operand coordinate dimensions. If more 
 (the argument names are selected for PROJ compatibility)
 
 **See also:** [`push`](#operator-push)
-
----
-
-### Operator `proj`
-
-**Purpose:** Projection from geographic to any projected system supported by PROJ
-
-**Description:**
-
-Invokes the `proj` executable (if available) instantiating any PROJ supported projection. The syntax is identical to PROJ's, so check the [PROJ projection documentation](https://proj.org/operations/projections/index.html) for details
-
-**Example**: UTM zone 32 implemented using PROJ
-
-```js
-proj proj=utm zone=32 ellps=GRS80
-```
-
-**See also:** [PROJ documentation](https://proj.org/operations/projections/index.html): *Projections*.
 
 ---
 
