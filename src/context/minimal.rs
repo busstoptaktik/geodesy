@@ -121,11 +121,11 @@ impl Context for Minimal {
     }
 }
 
-
 impl Minimal {
     /// Returns a `Coor4D`, where the elements represent (dx/dλ, dy/dφ, dx/dφ, dy/dλ) (x_l, y_p, x_p, y_l)
     /// Mostly based on the PROJ function [pj_deriv](https://github.com/OSGeo/PROJ/blob/master/src/deriv.cpp),
     /// with appropriate adaptations to the fact that PROJ internally sets the semimajor axis, a = 1
+    #[allow(dead_code)]
     fn jacobian(
         &self,
         op: OpHandle,
@@ -148,12 +148,12 @@ impl Minimal {
         }
         op.apply(self, &mut coo, Fwd);
 
-        for i in 0..operands.len() {
-            let coord = coo[i];
+        for coord in coo.iter().take(operands.len()) {
             j.push(Coor4D::raw(coord[0], coord[1], coord[0], coord[1]));
         }
 
         // South-east of POI
+        #[allow(clippy::needless_range_loop)]
         for i in 0..operands.len() {
             let coord = operands.get_coord(i);
             coo[i] = Coor2D::raw(coord[0] + h, coord[1] - h);
@@ -167,14 +167,14 @@ impl Minimal {
             j[i] = Coor4D::raw(ji[0] + x, ji[1] - y, ji[2] - x, ji[3] + y);
         }
 
-
         // South-west of POI
-        for i in 0..operands.len() {
+        for (i, item) in coo.iter_mut().enumerate().take(operands.len()) {
             let coord = operands.get_coord(i);
-            coo[i] = Coor2D::raw(coord[0] - h, coord[1] - h);
+            *item = Coor2D::raw(coord[0] - h, coord[1] - h);
         }
         op.apply(self, &mut coo, Fwd);
 
+        #[allow(clippy::needless_range_loop)]
         for i in 0..operands.len() {
             let x = coo[i][0];
             let y = coo[i][1];
@@ -183,12 +183,13 @@ impl Minimal {
         }
 
         // North-west of POI
-        for i in 0..operands.len() {
+        for (i, item) in coo.iter_mut().enumerate().take(operands.len()) {
             let coord = operands.get_coord(i);
-            coo[i] = Coor2D::raw(coord[0] - h, coord[1] + h);
+            *item = Coor2D::raw(coord[0] - h, coord[1] + h);
         }
         op.apply(self, &mut coo, Fwd);
 
+        #[allow(clippy::needless_range_loop)]
         for i in 0..operands.len() {
             let x = coo[i][0];
             let y = coo[i][1];
@@ -197,6 +198,7 @@ impl Minimal {
         }
 
         // Normalize
+        #[allow(clippy::needless_range_loop)]
         for i in 0..operands.len() {
             let d = 4.0 * h * ellps.semimajor_axis();
             j[i][0] /= d;
@@ -300,10 +302,7 @@ mod tests {
 
         let op = ctx.op("utm zone=32")?;
 
-        let mut data = [
-            Coor2D::geo(55., 12.),
-            Coor2D::geo(59., 18.)
-        ];
+        let mut data = [Coor2D::geo(55., 12.), Coor2D::geo(59., 18.)];
 
         // (dx/dλ, dy/dφ, dx/dφ, dy/dλ) (x_l, y_p, x_p, y_l)
         let (ellps, jac) = ctx.jacobian(op, &mut data)?;
@@ -327,14 +326,15 @@ mod tests {
         let n = t.sqrt();
         let h = h * (t * n / (1. - es));
         let k = k * n;
-        let r = t * t / (1. - es);
         dbg!(h);
         dbg!(k);
 
+        let factors = ellps.factors(jac[0], data[0][1]);
+        dbg!(factors);
 
         let conv = -jac[0][2].atan2(jac[0][1]).to_degrees();
         dbg!(conv);
-        assert_eq!(h, 3.45);
+        assert!(1 == 2);
 
         Ok(())
     }

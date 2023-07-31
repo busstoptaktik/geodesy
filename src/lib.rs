@@ -48,6 +48,7 @@ pub mod prelude {
     pub use crate::Direction::Fwd;
     pub use crate::Direction::Inv;
     pub use crate::Error;
+    pub use crate::Factors;
     #[cfg(test)]
     pub fn some_basic_coor4dinates() -> [Coor4D; 2] {
         let copenhagen = Coor4D::raw(55., 12., 0., 0.);
@@ -147,6 +148,30 @@ pub enum Error {
 pub enum Direction {
     Fwd,
     Inv,
+}
+
+#[derive(Debug, Default)]
+#[rustfmt::skip]
+pub struct Factors {
+    // Scalar factors                // Common textbook designation
+    meridional_scale: f64,           // h
+    parallel_scale: f64,             // k
+    areal_scale: f64,                // s
+
+    // Angular factors
+    angular_distortion: f64,         // ω
+    meridian_parallel_angle: f64,    // θ'
+    meridian_convergence: f64,       // α
+
+    // Tissot indicatrix
+    tissot_semimajor: f64,           // a
+    tissot_semiminor: f64,           // b
+
+    // Jacobian
+    dx_dlam: f64,                    // J
+    dx_dphi: f64,
+    dy_dlam: f64,
+    dy_dphi: f64
 }
 
 #[cfg(doc)]
