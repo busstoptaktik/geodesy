@@ -68,6 +68,7 @@ pub mod operator_authoring {
     pub use crate::inner_op::InnerOp;
     pub use crate::inner_op::OpConstructor;
     pub use crate::math::*;
+    pub use crate::op::split_into_steps;
     pub use crate::op::Op;
     pub use crate::op::OpDescriptor;
     pub use crate::op::OpParameter;

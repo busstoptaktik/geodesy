@@ -168,19 +168,81 @@ pub fn operator_name(definition: &str, default: &str) -> String {
         .to_string()
 }
 
-pub fn split_into_parameters(step: &str) -> BTreeMap<String, String> {
-    // Conflate contiguous whitespace, then remove whitespace after {"=",  ":",  ","}
-    let step = step.trim().to_string();
-    let elements: Vec<_> = step.split_whitespace().collect();
-    let step = elements
+// Helper function for 'split_into_steps' and 'split_into_parameters':
+// Glue syntactic elements together: Elements separated by a single space,
+// key-value pairs glued by '=':
+//     key1= value1            key2    =value2  ->  key1=value1 key2=value2
+// sigils '$' and ':' handled meaningfully:
+//     foo: bar $ baz -> foo:bar $baz
+// and sequence separators ',' trimmed:
+//     foo = bar, baz  ->  foo=bar,baz
+fn glue(definition: &str) -> String {
+    let elements: Vec<_> = definition.split_whitespace().collect();
+    elements
         .join(" ")
         .replace("= ", "=")
         .replace(": ", ":")
         .replace(", ", ",")
+        .replace("| ", "|")
         .replace(" =", "=")
         .replace(" :", ":")
-        .replace(" ,", ",");
+        .replace(" ,", ",")
+        .replace(" |", "|")
+        .replace("$ ", "$") // But keep " $" as is!
+}
 
+/// Split a pipeline definition into steps and a potentially empty docstring
+pub fn split_into_steps(definition: &str) -> (Vec<String>, String) {
+    // Impose some line ending sanity
+    let all = definition
+        .replace("\r\n", "\n")
+        .replace('\r', "\n")
+        .trim()
+        .to_string();
+
+    // Collect docstrings and remove plain comments
+    //let mut trimmed = Vec::<String>::new();
+    let mut trimmed = String::new();
+    let mut docstring = Vec::<String>::new();
+    for line in all.lines() {
+        let line = line.trim();
+
+        // Collect docstrings
+        if line.starts_with("##") {
+            docstring.push((line.to_string() + "    ")[3..].trim_end().to_string());
+            continue;
+        }
+
+        // Remove plain comments
+        if line.starts_with('#') {
+            continue;
+        }
+
+        // And collect everything else
+        trimmed += " ";
+        trimmed += line;
+    }
+
+    // Finalize the docstring
+    let docstring = docstring.join("\n").trim().to_string();
+
+    // Remove empty steps and other non-significant whitespace
+    let steps: Vec<String> = glue(&trimmed)
+        // split into steps
+        .split('|')
+        // remove empty steps
+        .filter(|x| !x.is_empty())
+        // convert &str to String
+        .map(|x| x.to_string())
+        // and turn into Vec<String>
+        .collect();
+
+    (steps, docstring)
+}
+
+pub fn split_into_parameters(step: &str) -> BTreeMap<String, String> {
+    // Remove non-significant whitespace
+    let step = glue(step);
     let mut params = BTreeMap::new();
     let elements: Vec<_> = step.split_whitespace().collect();
     for element in elements {
@@ -391,6 +453,18 @@ mod tests {
         ctx.apply(op, Inv, &mut data)?;
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
+
+        Ok(())
+    }
+
+    #[test]
+    fn steps() -> Result<(), Error> {
+        let (steps, _) = split_into_steps("  |\n#\n | |foo bar = baz |   bonk : bonk  $ bonk ||| ");
+        assert_eq!(steps.len(), 2);
+        assert_eq!(steps[0], "foo bar=baz");
+        assert_eq!(steps[1], "bonk:bonk $bonk");
+        let (steps, _) = split_into_steps("\n\r\r\n    ||| | \n\n\r\n\r  |  \n\r\r \n  ");
+        assert_eq!(steps.len(), 0);
 
         Ok(())
     }
