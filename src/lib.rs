@@ -84,7 +84,7 @@ pub mod context_authoring {
 }
 
 use thiserror::Error;
-/// The *Rust Geodesy* errror messaging enumeration. Badly needs reconsideration
+/// The *Rust Geodesy* error messaging enumeration. Badly needs reconsideration
 #[derive(Error, Debug)]
 pub enum Error {
     #[error("i/o error")]
