@@ -48,7 +48,7 @@ mod tests {
     fn addone() -> Result<(), Error> {
         let mut ctx = Minimal::default();
         let op = ctx.op("addone")?;
-        let mut data = some_basic_coordinates();
+        let mut data = some_basic_coor2dinates();
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
         ctx.apply(op, Fwd, &mut data)?;

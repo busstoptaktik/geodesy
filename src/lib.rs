@@ -49,9 +49,21 @@ pub mod prelude {
     pub use crate::Direction::Inv;
     pub use crate::Error;
     #[cfg(test)]
-    pub fn some_basic_coordinates() -> [Coor4D; 2] {
+    pub fn some_basic_coor4dinates() -> [Coor4D; 2] {
         let copenhagen = Coor4D::raw(55., 12., 0., 0.);
         let stockholm = Coor4D::raw(59., 18., 0., 0.);
+        [copenhagen, stockholm]
+    }
+    #[cfg(test)]
+    pub fn some_basic_coor3dinates() -> [Coor3D; 2] {
+        let copenhagen = Coor3D::raw(55., 12., 0.);
+        let stockholm = Coor3D::raw(59., 18., 0.);
+        [copenhagen, stockholm]
+    }
+    #[cfg(test)]
+    pub fn some_basic_coor2dinates() -> [Coor2D; 2] {
+        let copenhagen = Coor2D::raw(55., 12.);
+        let stockholm = Coor2D::raw(59., 18.);
         [copenhagen, stockholm]
     }
 }

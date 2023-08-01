@@ -282,7 +282,7 @@ mod tests {
 
         // Check forward and inverse operation
         let op = ctx.op("addone")?;
-        let mut data = some_basic_coordinates();
+        let mut data = some_basic_coor2dinates();
         ctx.apply(op, Fwd, &mut data)?;
         assert_eq!(data[0][0], 56.);
         assert_eq!(data[1][0], 60.);
@@ -292,7 +292,7 @@ mod tests {
 
         // Also for an inverted operator: check forward and inverse operation
         let op = ctx.op("addone inv ")?;
-        let mut data = some_basic_coordinates();
+        let mut data = some_basic_coor2dinates();
         ctx.apply(op, Fwd, &mut data)?;
         assert_eq!(data[0][0], 54.);
         assert_eq!(data[1][0], 58.);
@@ -323,7 +323,7 @@ mod tests {
 
     #[test]
     fn pipeline() -> Result<(), Error> {
-        let mut data = some_basic_coordinates();
+        let mut data = some_basic_coor2dinates();
         let mut ctx = Minimal::default();
         let op = ctx.op("addone|addone|addone")?;
 
@@ -340,7 +340,7 @@ mod tests {
 
     #[test]
     fn macro_expansion() -> Result<(), Error> {
-        let mut data = some_basic_coordinates();
+        let mut data = some_basic_coor2dinates();
         let mut ctx = Minimal::default();
         ctx.register_resource("sub:one", "addone inv");
         let op = ctx.op("addone|sub:one|addone")?;
@@ -358,7 +358,7 @@ mod tests {
 
     #[test]
     fn macro_expansion_inverted() -> Result<(), Error> {
-        let mut data = some_basic_coordinates();
+        let mut data = some_basic_coor2dinates();
         let mut ctx = Minimal::default();
         ctx.register_resource("sub:one", "addone inv");
         let op = ctx.op("addone|sub:one inv|addone")?;
@@ -376,7 +376,7 @@ mod tests {
 
     #[test]
     fn macro_expansion_with_embedded_pipeline() -> Result<(), Error> {
-        let mut data = some_basic_coordinates();
+        let mut data = some_basic_coor2dinates();
         let mut ctx = Minimal::default();
         ctx.register_resource("sub:three", "addone inv|addone inv|addone inv");
         let op = ctx.op("addone|sub:three")?;
@@ -403,7 +403,7 @@ mod tests {
 
     #[test]
     fn macro_expansion_with_defaults_provided() -> Result<(), Error> {
-        let mut data = some_basic_coordinates();
+        let mut data = some_basic_coor2dinates();
         let mut ctx = Minimal::default();
 
         // A macro providing a default value of 1 for the x parameter
