@@ -11,6 +11,7 @@ pub use parameter::OpParameter;
 pub use parsed_parameters::ParsedParameters;
 pub use raw_parameters::RawParameters;
 
+/// The key, returned to the user, representing the actual operation handled by the `Context`
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Copy, Clone)]
 pub struct OpHandle(uuid::Uuid);
 impl OpHandle {
@@ -213,7 +214,6 @@ pub fn split_into_steps(definition: &str) -> (Vec<String>, String) {
         .to_string();
 
     // Collect docstrings and remove plain comments
-    //let mut trimmed = Vec::<String>::new();
     let mut trimmed = String::new();
     let mut docstring = Vec::<String>::new();
     for line in all.lines() {

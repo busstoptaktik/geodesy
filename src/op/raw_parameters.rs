@@ -1,6 +1,6 @@
 // `RawParameters` is the vehicle used by the `Op`erator factory in `Op::op(...)`,
 // to ferry args around from the invocator into the constructor of the individual
-// `InnerOp`s. The `InnrOp`constructor typically interprets the contents of
+// `InnerOp`s. The `InnerOp`constructor typically interprets the contents of
 // `RawParameters`, and converts it into a more runtime friendly instance of
 // `ParsedParameters`.
 
@@ -44,8 +44,9 @@ impl RawParameters {
         }
     }
 
-    // If the next step is a macro (i.e. potentially an embedded pipeline), we
-    // get the arguments from the invocation and bring them into the globals.
+    // If the next step is a macro (i.e. potentially an embedded pipeline),
+    // we take a copy of the arguments from the macro invocation and enter
+    // them into the globals.
     // Otherwise, we just copy the globals from the previous step, and
     // update the recursion counter.
     pub fn next(&self, definition: &str) -> RawParameters {

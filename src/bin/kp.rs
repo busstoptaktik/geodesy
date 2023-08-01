@@ -134,7 +134,7 @@ fn main() -> Result<(), anyhow::Error> {
 
             // To avoid unlimited buffer growth, we send material
             // on to the transformation factory every time, we have
-            // 25000 operans to operate on
+            // 25000 operands to operate on
             if operands.len() == 25000 {
                 number_of_operands_succesfully_transformed +=
                     transform(&options, op, &mut operands, &ctx)?;

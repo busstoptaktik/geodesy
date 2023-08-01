@@ -240,7 +240,7 @@ mod tests {
         // 1234-order, while pop happens in 4321-order, so a
         // "push all, pop all" pair is a noop: The order of operator
         // options is insignificant, so the 1234/4321 order is, in principle
-        // arbitrary, but seleted with the noop-characteristicum in mind.
+        // arbitrary, but selected with the noop-characteristics in mind.
         let op = ctx.op("push v_1 v_2|pop v_1 v_2")?;
         ctx.apply(op, Fwd, &mut data)?;
         assert_eq!(data[0][0], 12.);
