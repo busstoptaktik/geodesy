@@ -17,6 +17,8 @@ pub struct Plain {
     paths: Vec<std::path::PathBuf>,
 }
 
+const BAD_ID_MESSAGE: Error = Error::General("Plain: Unknown operator id");
+
 impl Default for Plain {
     fn default() -> Plain {
         let constructors = BTreeMap::new();
@@ -64,9 +66,30 @@ impl Context for Plain {
         direction: Direction,
         operands: &mut dyn CoordinateSet,
     ) -> Result<usize, Error> {
-        const BAD_ID_MESSAGE: Error = Error::General("Local: Unknown operator id");
         let op = self.operators.get(&op).ok_or(BAD_ID_MESSAGE)?;
         Ok(op.apply(self, operands, direction))
+    }
+
+    fn steps(&self, op: OpHandle) -> Result<&Vec<String>, Error> {
+        let op = self.operators.get(&op).ok_or(BAD_ID_MESSAGE)?;
+        Ok(&op.descriptor.steps)
+    }
+
+    fn params(&self, op: OpHandle, index: usize) -> Result<&ParsedParameters, Error> {
+        let op = self.operators.get(&op).ok_or(BAD_ID_MESSAGE)?;
+        // Leaf level?
+        if op.steps.is_empty() {
+            if index > 0 {
+                return Err(Error::General("Plain: Bad step index"));
+            }
+            return Ok(&op.params);
+        }
+
+        // Not leaf level
+        if index >= op.steps.len() {
+            return Err(Error::General("Plain: Bad step index"));
+        }
+        Ok(&op.steps[index].params)
     }
 
     fn globals(&self) -> BTreeMap<String, String> {
