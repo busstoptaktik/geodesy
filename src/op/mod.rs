@@ -213,14 +213,16 @@ pub fn split_into_steps(definition: &str) -> (Vec<String>, String) {
             continue;
         }
 
-        // Remove plain comments
-        if line.starts_with('#') {
+        // Remove comments - both inline and separate lines
+        let line: Vec<&str> = line.trim().split('#').collect();
+        // Full line comment - just skip
+        if line[0].starts_with('#') {
             continue;
         }
 
-        // And collect everything else
+        // Inline comment, or no comment at all: Collect everything before `#`
         trimmed += " ";
-        trimmed += line;
+        trimmed += line[0].trim();
     }
 
     // Finalize the docstring
