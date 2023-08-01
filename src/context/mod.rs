@@ -33,6 +33,12 @@ pub trait Context {
     /// Globally defined default values (typically just `ellps=GRS80`)
     fn globals(&self) -> BTreeMap<String, String>;
 
+    /// Definitions of steps
+    fn steps(&self, op: OpHandle) -> Result<&Vec<String>, Error>;
+
+    /// Parsed parameters of a specific step
+    fn params(&self, op: OpHandle, index: usize) -> Result<&ParsedParameters, Error>;
+
     /// Register a new user-defined operator
     fn register_op(&mut self, name: &str, constructor: OpConstructor);
     /// Register a new user-defined resource (macro, ellipsoid parameter set...)

@@ -183,61 +183,6 @@ fn do_the_pop(
     operands.len()
 }
 
-pub fn split_into_steps(definition: &str) -> (Vec<String>, String) {
-    // Impose some line ending sanity
-    let all = definition
-        .replace("\r\n", "\n")
-        .replace('\r', "\n")
-        .trim()
-        .to_string();
-
-    // Collect docstrings and remove plain comments
-    let mut trimmed = Vec::<String>::new();
-    let mut docstring = Vec::<String>::new();
-    for line in all.lines() {
-        let line = line.trim();
-
-        // Collect docstrings
-        if line.starts_with("##") {
-            docstring.push((line.to_string() + "    ")[3..].trim_end().to_string());
-            continue;
-        }
-
-        // Remove comments
-        let line: Vec<&str> = line.trim().split('#').collect();
-        if line[0].starts_with('#') {
-            continue;
-        }
-        trimmed.push(line[0].trim().to_string());
-    }
-
-    // Finalize the docstring
-    let docstring = docstring.join("\n").trim().to_string();
-
-    // Remove superfluous newlines in the comment-trimmed text
-    let trimmed = trimmed.join(" ").replace('\n', " ");
-
-    // Generate trimmed steps with elements separated by a single space,
-    // and key-value pairs glued by '=' as in
-    //     key1=value1 key2=value2
-    // as opposed to e.g.
-    //     key1= value1            key2    =value2
-    let steps: Vec<_> = trimmed.split('|').collect();
-    let mut trimmed_steps = Vec::<String>::new();
-    for mut step in steps {
-        step = step.trim();
-        // Ignore empty steps to allow "|" at start of all steps
-        if step.is_empty() {
-            continue;
-        }
-        let elements: Vec<_> = step.split_whitespace().collect();
-        let joined = elements.join(" ").replace("= ", "=");
-        trimmed_steps.push(joined);
-    }
-    let trimmed_steps = trimmed_steps;
-    (trimmed_steps, docstring)
-}
-
 // ----- T E S T S ---------------------------------------------------------------------
 
 #[cfg(test)]
