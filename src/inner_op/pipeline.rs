@@ -192,7 +192,7 @@ mod tests {
     fn pipeline() -> Result<(), Error> {
         let mut ctx = Minimal::default();
         let op = ctx.op("addone|addone|addone")?;
-        let mut data = some_basic_coordinates();
+        let mut data = some_basic_coor2dinates();
 
         ctx.apply(op, Fwd, &mut data)?;
         assert_eq!(data[0][0], 58.);
@@ -203,7 +203,7 @@ mod tests {
         assert_eq!(data[1][0], 59.);
 
         let op = ctx.op("addone|addone inv|addone")?;
-        let mut data = some_basic_coordinates();
+        let mut data = some_basic_coor2dinates();
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
 
@@ -227,7 +227,7 @@ mod tests {
     #[test]
     fn push_pop() -> Result<(), Error> {
         let mut ctx = Minimal::default();
-        let mut data = some_basic_coordinates();
+        let mut data = some_basic_coor3dinates();
 
         // First we swap lat, lon by doing two independent pops
         let op = ctx.op("push v_2 v_1|addone|pop v_1|pop v_2")?;
@@ -254,14 +254,14 @@ mod tests {
 
         // Check inversion
         let op = ctx.op("push v_1 v_2|pop v_2 v_1 v_3")?;
-        let mut data = some_basic_coordinates();
+        let mut data = some_basic_coor3dinates();
         assert_eq!(2, ctx.apply(op, Inv, &mut data)?);
         assert_eq!(data[0][0], 12.);
         assert_eq!(data[0][1], 0.);
 
         // Check omit_fwd
         let op = ctx.op("push v_1 v_2|pop v_2 v_1 v_3 omit_fwd")?;
-        let mut data = some_basic_coordinates();
+        let mut data = some_basic_coor3dinates();
         assert_eq!(2, ctx.apply(op, Fwd, &mut data)?);
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[0][1], 12.);
@@ -271,7 +271,7 @@ mod tests {
 
         // Check omit_inv
         let op = ctx.op("push v_1 v_2 v_3 omit_inv|pop v_1 v_2")?;
-        let mut data = some_basic_coordinates();
+        let mut data = some_basic_coor3dinates();
         assert_eq!(2, ctx.apply(op, Inv, &mut data)?);
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[0][1], 12.);

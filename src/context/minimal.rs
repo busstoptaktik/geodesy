@@ -126,6 +126,7 @@ impl Context for Minimal {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use float_eq::assert_float_eq;
 
     #[test]
     fn basic() -> Result<(), Error> {
@@ -135,7 +136,7 @@ mod tests {
         ctx.register_resource("stupid:way", "addone | addone | addone inv");
         let op = ctx.op("stupid:way")?;
 
-        let mut data = some_basic_coordinates();
+        let mut data = some_basic_coor2dinates();
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
 
@@ -165,13 +166,13 @@ mod tests {
 
         let op = ctx.op("geo:in | utm zone=32 | neu:out")?;
 
-        let mut data = some_basic_coordinates();
+        let mut data = some_basic_coor2dinates();
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
 
         ctx.apply(op, Fwd, &mut data)?;
-        assert!((data[0][0] - 6098907.82501).abs() < 1e-4);
-        assert!((data[0][1] - 691875.63214).abs() < 1e-4);
+        let expected = [6098907.825005002, 691875.6321396609];
+        assert_float_eq!(data[0].0, expected, abs_all <= 1e-10);
 
         // The text definitions of each step
         let steps = ctx.steps(op)?;

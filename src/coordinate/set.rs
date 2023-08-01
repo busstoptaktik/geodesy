@@ -277,7 +277,7 @@ mod tests {
     // Test the "impl<const N: usize> CoordinateSet for [Coor4D; N]"
     #[test]
     fn array() {
-        let mut operands = some_basic_coordinates();
+        let mut operands = some_basic_coor4dinates();
         assert_eq!(operands.len(), 2);
         assert_eq!(operands.is_empty(), false);
 
@@ -299,7 +299,7 @@ mod tests {
     // Test the "impl CoordinateSet for Vec<Coor4D>"
     #[test]
     fn vector() {
-        let mut operands = Vec::from(some_basic_coordinates());
+        let mut operands = Vec::from(some_basic_coor4dinates());
         assert_eq!(operands.len(), 2);
         assert_eq!(operands.is_empty(), false);
 
@@ -321,7 +321,7 @@ mod tests {
     // Test the "AngularUnits" conversion trait
     #[test]
     fn angular() {
-        let mut operands = some_basic_coordinates();
+        let mut operands = some_basic_coor2dinates();
         let cph = operands.get_coord(0);
 
         // Note the different usage patterns when using the AngularUnits trait with

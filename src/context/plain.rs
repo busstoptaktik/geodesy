@@ -222,6 +222,7 @@ impl Context for Plain {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use float_eq::assert_float_eq;
 
     #[test]
     fn basic() -> Result<(), Error> {
@@ -245,7 +246,7 @@ mod tests {
         let op = ctx.op("stupid:way")?;
 
         // ...and it works as expected?
-        let mut data = some_basic_coordinates();
+        let mut data = some_basic_coor2dinates();
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
 
@@ -275,7 +276,7 @@ mod tests {
         let op = ctx.op("stupid:way_too")?;
 
         // ...and it works as expected?
-        let mut data = some_basic_coordinates();
+        let mut data = some_basic_coor2dinates();
 
         ctx.apply(op, Fwd, &mut data)?;
         assert_eq!(data[0][0], 57.);
@@ -291,10 +292,10 @@ mod tests {
 
         // But this classic should work...
         let op = ctx.op("geo:in | utm zone=32")?;
-        let mut data = some_basic_coordinates();
+        let mut data = some_basic_coor2dinates();
         ctx.apply(op, Fwd, &mut data)?;
-        assert!((data[0][0] - 691875.632139660884) < 1e-9);
-        assert!((data[0][1] - 6098907.825005002320) < 1e-9);
+        let expected = [691875.6321396609, 6098907.825005002];
+        assert_float_eq!(data[0].0, expected, abs_all <= 1e-9);
 
         Ok(())
     }

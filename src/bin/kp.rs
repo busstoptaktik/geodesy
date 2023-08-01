@@ -226,6 +226,7 @@ fn transform(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use float_eq::assert_float_eq;
 
     fn some_basic_coordinates() -> [Coor4D; 2] {
         let copenhagen = Coor4D::raw(55., 12., 0., 0.);
@@ -240,12 +241,10 @@ mod tests {
         let op = ctx.op("geo:in | utm zone=32 | neu:out")?;
 
         let mut data = some_basic_coordinates();
-        assert_eq!(data[0][0], 55.);
-        assert_eq!(data[1][0], 59.);
+        let expected = [6098907.825005002, 691875.6321396609, 0., 0.];
 
         ctx.apply(op, Fwd, &mut data)?;
-        assert!((data[0][0] - 6098907.82501).abs() < 1e-4);
-        assert!((data[0][1] - 691875.63214).abs() < 1e-4);
+        assert_float_eq!(data[0].0, expected, abs_all <= 1e-9);
 
         // The text definitions of each step
         let steps = ctx.steps(op)?;

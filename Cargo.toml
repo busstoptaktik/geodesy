@@ -31,6 +31,7 @@ env_logger = {version="0.10.0", optional = true}
 # Library level logging and error handling
 log = "0.4"
 thiserror = "1.0"
+float_eq = "1"
 
 [dev-dependencies]
 # Needed for building doc-tests

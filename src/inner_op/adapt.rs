@@ -284,6 +284,7 @@ fn combine_descriptors(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use float_eq::assert_float_eq;
 
     // Test that the underlying descriptor-functionality works
     #[test]
@@ -366,20 +367,12 @@ mod tests {
         ];
 
         assert_eq!(ctx.apply(degify, Fwd, &mut data)?, 2);
-        assert!((data[0][0] - 90.0).abs() < 1e-10);
-        assert!((data[0][1] - 180.0).abs() < 1e-10);
-
-        assert!((data[1][0] - 45.0).abs() < 1e-10);
-        assert!((data[1][1] - 90.0).abs() < 1e-10);
-
-        assert_eq!(data[1][2], 0.);
-        assert_eq!(data[1][3], 0.);
+        assert_float_eq!(data[0].0, [90., 180., 0., 0.], abs_all <= 1e-10);
+        assert_float_eq!(data[1].0, [45., 90., 0., 0.], abs_all <= 1e-10);
 
         assert_eq!(ctx.apply(degify, Inv, &mut data)?, 2);
-        assert!((data[0][0] - 200.0).abs() < 1e-10);
-        assert!((data[0][1] - 100.0).abs() < 1e-10);
-        assert!((data[1][0] - 100.0).abs() < 1e-10);
-        assert!((data[1][1] - 50.0).abs() < 1e-10);
+        assert_float_eq!(data[0].0, [200., 100., 0., 0.], abs_all <= 1e-10);
+        assert_float_eq!(data[1].0, [100., 50., 0., 0.], abs_all <= 1e-10);
 
         Ok(())
     }
@@ -388,7 +381,7 @@ mod tests {
     #[test]
     fn no_unit_conversion() -> Result<(), Error> {
         let mut ctx = Minimal::default();
-        let mut data = some_basic_coordinates();
+        let mut data = some_basic_coor2dinates();
         let swap = ctx.op("adapt from=neuf")?;
         assert_eq!(ctx.apply(swap, Fwd, &mut data)?, 2);
         assert_eq!(data[0][0], 12.0);
@@ -409,31 +402,31 @@ mod tests {
 
         let utm = ctx.op("geo:in | utm zone=32")?;
         let geo = ctx.op("utm zone=32 inv | geo:out")?;
+        let expected = [691875.6321396609, 6098907.825005002];
 
         // Roundtrip geo->utm->geo, using separate ops for fwd and inv
-        let mut data = some_basic_coordinates();
+        let mut data = some_basic_coor2dinates();
+
         assert_eq!(ctx.apply(utm, Fwd, &mut data)?, 2);
-        assert!((data[0][0] - 691875.6321396603).abs() < 1e-9);
-        assert!((data[0][1] - 6098907.825005002).abs() < 1e-9);
+        assert_float_eq!(data[0].0, expected, abs_all <= 1e-9);
+
         assert_eq!(ctx.apply(geo, Fwd, &mut data)?, 2);
-        assert!((data[0][0] - 55.0).abs() < 1e-9);
-        assert!((data[0][1] - 12.0).abs() < 1e-9);
+        assert_float_eq!(data[0].0, [55., 12.], abs_all <= 1e-9);
 
         // Same, but using a plain Inv invocation for the return trip
-        let mut data = some_basic_coordinates();
+        let mut data = some_basic_coor2dinates();
+
         assert_eq!(ctx.apply(utm, Fwd, &mut data)?, 2);
-        assert!((data[0][0] - 691875.6321396603).abs() < 1e-9);
-        assert!((data[0][1] - 6098907.825005002).abs() < 1e-9);
+        assert_float_eq!(data[0].0, expected, abs_all <= 1e-9);
+
         assert_eq!(ctx.apply(utm, Inv, &mut data)?, 2);
-        assert!((data[0][0] - 55.0).abs() < 1e-9);
-        assert!((data[0][1] - 12.0).abs() < 1e-9);
+        assert_float_eq!(data[0].0, [55., 12.], abs_all <= 1e-9);
 
         // Swap data by reading them as geo, writing them as gis
-        let mut data = some_basic_coordinates();
+        let mut data = some_basic_coor2dinates();
         let swap = ctx.op("geo:in | gis:out")?;
         assert_eq!(ctx.apply(swap, Fwd, &mut data)?, 2);
-        assert!((data[0][0] - 12.0).abs() < 1e-9);
-        assert!((data[0][1] - 55.0).abs() < 1e-9);
+        assert_float_eq!(data[0].0, [12., 55.], abs_all <= 1e-9);
 
         Ok(())
     }
