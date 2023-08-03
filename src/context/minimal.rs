@@ -121,67 +121,6 @@ impl Context for Minimal {
     }
 }
 
-impl Minimal {
-    /// Returns a `Coor4D`, where the elements represent (dx/dλ, dy/dφ, dx/dφ, dy/dλ) (x_l, y_p, x_p, y_l)
-    /// Mostly based on the PROJ function [pj_deriv](https://github.com/OSGeo/PROJ/blob/master/src/deriv.cpp),
-    /// with appropriate adaptations to the fact that PROJ internally sets the semimajor axis, a = 1
-    #[allow(dead_code)]
-    #[rustfmt::skip]
-    fn jacobian(&self, op: OpHandle, scale: [f64; 2], swap: [bool; 2], ellps: Ellipsoid, at: Coor2D) -> Result<Jacobian, Error> {
-        const BAD_ID_MESSAGE: Error = Error::General("Minimal: Unknown operator id");
-        let op = self.operators.get(&op).ok_or(BAD_ID_MESSAGE)?;
-
-        // If we have input in degrees, we must multiply the output by a factor of 180/pi
-        // For user convenience, scale[0] is a "to degrees"-factor, i.e. scale[0]==1
-        // indicates degrees, whereas scale[0]==180/pi indicates that input angles are
-        // in radians.
-        // To convert input coordinates to radians, divide by `angular_scale`
-        let angular_scale = 1f64.to_degrees() / scale[0];
-
-        // If we have output in feet, we must multiply the output by a factor of 0.3048
-        // For user convenience, scale[1] is a "to metres"-factor, i.e. scale[1]==1
-        // indicates metres, whereas scale[1]==0.3048 indicates that output lengths
-        // are in feet, and scale[1]=201.168 indicates that output is in furlongs
-        let linear_scale = 1.0 / scale[1];
-
-        let h = 1e-5 / angular_scale;
-        let d = (4.0 * h * ellps.semimajor_axis() / angular_scale * linear_scale).recip();
-
-        let mut coo = [Coor2D::origin(); 4];
-
-        let (e, n) = if swap[0] {(at[1], at[0])} else {(at[0], at[1])};
-
-        // Latitude in degrees
-        let latitude = n * scale[0];
-
-        // North-east of POI
-        coo[0] = Coor2D::raw(e + h, n + h);
-        // South-east of POI
-        coo[1] = Coor2D::raw(e + h, n - h);
-        // South-west of POI
-        coo[2] = Coor2D::raw(e - h, n - h);
-        // North-west of POI
-        coo[3] = Coor2D::raw(e - h, n + h);
-        if swap[0] {
-            coo[0] = Coor2D::raw(coo[0][1], coo[0][0]);
-            coo[1] = Coor2D::raw(coo[1][1], coo[1][0]);
-            coo[2] = Coor2D::raw(coo[2][1], coo[2][0]);
-            coo[3] = Coor2D::raw(coo[3][1], coo[3][0]);
-        }
-        op.apply(self, &mut coo, Fwd);
-
-        let (e, n) = if swap[1] {(1, 0)} else {(0, 1)};
-
-        //        NE          SE         SW          NW
-        let dx_dlam =  (coo[0][e] + coo[1][e] - coo[2][e] - coo[3][e]) * d;
-        let dy_dlam =  (coo[0][n] + coo[1][n] - coo[2][n] - coo[3][n]) * d;
-        let dx_dphi =  (coo[0][e] - coo[1][e] - coo[2][e] + coo[3][e]) * d;
-        let dy_dphi =  (coo[0][n] - coo[1][n] - coo[2][n] + coo[3][n]) * d;
-
-        Ok(Jacobian{latitude, dx_dlam, dy_dlam, dx_dphi, dy_dphi, ellps})
-    }
-}
-
 // ----- T E S T S ------------------------------------------------------------------
 
 #[cfg(test)]
@@ -272,47 +211,75 @@ mod tests {
     }
 
     #[test]
-    fn jacobian() -> Result<(), Error> {
+    fn jacobian_test() -> Result<(), Error> {
         let mut ctx = Minimal::new();
+        let expected = [
+            0.5743697198254788,
+            0.02465770672327687,
+            -0.04289429341613819,
+            0.9991676664740311,
+        ];
 
+        // First a plain case of scaling input in radians, but no swapping
         let cph = Coor2D::geo(55., 12.);
         let op = ctx.op("utm zone=32")?;
         let steps = ctx.steps(op)?;
-        assert!(steps.len()==1);
+        assert!(steps.len() == 1);
         let ellps = ctx.params(op, 0)?.ellps[0];
-        let jac = ctx.jacobian(op, [1f64.to_degrees(),1.], [false, false], ellps, cph)?;
-        //dbg!(&jac);
+        let jac = Jacobian::new(
+            &ctx,
+            op,
+            [1f64.to_degrees(), 1.],
+            [false, false],
+            ellps,
+            cph,
+        )?;
+        assert_float_eq!(
+            [jac.dx_dlam, jac.dy_dlam, jac.dx_dphi, jac.dy_dphi],
+            expected,
+            abs_all <= 1e-8
+        );
         dbg!(1f64.to_degrees());
         let factors = jac.factors();
         dbg!(factors);
 
+        // Then input in degrees (i.e. no scaling), and no swapping
         let cph = Coor2D::raw(12., 55.);
         let op = ctx.op("gis:in | utm zone=32")?;
-        let jac = ctx.jacobian(op, [1.,1.], [false, false], ellps, cph)?;
-        //dbg!(&jac);
-        let factors = jac.factors();
-        dbg!(factors);
+        let jac = Jacobian::new(&ctx, op, [1., 1.], [false, false], ellps, cph)?;
+        assert_float_eq!(
+            [jac.dx_dlam, jac.dy_dlam, jac.dx_dphi, jac.dy_dphi],
+            expected,
+            abs_all <= 1e-7
+        );
 
+        // Then input in degrees (i.e. no scaling), and swapping on input
         let cph = Coor2D::raw(55., 12.);
         let op = ctx.op("geo:in | utm zone=32")?;
-        let jac = ctx.jacobian(op, [1.,1.], [true, false], ellps, cph)?;
-        //dbg!(&jac);
-        let factors = jac.factors();
-        dbg!(factors);
+        let jac = Jacobian::new(&ctx, op, [1., 1.], [true, false], ellps, cph)?;
+        assert_float_eq!(
+            [jac.dx_dlam, jac.dy_dlam, jac.dx_dphi, jac.dy_dphi],
+            expected,
+            abs_all <= 1e-7
+        );
 
+        // Then input in degrees (i.e. no scaling), and swapping on both input and output
         let op = ctx.op("geo:in | utm zone=32 |neu:out")?;
-        let jac = ctx.jacobian(op, [1.,1.], [true, true], ellps, cph)?;
-        //dbg!(&jac);
-        let factors = jac.factors();
-        dbg!(factors);
+        let jac = Jacobian::new(&ctx, op, [1., 1.], [true, true], ellps, cph)?;
+        assert_float_eq!(
+            [jac.dx_dlam, jac.dy_dlam, jac.dx_dphi, jac.dy_dphi],
+            expected,
+            abs_all <= 1e-7
+        );
 
-        let op = ctx.op("geo:in | utm zone=32 |neu:out | helmert scale=3.28083989501312300874")?;
-        let jac = ctx.jacobian(op, [1.,0.3048], [true, true], ellps, cph)?;
-        //dbg!(&jac);
-        let factors = jac.factors();
-        dbg!(factors);
-
-        assert!(2==1);
+        // Then input in degrees (i.e. no scaling), scaling onoutput, and swapping on both input and output
+        let op = ctx.op("geo:in | utm zone=32 |neu:out | helmert s=3e6")?;
+        let jac = Jacobian::new(&ctx, op, [1., 0.25], [true, true], ellps, cph)?;
+        assert_float_eq!(
+            [jac.dx_dlam, jac.dy_dlam, jac.dx_dphi, jac.dy_dphi],
+            expected,
+            abs_all <= 1e-7
+        );
 
         Ok(())
     }

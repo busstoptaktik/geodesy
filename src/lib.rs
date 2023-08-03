@@ -34,6 +34,8 @@ pub mod prelude {
     #[cfg(feature = "with_plain")]
     pub use crate::context::plain::Plain;
 
+    pub use crate::context::Factors;
+    pub use crate::context::Jacobian;
     pub use crate::coordinate::coor2d::Coor2D;
     pub use crate::coordinate::coor32::Coor32;
     pub use crate::coordinate::coor3d::Coor3D;
@@ -48,8 +50,6 @@ pub mod prelude {
     pub use crate::Direction::Fwd;
     pub use crate::Direction::Inv;
     pub use crate::Error;
-    pub use crate::context::Jacobian;
-    pub use crate::context::Factors;
     #[cfg(test)]
     pub fn some_basic_coor4dinates() -> [Coor4D; 2] {
         let copenhagen = Coor4D::raw(55., 12., 0., 0.);

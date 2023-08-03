@@ -56,47 +56,102 @@ pub trait Context {
     fn get_grid(&self, name: &str) -> Result<Grid, Error>;
 }
 
-
-
-
-
-
 #[derive(Debug, Default)]
 #[rustfmt::skip]
 pub struct Jacobian {
-    // The latitude (in degrees) of the evaluation point
-    latitude: f64,
+    // The geographical coordinates (in degrees) of the evaluation point
+    pub latitude: f64,
+    pub longitude: f64,
 
     // The derivatives at the evaluation point of easting (x) and northing (y)
     // with respect to longitude (lam) and latitude (phi)
-    dx_dlam: f64,
-    dy_dlam: f64,
-    dx_dphi: f64,
-    dy_dphi: f64,
+    pub dx_dlam: f64,
+    pub dy_dlam: f64,
+    pub dx_dphi: f64,
+    pub dy_dphi: f64,
 
     // The ellipsoid on which the jacobian is evaluated
-    ellps: Ellipsoid
+    pub ellps: Ellipsoid
 }
 
 #[derive(Debug, Default)]
 #[rustfmt::skip]
 pub struct Factors {
     // Scalar factors                // Common textbook designation
-    meridional_scale: f64,           // h
-    parallel_scale: f64,             // k
-    areal_scale: f64,                // s
+    pub meridional_scale: f64,           // h
+    pub parallel_scale: f64,             // k
+    pub areal_scale: f64,                // s
 
     // Angular factors
-    angular_distortion: f64,         // ω
-    meridian_parallel_angle: f64,    // θ'
-    meridian_convergence: f64,       // α
+    pub angular_distortion: f64,         // ω
+    pub meridian_parallel_angle: f64,    // θ'
+    pub meridian_convergence: f64,       // α
 
     // Tissot indicatrix
-    tissot_semimajor: f64,           // a
-    tissot_semiminor: f64,           // b
+    pub tissot_semimajor: f64,           // a
+    pub tissot_semiminor: f64,           // b
 }
 
 impl Jacobian {
+    /// Returns a `Coor4D`, where the elements represent (dx/dλ, dy/dφ, dx/dφ, dy/dλ) (x_l, y_p, x_p, y_l)
+    /// Mostly based on the PROJ function [pj_deriv](https://github.com/OSGeo/PROJ/blob/master/src/deriv.cpp),
+    /// with appropriate adaptations to the fact that PROJ internally sets the semimajor axis, a = 1
+    #[allow(dead_code)]
+    #[rustfmt::skip]
+    fn new(ctx: &impl Context, op: OpHandle, scale: [f64; 2], swap: [bool; 2], ellps: Ellipsoid, at: Coor2D) -> Result<Jacobian, Error> {
+
+        // If we have input in degrees, we must multiply the output by a factor of 180/pi
+        // For user convenience, scale[0] is a "to degrees"-factor, i.e. scale[0]==1
+        // indicates degrees, whereas scale[0]==180/pi indicates that input angles are
+        // in radians.
+        // To convert input coordinates to radians, divide by `angular_scale`
+        let angular_scale = 1f64.to_degrees() / scale[0];
+
+        // If we have output in feet, we must multiply the output by a factor of 0.3048
+        // For user convenience, scale[1] is a "to metres"-factor, i.e. scale[1]==1
+        // indicates metres, whereas scale[1]==0.3048 indicates that output lengths
+        // are in feet, and scale[1]=201.168 indicates that output is in furlongs
+        let linear_scale = scale[1];
+
+        let h = 1e-5 / angular_scale;
+        let d = (4.0 * h * ellps.semimajor_axis() / angular_scale).recip() * linear_scale;
+
+        let mut coo = [Coor2D::origin(); 4];
+
+        let (e, n) = if swap[0] {(at[1], at[0])} else {(at[0], at[1])};
+
+        // Latitude and longitude in degrees for the return value
+        let latitude = n * scale[0];
+        let longitude = e * scale[0];
+
+        // North-east of POI
+        coo[0] = Coor2D::raw(e + h, n + h);
+        // South-east of POI
+        coo[1] = Coor2D::raw(e + h, n - h);
+        // South-west of POI
+        coo[2] = Coor2D::raw(e - h, n - h);
+        // North-west of POI
+        coo[3] = Coor2D::raw(e - h, n + h);
+        if swap[0] {
+            coo[0] = Coor2D::raw(coo[0][1], coo[0][0]);
+            coo[1] = Coor2D::raw(coo[1][1], coo[1][0]);
+            coo[2] = Coor2D::raw(coo[2][1], coo[2][0]);
+            coo[3] = Coor2D::raw(coo[3][1], coo[3][0]);
+        }
+        ctx.apply(op, Fwd, &mut coo)?;
+
+        // Handle output swapping
+        let (e, n) = if swap[1] {(1, 0)} else {(0, 1)};
+
+        //        NE          SE         SW          NW
+        let dx_dlam =  (coo[0][e] + coo[1][e] - coo[2][e] - coo[3][e]) * d;
+        let dy_dlam =  (coo[0][n] + coo[1][n] - coo[2][n] - coo[3][n]) * d;
+        let dx_dphi =  (coo[0][e] - coo[1][e] - coo[2][e] + coo[3][e]) * d;
+        let dy_dphi =  (coo[0][n] - coo[1][n] - coo[2][n] + coo[3][n]) * d;
+
+        Ok(Jacobian{latitude, longitude, dx_dlam, dy_dlam, dx_dphi, dy_dphi, ellps})
+    }
+
     // This closely follows the PROJ function pj_factors() and its friendly wrapper
     // proj_factors(), i.e. closely following Snyder's magnum opus
     pub fn factors(&self) -> Factors {
@@ -140,8 +195,6 @@ impl Jacobian {
         f
     }
 }
-
-
 
 // Help context providers provide canonically named, built in coordinate adaptors
 #[rustfmt::skip]
