@@ -182,54 +182,6 @@ impl Ellipsoid {
     pub fn polar_radius_of_curvature(&self) -> f64 {
         self.a * self.a / self.semiminor_axis()
     }
-
-    // This closely follows the PROJ function pj_factors() and its friendly wrapper
-    // proj_factors(), i.e. closely following Snyder's magnum opus
-    pub fn factors(&self, jacobian: Coor4D, latitude: f64) -> Factors {
-        let mut f = Factors::default();
-        let x_l = jacobian[0];
-        let y_p = jacobian[1];
-        let x_p = jacobian[2];
-        let y_l = jacobian[3];
-
-        f.dx_dlam = x_l;
-        f.dy_dlam = y_l;
-        f.dx_dphi = x_p;
-        f.dy_dphi = y_p;
-
-        let (s, c) = latitude.sin_cos();
-        let es = self.eccentricity_squared();
-
-        // Linear scaling factors
-        let h = x_p.hypot(y_p);
-        let k = x_l.hypot(y_l) / c;
-
-        // Correction of linear scaling factors for ellipsoidal geometry
-        let t = 1. - es * s * s;
-        let n = t.sqrt();
-        let h = h * (t * n / (1. - es));
-        let k = k * n;
-        let r = t * t / (1. - es);
-
-        f.meridional_scale = h;
-        f.parallel_scale = k;
-        f.areal_scale = (y_p * x_l - x_p * y_l) * r / c;
-
-        // Tissot axes
-        let t = h * h + k * k;
-        let a = (t + 2. * f.areal_scale).sqrt();
-        let t = (t - 2. * f.areal_scale).clamp(0., f64::MAX).sqrt();
-        f.tissot_semiminor = 0.5 * (a - t);
-        f.tissot_semimajor = 0.5 * (a + t);
-
-        // Angular elements
-        f.meridian_parallel_angle = (f.areal_scale / (h * k)).clamp(-1., 1.).asin().to_degrees();
-        f.meridian_convergence = -x_p.atan2(y_p).to_degrees();
-        let a = f.tissot_semimajor;
-        let b = f.tissot_semiminor;
-        f.angular_distortion = 2. * ((a - b) / (a + b)).asin();
-        f
-    }
 }
 
 // ----- Tests ---------------------------------------------------------------------

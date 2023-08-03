@@ -8,7 +8,7 @@
 use crate::prelude::*;
 use std::io::BufRead;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct Grid {
     lat_0: f64, // Latitude of the first (typically northernmost) row of the grid
     lat_1: f64, // Latitude of the last (typically southernmost) row of the grid

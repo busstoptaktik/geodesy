@@ -11,7 +11,7 @@ use std::collections::BTreeSet;
 
 use super::*;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ParsedParameters {
     pub name: String,
 

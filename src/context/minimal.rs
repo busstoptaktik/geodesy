@@ -54,21 +54,21 @@ impl Context for Minimal {
         Ok(&op.descriptor.steps)
     }
 
-    fn params(&self, op: OpHandle, index: usize) -> Result<&ParsedParameters, Error> {
+    fn params(&self, op: OpHandle, index: usize) -> Result<ParsedParameters, Error> {
         let op = self.operators.get(&op).ok_or(BAD_ID_MESSAGE)?;
         // Leaf level?
         if op.steps.is_empty() {
             if index > 0 {
                 return Err(Error::General("Minimal: Bad step index"));
             }
-            return Ok(&op.params);
+            return Ok(op.params.clone());
         }
 
         // Not leaf level
         if index >= op.steps.len() {
             return Err(Error::General("Minimal: Bad step index"));
         }
-        Ok(&op.steps[index].params)
+        Ok(op.steps[index].params.clone())
     }
 
     fn register_op(&mut self, name: &str, constructor: OpConstructor) {
@@ -126,88 +126,59 @@ impl Minimal {
     /// Mostly based on the PROJ function [pj_deriv](https://github.com/OSGeo/PROJ/blob/master/src/deriv.cpp),
     /// with appropriate adaptations to the fact that PROJ internally sets the semimajor axis, a = 1
     #[allow(dead_code)]
-    fn jacobian(
-        &self,
-        op: OpHandle,
-        operands: &dyn CoordinateSet,
-    ) -> Result<(Ellipsoid, Vec<Coor4D>), Error> {
+    #[rustfmt::skip]
+    fn jacobian(&self, op: OpHandle, scale: [f64; 2], swap: [bool; 2], ellps: Ellipsoid, at: Coor2D) -> Result<Jacobian, Error> {
         const BAD_ID_MESSAGE: Error = Error::General("Minimal: Unknown operator id");
         let op = self.operators.get(&op).ok_or(BAD_ID_MESSAGE)?;
 
-        let ellps = op.params.ellps(0);
+        // If we have input in degrees, we must multiply the output by a factor of 180/pi
+        // For user convenience, scale[0] is a "to degrees"-factor, i.e. scale[0]==1
+        // indicates degrees, whereas scale[0]==180/pi indicates that input angles are
+        // in radians.
+        // To convert input coordinates to radians, divide by `angular_scale`
+        let angular_scale = 1f64.to_degrees() / scale[0];
 
-        let h = 1e-8;
+        // If we have output in feet, we must multiply the output by a factor of 0.3048
+        // For user convenience, scale[1] is a "to metres"-factor, i.e. scale[1]==1
+        // indicates metres, whereas scale[1]==0.3048 indicates that output lengths
+        // are in feet, and scale[1]=201.168 indicates that output is in furlongs
+        let linear_scale = 1.0 / scale[1];
 
-        let mut j = Vec::with_capacity(operands.len());
-        let mut coo = Vec::with_capacity(operands.len());
+        let h = 1e-5 / angular_scale;
+        let d = (4.0 * h * ellps.semimajor_axis() / angular_scale * linear_scale).recip();
+
+        let mut coo = [Coor2D::origin(); 4];
+
+        let (e, n) = if swap[0] {(at[1], at[0])} else {(at[0], at[1])};
+
+        // Latitude in degrees
+        let latitude = n * scale[0];
 
         // North-east of POI
-        for i in 0..operands.len() {
-            let coord = operands.get_coord(i);
-            coo.push(Coor2D::raw(coord[0] + h, coord[1] + h));
-        }
-        op.apply(self, &mut coo, Fwd);
-
-        for coord in coo.iter().take(operands.len()) {
-            j.push(Coor4D::raw(coord[0], coord[1], coord[0], coord[1]));
-        }
-
+        coo[0] = Coor2D::raw(e + h, n + h);
         // South-east of POI
-        #[allow(clippy::needless_range_loop)]
-        for i in 0..operands.len() {
-            let coord = operands.get_coord(i);
-            coo[i] = Coor2D::raw(coord[0] + h, coord[1] - h);
-        }
-        op.apply(self, &mut coo, Fwd);
-
-        for i in 0..operands.len() {
-            let x = coo[i][0];
-            let y = coo[i][1];
-            let ji = j[i];
-            j[i] = Coor4D::raw(ji[0] + x, ji[1] - y, ji[2] - x, ji[3] + y);
-        }
-
+        coo[1] = Coor2D::raw(e + h, n - h);
         // South-west of POI
-        for (i, item) in coo.iter_mut().enumerate().take(operands.len()) {
-            let coord = operands.get_coord(i);
-            *item = Coor2D::raw(coord[0] - h, coord[1] - h);
-        }
-        op.apply(self, &mut coo, Fwd);
-
-        #[allow(clippy::needless_range_loop)]
-        for i in 0..operands.len() {
-            let x = coo[i][0];
-            let y = coo[i][1];
-            let ji = j[i];
-            j[i] = Coor4D::raw(ji[0] - x, ji[1] - y, ji[2] - x, ji[3] - y);
-        }
-
+        coo[2] = Coor2D::raw(e - h, n - h);
         // North-west of POI
-        for (i, item) in coo.iter_mut().enumerate().take(operands.len()) {
-            let coord = operands.get_coord(i);
-            *item = Coor2D::raw(coord[0] - h, coord[1] + h);
+        coo[3] = Coor2D::raw(e - h, n + h);
+        if swap[0] {
+            coo[0] = Coor2D::raw(coo[0][1], coo[0][0]);
+            coo[1] = Coor2D::raw(coo[1][1], coo[1][0]);
+            coo[2] = Coor2D::raw(coo[2][1], coo[2][0]);
+            coo[3] = Coor2D::raw(coo[3][1], coo[3][0]);
         }
         op.apply(self, &mut coo, Fwd);
 
-        #[allow(clippy::needless_range_loop)]
-        for i in 0..operands.len() {
-            let x = coo[i][0];
-            let y = coo[i][1];
-            let ji = j[i];
-            j[i] = Coor4D::raw(ji[0] - x, ji[1] + y, ji[2] + x, ji[3] - y);
-        }
+        let (e, n) = if swap[1] {(1, 0)} else {(0, 1)};
 
-        // Normalize
-        #[allow(clippy::needless_range_loop)]
-        for i in 0..operands.len() {
-            let d = 4.0 * h * ellps.semimajor_axis();
-            j[i][0] /= d;
-            j[i][1] /= d;
-            j[i][2] /= d;
-            j[i][3] /= d;
-        }
+        //        NE          SE         SW          NW
+        let dx_dlam =  (coo[0][e] + coo[1][e] - coo[2][e] - coo[3][e]) * d;
+        let dy_dlam =  (coo[0][n] + coo[1][n] - coo[2][n] - coo[3][n]) * d;
+        let dx_dphi =  (coo[0][e] - coo[1][e] - coo[2][e] + coo[3][e]) * d;
+        let dy_dphi =  (coo[0][n] - coo[1][n] - coo[2][n] + coo[3][n]) * d;
 
-        Ok((*ellps, j))
+        Ok(Jacobian{latitude, dx_dlam, dy_dlam, dx_dphi, dy_dphi, ellps})
     }
 }
 
@@ -244,7 +215,8 @@ mod tests {
         assert_eq!(steps[1], "addone");
         assert_eq!(steps[2], "addone inv");
 
-        let ellps = ctx.params(op, 1)?.ellps(0);
+        let params = ctx.params(op, 1)?;
+        let ellps = params.ellps(0);
         assert_eq!(ellps.semimajor_axis(), 6378137.);
 
         Ok(())
@@ -276,17 +248,20 @@ mod tests {
         assert_eq!("adapt", ctx.params(op, 2)?.name);
 
         // While the utm step really is the 'utm' operator, not 'tmerc'-with-extras
+        // (although, obviously it is, if we dig a level deeper down through the
+        // abstractions, into the concretions)
         assert_eq!("utm", ctx.params(op, 1)?.name);
 
         // All the 'common' elements (lat_?, lon_?, x_?, y_? etc.) defaults to 0,
         // while ellps_? defaults to GRS80 - so they are there even though we havent
         // set them
-        let ellps = ctx.params(op, 1)?.ellps(0);
+        let params = ctx.params(op, 1)?;
+        let ellps = params.ellps[0];
         assert_eq!(ellps.semimajor_axis(), 6378137.);
-        assert_eq!(0., ctx.params(op, 1)?.lat(0));
+        assert_eq!(0., params.lat[0]);
 
         // The zone id is found among the natural numbers (which here includes 0)
-        let zone = ctx.params(op, 1)?.natural("zone")?;
+        let zone = params.natural("zone")?;
         assert_eq!(zone, 32);
 
         // Taking a look at the internals is not too hard either
@@ -300,41 +275,44 @@ mod tests {
     fn jacobian() -> Result<(), Error> {
         let mut ctx = Minimal::new();
 
+        let cph = Coor2D::geo(55., 12.);
         let op = ctx.op("utm zone=32")?;
-
-        let mut data = [Coor2D::geo(55., 12.), Coor2D::geo(59., 18.)];
-
-        // (dx/dλ, dy/dφ, dx/dφ, dy/dλ) (x_l, y_p, x_p, y_l)
-        let (ellps, jac) = ctx.jacobian(op, &mut data)?;
-        dbg!(&jac);
-
-        let es = ellps.eccentricity_squared();
-
-        let cosphi = data[0][1].cos();
-        let x_l = jac[0][0];
-        let y_p = jac[0][1];
-        let x_p = jac[0][2];
-        let y_l = jac[0][3];
-
-        let h = x_p.hypot(y_p);
-        dbg!(h);
-        let k = x_l.hypot(y_l) / cosphi;
-        dbg!(k);
-
-        let t = data[0][1].sin();
-        let t = 1. - es * t * t;
-        let n = t.sqrt();
-        let h = h * (t * n / (1. - es));
-        let k = k * n;
-        dbg!(h);
-        dbg!(k);
-
-        let factors = ellps.factors(jac[0], data[0][1]);
+        let steps = ctx.steps(op)?;
+        assert!(steps.len()==1);
+        let ellps = ctx.params(op, 0)?.ellps[0];
+        let jac = ctx.jacobian(op, [1f64.to_degrees(),1.], [false, false], ellps, cph)?;
+        //dbg!(&jac);
+        dbg!(1f64.to_degrees());
+        let factors = jac.factors();
         dbg!(factors);
 
-        let conv = -jac[0][2].atan2(jac[0][1]).to_degrees();
-        dbg!(conv);
-        assert!(1 == 2);
+        let cph = Coor2D::raw(12., 55.);
+        let op = ctx.op("gis:in | utm zone=32")?;
+        let jac = ctx.jacobian(op, [1.,1.], [false, false], ellps, cph)?;
+        //dbg!(&jac);
+        let factors = jac.factors();
+        dbg!(factors);
+
+        let cph = Coor2D::raw(55., 12.);
+        let op = ctx.op("geo:in | utm zone=32")?;
+        let jac = ctx.jacobian(op, [1.,1.], [true, false], ellps, cph)?;
+        //dbg!(&jac);
+        let factors = jac.factors();
+        dbg!(factors);
+
+        let op = ctx.op("geo:in | utm zone=32 |neu:out")?;
+        let jac = ctx.jacobian(op, [1.,1.], [true, true], ellps, cph)?;
+        //dbg!(&jac);
+        let factors = jac.factors();
+        dbg!(factors);
+
+        let op = ctx.op("geo:in | utm zone=32 |neu:out | helmert scale=3.28083989501312300874")?;
+        let jac = ctx.jacobian(op, [1.,0.3048], [true, true], ellps, cph)?;
+        //dbg!(&jac);
+        let factors = jac.factors();
+        dbg!(factors);
+
+        assert!(2==1);
 
         Ok(())
     }
