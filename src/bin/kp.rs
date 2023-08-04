@@ -263,7 +263,8 @@ mod tests {
         // All the 'common' elements (lat_?, lon_?, x_?, y_? etc.) defaults to 0,
         // while ellps_? defaults to GRS80 - so they are there even though we havent
         // set them
-        let ellps = ctx.params(op, 1)?.ellps(0);
+        let params = ctx.params(op, 1)?;
+        let ellps = params.ellps(0);
         assert_eq!(ellps.semimajor_axis(), 6378137.);
         assert_eq!(0., ctx.params(op, 1)?.lat(0));
 

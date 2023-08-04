@@ -34,6 +34,8 @@ pub mod prelude {
     #[cfg(feature = "with_plain")]
     pub use crate::context::plain::Plain;
 
+    pub use crate::context::Factors;
+    pub use crate::context::Jacobian;
     pub use crate::coordinate::coor2d::Coor2D;
     pub use crate::coordinate::coor32::Coor32;
     pub use crate::coordinate::coor3d::Coor3D;

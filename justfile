@@ -26,7 +26,7 @@ check:
     cargo clippy
     cargo fmt -- --check
     cargo test
-    cargo doc --no-deps
+    cargo doc --all-features --no-deps
     cargo package --allow-dirty
     git status
 
@@ -39,19 +39,14 @@ clean-check:
 tree:
     cargo modules generate tree --lib --with-types
 
-# Build and install assets
-#assets:
-#    zip -r assets.zip assets
-#    mv assets.zip $LOCALAPPDATA/geodesy
-#    ls -l $LOCALAPPDATA/geodesy
-
 # Build documentation, open in browser for inspection.
 doc:
-    cargo doc --no-deps --open
+    cargo doc --all-features --no-deps --open
 
-# Run default application.
+# Run default application, i.e. kp. Under Windows use triple quotation signs to delimit the operator pipeline.
 run ARGS:
     cargo run --features=binary -- {{ARGS}}
+# echo 55 12 | just run """geo:in | utm zone=32 | neu:out"""
 
 # Run example based on its unique prefix (e.g. 00, 01, etc.).
 run-example EXAMPLE:
@@ -68,7 +63,6 @@ run-all:
     cargo run --example 05-pq
     cargo run --example 06-user_defined_coordinate_types_and_containers
     cargo run --example 07-examples_from_ruminations
-
 
 # Compact format log for changelog report
 changes:

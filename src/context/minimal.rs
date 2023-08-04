@@ -54,21 +54,21 @@ impl Context for Minimal {
         Ok(&op.descriptor.steps)
     }
 
-    fn params(&self, op: OpHandle, index: usize) -> Result<&ParsedParameters, Error> {
+    fn params(&self, op: OpHandle, index: usize) -> Result<ParsedParameters, Error> {
         let op = self.operators.get(&op).ok_or(BAD_ID_MESSAGE)?;
         // Leaf level?
         if op.steps.is_empty() {
             if index > 0 {
                 return Err(Error::General("Minimal: Bad step index"));
             }
-            return Ok(&op.params);
+            return Ok(op.params.clone());
         }
 
         // Not leaf level
         if index >= op.steps.len() {
             return Err(Error::General("Minimal: Bad step index"));
         }
-        Ok(&op.steps[index].params)
+        Ok(op.steps[index].params.clone())
     }
 
     fn register_op(&mut self, name: &str, constructor: OpConstructor) {
@@ -154,7 +154,8 @@ mod tests {
         assert_eq!(steps[1], "addone");
         assert_eq!(steps[2], "addone inv");
 
-        let ellps = ctx.params(op, 1)?.ellps(0);
+        let params = ctx.params(op, 1)?;
+        let ellps = params.ellps(0);
         assert_eq!(ellps.semimajor_axis(), 6378137.);
 
         Ok(())
@@ -186,22 +187,99 @@ mod tests {
         assert_eq!("adapt", ctx.params(op, 2)?.name);
 
         // While the utm step really is the 'utm' operator, not 'tmerc'-with-extras
+        // (although, obviously it is, if we dig a level deeper down through the
+        // abstractions, into the concretions)
         assert_eq!("utm", ctx.params(op, 1)?.name);
 
         // All the 'common' elements (lat_?, lon_?, x_?, y_? etc.) defaults to 0,
         // while ellps_? defaults to GRS80 - so they are there even though we havent
         // set them
-        let ellps = ctx.params(op, 1)?.ellps(0);
+        let params = ctx.params(op, 1)?;
+        let ellps = params.ellps[0];
         assert_eq!(ellps.semimajor_axis(), 6378137.);
-        assert_eq!(0., ctx.params(op, 1)?.lat(0));
+        assert_eq!(0., params.lat[0]);
 
         // The zone id is found among the natural numbers (which here includes 0)
-        let zone = ctx.params(op, 1)?.natural("zone")?;
+        let zone = params.natural("zone")?;
         assert_eq!(zone, 32);
 
         // Taking a look at the internals is not too hard either
         // let params = ctx.params(op, 0)?;
         // dbg!(params);
+
+        Ok(())
+    }
+
+    #[test]
+    fn jacobian_test() -> Result<(), Error> {
+        let mut ctx = Minimal::new();
+        let expected = [
+            0.5743697198254788,
+            0.02465770672327687,
+            -0.04289429341613819,
+            0.9991676664740311,
+        ];
+
+        // First a plain case of scaling input in radians, but no swapping
+        let cph = Coor2D::geo(55., 12.);
+        let op = ctx.op("utm zone=32")?;
+        let steps = ctx.steps(op)?;
+        assert!(steps.len() == 1);
+        let ellps = ctx.params(op, 0)?.ellps[0];
+        let jac = Jacobian::new(
+            &ctx,
+            op,
+            [1f64.to_degrees(), 1.],
+            [false, false],
+            ellps,
+            cph,
+        )?;
+        assert_float_eq!(
+            [jac.dx_dlam, jac.dy_dlam, jac.dx_dphi, jac.dy_dphi],
+            expected,
+            abs_all <= 1e-8
+        );
+        dbg!(1f64.to_degrees());
+        let factors = jac.factors();
+        dbg!(factors);
+
+        // Then input in degrees (i.e. no scaling), and no swapping
+        let cph = Coor2D::raw(12., 55.);
+        let op = ctx.op("gis:in | utm zone=32")?;
+        let jac = Jacobian::new(&ctx, op, [1., 1.], [false, false], ellps, cph)?;
+        assert_float_eq!(
+            [jac.dx_dlam, jac.dy_dlam, jac.dx_dphi, jac.dy_dphi],
+            expected,
+            abs_all <= 1e-7
+        );
+
+        // Then input in degrees (i.e. no scaling), and swapping on input
+        let cph = Coor2D::raw(55., 12.);
+        let op = ctx.op("geo:in | utm zone=32")?;
+        let jac = Jacobian::new(&ctx, op, [1., 1.], [true, false], ellps, cph)?;
+        assert_float_eq!(
+            [jac.dx_dlam, jac.dy_dlam, jac.dx_dphi, jac.dy_dphi],
+            expected,
+            abs_all <= 1e-7
+        );
+
+        // Then input in degrees (i.e. no scaling), and swapping on both input and output
+        let op = ctx.op("geo:in | utm zone=32 |neu:out")?;
+        let jac = Jacobian::new(&ctx, op, [1., 1.], [true, true], ellps, cph)?;
+        assert_float_eq!(
+            [jac.dx_dlam, jac.dy_dlam, jac.dx_dphi, jac.dy_dphi],
+            expected,
+            abs_all <= 1e-7
+        );
+
+        // Then input in degrees (i.e. no scaling), scaling onoutput, and swapping on both input and output
+        let op = ctx.op("geo:in | utm zone=32 |neu:out | helmert s=3e6")?;
+        let jac = Jacobian::new(&ctx, op, [1., 0.25], [true, true], ellps, cph)?;
+        assert_float_eq!(
+            [jac.dx_dlam, jac.dy_dlam, jac.dx_dphi, jac.dy_dphi],
+            expected,
+            abs_all <= 1e-7
+        );
 
         Ok(())
     }
