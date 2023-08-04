@@ -56,6 +56,9 @@ pub trait Context {
     fn get_grid(&self, name: &str) -> Result<Grid, Error>;
 }
 
+/// The Jacobian matrix for investigation of the geometrical properties of
+/// map projections. Can be converted to the more easily digestible
+/// [`Factors`] struct, using the `.factors()` method.
 #[derive(Debug, Default)]
 #[rustfmt::skip]
 pub struct Jacobian {
@@ -74,6 +77,9 @@ pub struct Jacobian {
     pub ellps: Ellipsoid
 }
 
+/// Geometrical properties of map projections. The `Factors` struct is
+/// derived from the more fundamental `Jacobian`, using its `.factors()`
+/// method
 #[derive(Debug, Default)]
 #[rustfmt::skip]
 pub struct Factors {
@@ -93,9 +99,23 @@ pub struct Factors {
 }
 
 impl Jacobian {
-    /// Returns a `Coor4D`, where the elements represent (dx/dλ, dy/dφ, dx/dφ, dy/dλ) (x_l, y_p, x_p, y_l)
+    /// Compute the Jacobian matrix for the map projection represented by `op`.
+    /// The `scale` parameters define the scaling from input units to degrees,
+    /// and from output units to metres. Hence, if input is in radians and
+    /// output in feet, `scale`should be set to `[1f64.to_degrees(), 0.3048]`.
+    /// The `swap` parameters indicate whether input and output is swapped
+    /// with respect to the Rust Geodesy internal GIS convention of "longitude
+    /// before latitude, and easting before northing". Hence, if input is in
+    /// the geographical convention of latitude/longitude, and output is in
+    /// easting/northing, `swap` should be set to `[true, false]`. The `ellps`
+    /// parameter should be set to the relevant ellipsoid for the projection.
+    /// While it could be derived directly from the other input data in the
+    /// case of a single operation, the potential case of a pipeline operation
+    /// makes it necessary to actively select which one to use. In all but the
+    /// most demanding situations it is, however, probably fine to just select
+    /// `Ellipsoid::default()`, i.e. GRS80.
+    ///
     /// Mostly based on the PROJ function [pj_deriv](https://github.com/OSGeo/PROJ/blob/master/src/deriv.cpp),
-    /// with appropriate adaptations to the fact that PROJ internally sets the semimajor axis, a = 1
     #[allow(dead_code)]
     #[rustfmt::skip]
     fn new(ctx: &impl Context, op: OpHandle, scale: [f64; 2], swap: [bool; 2], ellps: Ellipsoid, at: Coor2D) -> Result<Jacobian, Error> {
@@ -114,7 +134,7 @@ impl Jacobian {
         let linear_scale = scale[1];
 
         let h = 1e-5 / angular_scale;
-        let d = (4.0 * h * ellps.semimajor_axis() / angular_scale).recip() * linear_scale;
+        let d = (4.0 * h * ellps.semimajor_axis()).recip() * linear_scale * angular_scale;
 
         let mut coo = [Coor2D::origin(); 4];
 
@@ -152,8 +172,8 @@ impl Jacobian {
         Ok(Jacobian{latitude, longitude, dx_dlam, dy_dlam, dx_dphi, dy_dphi, ellps})
     }
 
-    // This closely follows the PROJ function pj_factors() and its friendly wrapper
-    // proj_factors(), i.e. closely following Snyder's magnum opus
+    /// This closely follows the PROJ function pj_factors() and its friendly wrapper
+    /// proj_factors(), i.e. closely following Snyder's magnum opus
     pub fn factors(&self) -> Factors {
         let mut f = Factors::default();
         let x_l = self.dx_dlam;
