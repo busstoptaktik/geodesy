@@ -45,6 +45,7 @@ pub mod prelude {
     pub use crate::coordinate::CoordinateSet;
     pub use crate::ellipsoid::Ellipsoid;
     pub use crate::math::parse_sexagesimal;
+    pub use crate::op::parse_proj;
     pub use crate::op::OpHandle;
     pub use crate::Direction;
     pub use crate::Direction::Fwd;
