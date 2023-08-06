@@ -267,6 +267,93 @@ pub fn split_into_parameters(step: &str) -> BTreeMap<String, String> {
     params
 }
 
+/// Translate a PROJ string into Geodesy format
+pub fn parse_proj(definition: &str) -> String {
+    // Impose some line ending sanity and remove PROJ prefix '+'
+    let all = definition
+        .replace("\r\n", "\n")
+        .replace('\r', "\n")
+        .replace(" +", " ")
+        .trim()
+        .trim_start_matches('+')
+        .to_string();
+
+    // Collect the PROJ string
+    let mut trimmed = String::new();
+    for line in all.lines() {
+        let line = line.trim();
+
+        // Remove block comments
+        let line: Vec<&str> = line.trim().split('#').collect();
+        // Full line (block) comment - just skip
+        if line[0].starts_with('#') {
+            continue;
+        }
+
+        // Inline comment, or no comment at all: Collect everything before `#`
+        trimmed += " ";
+        trimmed += line[0].trim();
+    }
+
+    // Now split the text into steps. First make sure we do not match
+    //"step" as part of a word (stairstepping,  postepileptic, stepwise,
+    // quickstep), by making it possible to only search for " step "
+    trimmed = " ".to_string() + &trimmed + " ";
+
+    // Remove empty steps and other non-significant whitespace
+    let steps: Vec<String> = glue(&trimmed)
+        // split into steps
+        .split(" step ")
+        // remove empty steps
+        .filter(|x| !x.trim().is_empty())
+        // convert &str to String
+        .map(|x| x.trim().to_string())
+        // and turn into Vec<String>
+        .collect();
+
+    // For accumulating the pipeline steps converted to geodesy syntax
+    let mut geodesy_steps = Vec::new();
+
+    // Geodesy does not suppport pipeline globals, so we must explicitly
+    // insert them in the beginning of the argument list of each step
+    let mut pipeline_globals = "".to_string();
+
+    for step in steps {
+        let mut elements: Vec<_> = step.split_whitespace().map(|x| x.to_string()).collect();
+
+        // Move the "proj=..." element to the front of the collection, stripped for "proj="
+        for (i, element) in elements.iter_mut().enumerate() {
+            if element.starts_with("proj=") {
+                elements.swap(i, 0);
+                elements[0] = elements[0][5..].to_string();
+
+                // In the proj=pipeline case, just collect the globals, without
+                // introducing a new step into geodesy_steps
+                if elements[0] == "pipeline" {
+                    elements.remove(0);
+                    pipeline_globals = elements.join(" ");
+                    elements.clear();
+                    break;
+                }
+                // Add the globals (if any) to the step and go on
+                if !pipeline_globals.is_empty() {
+                    let mut globalized = elements[0].clone();
+                    globalized += " ";
+                    globalized += &pipeline_globals;
+                    elements[0] = globalized;
+                }
+                break;
+            }
+        }
+        let geodesy_step = elements.join(" ").trim().to_string();
+        if !geodesy_step.is_empty() {
+            geodesy_steps.push(geodesy_step);
+        }
+    }
+    dbg!(&geodesy_steps);
+    geodesy_steps.join(" | ").trim().to_string()
+}
+
 // ----- T E S T S ------------------------------------------------------------------
 
 #[cfg(test)]
@@ -467,6 +554,54 @@ mod tests {
         assert_eq!(steps[1], "bonk:bonk $bonk");
         let (steps, _) = split_into_steps("\n\r\r\n    ||| | \n\n\r\n\r  |  \n\r\r \n  ");
         assert_eq!(steps.len(), 0);
+
+        Ok(())
+    }
+
+    #[test]
+    fn proj() -> Result<(), Error> {
+        // Some trivial, but strangely formatted cases
+        assert_eq!(parse_proj("a   =   1 +proj =foo    b= 2  "), "foo a=1 b=2");
+        assert_eq!(
+            parse_proj("+a   =   1 +proj =foo    +   b= 2  "),
+            "foo a=1 b=2"
+        );
+
+        // An invalid PROJ string, that parses into an empty pipeline
+        assert_eq!(parse_proj("      proj="), "");
+
+        // A pipeline with a single step and a global argument
+        assert_eq!(
+            parse_proj("proj=pipeline +foo=bar +step proj=utm zone=32"),
+            "utm foo=bar zone=32"
+        );
+
+        // A pipeline with 3 steps and 2 global arguments
+        assert_eq!(
+            parse_proj("proj=pipeline +foo = bar ellps=GRS80 step proj=cart step proj=helmert s=3 step proj=cart ellps=intl"),
+            "cart foo=bar ellps=GRS80 | helmert foo=bar ellps=GRS80 s=3 | cart foo=bar ellps=GRS80 ellps=intl"
+        );
+
+        // Although PROJ would choke on this, we accept steps without an initial proj=pipeline
+        assert_eq!(
+            parse_proj("proj=utm zone=32 step proj=utm inv zone=32"),
+            "utm zone=32 | utm inv zone=32"
+        );
+
+        // Room here for testing of additional pathological cases...
+
+
+        // Now check the sanity of the pipeline globals handling
+        let mut ctx = Minimal::default();
+
+        // Check that we get the correct argument value when inserting pipeline globals
+        // *at the top of the argument list*. Here: x=1 is the global value, while x=2 is
+        // the step local, which overwrites the global
+        let op = ctx.op("helmert x=1 x=2")?;
+        let mut operands = some_basic_coor2dinates();
+        assert_eq!(2, ctx.apply(op, Fwd, &mut operands)?);
+        assert_eq!(operands[0][0], 57.0);
+        assert_eq!(operands[1][0], 61.0);
 
         Ok(())
     }
