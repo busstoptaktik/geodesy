@@ -239,7 +239,6 @@ mod tests {
             expected,
             abs_all <= 1e-12
         );
-        let factors = jac.factors();
 
         // Then input in degrees (i.e. no scaling), and no swapping
         let cph = Coor2D::raw(12., 55.);
@@ -264,7 +263,6 @@ mod tests {
         // Then input in degrees (i.e. no scaling), and swapping on both input and output
         let op = ctx.op("geo:in | utm zone=32 |neu:out")?;
         let jac = Jacobian::new(&ctx, op, [1., 1.], [true, true], ellps, cph)?;
-        let factors = jac.factors();
         assert_float_eq!(
             [jac.dx_dlam, jac.dy_dlam, jac.dx_dphi, jac.dy_dphi],
             expected,
