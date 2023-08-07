@@ -267,13 +267,17 @@ pub fn split_into_parameters(step: &str) -> BTreeMap<String, String> {
     params
 }
 
-/// Translate a PROJ string into Geodesy format
+/// Translate a PROJ string into Rust Geodesy format. Since the PROJ syntax is
+/// very unrestrictive, we do not try to detect any syntax errors: If the input
+/// is so cursed as to be intranslatable, this will become clear when trying to
+/// instantiate the result as a Geodesy operator.
 pub fn parse_proj(definition: &str) -> String {
-    // Impose some line ending sanity and remove PROJ prefix '+'
+    // Impose some line ending sanity and remove the PROJ '+' prefix
     let all = definition
         .replace("\r\n", "\n")
         .replace('\r', "\n")
         .replace(" +", " ")
+        .replace("\n+", " ")
         .trim()
         .trim_start_matches('+')
         .to_string();
@@ -317,12 +321,16 @@ pub fn parse_proj(definition: &str) -> String {
     // Geodesy does not suppport pipeline globals, so we must explicitly
     // insert them in the beginning of the argument list of each step
     let mut pipeline_globals = "".to_string();
+    let mut pipeline_is_inverted = false;
 
     for step in steps {
         let mut elements: Vec<_> = step.split_whitespace().map(|x| x.to_string()).collect();
 
         // Move the "proj=..." element to the front of the collection, stripped for "proj="
-        for (i, element) in elements.iter_mut().enumerate() {
+        // and handle the pipeline globals, if any
+        for (i, element) in elements.iter().enumerate() {
+            // Mutating the Vec we are iterating over may seem dangerous but is
+            // OK as we break out of the loop immediately after the mutation
             if element.starts_with("proj=") {
                 elements.swap(i, 0);
                 elements[0] = elements[0][5..].to_string();
@@ -331,21 +339,59 @@ pub fn parse_proj(definition: &str) -> String {
                 // introducing a new step into geodesy_steps
                 if elements[0] == "pipeline" {
                     elements.remove(0);
-                    pipeline_globals = elements.join(" ");
-                    elements.clear();
-                    break;
-                }
 
-                // Add the globals (if any) to the step and go on
-                if !pipeline_globals.is_empty() {
-                    elements[0] = [&elements[0], pipeline_globals.as_str()].join(" ");
+                    // The case of 'inv' in globals must be handled separately, since it indicates
+                    // the inversion of the entire pipeline, not just an inversion of each step
+                    if elements.contains(&"inv".to_string()) {
+                        pipeline_is_inverted = true;
+                    }
+
+                    // Remove all cases of 'inv' from the global arguments
+                    let pipeline_globals_elements: Vec<String> = elements
+                        .join(" ")
+                        .trim()
+                        .to_string()
+                        .split_whitespace()
+                        .filter(|x| x.trim() != "inv")
+                        .map(|x| x.trim().to_string())
+                        .collect();
+                    pipeline_globals = pipeline_globals_elements.join(" ").trim().to_string();
+                    elements.clear();
                 }
                 break;
             }
         }
-        let geodesy_step = elements.join(" ").trim().to_string();
+
+        // Skip empty steps, insert pipeline globals, handle step and pipeline
+        // inversions, and handle directional omissions (omit_fwd, omit_inv)
+        let mut geodesy_step = elements.join(" ").trim().to_string();
         if !geodesy_step.is_empty() {
-            geodesy_steps.push(geodesy_step);
+            if !pipeline_globals.is_empty() {
+                elements.insert(1, pipeline_globals.clone());
+            }
+
+            let step_is_inverted = elements.contains(&"inv".to_string());
+            elements = elements
+                .iter()
+                .filter(|x| x.as_str() != "inv")
+                .map(|x| match x.as_str() {
+                    "omit_fwd" => "omit_inv",
+                    "omit_inv" => "omit_fwd",
+                    _ => x,
+                })
+                .map(|x| x.to_string())
+                .collect();
+
+            if step_is_inverted != pipeline_is_inverted {
+                elements.insert(1, "inv".to_string());
+            }
+
+            geodesy_step = elements.join(" ").trim().to_string();
+            if pipeline_is_inverted {
+                geodesy_steps.insert(0, geodesy_step);
+            } else {
+                geodesy_steps.push(geodesy_step);
+            }
         }
     }
     geodesy_steps.join(" | ").trim().to_string()
@@ -593,14 +639,28 @@ mod tests {
             "step step=quickstep | utm inv zone=32 | stepwise | quickstep"
         );
 
+        // Invert the entire pipeline, turning "zone 32-to-zone 33" into "zone 33-to-zone 32"
+        // Also throw a few additional spanners in the works, in the form of some ugly, but
+        // PROJ-accepted, syntactical abominations
+        assert_eq!(
+            parse_proj("inv ellps=intl proj=pipeline ugly=syntax +step inv proj=utm zone=32 step proj=utm zone=33"),
+            "utm inv ellps=intl ugly=syntax zone=33 | utm ellps=intl ugly=syntax zone=32"
+        );
+
+        // Check for the proper inversion of directional omissions
+        assert_eq!(
+            parse_proj("proj=pipeline inv   +step   omit_fwd inv proj=utm zone=32   step   omit_inv proj=utm zone=33"),
+            "utm inv omit_fwd zone=33 | utm omit_inv zone=32"
+        );
+
         // Room here for testing of additional pathological cases...
 
-        // Now check the sanity of the pipeline globals handling
+        // Now check the sanity of the 'pipeline globals' handling
         let mut ctx = Minimal::default();
 
         // Check that we get the correct argument value when inserting pipeline globals
-        // *at the top of the argument list*. Here: x=1 is the global value, while x=2 is
-        // the step local, which overwrites the global
+        // *at the top of the argument list*. Here: x=1 masquerades as the global value,
+        // while x=2 is the step local one, which overwrites the global
         let op = ctx.op("helmert x=1 x=2")?;
         let mut operands = some_basic_coor2dinates();
         assert_eq!(2, ctx.apply(op, Fwd, &mut operands)?);
