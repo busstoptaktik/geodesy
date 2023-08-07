@@ -296,19 +296,19 @@ pub fn parse_proj(definition: &str) -> String {
     }
 
     // Now split the text into steps. First make sure we do not match
-    //"step" as part of a word (stairstepping,  postepileptic, stepwise,
-    // quickstep), by making it possible to only search for " step "
-    trimmed = " ".to_string() + &trimmed + " ";
+    //"step" as part of a word (stairSTEPping,  poSTEPileptic, STEPwise,
+    // quickSTEP), by making it possible to only search for " step "
+    trimmed = " ".to_string() + &glue(&trimmed) + " ";
 
     // Remove empty steps and other non-significant whitespace
-    let steps: Vec<String> = glue(&trimmed)
+    let steps: Vec<String> = trimmed
         // split into steps
         .split(" step ")
         // remove empty steps
-        .filter(|x| !x.trim().is_empty())
-        // convert &str to String
-        .map(|x| x.trim().to_string())
-        // and turn into Vec<String>
+        .filter(|x| !x.trim().trim_start_matches("step ").is_empty())
+        // remove spurious 'step step' noise and convert &str to String
+        .map(|x| x.trim().trim_start_matches("step ").to_string())
+        // turn into Vec<String>
         .collect();
 
     // For accumulating the pipeline steps converted to geodesy syntax
@@ -335,12 +335,10 @@ pub fn parse_proj(definition: &str) -> String {
                     elements.clear();
                     break;
                 }
+
                 // Add the globals (if any) to the step and go on
                 if !pipeline_globals.is_empty() {
-                    let mut globalized = elements[0].clone();
-                    globalized += " ";
-                    globalized += &pipeline_globals;
-                    elements[0] = globalized;
+                    elements[0] = [&elements[0], pipeline_globals.as_str()].join(" ");
                 }
                 break;
             }
@@ -350,7 +348,6 @@ pub fn parse_proj(definition: &str) -> String {
             geodesy_steps.push(geodesy_step);
         }
     }
-    dbg!(&geodesy_steps);
     geodesy_steps.join(" | ").trim().to_string()
 }
 
@@ -588,8 +585,15 @@ mod tests {
             "utm zone=32 | utm inv zone=32"
         );
 
-        // Room here for testing of additional pathological cases...
+        // Check for accidental matching of 'step' - even for a hypothetical 'proj=step arg...'
+        // and for args called 'step' (which, however, cannot be flags - must come with a value
+        // to be recognized as a key=value pair)
+        assert_eq!(
+            parse_proj("  +step proj = step step=quickstep step step proj=utm inv zone=32 step proj=stepwise step proj=quickstep"),
+            "step step=quickstep | utm inv zone=32 | stepwise | quickstep"
+        );
 
+        // Room here for testing of additional pathological cases...
 
         // Now check the sanity of the pipeline globals handling
         let mut ctx = Minimal::default();
