@@ -133,7 +133,7 @@ impl Jacobian {
         // are in feet, and scale[1]=201.168 indicates that output is in furlongs
         let linear_scale = scale[1];
 
-        let h = 1e-5 / angular_scale;
+        let h = 1e-5 * angular_scale;
         let d = (4.0 * h * ellps.semimajor_axis()).recip() * linear_scale * angular_scale;
 
         let mut coo = [Coor2D::origin(); 4];

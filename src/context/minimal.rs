@@ -237,11 +237,9 @@ mod tests {
         assert_float_eq!(
             [jac.dx_dlam, jac.dy_dlam, jac.dx_dphi, jac.dy_dphi],
             expected,
-            abs_all <= 1e-8
+            abs_all <= 1e-12
         );
-        dbg!(1f64.to_degrees());
         let factors = jac.factors();
-        dbg!(factors);
 
         // Then input in degrees (i.e. no scaling), and no swapping
         let cph = Coor2D::raw(12., 55.);
@@ -250,7 +248,7 @@ mod tests {
         assert_float_eq!(
             [jac.dx_dlam, jac.dy_dlam, jac.dx_dphi, jac.dy_dphi],
             expected,
-            abs_all <= 1e-7
+            abs_all <= 1e-12
         );
 
         // Then input in degrees (i.e. no scaling), and swapping on input
@@ -260,25 +258,27 @@ mod tests {
         assert_float_eq!(
             [jac.dx_dlam, jac.dy_dlam, jac.dx_dphi, jac.dy_dphi],
             expected,
-            abs_all <= 1e-7
+            abs_all <= 1e-12
         );
 
         // Then input in degrees (i.e. no scaling), and swapping on both input and output
         let op = ctx.op("geo:in | utm zone=32 |neu:out")?;
         let jac = Jacobian::new(&ctx, op, [1., 1.], [true, true], ellps, cph)?;
+        let factors = jac.factors();
         assert_float_eq!(
             [jac.dx_dlam, jac.dy_dlam, jac.dx_dphi, jac.dy_dphi],
             expected,
-            abs_all <= 1e-7
+            abs_all <= 1e-12
         );
 
-        // Then input in degrees (i.e. no scaling), scaling onoutput, and swapping on both input and output
+        // Then input in degrees (i.e. no scaling), scaling on output, and swapping on both input and output
+        // (yes - the 'helmert s=3e6' scales by a factor of 4: 1 + 3 million ppm = 4)
         let op = ctx.op("geo:in | utm zone=32 |neu:out | helmert s=3e6")?;
         let jac = Jacobian::new(&ctx, op, [1., 0.25], [true, true], ellps, cph)?;
         assert_float_eq!(
             [jac.dx_dlam, jac.dy_dlam, jac.dx_dphi, jac.dy_dphi],
             expected,
-            abs_all <= 1e-7
+            abs_all <= 1e-12
         );
 
         Ok(())
