@@ -31,6 +31,7 @@ pub struct ParsedParameters {
     pub series: BTreeMap<&'static str, Vec<f64>>,
     pub grids: BTreeMap<&'static str, Grid>,
     pub text: BTreeMap<&'static str, String>,
+    pub texts: BTreeMap<&'static str, Vec<String>>,
     pub uuid: BTreeMap<&'static str, uuid::Uuid>,
     pub fourier_coefficients: BTreeMap<&'static str, FourierCoefficients>,
     pub ignored: Vec<String>,
@@ -120,6 +121,7 @@ impl ParsedParameters {
         let mut real = BTreeMap::<&'static str, f64>::new();
         let mut series = BTreeMap::<&'static str, Vec<f64>>::new();
         let mut text = BTreeMap::<&'static str, String>::new();
+        let mut texts = BTreeMap::<&'static str, Vec<String>>::new();
         let grids = BTreeMap::<&'static str, Grid>::new();
         #[allow(unused_mut)]
         let mut uuid = BTreeMap::<&'static str, uuid::Uuid>::new();
@@ -279,6 +281,33 @@ impl ParsedParameters {
                     error!("Missing required parameter '{key}'");
                     return Err(Error::MissingParam(key.to_string()));
                 }
+
+                OpParameter::Texts { key, default } => {
+                    if let Some(value) = chase(globals, &locals, key)? {
+                        let elements: Vec<String> =
+                            value.split(',').map(|x| x.trim().to_string()).collect();
+                        texts.insert(key, elements);
+                        continue;
+                    }
+
+                    // If we're here, the key was not found
+
+                    // Default given?
+                    if let Some(value) = default {
+                        // Defaults to nothing, so we just continue with the next parameter
+                        if value.is_empty() {
+                            continue;
+                        }
+                        let elements: Vec<String> =
+                            value.split(',').map(|x| x.trim().to_string()).collect();
+                        texts.insert(key, elements);
+                        continue;
+                    }
+
+                    // Missing a required parameter
+                    error!("Missing required parameter '{key}'");
+                    return Err(Error::MissingParam(key.to_string()));
+                }
             };
         }
 
@@ -359,6 +388,7 @@ impl ParsedParameters {
             series,
             grids,
             text,
+            texts,
             uuid,
             fourier_coefficients,
             ignored,
@@ -434,7 +464,7 @@ mod tests {
     use super::*;
 
     #[rustfmt::skip]
-    const GAMUT: [OpParameter; 9] = [
+    const GAMUT: [OpParameter; 11] = [
         OpParameter::Flag    { key: "flag" },
         OpParameter::Natural { key: "natural",     default: Some(0) },
         OpParameter::Integer { key: "integer",     default: Some(-1)},
@@ -443,13 +473,15 @@ mod tests {
         OpParameter::Series  { key: "series",      default: Some("1,2,3,4") },
         OpParameter::Series  { key: "bad_series",  default: Some("1:2:3,2:3:4") },
         OpParameter::Text    { key: "text",        default: Some("text") },
+        OpParameter::Texts   { key: "names",       default: Some("foo, bar") },
+        OpParameter::Texts   { key: "foo",         default: Some("   bar   ") },
         OpParameter::Text    { key: "ellps_0",     default: Some("6400000, 300") },
     ];
 
     #[test]
     fn basic() -> Result<(), Error> {
         let invocation = String::from(
-            "cucumber flag ellps_0=123 , 456 natural=$indirection sexagesimal=1:30:36",
+            "cucumber flag ellps_0=123 , 456 natural=$indirection sexagesimal=1:30:36 names=alice, bob",
         );
         let mut globals = BTreeMap::<String, String>::new();
         globals.insert("indirection".to_string(), "123".to_string());
@@ -473,6 +505,15 @@ mod tests {
         assert_eq!(series.len(), 4);
         assert_eq!(series[0], 1.);
         assert_eq!(series[3], 4.);
+
+        // Texts correctly parsed?
+        let texts = p.texts.get("names").unwrap();
+        assert_eq!(texts.len(), 2);
+        assert_eq!(texts[0], "alice");
+        assert_eq!(texts[1], "bob");
+        let texts = p.texts.get("foo").unwrap();
+        assert_eq!(texts.len(), 1);
+        assert_eq!(texts[0], "bar");
 
         // Etc.
         assert_eq!(*p.real.get("sexagesimal").unwrap(), 1.51);

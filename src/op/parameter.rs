@@ -41,4 +41,9 @@ pub enum OpParameter {
         key: &'static str,
         default: Option<&'static str>,
     },
+    /// Any set of comma-separated texts
+    Texts {
+        key: &'static str,
+        default: Option<&'static str>,
+    },
 }
