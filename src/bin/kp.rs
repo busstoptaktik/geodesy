@@ -1,4 +1,3 @@
-use anyhow::bail;
 use clap::Parser;
 use geodesy::prelude::*;
 use log::{info, trace}; // debug, error, warn: not used
@@ -64,10 +63,6 @@ fn main() -> Result<(), anyhow::Error> {
         .init();
 
     log::trace!("This is KP");
-
-    if options.inverse && options.roundtrip {
-        bail!("Options `inverse` and `roundtrip` are mutually exclusive");
-    }
 
     if options.debug {
         eprintln!("args: {:?}", options.args);
