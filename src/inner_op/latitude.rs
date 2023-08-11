@@ -7,7 +7,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let mut successes = 0_usize;
     let n = operands.len();
     let sliced = 0..n;
-    let ellps = op.params.ellps[0];
+    let ellps = op.params.ellps(0);
 
     if op.params.boolean("geocentric") {
         for i in sliced {
@@ -66,7 +66,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
 fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let mut successes = 0_usize;
     let n = operands.len();
-    let ellps = op.params.ellps[0];
+    let ellps = op.params.ellps(0);
 
     if op.params.boolean("geocentric") {
         for i in 0..n {
@@ -137,7 +137,7 @@ pub const GAMUT: [OpParameter; 8] = [
 
 pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
     let mut op = Op::plain(parameters, InnerOp(fwd), Some(InnerOp(inv)), &GAMUT, ctx)?;
-    let ellps = op.params.ellps[0];
+    let ellps = op.params.ellps(0);
 
     let mut number_of_flags = 0_usize;
     if op.params.boolean("geocentric") {

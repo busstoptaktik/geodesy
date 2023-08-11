@@ -20,9 +20,9 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let north_polar = op.params.boolean("north_polar");
     let south_polar = op.params.boolean("south_polar");
 
-    let lon_0 = op.params.lon(0);
-    let x_0 = op.params.x(0);
-    let y_0 = op.params.y(0);
+    let lon_0 = op.params.real("lon_0").unwrap_or(0.).to_radians();
+    let x_0 = op.params.real("x_0").unwrap_or(0.);
+    let y_0 = op.params.real("y_0").unwrap_or(0.);
     let ellps = op.params.ellps(0);
     let e = ellps.eccentricity();
     let a = ellps.semimajor_axis();
@@ -95,10 +95,10 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let north_polar = op.params.boolean("north_polar");
     let south_polar = op.params.boolean("south_polar");
 
-    let lon_0 = op.params.lon(0);
-    let lat_0 = op.params.lat(0);
-    let x_0 = op.params.x(0);
-    let y_0 = op.params.y(0);
+    let lon_0 = op.params.real("lon_0").unwrap_or(0.).to_radians();
+    let lat_0 = op.params.real("lat_0").unwrap_or(0.).to_radians();
+    let x_0 = op.params.real("x_0").unwrap_or(0.);
+    let y_0 = op.params.real("y_0").unwrap_or(0.);
 
     let ellps = op.params.ellps(0);
     let a = ellps.semimajor_axis();
@@ -191,7 +191,8 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     let def = &parameters.definition;
     let mut params = ParsedParameters::new(parameters, &GAMUT)?;
 
-    let lat_0 = params.lat[0];
+    let lat_0 = params.real("lat_0").unwrap_or(0.).to_radians();
+
     if lat_0.is_nan() {
         warn!("LAEA: Bad central latitude!");
         return Err(Error::BadParam("lat_0".to_string(), def.clone()));
@@ -216,7 +217,7 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
 
     // --- Precompute some latitude invariant factors ---
 
-    let ellps = params.ellps[0];
+    let ellps = params.ellps(0);
     let a = ellps.semimajor_axis();
     let es = ellps.eccentricity_squared();
     let e = es.sqrt();
@@ -266,6 +267,7 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use float_eq::assert_float_eq;
 
     #[test]
     fn laea_oblique() -> Result<(), Error> {
@@ -275,11 +277,16 @@ mod tests {
         let op = ctx.op("laea ellps=GRS80 lat_0=52 lon_0=10  x_0=4321000 y_0=3210000")?;
 
         // The test point from IOGP
-        let p = Coor4D::geo(50.0, 5.0, 0.0, 0.0);
-        let mut operands = [p];
+        let p = Coor2D::geo(50.0, 5.0);
+        let geo = [p];
+        let p = Coor2D::raw(3962799.45, 2999718.85);
+        let projected = [p];
+
+        let mut operands = geo.clone();
 
         // Forward
         ctx.apply(op, Fwd, &mut operands)?;
+        assert_float_eq!(operands[0].0, projected[0].0, abs_all <= 0.01);
         assert!((operands[0][0] - 3962799.45).abs() < 0.01);
         assert!((operands[0][1] - 2999718.85).abs() < 0.01);
         ctx.apply(op, Inv, &mut operands)?;

@@ -12,7 +12,7 @@
 ///
 /// For a given operation, the union of the sets of its required and optional
 /// parameters is called the *gamut* of the operation.
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum OpParameter {
     /// A flag is a boolean that is true if present, false if not
     Flag { key: &'static str },

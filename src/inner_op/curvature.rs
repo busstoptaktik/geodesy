@@ -6,7 +6,7 @@ use crate::operator_authoring::*;
 fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let n = operands.len();
     let sliced = 0..n;
-    let ellps = op.params.ellps[0];
+    let ellps = op.params.ellps(0);
 
     let prime = op.params.boolean("prime");
     let meridional = op.params.boolean("meridian");
@@ -114,6 +114,11 @@ pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
             "curvature: must specify exactly one of flags prime/meridian/gaussian/mean/azimuthal"
                 .to_string(),
         ));
+    }
+
+    // Check that we have a proper ellipsoid
+    if op.params.text("ellps").is_ok() {
+        let _ = Ellipsoid::named(op.params.text("ellps")?.as_str())?;
     }
 
     Ok(op)

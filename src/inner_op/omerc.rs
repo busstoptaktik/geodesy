@@ -9,14 +9,14 @@ use std::f64::consts::FRAC_PI_4;
 
 #[allow(non_snake_case)]
 fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
-    let ellps = op.params.ellps[0];
+    let ellps = op.params.ellps(0);
     let es = ellps.eccentricity_squared();
     let e = es.sqrt();
 
-    let kc = op.params.k[0];
+    let kc = op.params.k(0);
 
-    let FE = op.params.x[0];
-    let FN = op.params.y[0];
+    let FE = op.params.x(0);
+    let FN = op.params.y(0);
     let Ec = FE;
     let Nc = FN;
 
@@ -92,6 +92,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
             let u = A * (S * c0 + V * s0).atan2(cblon) / B;
             coord[0] = v * cc + u * sc + FE;
             coord[1] = u * cc - v * sc + FN;
+            successes += 1;
             continue;
         }
 
@@ -106,6 +107,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
             };
             coord[0] = v * cc + u * sc + Ec;
             coord[1] = u * cc - v * sc + Nc;
+            successes += 1;
             continue;
         }
 
@@ -125,14 +127,14 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
 
 #[allow(non_snake_case)]
 fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
-    let ellps = op.params.ellps[0];
+    let ellps = op.params.ellps(0);
     let es = ellps.eccentricity_squared();
     let e = es.sqrt();
 
-    let kc = op.params.k[0];
+    let kc = op.params.k(0);
 
-    let FE = op.params.x[0];
-    let FN = op.params.y[0];
+    let FE = op.params.x(0);
+    let FN = op.params.y(0);
 
     let latc = op.params.real["latc"].to_radians();
     let lonc = op.params.real["lonc"].to_radians();
@@ -276,6 +278,7 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use float_eq::assert_float_eq;
 
     #[test]
     fn omerc() -> Result<(), Error> {
@@ -291,15 +294,27 @@ mod tests {
 
         // Validation value from EPSG
         let geo = [Coor2D::geo(5.3872535833, 115.8055054444)];
-
         let projected = [Coor2D::raw(679245.7281740266, 596562.7774687681)];
+
+        // Forward
+        let mut operands = geo.clone();
+
+        assert_eq!(1, ctx.apply(op, Fwd, &mut operands)?);
+        for i in 0..operands.len() {
+            assert_float_eq!(operands[i].0, projected[i].0, abs_all <= 1e-9);
+        }
+
+        // Roundtrip
+        assert_eq!(1, ctx.apply(op, Inv, &mut operands)?);
+        for i in 0..operands.len() {
+            assert_float_eq!(operands[i].0, geo[i].0, abs_all <= 1e-9);
+        }
 
         // Forward
         let mut operands = geo.clone();
 
         ctx.apply(op, Fwd, &mut operands)?;
         for i in 0..operands.len() {
-            dbg!(operands[i]);
             assert!(operands[i].hypot2(&projected[i]) < 1e-9);
         }
 

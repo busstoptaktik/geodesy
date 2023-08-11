@@ -11,17 +11,22 @@ use std::collections::BTreeSet;
 
 use super::*;
 
+#[rustfmt::skip]
+const ZERO_VALUED_IMPLICIT_GAMUT_ELEMENTS: [&str; 16] = [
+    "x_0", "x_1", "x_2", "x_3",
+    "y_0", "y_1", "y_2", "y_3",
+    "lat_0", "lat_1", "lat_2", "lat_3",
+    "lon_0", "lon_1", "lon_2", "lon_3"
+];
+
+#[rustfmt::skip]
+const UNIT_VALUED_IMPLICIT_GAMUT_ELEMENTS: [&str; 4] = [
+    "k_0", "k_1", "k_2", "k_3"
+];
+
 #[derive(Debug, Clone)]
 pub struct ParsedParameters {
     pub name: String,
-
-    // Commonly used options have hard-coded slots
-    pub ellps: [Ellipsoid; 2],
-    pub lat: [f64; 4],
-    pub lon: [f64; 4],
-    pub x: [f64; 4],
-    pub y: [f64; 4],
-    pub k: [f64; 4],
 
     // Op-specific options are stored in B-Trees
     pub boolean: BTreeSet<&'static str>,
@@ -88,23 +93,34 @@ impl ParsedParameters {
     pub fn ignored(&self) -> Vec<String> {
         self.ignored.clone()
     }
-    pub fn ellps(&self, index: usize) -> &Ellipsoid {
-        &self.ellps[index]
-    }
-    pub fn x(&self, index: usize) -> f64 {
-        self.x[index]
-    }
-    pub fn y(&self, index: usize) -> f64 {
-        self.y[index]
-    }
-    pub fn lat(&self, index: usize) -> f64 {
-        self.lat[index]
-    }
-    pub fn lon(&self, index: usize) -> f64 {
-        self.lon[index]
+    pub fn ellps(&self, index: usize) -> Ellipsoid {
+        // if 'ellps' was explicitly given, it will override 'ellps_0'
+        if index == 0 {
+            if let Some(e) = self.text.get("ellps") {
+                return Ellipsoid::named(e).unwrap();
+            }
+        }
+        let key = format!("ellps_{index}");
+        if let Some(e) = self.text.get(&key[..]) {
+            return Ellipsoid::named(e).unwrap();
+        }
+        // If none of them existed, i.e. no defaults were given, we return the general default
+        Ellipsoid::default()
     }
     pub fn k(&self, index: usize) -> f64 {
-        self.k[index]
+        *(self.real.get(&format!("k_{index}")[..]).unwrap_or(&1.))
+    }
+    pub fn x(&self, index: usize) -> f64 {
+        *(self.real.get(&format!("x_{index}")[..]).unwrap_or(&0.))
+    }
+    pub fn y(&self, index: usize) -> f64 {
+        *(self.real.get(&format!("y_{index}")[..]).unwrap_or(&0.))
+    }
+    pub fn lat(&self, index: usize) -> f64 {
+        *self.real.get(&format!("lat_{index}")[..]).unwrap_or(&0.)
+    }
+    pub fn lon(&self, index: usize) -> f64 {
+        *self.real.get(&format!("lon_{index}")[..]).unwrap_or(&0.)
     }
 }
 
@@ -127,18 +143,9 @@ impl ParsedParameters {
         let mut uuid = BTreeMap::<&'static str, uuid::Uuid>::new();
         let fourier_coefficients = BTreeMap::<&'static str, FourierCoefficients>::new();
 
-        // 'omit_fwd'/'omit_inv' are implicitly valid for all operators (including pipelines),
-        // so we append them to the gamut
-        let mut gamutt = Vec::new();
-        for g in gamut {
-            gamutt.push(g);
-        }
-        gamutt.push(&OpParameter::Flag { key: "omit_fwd" });
-        gamutt.push(&OpParameter::Flag { key: "omit_inv" });
-
         // Try to locate all accepted parameters, type check, and place them into
         // their proper bins
-        for p in gamutt {
+        for p in gamut {
             match *p {
                 OpParameter::Flag { key } => {
                     if let Some(value) = chase(globals, &locals, key)? {
@@ -311,55 +318,30 @@ impl ParsedParameters {
             };
         }
 
-        // Now handle the commonly used options with the hard-coded slots
+        // Default gamut elements - traditionally supported for all operators
 
-        let mut ellps = [Ellipsoid::default(), Ellipsoid::default()];
-        let mut lat = [0.; 4];
-        let mut lon = [0.; 4];
-        let mut x = [0.; 4];
-        let mut y = [0.; 4];
-        let mut k = [1.; 4];
-
-        // ellps_{n}
-        for i in 0..2 {
-            let key = format!("ellps_{i}");
-            if let Some(e) = text.get(&key[..]) {
-                ellps[i] = Ellipsoid::named(e)?;
+        // omit_fwd and omit_inv are implicitly valid for all ops
+        if let Some(value) = chase(globals, &locals, "omit_fwd")? {
+            if value.is_empty() || value.to_lowercase() == "true" {
+                boolean.insert("omit_fwd");
             }
         }
-        // But `ellps` trumps `ellps_0`
-        if let Some(e) = text.get("ellps") {
-            ellps[0] = Ellipsoid::named(e)?;
+        if let Some(value) = chase(globals, &locals, "omit_inv")? {
+            if value.is_empty() || value.to_lowercase() == "true" {
+                boolean.insert("omit_inv");
+            }
         }
 
-        // lat_{n}
-        for i in 0..4 {
-            let key = format!("lat_{i}");
-            lat[i] = (*real.get(&key[..]).unwrap_or(&0.)).to_radians();
+        for k in ZERO_VALUED_IMPLICIT_GAMUT_ELEMENTS {
+            if !real.contains_key(k) {
+                real.insert(k, 0.);
+            }
         }
 
-        // lon_{n}
-        for i in 0..4 {
-            let key = format!("lon_{i}");
-            lon[i] = (*real.get(&key[..]).unwrap_or(&0.)).to_radians();
-        }
-
-        // x_{n}
-        for i in 0..4 {
-            let key = format!("x_{i}");
-            x[i] = *real.get(&key[..]).unwrap_or(&0.);
-        }
-
-        // y_{n}
-        for i in 0..4 {
-            let key = format!("y_{i}");
-            y[i] = *real.get(&key[..]).unwrap_or(&0.);
-        }
-
-        // k_{n}
-        for i in 0..4 {
-            let key = format!("k_{i}");
-            k[i] = *real.get(&key[..]).unwrap_or(&0.);
+        for k in UNIT_VALUED_IMPLICIT_GAMUT_ELEMENTS {
+            if !real.contains_key(k) {
+                real.insert(k, 1.);
+            }
         }
 
         let name = locals
@@ -374,12 +356,6 @@ impl ParsedParameters {
         let given = locals.clone();
         let ignored: Vec<String> = locals.into_keys().collect();
         Ok(ParsedParameters {
-            ellps,
-            lat,
-            lon,
-            x,
-            y,
-            k,
             name,
             boolean,
             natural,
@@ -522,7 +498,7 @@ mod tests {
         assert_eq!(*p.text.get("text").unwrap(), "text");
 
         assert_eq!(
-            p.ellps[0].semimajor_axis(),
+            p.ellps(0).semimajor_axis(),
             Ellipsoid::new(123., 1. / 456.).semimajor_axis()
         );
 

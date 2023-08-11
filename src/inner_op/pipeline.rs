@@ -194,7 +194,7 @@ mod tests {
         let op = ctx.op("addone|addone|addone")?;
         let mut data = some_basic_coor2dinates();
 
-        ctx.apply(op, Fwd, &mut data)?;
+        assert_eq!(2, ctx.apply(op, Fwd, &mut data)?);
         assert_eq!(data[0][0], 58.);
         assert_eq!(data[1][0], 62.);
 

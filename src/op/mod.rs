@@ -67,7 +67,19 @@ impl Op {
         _ctx: &dyn Context,
     ) -> Result<Op, Error> {
         let def = parameters.definition.as_str();
-        let params = ParsedParameters::new(parameters, gamut)?;
+        let mut params = ParsedParameters::new(parameters, gamut)?;
+
+        // Convert lat_{0..4} and lon_{0..4} to radians
+        for i in ["lat_0", "lat_1", "lat_2", "lat_3"] {
+            let lat = *params.real.get(i).unwrap_or(&0.);
+            params.real.insert(i, lat);
+        }
+
+        for i in ["lon_0", "lon_1", "lon_2", "lon_3"] {
+            let lon = *params.real.get(i).unwrap_or(&0.);
+            params.real.insert(i, lon);
+        }
+
         let descriptor = OpDescriptor::new(def, fwd, inv);
         let steps = Vec::<Op>::new();
         let id = OpHandle::new();

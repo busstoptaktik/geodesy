@@ -4,13 +4,13 @@ use crate::operator_authoring::*;
 // ----- F O R W A R D -----------------------------------------------------------------
 
 fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
-    let ellps = op.params.ellps[0];
+    let ellps = op.params.ellps(0);
     let a = ellps.semimajor_axis();
-    let k_0 = op.params.k[0];
-    let x_0 = op.params.x[0];
-    let y_0 = op.params.y[0];
-    let lat_0 = op.params.lat[0];
-    let lon_0 = op.params.lon[0];
+    let k_0 = op.params.k(0);
+    let x_0 = op.params.x(0);
+    let y_0 = op.params.y(0);
+    let lat_0 = op.params.lat(0);
+    let lon_0 = op.params.lon(0);
 
     let mut successes = 0_usize;
     let length = operands.len();
@@ -33,13 +33,13 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
 // ----- I N V E R S E -----------------------------------------------------------------
 
 fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
-    let ellps = op.params.ellps[0];
+    let ellps = op.params.ellps(0);
     let a = ellps.semimajor_axis();
-    let k_0 = op.params.k[0];
-    let x_0 = op.params.x[0];
-    let y_0 = op.params.y[0];
-    let lat_0 = op.params.lat[0];
-    let lon_0 = op.params.lon[0];
+    let k_0 = op.params.k(0);
+    let x_0 = op.params.x(0);
+    let y_0 = op.params.y(0);
+    let lat_0 = op.params.lat(0);
+    let lon_0 = op.params.lon(0);
 
     let mut successes = 0_usize;
     let length = operands.len();
@@ -80,7 +80,7 @@ pub const GAMUT: [OpParameter; 8] = [
 pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> {
     let def = &parameters.definition;
     let mut params = ParsedParameters::new(parameters, &GAMUT)?;
-    let ellps = params.ellps[0];
+    let ellps = params.ellps(0);
 
     let lat_ts = params.real("lat_ts")?;
     if lat_ts.abs() > 90. {
@@ -92,7 +92,8 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     // lat_ts trumps k_0
     if lat_ts != 0.0 {
         let sc = lat_ts.to_radians().sin_cos();
-        params.k[0] = sc.1 / (1. - ellps.eccentricity_squared() * sc.0 * sc.0).sqrt()
+        let k_0 = sc.1 / (1. - ellps.eccentricity_squared() * sc.0 * sc.0).sqrt();
+        params.real.insert("k_0", k_0);
     }
 
     let descriptor = OpDescriptor::new(def, InnerOp(fwd), Some(InnerOp(inv)));
