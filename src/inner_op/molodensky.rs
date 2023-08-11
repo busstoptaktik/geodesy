@@ -25,7 +25,7 @@ fn common(
     operands: &mut dyn CoordinateSet,
     direction: Direction,
 ) -> usize {
-    let ellps = op.params.ellps[0];
+    let ellps = op.params.ellps(0);
     let a = ellps.semimajor_axis();
     let f = ellps.flattening();
     let es = ellps.eccentricity_squared();
@@ -100,8 +100,8 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     let def = &parameters.definition;
     let mut params = ParsedParameters::new(parameters, &GAMUT)?;
 
-    let ellps_0 = params.ellps[0];
-    let ellps_1 = params.ellps[1];
+    let ellps_0 = params.ellps(0);
+    let ellps_1 = params.ellps(1);
 
     // We may use `ellps, da, df`, to parameterize the op, but `ellps_0, ellps_1`
     // is a more likely set of parameters to come across in real life.

@@ -6,9 +6,10 @@ use crate::operator_authoring::*;
 fn cart_fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let n = operands.len();
     let mut successes = 0;
+    let ellps = op.params.ellps(0);
     for i in 0..n {
         let mut coord = operands.get_coord(i);
-        coord = op.params.ellps[0].cartesian(&coord);
+        coord = ellps.cartesian(&coord);
         if !coord.0.iter().any(|c| c.is_nan()) {
             successes += 1;
         }
@@ -20,20 +21,21 @@ fn cart_fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> us
 // ----- I N V E R S E --------------------------------------------------------------
 
 fn cart_inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
+    let ellps = op.params.ellps(0);
     // eccentricity squared, Fukushima's E, Claessens' c3 = 1-c2`
-    let es = op.params.ellps[0].eccentricity_squared();
+    let es = ellps.eccentricity_squared();
     // semiminor axis
-    let b = op.params.ellps[0].semiminor_axis();
+    let b = ellps.semiminor_axis();
     // semimajor axis
-    let a = op.params.ellps[0].semimajor_axis();
+    let a = ellps.semimajor_axis();
     // reciproque of a
-    let ra = 1. / op.params.ellps[0].semimajor_axis();
+    let ra = 1. / ellps.semimajor_axis();
     // aspect ratio, b/a: Fukushima's ec, Claessens' c4
     let ar = b * ra;
     // 1.5 times the fourth power of the eccentricity
     let ce4 = 1.5 * es * es;
     // if we're closer than this to the Z axis, we force latitude to one of the poles
-    let cutoff = op.params.ellps[0].semimajor_axis() * 1e-16;
+    let cutoff = ellps.semimajor_axis() * 1e-16;
 
     let n = operands.len();
     let mut successes = 0;

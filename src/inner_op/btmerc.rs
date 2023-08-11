@@ -5,13 +5,13 @@ use crate::operator_authoring::*;
 
 // Forward transverse mercator, following Bowring (1989)
 fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
-    let ellps = op.params.ellps[0];
+    let ellps = op.params.ellps(0);
     let eps = ellps.second_eccentricity_squared();
-    let lat_0 = op.params.lat[0];
-    let lon_0 = op.params.lon[0];
-    let x_0 = op.params.x[0];
-    let y_0 = op.params.y[0];
-    let k_0 = op.params.k[0];
+    let lat_0 = op.params.lat(0).to_radians();
+    let lon_0 = op.params.lon(0).to_radians();
+    let x_0 = op.params.x(0);
+    let y_0 = op.params.y(0);
+    let k_0 = op.params.k(0);
 
     let mut successes = 0_usize;
     let n = operands.len();
@@ -53,13 +53,13 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
 
 // Inverse transverse mercator, following Bowring (1989)
 fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
-    let ellps = op.params.ellps[0];
+    let ellps = op.params.ellps(0);
     let eps = ellps.second_eccentricity_squared();
-    let lat_0 = op.params.lat[0];
-    let lon_0 = op.params.lon[0];
-    let x_0 = op.params.x[0];
-    let y_0 = op.params.y[0];
-    let k_0 = op.params.k[0];
+    let lat_0 = op.params.lat(0).to_radians();
+    let lon_0 = op.params.lon(0).to_radians();
+    let x_0 = op.params.x(0);
+    let y_0 = op.params.y(0);
+    let k_0 = op.params.k(0);
 
     let mut successes = 0_usize;
     let n = operands.len();
@@ -134,22 +134,24 @@ pub fn utm(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     }
 
     // The scaling factor is 0.9996 by definition of UTM
-    params.k[0] = 0.9996;
+    params.real.insert("k_0", 0.9996);
 
     // The center meridian is determined by the zone
-    params.lon[0] = (-183. + 6. * zone as f64).to_radians();
+    params
+        .real
+        .insert("lon_0", -183. + 6. * zone as f64);
 
     // The base parallel is by definition the equator
-    params.lat[0] = 0.0;
+    params.real.insert("lat_0", 0.);
 
     // The false easting is 500000 m by definition of UTM
-    params.x[0] = 500000.0;
+    params.real.insert("x_0", 500_000.);
 
     // The false northing is 0 m by definition of UTM
-    params.y[0] = 0.0;
+    params.real.insert("y_0", 0.);
     // or 10_000_000 m if using the southern aspect
     if params.boolean("south") {
-        params.y[0] = 10_000_000.0;
+        params.real.insert("y_0", 10_000_000.0);
     }
 
     let descriptor = OpDescriptor::new(def, InnerOp(fwd), Some(InnerOp(inv)));

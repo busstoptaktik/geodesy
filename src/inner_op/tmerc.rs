@@ -7,10 +7,10 @@ use crate::operator_authoring::*;
 // Forward transverse mercator, following Engsager & Poder(2007)
 fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     // Make all precomputed parameters directly accessible
-    let ellps = op.params.ellps[0];
-    let lat_0 = op.params.lat[0];
-    let lon_0 = op.params.lon[0];
-    let x_0 = op.params.x[0];
+    let ellps = op.params.ellps(0);
+    let lat_0 = op.params.lat(0).to_radians();
+    let lon_0 = op.params.lon(0).to_radians();
+    let x_0 = op.params.x(0);
     let Some(conformal) = op.params.fourier_coefficients.get("conformal") else {
         warn!("Missing Fourier coefficients for conformal mapping!");
         return 0;
@@ -94,12 +94,12 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
 
 // ----- I N V E R S E -----------------------------------------------------------------
 
-// Inverse Transverse Mercator, following Engsager & Poder (2007) (currently Bowring stands in!)
+// Inverse Transverse Mercator, following Engsager & Poder (2007)
 fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     // Make all precomputed parameters directly accessible
-    let ellps = op.params.ellps[0];
-    let lon_0 = op.params.lon[0];
-    let x_0 = op.params.x[0];
+    let ellps = op.params.ellps(0);
+    let lon_0 = op.params.lon(0).to_radians();
+    let x_0 = op.params.x(0);
     let Some(conformal) = op.params.fourier_coefficients.get("conformal") else {
         warn!("Missing Fourier coefficients for conformal mapping!");
         return 0;
@@ -201,22 +201,24 @@ pub fn utm(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     }
 
     // The scaling factor is 0.9996 by definition of UTM
-    params.k[0] = 0.9996;
+    params.real.insert("k_0", 0.9996);
 
     // The center meridian is determined by the zone
-    params.lon[0] = (-183. + 6. * zone as f64).to_radians();
+    params
+        .real
+        .insert("lon_0", -183. + 6. * zone as f64);
 
     // The base parallel is by definition the equator
-    params.lat[0] = 0.0;
+    params.real.insert("lat_0", 0.);
 
     // The false easting is 500000 m by definition of UTM
-    params.x[0] = 500_000.0;
+    params.real.insert("x_0", 500_000.);
 
     // The false northing is 0 m by definition of UTM
-    params.y[0] = 0.0;
+    params.real.insert("y_0", 0.);
     // or 10_000_000 m if using the southern aspect
     if params.boolean("south") {
-        params.y[0] = 10_000_000.0;
+        params.real.insert("y_0", 10_000_000.0);
     }
 
     let descriptor = OpDescriptor::new(def, InnerOp(fwd), Some(InnerOp(inv)));
@@ -263,13 +265,13 @@ const TRANSVERSE_MERCATOR: PolynomialCoefficients = PolynomialCoefficients {
 // Pre-compute some of the computationally heavy prerequisites,
 // to get better amortization over the full operator lifetime.
 fn precompute(op: &mut Op) {
-    let ellps = op.params.ellps[0];
+    let ellps = op.params.ellps(0);
     let n = ellps.third_flattening();
-    let lat_0 = op.params.lat[0];
-    let y_0 = op.params.y[0];
+    let lat_0 = op.params.lat(0).to_radians();
+    let y_0 = op.params.y(0);
 
     // The scaled spherical Earth radius - Qn in Engsager's implementation
-    let qs = op.params.k[0] * ellps.semimajor_axis() * ellps.normalized_meridian_arc_unit();
+    let qs = op.params.k(0) * ellps.semimajor_axis() * ellps.normalized_meridian_arc_unit();
     op.params.real.insert("scaled_radius", qs);
 
     // The Fourier series for the conformal latitude
@@ -303,51 +305,10 @@ pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use float_eq::assert_float_eq;
 
     #[test]
     fn tmerc() -> Result<(), Error> {
-        // Validation values from PROJ:
-        // echo 12 55 0 0 | cct -d18 +proj=utm +zone=32 | clip
-        #[rustfmt::skip]
-        let geo = [
-            Coor4D::geo( 55.,  12., 0., 0.),
-            Coor4D::geo(-55.,  12., 0., 0.),
-            Coor4D::geo( 55., -6., 0., 0.),
-            Coor4D::geo(-55., -6., 0., 0.)
-        ];
-
-        #[rustfmt::skip]
-        let projected = [
-            Coor4D::raw( 691_875.632_139_661, 6_098_907.825_005_012, 0., 0.),
-            Coor4D::raw( 691_875.632_139_661,-6_098_907.825_005_012, 0., 0.),
-            Coor4D::raw(-455_673.814_189_040, 6_198_246.671_090_279, 0., 0.),
-            Coor4D::raw(-455_673.814_189_040,-6_198_246.671_090_279, 0., 0.)
-        ];
-
-        let mut ctx = Minimal::default();
-        let definition = "tmerc k_0=0.9996 lon_0=9 x_0=500000";
-        let op = ctx.op(definition)?;
-
-        let mut operands = geo.clone();
-        ctx.apply(op, Fwd, &mut operands)?;
-
-        for i in 0..operands.len() {
-            dbg!(operands[i]);
-            dbg!(projected[i]);
-            assert!(operands[i].hypot2(&projected[i]) < 1e-6);
-        }
-
-        ctx.apply(op, Inv, &mut operands)?;
-        for i in 0..operands.len() {
-            assert!(operands[i].hypot2(&geo[i]) < 5e-6);
-        }
-
-        Ok(())
-    }
-
-    // Same as above, but using the 2D Coor2D data structure
-    #[test]
-    fn coor2d() -> Result<(), Error> {
         // Validation values from PROJ:
         // echo 12 55 0 0 | cct -d18 +proj=utm +zone=32 | clip
         #[rustfmt::skip]
@@ -374,9 +335,7 @@ mod tests {
         ctx.apply(op, Fwd, &mut operands)?;
 
         for i in 0..operands.len() {
-            dbg!(operands[i]);
-            dbg!(projected[i]);
-            assert!(operands[i].hypot2(&projected[i]) < 1e-6);
+            assert_float_eq!(operands[i].0, projected[i].0, abs_all <= 1e-8);
         }
 
         ctx.apply(op, Inv, &mut operands)?;
@@ -397,29 +356,29 @@ mod tests {
         // echo 12 55 0 0 | cct -d18 +proj=utm +zone=32 | clip
         #[rustfmt::skip]
         let geo = [
-            Coor4D::geo( 55.,  12., 0., 0.),
-            Coor4D::geo(-55.,  12., 0., 0.),
-            Coor4D::geo( 55., -6., 0., 0.),
-            Coor4D::geo(-55., -6., 0., 0.)
+            Coor2D::geo( 55.,  12.),
+            Coor2D::geo(-55.,  12.),
+            Coor2D::geo( 55., -6.),
+            Coor2D::geo(-55., -6.)
         ];
 
         #[rustfmt::skip]
         let projected = [
-            Coor4D::raw( 691_875.632_139_661, 6_098_907.825_005_012, 0., 0.),
-            Coor4D::raw( 691_875.632_139_661,-6_098_907.825_005_012, 0., 0.),
-            Coor4D::raw(-455_673.814_189_040, 6_198_246.671_090_279, 0., 0.),
-            Coor4D::raw(-455_673.814_189_040,-6_198_246.671_090_279, 0., 0.)
+            Coor2D::raw( 691_875.632_139_661, 6_098_907.825_005_012),
+            Coor2D::raw( 691_875.632_139_661,-6_098_907.825_005_012),
+            Coor2D::raw(-455_673.814_189_040, 6_198_246.671_090_279),
+            Coor2D::raw(-455_673.814_189_040,-6_198_246.671_090_279)
         ];
 
         let mut operands = geo.clone();
-        ctx.apply(op, Fwd, &mut operands)?;
+        assert_eq!(ctx.apply(op, Fwd, &mut operands)?, 4);
         for i in 0..operands.len() {
-            assert!(operands[i].hypot2(&projected[i]) < 5e-3);
+            assert_float_eq!(operands[i].0, projected[i].0, abs_all <= 1e-8);
         }
 
-        ctx.apply(op, Inv, &mut operands)?;
+        assert_eq!(ctx.apply(op, Inv, &mut operands)?, 4);
         for i in 0..operands.len() {
-            assert!(operands[i].hypot2(&geo[i]) < 10e-8);
+            assert_float_eq!(operands[i].0, geo[i].0, abs_all <= 1e-12);
         }
 
         Ok(())

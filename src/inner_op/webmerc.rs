@@ -6,7 +6,7 @@ use std::f64::consts::FRAC_PI_4;
 // ----- F O R W A R D -----------------------------------------------------------------
 
 fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
-    let ellps = op.params.ellps[0];
+    let ellps = op.params.ellps(0);
     let a = ellps.semimajor_axis();
 
     let mut successes = 0_usize;
@@ -30,7 +30,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
 // ----- I N V E R S E -----------------------------------------------------------------
 
 fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
-    let ellps = op.params.ellps[0];
+    let ellps = op.params.ellps(0);
     let a = ellps.semimajor_axis();
 
     let mut successes = 0_usize;
@@ -80,6 +80,7 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use float_eq::assert_float_eq;
 
     #[test]
     fn webmerc() -> Result<(), Error> {
@@ -102,14 +103,13 @@ mod tests {
         let mut operands = geo.clone();
         ctx.apply(op, Fwd, &mut operands)?;
         for i in 0..operands.len() {
-            assert!(operands[i].hypot2(&projected[i]) < 1e-8);
+            assert_float_eq!(operands[i].0, projected[i].0, abs_all <= 1e-8);
         }
 
         // Roundtrip
         ctx.apply(op, Inv, &mut operands)?;
         for i in 0..operands.len() {
-            dbg!(operands[0].to_geo());
-            assert!(operands[i].hypot2(&geo[i]) < 2e-9);
+            assert_float_eq!(operands[i].0, geo[i].0, abs_all <= 2e-9);
         }
 
         Ok(())

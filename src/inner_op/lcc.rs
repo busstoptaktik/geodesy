@@ -9,12 +9,13 @@ const EPS10: f64 = 1e-10;
 // Forward Lambert conformal conic, following the PROJ implementation,
 // cf.  https://proj.org/operations/projections/lcc.html
 fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
-    let a = op.params.ellps[0].semimajor_axis();
-    let e = op.params.ellps[0].eccentricity();
-    let lon_0 = op.params.lon[0];
-    let k_0 = op.params.k[0];
-    let x_0 = op.params.x[0];
-    let y_0 = op.params.y[0];
+    let ellps = op.params.ellps(0);
+    let a = ellps.semimajor_axis();
+    let e = ellps.eccentricity();
+    let lon_0 = op.params.lon(0);
+    let k_0 = op.params.k(0);
+    let x_0 = op.params.x(0);
+    let y_0 = op.params.y(0);
     let Ok(n) = op.params.real("n") else { return 0 };
     let Ok(c) = op.params.real("c") else { return 0 };
     let Ok(rho0) = op.params.real("rho0") else { return 0 };
@@ -48,12 +49,13 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
 
 // ----- I N V E R S E -----------------------------------------------------------------
 fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
-    let a = op.params.ellps[0].semimajor_axis();
-    let e = op.params.ellps[0].eccentricity();
-    let lon_0 = op.params.lon[0];
-    let k_0 = op.params.k[0];
-    let x_0 = op.params.x[0];
-    let y_0 = op.params.y[0];
+    let ellps = op.params.ellps(0);
+    let a = ellps.semimajor_axis();
+    let e = ellps.eccentricity();
+    let lon_0 = op.params.lon(0);
+    let k_0 = op.params.k(0);
+    let x_0 = op.params.x(0);
+    let y_0 = op.params.y(0);
     let Ok(n) = op.params.real("n") else { return 0 };
     let Ok(c) = op.params.real("c") else { return 0 };
     let Ok(rho0) = op.params.real("rho0") else { return 0 };
@@ -119,18 +121,25 @@ pub const GAMUT: [OpParameter; 9] = [
 pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> {
     let def = &parameters.definition;
     let mut params = ParsedParameters::new(parameters, &GAMUT)?;
-    if params.lat[2].is_nan() {
-        params.lat[2] = params.lat[1];
+    if !params.real.contains_key("lat_2") {
+        params.real.insert("lat_2", params.lat(1));
     }
 
-    let phi1 = params.lat[1];
-    let mut phi2 = params.lat[2];
+    let phi1 = params.lat(1).to_radians();
+    let mut phi2 = params.lat(2).to_radians();
     if phi2.is_nan() {
         phi2 = phi1;
     }
-    params.lat[2] = phi2;
+    params
+        .real
+        .insert("lon_0", params.real["lon_0"].to_radians());
+    params
+        .real
+        .insert("lat_0", params.real["lat_0"].to_radians());
+    params.real.insert("lat_1", phi1);
+    params.real.insert("lat_2", phi2);
 
-    let mut lat_0 = params.lat[0];
+    let mut lat_0 = params.lat(0);
     if lat_0.is_nan() {
         lat_0 = 0.;
         if (phi1 - phi2).abs() < EPS10 {
@@ -140,8 +149,9 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
 
     let sc = phi1.sin_cos();
     let mut n = sc.0;
-    let e = params.ellps[0].eccentricity();
-    let es = params.ellps[0].eccentricity_squared();
+    let ellps = params.ellps(0);
+    let e = ellps.eccentricity();
+    let es = ellps.eccentricity_squared();
 
     if (phi1 + phi2).abs() < EPS10 {
         return Err(Error::General(
@@ -189,7 +199,7 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     params.real.insert("c", c);
     params.real.insert("n", n);
     params.real.insert("rho0", rho0);
-    params.lat[0] = lat_0;
+    params.real.insert("lat_0", lat_0);
 
     let descriptor = OpDescriptor::new(def, InnerOp(fwd), Some(InnerOp(inv)));
     let steps = Vec::<Op>::new();

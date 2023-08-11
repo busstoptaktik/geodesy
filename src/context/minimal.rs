@@ -136,23 +136,23 @@ mod tests {
         ctx.register_resource("stupid:way", "addone | addone | addone inv");
         let op = ctx.op("stupid:way")?;
 
+        let steps = ctx.steps(op)?;
+        assert_eq!(steps.len(), 3);
+        assert_eq!(steps[0], "addone");
+        assert_eq!(steps[1], "addone");
+        assert_eq!(steps[2], "addone inv");
+
         let mut data = some_basic_coor2dinates();
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
 
-        ctx.apply(op, Fwd, &mut data)?;
+        assert_eq!(2, ctx.apply(op, Fwd, &mut data)?);
         assert_eq!(data[0][0], 56.);
         assert_eq!(data[1][0], 60.);
 
         ctx.apply(op, Inv, &mut data)?;
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
-
-        let steps = ctx.steps(op)?;
-        assert_eq!(steps.len(), 3);
-        assert_eq!(steps[0], "addone");
-        assert_eq!(steps[1], "addone");
-        assert_eq!(steps[2], "addone inv");
 
         let params = ctx.params(op, 1)?;
         let ellps = params.ellps(0);
@@ -195,9 +195,9 @@ mod tests {
         // while ellps_? defaults to GRS80 - so they are there even though we havent
         // set them
         let params = ctx.params(op, 1)?;
-        let ellps = params.ellps[0];
+        let ellps = params.ellps(0);
         assert_eq!(ellps.semimajor_axis(), 6378137.);
-        assert_eq!(0., params.lat[0]);
+        assert_eq!(0., params.real("lat_0")?);
 
         // The zone id is found among the natural numbers (which here includes 0)
         let zone = params.natural("zone")?;
@@ -225,7 +225,7 @@ mod tests {
         let op = ctx.op("utm zone=32")?;
         let steps = ctx.steps(op)?;
         assert!(steps.len() == 1);
-        let ellps = ctx.params(op, 0)?.ellps[0];
+        let ellps = ctx.params(op, 0)?.ellps(0);
         let jac = Jacobian::new(
             &ctx,
             op,

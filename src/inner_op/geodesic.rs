@@ -4,7 +4,7 @@ use crate::operator_authoring::*;
 // ----- F O R W A R D -----------------------------------------------------------------
 
 fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
-    let ellps = op.params.ellps[0];
+    let ellps = op.params.ellps(0);
 
     let n = operands.len();
     let sliced = 0..n;
@@ -35,7 +35,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
 // ----- I N V E R S E -----------------------------------------------------------------
 
 fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
-    let ellps = op.params.ellps[0];
+    let ellps = op.params.ellps(0);
     let reversible = op.params.boolean("reversible");
 
     let n = operands.len();
