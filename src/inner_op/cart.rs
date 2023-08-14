@@ -1,5 +1,5 @@
 /// Geographical to cartesian (and v.v.) conversion
-use crate::operator_authoring::*;
+use crate::authoring::*;
 
 // ----- F O R W A R D --------------------------------------------------------------
 

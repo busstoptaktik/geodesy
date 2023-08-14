@@ -1,4 +1,4 @@
-use crate::operator_authoring::*;
+use crate::authoring::*;
 use std::collections::BTreeSet;
 
 // ----- F O R W A R D -----------------------------------------------------------------

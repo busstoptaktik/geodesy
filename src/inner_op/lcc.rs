@@ -1,5 +1,5 @@
 //! Lambert Conformal Conic
-use crate::operator_authoring::*;
+use crate::authoring::*;
 use std::f64::consts::FRAC_PI_2;
 
 const EPS10: f64 = 1e-10;

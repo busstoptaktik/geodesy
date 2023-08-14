@@ -1,4 +1,4 @@
-use geodesy::operator_authoring::*;
+use geodesy::authoring::*;
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 

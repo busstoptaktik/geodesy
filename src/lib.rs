@@ -26,6 +26,9 @@ pub use crate::ellipsoid::Ellipsoid;
 pub use crate::Direction::Fwd;
 pub use crate::Direction::Inv;
 
+pub use crate::math::jacobian::Factors;
+pub use crate::math::jacobian::Jacobian;
+
 /// The bread-and-butter, shrink-wrapped for external use
 pub mod prelude {
     pub use crate::context::minimal::Minimal;
@@ -34,8 +37,6 @@ pub mod prelude {
     #[cfg(feature = "with_plain")]
     pub use crate::context::plain::Plain;
 
-    pub use crate::context::Factors;
-    pub use crate::context::Jacobian;
     pub use crate::coordinate::coor2d::Coor2D;
     pub use crate::coordinate::coor32::Coor32;
     pub use crate::coordinate::coor3d::Coor3D;
@@ -44,6 +45,8 @@ pub mod prelude {
     pub use crate::coordinate::CoordinateMetadata;
     pub use crate::coordinate::CoordinateSet;
     pub use crate::ellipsoid::Ellipsoid;
+    pub use crate::math::jacobian::Factors;
+    pub use crate::math::jacobian::Jacobian;
     pub use crate::math::parse_sexagesimal;
     pub use crate::op::parse_proj;
     pub use crate::op::OpHandle;
@@ -71,8 +74,8 @@ pub mod prelude {
     }
 }
 
-/// Preamble for InnerOp modules (built-in or user defined)
-pub mod operator_authoring {
+/// Preamble for authoring Contexts and InnerOp modules (built-in or user defined)
+pub mod authoring {
     pub use crate::prelude::*;
     pub use log::error;
     pub use log::info;
@@ -89,12 +92,8 @@ pub mod operator_authoring {
     pub use crate::op::OpParameter;
     pub use crate::op::ParsedParameters;
     pub use crate::op::RawParameters;
-}
 
-/// Preamble for Contexts (built-in or user defined)
-pub mod context_authoring {
     pub use crate::context::BUILTIN_ADAPTORS;
-    pub use crate::operator_authoring::*;
     pub use std::collections::BTreeMap;
 }
 

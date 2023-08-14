@@ -12,7 +12,7 @@
 // of the Rust Geodesy library. Since they are mostly for
 // library-internal use, they are wrapped up in this dedicated
 // module:
-use geodesy::operator_authoring::*;
+use geodesy::authoring::*;
 
 // ----- O P E R A T O R ------------------------------------------------------------
 

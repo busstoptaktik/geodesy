@@ -1,4 +1,4 @@
-use crate::context_authoring::*;
+use crate::authoring::*;
 use std::path::PathBuf;
 
 // ----- T H E   M I N I M A L   P R O V I D E R ---------------------------------------

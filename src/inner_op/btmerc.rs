@@ -1,5 +1,5 @@
 //! Transverse Mercator, following [Bowring (1989)](crate::Bibliography::Bow89)
-use crate::operator_authoring::*;
+use crate::authoring::*;
 
 // ----- F O R W A R D -----------------------------------------------------------------
 
@@ -137,9 +137,7 @@ pub fn utm(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     params.real.insert("k_0", 0.9996);
 
     // The center meridian is determined by the zone
-    params
-        .real
-        .insert("lon_0", -183. + 6. * zone as f64);
+    params.real.insert("lon_0", -183. + 6. * zone as f64);
 
     // The base parallel is by definition the equator
     params.real.insert("lat_0", 0.);

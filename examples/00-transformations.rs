@@ -152,7 +152,7 @@ fn main() -> anyhow::Result<()> {
     println!("------------------------------------");
     println!(" Doing the same in the wrong way... ");
     println!("------------------------------------");
-    use geodesy::operator_authoring::Op;
+    use geodesy::authoring::Op;
     // Create an `Op`, turning geographical coordinates into UTM zone 32 coordinates
     let utm32 = Op::new("utm zone=32", &ctx)?;
     // Now, let's use the utm32-operator to transform some data

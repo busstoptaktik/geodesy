@@ -1,4 +1,4 @@
-use crate::operator_authoring::*;
+use crate::authoring::*;
 
 // ----- B U I L T I N   O P E R A T O R S ---------------------------------------------
 

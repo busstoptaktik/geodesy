@@ -1,5 +1,5 @@
 //! Web Mercator
-use crate::operator_authoring::*;
+use crate::authoring::*;
 use std::f64::consts::FRAC_PI_2;
 use std::f64::consts::FRAC_PI_4;
 

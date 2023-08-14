@@ -113,7 +113,7 @@
 /// from the grid.
 ///
 /// For now, this is the solution implemented here.
-use crate::operator_authoring::*;
+use crate::authoring::*;
 
 // ----- F O R W A R D --------------------------------------------------------------
 

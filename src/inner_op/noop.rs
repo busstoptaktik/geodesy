@@ -1,5 +1,5 @@
 /// The no-operation. Does nothing, and is good at it
-use crate::operator_authoring::*;
+use crate::authoring::*;
 
 // ----- F O R W A R D --------------------------------------------------------------
 

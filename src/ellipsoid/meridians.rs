@@ -12,7 +12,7 @@ impl Ellipsoid {
     #[must_use]
     pub fn normalized_meridian_arc_unit(&self) -> f64 {
         let n = self.third_flattening();
-        crate::math::horner(n * n, &constants::MERIDIAN_ARC_COEFFICIENTS) / (1. + n)
+        crate::math::taylor::horner(n * n, &constants::MERIDIAN_ARC_COEFFICIENTS) / (1. + n)
     }
 
     /// The rectifying radius, *A*, is the radius of a sphere of the same circumference
@@ -26,7 +26,7 @@ impl Ellipsoid {
     pub fn rectifying_radius(&self) -> f64 {
         let n = self.third_flattening();
         self.semimajor_axis() / (1. + n)
-            * crate::math::horner(n * n, &constants::MERIDIAN_ARC_COEFFICIENTS)
+            * crate::math::taylor::horner(n * n, &constants::MERIDIAN_ARC_COEFFICIENTS)
     }
 
     /// The rectifying radius, *A*, following [Bowring (1983)](crate::Bibliography::Bow83):

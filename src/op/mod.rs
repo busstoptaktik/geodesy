@@ -3,7 +3,7 @@ mod parameter;
 mod parsed_parameters;
 mod raw_parameters;
 
-use crate::operator_authoring::*;
+use crate::authoring::*;
 use std::collections::BTreeMap;
 
 pub use op_descriptor::OpDescriptor;

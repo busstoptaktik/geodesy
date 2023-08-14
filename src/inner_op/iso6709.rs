@@ -20,7 +20,7 @@
 //! $ echo 553036. -124509 | kp "dms | geo inv"
 //! > 55.51  -12.7525 0 0
 //! ```
-use crate::operator_authoring::*;
+use crate::authoring::*;
 
 // ----- F O R W A R D -----------------------------------------------------------------
 

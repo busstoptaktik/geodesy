@@ -1,7 +1,7 @@
 //! Oblique Mercator
 //! Following IOGP Publication 373-7-2 – Geomatics Guidance Note number 7, part 2 – September 2019
 //!
-use crate::operator_authoring::*;
+use crate::authoring::*;
 use std::f64::consts::FRAC_PI_2;
 use std::f64::consts::FRAC_PI_4;
 

@@ -1,6 +1,6 @@
 //! Transverse Mercator, following Engsager & Poder (2007)
+use crate::authoring::*;
 use crate::math::*;
-use crate::operator_authoring::*;
 
 // ----- F O R W A R D -----------------------------------------------------------------
 
@@ -70,7 +70,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         ];
 
         // Evaluate and apply the differential term
-        let dc = clenshaw::complex_sin_optimized_for_tmerc(trig, hyp, &tm.fwd);
+        let dc = fourier::complex_sin_optimized_for_tmerc(trig, hyp, &tm.fwd);
         lat += dc[0];
         lon += dc[1];
 
@@ -136,7 +136,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
 
         // --- 2. Normalized N, E -> complex spherical LAT, LNG
 
-        let dc = clenshaw::complex_sin([2. * lat, 2. * lon], &tm.inv);
+        let dc = fourier::complex_sin([2. * lat, 2. * lon], &tm.inv);
         lat += dc[0];
         lon += dc[1];
         lon = gudermannian::fwd(lon);
@@ -204,9 +204,7 @@ pub fn utm(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     params.real.insert("k_0", 0.9996);
 
     // The center meridian is determined by the zone
-    params
-        .real
-        .insert("lon_0", -183. + 6. * zone as f64);
+    params.real.insert("lon_0", -183. + 6. * zone as f64);
 
     // The base parallel is by definition the equator
     params.real.insert("lat_0", 0.);
@@ -290,7 +288,7 @@ fn precompute(op: &mut Op) {
     let z = ellps.latitude_geographic_to_conformal(lat_0, &conformal);
     // Origin northing minus true northing at the origin latitude
     // i.e. true northing = N - zb
-    let zb = y_0 - qs * (z + clenshaw::sin(2. * z, &tm.fwd));
+    let zb = y_0 - qs * (z + fourier::sin(2. * z, &tm.fwd));
     op.params.real.insert("zb", zb);
 }
 

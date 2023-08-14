@@ -1,5 +1,5 @@
 #[cfg(feature = "with_plain")]
-use crate::context_authoring::*;
+use crate::authoring::*;
 use std::path::PathBuf;
 
 // ----- T H E   P L A I N   C O N T E X T ---------------------------------------------
