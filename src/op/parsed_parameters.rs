@@ -6,6 +6,7 @@
 // store them in the `ParsedParameters` struct, ready for use at run time.
 
 #![allow(clippy::needless_range_loop)]
+use crate::math::angular;
 use crate::math::FourierCoefficients;
 use std::collections::BTreeSet;
 
@@ -206,7 +207,7 @@ impl ParsedParameters {
 
                 OpParameter::Real { key, default } => {
                     if let Some(value) = chase(globals, &locals, key)? {
-                        let v = crate::math::parse_sexagesimal(&value);
+                        let v = angular::parse_sexagesimal(&value);
                         if v.is_nan() {
                             return Err(Error::BadParam(key.to_string(), value));
                         }
@@ -231,7 +232,7 @@ impl ParsedParameters {
                     let mut elements = Vec::<f64>::new();
                     if let Some(value) = chase(globals, &locals, key)? {
                         for element in value.split(',') {
-                            let v = crate::math::parse_sexagesimal(element);
+                            let v = angular::parse_sexagesimal(element);
                             if v.is_nan() {
                                 warn!("Cannot parse {key}:{value} as a series");
                                 return Err(Error::BadParam(key.to_string(), value.to_string()));
@@ -252,7 +253,7 @@ impl ParsedParameters {
                             continue;
                         }
                         for element in value.split(',') {
-                            let v = crate::math::parse_sexagesimal(element);
+                            let v = angular::parse_sexagesimal(element);
                             if v.is_nan() {
                                 warn!("Cannot parse {key}:{value} as a series");
                                 return Err(Error::BadParam(key.to_string(), value.to_string()));

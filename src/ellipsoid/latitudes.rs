@@ -1,5 +1,5 @@
 use super::*;
-use crate::math::*;
+use crate::authoring::*;
 
 // ----- Latitudes -------------------------------------------------------------
 impl Ellipsoid {
@@ -48,7 +48,7 @@ impl Ellipsoid {
     #[must_use]
     pub fn latitude_isometric_to_geographic(&self, isometric: f64) -> f64 {
         let e = self.eccentricity();
-        sinhpsi_to_tanphi(isometric.sinh(), e).atan()
+        ancillary::sinhpsi_to_tanphi(isometric.sinh(), e).atan()
     }
 
     // --- Auxiliary latitudes ---

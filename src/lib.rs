@@ -6,54 +6,70 @@ mod coordinate;
 mod ellipsoid;
 mod grid;
 mod inner_op;
-mod math;
+pub mod math;
 mod op;
 
 // The bread-and-butter
-pub use crate::context::minimal::Minimal;
-pub use crate::context::Context;
 
+// Context trait and types
+pub use crate::context::minimal::Minimal;
 #[cfg(feature = "with_plain")]
 pub use crate::context::plain::Plain;
+pub use crate::context::Context;
 
+// Used to specify which operator to apply in `Context::apply(...)`
+pub use crate::op::OpHandle;
+
+// Coordinate traits and types
 pub use crate::coordinate::coor2d::Coor2D;
 pub use crate::coordinate::coor32::Coor32;
 pub use crate::coordinate::coor3d::Coor3D;
 pub use crate::coordinate::coor4d::Coor4D;
+pub use crate::coordinate::AngularUnits;
 pub use crate::coordinate::CoordinateMetadata;
 pub use crate::coordinate::CoordinateSet;
-pub use crate::ellipsoid::Ellipsoid;
-pub use crate::Direction::Fwd;
-pub use crate::Direction::Inv;
 
+// Additional types
+pub use crate::ellipsoid::Ellipsoid;
 pub use crate::math::jacobian::Factors;
 pub use crate::math::jacobian::Jacobian;
 
+// Constants - directionality in `Context::apply(...)`
+pub use crate::Direction::Fwd;
+pub use crate::Direction::Inv;
+
+// PROJ interoperability
+pub use crate::op::parse_proj;
+
 /// The bread-and-butter, shrink-wrapped for external use
 pub mod prelude {
-    pub use crate::context::minimal::Minimal;
-    pub use crate::context::Context;
-
+    pub use crate::Context;
+    pub use crate::Minimal;
     #[cfg(feature = "with_plain")]
-    pub use crate::context::plain::Plain;
+    pub use crate::Plain;
 
-    pub use crate::coordinate::coor2d::Coor2D;
-    pub use crate::coordinate::coor32::Coor32;
-    pub use crate::coordinate::coor3d::Coor3D;
-    pub use crate::coordinate::coor4d::Coor4D;
-    pub use crate::coordinate::AngularUnits;
-    pub use crate::coordinate::CoordinateMetadata;
-    pub use crate::coordinate::CoordinateSet;
-    pub use crate::ellipsoid::Ellipsoid;
-    pub use crate::math::jacobian::Factors;
-    pub use crate::math::jacobian::Jacobian;
-    pub use crate::math::parse_sexagesimal;
-    pub use crate::op::parse_proj;
-    pub use crate::op::OpHandle;
+    pub use crate::AngularUnits;
+    pub use crate::CoordinateMetadata;
+    pub use crate::CoordinateSet;
+
+    pub use crate::Coor2D;
+    pub use crate::Coor32;
+    pub use crate::Coor3D;
+    pub use crate::Coor4D;
+
+    pub use crate::Ellipsoid;
+    pub use crate::Factors;
+    pub use crate::Jacobian;
+
+    pub use crate::OpHandle;
+
     pub use crate::Direction;
     pub use crate::Direction::Fwd;
     pub use crate::Direction::Inv;
     pub use crate::Error;
+
+    pub use crate::parse_proj;
+
     #[cfg(test)]
     pub fn some_basic_coor4dinates() -> [Coor4D; 2] {
         let copenhagen = Coor4D::raw(55., 12., 0., 0.);
@@ -74,13 +90,9 @@ pub mod prelude {
     }
 }
 
-/// Preamble for authoring Contexts and InnerOp modules (built-in or user defined)
+/// Prelude for authoring Contexts and InnerOp modules (built-in or user defined)
 pub mod authoring {
     pub use crate::prelude::*;
-    pub use log::error;
-    pub use log::info;
-    pub use log::trace;
-    pub use log::warn;
 
     pub use crate::grid::Grid;
     pub use crate::inner_op::InnerOp;
@@ -93,7 +105,14 @@ pub mod authoring {
     pub use crate::op::ParsedParameters;
     pub use crate::op::RawParameters;
 
+    // All new contexts are supposed to support these
     pub use crate::context::BUILTIN_ADAPTORS;
+
+    // External material
+    pub use log::error;
+    pub use log::info;
+    pub use log::trace;
+    pub use log::warn;
     pub use std::collections::BTreeMap;
 }
 

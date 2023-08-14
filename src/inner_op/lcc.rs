@@ -36,7 +36,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
                 continue;
             }
         } else {
-            rho = c * crate::math::ts(phi.sin_cos(), e).powf(n);
+            rho = c * crate::math::ancillary::ts(phi.sin_cos(), e).powf(n);
         }
         let sc = (lam * n).sin_cos();
         coord[0] = a * k_0 * rho * sc.0 + x_0;
@@ -86,7 +86,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         }
 
         let ts0 = (rho / c).powf(1. / n);
-        let phi = crate::math::pj_phi2(ts0, e);
+        let phi = crate::math::ancillary::pj_phi2(ts0, e);
         if phi.is_infinite() || phi.is_nan() {
             coord = Coor4D::nan();
             operands.set_coord(i, &coord);
@@ -170,19 +170,19 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     }
 
     // Snyder (1982) eq. 12-15
-    let m1 = crate::math::pj_msfn(sc, es);
+    let m1 = crate::math::ancillary::pj_msfn(sc, es);
 
     // Snyder (1982) eq. 7-10: exp(-𝜓)
-    let ml1 = crate::math::ts(sc, e);
+    let ml1 = crate::math::ancillary::ts(sc, e);
 
     // Secant case?
     if (phi1 - phi2).abs() >= EPS10 {
         let sc = phi2.sin_cos();
-        n = (m1 / crate::math::pj_msfn(sc, es)).ln();
+        n = (m1 / crate::math::ancillary::pj_msfn(sc, es)).ln();
         if n == 0. {
             return Err(Error::General("Lcc: Invalid value for eccentricity"));
         }
-        let ml2 = crate::math::ts(sc, e);
+        let ml2 = crate::math::ancillary::ts(sc, e);
         let denom = (ml1 / ml2).ln();
         if denom == 0. {
             return Err(Error::General("Lcc: Invalid value for eccentricity"));
@@ -193,7 +193,7 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     let c = m1 * ml1.powf(-n) / n;
     let mut rho0 = 0.;
     if (lat_0.abs() - FRAC_PI_2).abs() > EPS10 {
-        rho0 = c * crate::math::ts(lat_0.sin_cos(), e).powf(n);
+        rho0 = c * crate::math::ancillary::ts(lat_0.sin_cos(), e).powf(n);
     }
 
     params.real.insert("c", c);

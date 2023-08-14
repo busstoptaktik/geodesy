@@ -42,7 +42,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
             let lon = coord[0];
             let (sin_lon, cos_lon) = (lon - lon_0).sin_cos();
 
-            let q = qs(lat.sin(), e);
+            let q = ancillary::qs(lat.sin(), e);
             let rho = a * (qp + sign * q).sqrt();
 
             coord[0] = x_0 + rho * sin_lon;
@@ -60,7 +60,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         let (sin_lon, cos_lon) = (lon - lon_0).sin_cos();
 
         // Authalic latitude, 𝜉
-        let xi = (qs(lat.sin(), e) / qp).asin();
+        let xi = (ancillary::qs(lat.sin(), e) / qp).asin();
 
         let (sin_xi, cos_xi) = xi.sin_cos();
         let b = if oblique {
@@ -224,9 +224,9 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     let (sin_phi_0, cos_phi_0) = lat_0.sin_cos();
 
     // qs for the central parallel
-    let q0 = qs(sin_phi_0, e);
+    let q0 = ancillary::qs(sin_phi_0, e);
     // qs for the North Pole
-    let qp = qs(1.0, e);
+    let qp = ancillary::qs(1.0, e);
     // Authalic latitude of the central parallel - 𝛽₀ in the IOGP text
     let xi_0 = (q0 / qp).asin();
     // Rq in the IOGP text

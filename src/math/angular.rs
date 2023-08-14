@@ -1,3 +1,5 @@
+use log::warn;
+
 /// Simplistic transformation from degrees, minutes and seconds-with-decimals
 /// to degrees-with-decimals. No sanity check: Sign taken from degree-component,
 /// minutes forced to unsigned by i16 type, but passing a negative value for
@@ -63,14 +65,14 @@ pub fn dd_to_iso_dms(dd: f64) -> f64 {
     sign * (d * 10000. + m * 100. + s)
 }
 
-/// normalize arbitrary angles to [-π, π):
+/// normalize arbitrary angles to [-π, π)
 pub fn normalize_symmetric(angle: f64) -> f64 {
     use std::f64::consts::PI;
     let angle = (angle + PI) % (2.0 * PI);
     angle - PI * angle.signum()
 }
 
-/// normalize arbitrary angles to [0, 2π):
+/// normalize arbitrary angles to [0, 2π)
 pub fn normalize_positive(angle: f64) -> f64 {
     use std::f64::consts::PI;
     let angle = angle % (2.0 * PI);
@@ -78,6 +80,47 @@ pub fn normalize_positive(angle: f64) -> f64 {
         return angle + 2.0 * PI;
     }
     angle
+}
+
+/// Parse sexagesimal degrees, i.e. degrees, minutes and seconds in the
+/// format 45:30:36, 45:30:36N,-45:30:36 etc.
+pub fn parse_sexagesimal(angle: &str) -> f64 {
+    // Degrees, minutes, and seconds
+    let mut dms = [0.0, 0.0, 0.0];
+    let mut angle = angle.trim();
+
+    // Empty?
+    let n = angle.len();
+    if n == 0 || angle == "NaN" {
+        return f64::NAN;
+    }
+
+    // Handle NSEW indicators
+    let mut postfix_sign = 1.0;
+    if "wWsSeEnN".contains(&angle[n - 1..]) {
+        if "wWsS".contains(&angle[n - 1..]) {
+            postfix_sign = -1.0;
+        }
+        angle = &angle[..n - 1];
+    }
+
+    // Split into as many elements as given: D, D:M, D:M:S
+    for (i, element) in angle.split(':').enumerate() {
+        if i < 3 {
+            if let Ok(v) = element.parse::<f64>() {
+                dms[i] = v;
+                continue;
+            }
+        }
+        // More than 3 elements?
+        warn!("Cannot parse {angle} as a real number or sexagesimal angle");
+        return f64::NAN;
+    }
+
+    // Sexagesimal conversion if we have more than one element. Otherwise
+    // decay gracefully to plain real/f64 conversion
+    let sign = dms[0].signum() * postfix_sign;
+    sign * (dms[0].abs() + (dms[1] + dms[2] / 60.0) / 60.0)
 }
 
 // ----- Tests ---------------------------------------------------------------------
@@ -106,5 +149,16 @@ mod tests {
         assert_eq!(iso_dm_to_dd(-5500.), -55.);
         assert_eq!(iso_dm_to_dd(5530.60), -iso_dm_to_dd(-5530.60));
         assert_eq!(iso_dms_to_dd(553036.), -iso_dms_to_dd(-553036.00));
+    }
+
+    #[test]
+    fn test_parse_sexagesimal() {
+        assert_eq!(1.51, parse_sexagesimal("1:30:36"));
+        assert_eq!(-1.51, parse_sexagesimal("-1:30:36"));
+        assert_eq!(1.51, parse_sexagesimal("1:30:36N"));
+        assert_eq!(-1.51, parse_sexagesimal("1:30:36S"));
+        assert_eq!(1.51, parse_sexagesimal("1:30:36e"));
+        assert_eq!(-1.51, parse_sexagesimal("1:30:36w"));
+        assert!(parse_sexagesimal("q1:30:36w").is_nan());
     }
 }
