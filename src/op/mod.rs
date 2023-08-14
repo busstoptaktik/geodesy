@@ -283,7 +283,7 @@ pub fn split_into_parameters(step: &str) -> BTreeMap<String, String> {
 /// very unrestrictive, we do not try to detect any syntax errors: If the input
 /// is so cursed as to be intranslatable, this will become clear when trying to
 /// instantiate the result as a Geodesy operator.
-pub fn parse_proj(definition: &str) -> String {
+pub fn parse_proj(definition: &str) -> Result<String, Error> {
     // Impose some line ending sanity and remove the PROJ '+' prefix
     let all = definition
         .replace("\r\n", "\n")
@@ -335,7 +335,7 @@ pub fn parse_proj(definition: &str) -> String {
     let mut pipeline_globals = "".to_string();
     let mut pipeline_is_inverted = false;
 
-    for step in steps {
+    for (step_index, step) in steps.iter().enumerate() {
         let mut elements: Vec<_> = step.split_whitespace().map(|x| x.to_string()).collect();
 
         // Move the "proj=..." element to the front of the collection, stripped for "proj="
@@ -343,6 +343,12 @@ pub fn parse_proj(definition: &str) -> String {
         for (i, element) in elements.iter().enumerate() {
             // Mutating the Vec we are iterating over may seem dangerous but is
             // OK as we break out of the loop immediately after the mutation
+            if element.starts_with("init=") {
+                return Err(Error::Unsupported(
+                    "parse_proj does not support PROJ init clauses: ".to_string() + step,
+                ));
+            }
+
             if element.starts_with("proj=") {
                 elements.swap(i, 0);
                 elements[0] = elements[0][5..].to_string();
@@ -350,6 +356,11 @@ pub fn parse_proj(definition: &str) -> String {
                 // In the proj=pipeline case, just collect the globals, without
                 // introducing a new step into geodesy_steps
                 if elements[0] == "pipeline" {
+                    if step_index != 0 {
+                        return Err(Error::Unsupported(
+                            "PROJ does not support nested pipelines: ".to_string() + &trimmed,
+                        ));
+                    }
                     elements.remove(0);
 
                     // The case of 'inv' in globals must be handled separately, since it indicates
@@ -406,7 +417,7 @@ pub fn parse_proj(definition: &str) -> String {
             }
         }
     }
-    geodesy_steps.join(" | ").trim().to_string()
+    Ok(geodesy_steps.join(" | ").trim().to_string())
 }
 
 // ----- T E S T S ------------------------------------------------------------------
@@ -616,30 +627,30 @@ mod tests {
     #[test]
     fn proj() -> Result<(), Error> {
         // Some trivial, but strangely formatted cases
-        assert_eq!(parse_proj("a   =   1 +proj =foo    b= 2  "), "foo a=1 b=2");
+        assert_eq!(parse_proj("a   =   1 +proj =foo    b= 2  ")?, "foo a=1 b=2");
         assert_eq!(
-            parse_proj("+a   =   1 +proj =foo    +   b= 2  "),
+            parse_proj("+a   =   1 +proj =foo    +   b= 2  ")?,
             "foo a=1 b=2"
         );
 
         // An invalid PROJ string, that parses into an empty pipeline
-        assert_eq!(parse_proj("      proj="), "");
+        assert_eq!(parse_proj("      proj=")?, "");
 
         // A pipeline with a single step and a global argument
         assert_eq!(
-            parse_proj("proj=pipeline +foo=bar +step proj=utm zone=32"),
+            parse_proj("proj=pipeline +foo=bar +step proj=utm zone=32")?,
             "utm foo=bar zone=32"
         );
 
         // A pipeline with 3 steps and 2 global arguments
         assert_eq!(
-            parse_proj("proj=pipeline +foo = bar ellps=GRS80 step proj=cart step proj=helmert s=3 step proj=cart ellps=intl"),
+            parse_proj("proj=pipeline +foo = bar ellps=GRS80 step proj=cart step proj=helmert s=3 step proj=cart ellps=intl")?,
             "cart foo=bar ellps=GRS80 | helmert foo=bar ellps=GRS80 s=3 | cart foo=bar ellps=GRS80 ellps=intl"
         );
 
         // Although PROJ would choke on this, we accept steps without an initial proj=pipeline
         assert_eq!(
-            parse_proj("proj=utm zone=32 step proj=utm inv zone=32"),
+            parse_proj("proj=utm zone=32 step proj=utm inv zone=32")?,
             "utm zone=32 | utm inv zone=32"
         );
 
@@ -647,7 +658,7 @@ mod tests {
         // and for args called 'step' (which, however, cannot be flags - must come with a value
         // to be recognized as a key=value pair)
         assert_eq!(
-            parse_proj("  +step proj = step step=quickstep step step proj=utm inv zone=32 step proj=stepwise step proj=quickstep"),
+            parse_proj("  +step proj = step step=quickstep step step proj=utm inv zone=32 step proj=stepwise step proj=quickstep")?,
             "step step=quickstep | utm inv zone=32 | stepwise | quickstep"
         );
 
@@ -655,15 +666,30 @@ mod tests {
         // Also throw a few additional spanners in the works, in the form of some ugly, but
         // PROJ-accepted, syntactical abominations
         assert_eq!(
-            parse_proj("inv ellps=intl proj=pipeline ugly=syntax +step inv proj=utm zone=32 step proj=utm zone=33"),
+            parse_proj("inv ellps=intl proj=pipeline ugly=syntax +step inv proj=utm zone=32 step proj=utm zone=33")?,
             "utm inv ellps=intl ugly=syntax zone=33 | utm ellps=intl ugly=syntax zone=32"
         );
 
         // Check for the proper inversion of directional omissions
         assert_eq!(
-            parse_proj("proj=pipeline inv   +step   omit_fwd inv proj=utm zone=32   step   omit_inv proj=utm zone=33"),
+            parse_proj("proj=pipeline inv   +step   omit_fwd inv proj=utm zone=32   step   omit_inv proj=utm zone=33")?,
             "utm inv omit_fwd zone=33 | utm omit_inv zone=32"
         );
+
+        // Nested pipelines are not supported...
+
+        // Nested pipelines in PROJ requires an `init=` indirection
+        assert!(matches!(
+            parse_proj("proj=pipeline step proj=pipeline"),
+            Err(Error::Unsupported(_))
+        ));
+        // ...but `init` is not supported by Rust Geodesy, since that
+        // would require a full implementation of PROJ's resolution
+        // system - which would be counter to RG's raison d'etre
+        assert!(matches!(
+            parse_proj("pipeline step init=another_pipeline step proj=noop"),
+            Err(Error::Unsupported(_))
+        ));
 
         // Room here for testing of additional pathological cases...
 

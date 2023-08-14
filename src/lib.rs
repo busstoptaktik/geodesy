@@ -156,6 +156,9 @@ pub enum Error {
     #[error("malformed value for parameter {0}: {1}")]
     BadParam(String, String),
 
+    #[error("unsupported: {0}")]
+    Unsupported(String),
+
     #[error("unknown error")]
     Unknown,
 }
