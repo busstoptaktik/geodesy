@@ -123,16 +123,16 @@ pub enum Error {
     #[error("i/o error")]
     Io(#[from] std::io::Error),
 
-    #[error("error: {0}")]
+    #[error("General error: '{0}'")]
     General(&'static str),
 
-    #[error("syntax error: {0}")]
+    #[error("Syntax error: '{0}'")]
     Syntax(String),
 
     #[error("{0}: {1}")]
     Operator(&'static str, &'static str),
 
-    #[error("invalid header (expected {expected:?}, found {found:?})")]
+    #[error("Invalid header (expected {expected:?}, found {found:?})")]
     InvalidHeader { expected: String, found: String },
     #[error("{message:?} (expected {expected:?}, found {found:?})")]
     Unexpected {
@@ -141,25 +141,25 @@ pub enum Error {
         found: String,
     },
 
-    #[error("operator {0} not found{1}")]
+    #[error("Operator '{0}' not found{1}")]
     NotFound(String, String),
 
-    #[error("recursion too deep for {0}, at {1}")]
+    #[error("Recursion too deep for '{0}', at {1}")]
     Recursion(String, String),
 
-    #[error("attempt to invert a non-invertible item: {0}")]
+    #[error("Attempt to invert a non-invertible item: '{0}'")]
     NonInvertible(String),
 
-    #[error("missing required parameter {0}")]
+    #[error("Missing required parameter '{0}'")]
     MissingParam(String),
 
-    #[error("malformed value for parameter {0}: {1}")]
+    #[error("Malformed value for parameter '{0}': '{1}'")]
     BadParam(String, String),
 
-    #[error("unsupported: {0}")]
+    #[error("Unsupported: {0}")]
     Unsupported(String),
 
-    #[error("unknown error")]
+    #[error("Unknown")]
     Unknown,
 }
 
