@@ -1,3 +1,5 @@
+//! Miscellaneous math functions for general use
+
 /// Free functions used in more than one module of the crate.
 pub mod ancillary;
 pub use ancillary::gudermannian;

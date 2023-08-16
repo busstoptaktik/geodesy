@@ -2,7 +2,7 @@
 
 ## Abstract
 
-"Rust Geodesy" is - unsurprisingly - a geodesy library written in the Rust programming language.
+**Rust Geodesy** is - unsurprisingly - a geodesy library written in the Rust programming language.
 
 Rust Geodesy provides a number of **features** to support a number of **objectives**.
 

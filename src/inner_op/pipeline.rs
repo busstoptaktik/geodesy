@@ -59,7 +59,7 @@ pub const GAMUT: [OpParameter; 1] = [
 
 pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
     let definition = &parameters.definition;
-    let thesteps = split_into_steps(definition).0;
+    let thesteps = definition.split_into_steps().0;
     let mut steps = Vec::new();
 
     for step in thesteps {

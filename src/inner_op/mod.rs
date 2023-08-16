@@ -71,6 +71,7 @@ pub(crate) fn builtin(name: &str) -> Result<OpConstructor, Error> {
 // ----- S T R U C T   O P C O N S T R U C T O R ---------------------------------------
 
 /// Blueprint for the overall instantiation of an operator.
+///
 /// OpConstructor needs to be a newtype, rather than a type alias,
 /// since we must implement the Debug-trait for OpConstructor (to
 /// make auto derive of the Debug-trait work for any derived type).
@@ -86,6 +87,7 @@ impl core::fmt::Debug for OpConstructor {
 // ----- S T R U C T   I N N E R O P ---------------------------------------------------
 
 /// Blueprint for the functions doing the actual transformation work.
+///
 /// InnerOp needs to be a newtype, rather than a type alias, since we
 /// must implement the Debug-trait for InnerOp (to make auto derive
 /// of the Debug-trait work for any derived type).

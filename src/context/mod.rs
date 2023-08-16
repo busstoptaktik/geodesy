@@ -9,9 +9,8 @@ pub use plain::Plain;
 
 // ----- T H E   C O N T E X T   T R A I T ---------------------------------------------
 
-/// The `Context` trait defines the mode of communication between *Rust Geodesy* internals
-/// and the external context (i.e. typically resources like grids, transformation definitions,
-/// or ellipsoid parameters).
+/// Modes of communication between the *Rust Geodesy* internals and the external
+/// world (i.e. resources like grids, transformation definitions, or ellipsoid parameters).
 pub trait Context {
     /// In general, implementations should make sure that `new` differs from `default`
     /// only by adding access to the builtin adaptors (`geo:in`, `gis:out` etc.)
@@ -56,7 +55,7 @@ pub trait Context {
     fn get_grid(&self, name: &str) -> Result<Grid, Error>;
 }
 
-// Help context providers provide canonically named, built in coordinate adaptors
+/// Help context providers provide canonically named, built in coordinate adaptors
 #[rustfmt::skip]
 pub const BUILTIN_ADAPTORS: [(&str, &str); 8] = [
     ("geo:in",  "adapt from=neuf_deg"),

@@ -5,42 +5,48 @@ pub mod coor3d;
 pub mod coor4d;
 pub mod set;
 
+/// Methods for changing the coordinate representation of angles.
+/// Dimensionality untold, the methods operate on the first two
+/// dimensions only.
 pub trait AngularUnits {
-    /// Transform the first two elements of a `Coord` from degrees to radians
+    /// Transform the first two elements of a coordinate tuple from degrees to radians
     fn to_radians(self) -> Self;
 
-    /// Transform the first two elements of a `Coord` from radians to degrees
+    /// Transform the first two elements of a coordinate tuple from radians to degrees
     fn to_degrees(self) -> Self;
 
-    /// Transform the first two elements of a `Coord` from radians to seconds
+    /// Transform the first two elements of a coordinate tuple from radians to seconds
     /// of arc.
     fn to_arcsec(self) -> Self;
 
-    /// Transform the internal lon/lat/h/t-in-radians to lat/lon/h/t-in-degrees
+    /// Transform the internal lon/lat(/h/t)-in-radians to lat/lon(/h/t)-in-degrees
     fn to_geo(self) -> Self;
 }
 
-// For Rust Geodesy, a DirectPosition is represented as a geodesy::Coord.
+/// For Rust Geodesy, the ISO-19111 concept of `DirectPosition` is represented
+/// as a `geodesy::Coo4D`.
+///
+/// The strict connection between the ISO19107 "DirectPosition" datatype
+/// and the ISO19111/OGC Topic 2 "CoordinateSet" interface (i.e. trait)
+/// is unclear to me: The DirectPosition, according to 19107, includes
+/// metadata which in the 19111 CoordinateSet interface is lifted from the
+/// DirectPosition to the CoordinateSet level. Nevertheless, the interface
+/// consists of an array of DirectPositions, and further derives from the
+/// CoordinateMetadata interface...
 #[allow(dead_code)]
 type DirectPosition = Coor4D;
-// The strict connection between the ISO19107 "DirectPosition" datatype
-// and the ISO19111/OGC Topic 2 "CoordinateSet" interface (i.e. trait)
-// is unclear to me: The DirectPosition, according to 19107, includes
-// metadata which in the 19111 CoordinateSet interface is lifted from the
-// DirectPosition to the CoordinateSet level. Nevertheless, the interface
-// consists of an array of DirectPositions, and further derives from the
-// CoordinateMetadata interface...
 
 // ----- Coordinate Metadata --------------------------------------------------
 
-// OGC 18-005r5, section 7.4 https://docs.ogc.org/as/18-005r5/18-005r5.html#12
-
+/// OGC 18-005r5, section 7.4 https://docs.ogc.org/as/18-005r5/18-005r5.html#12
 #[derive(Debug, Default, PartialEq, PartialOrd, Copy, Clone)]
 pub struct DataEpoch(f64);
 
+/// The metadataidentifier (CRS id) is represented by an UUID placeholder
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Copy, Clone)]
 pub struct MdIdentifier(uuid::Uuid);
 
+/// CRS given as a register item
 #[derive(Debug, Default, PartialEq, PartialOrd, Clone)]
 pub enum Crs {
     #[default]
@@ -50,6 +56,8 @@ pub enum Crs {
 
 // ----- Interface: Coordinate Metadata ---------------------------------------
 
+/// The ISO-19111 Coordinate Metadata gamut includes an optional
+///  epoch and one of two possible ways of representing the CRS
 pub trait CoordinateMetadata {
     fn crs_id(&self) -> Option<MdIdentifier> {
         None
@@ -73,6 +81,11 @@ pub trait CoordinateMetadata {
 // Preliminary empty blanket implementation: Defaults for all items, for all types
 impl<T> CoordinateMetadata for T where T: ?Sized {}
 
+/// CoordinateSet is the fundamental coordinate access interface in ISO-19111.
+///
+/// Here it is implemented simply as an accessor trait, that allows us to
+/// access any user provided data model by iterating over its elements,
+/// represented as a `Coor4D`
 pub trait CoordinateSet: CoordinateMetadata {
     fn len(&self) -> usize;
     fn get_coord(&self, index: usize) -> Coor4D;

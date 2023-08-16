@@ -123,7 +123,7 @@ fn main() -> Result<(), anyhow::Error> {
             args.extend(&(["0", "0", "0", "NaN", "0"][args.len()..]));
             let mut b: Vec<f64> = vec![];
             for e in args {
-                b.push(geodesy::math::angular::parse_sexagesimal(e));
+                b.push(angular::parse_sexagesimal(e));
             }
             b[2] = options.height.unwrap_or(b[2]);
             b[3] = options.time.unwrap_or(b[3]);

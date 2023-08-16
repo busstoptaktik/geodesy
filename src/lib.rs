@@ -1,74 +1,30 @@
 #![doc = include_str!("../README.md")]
 
-mod bibliography;
-mod context;
-mod coordinate;
-mod ellipsoid;
-mod grid;
-mod inner_op;
-pub mod math;
-mod op;
-
-// The bread-and-butter
-
-// Context trait and types
-pub use crate::context::minimal::Minimal;
-#[cfg(feature = "with_plain")]
-pub use crate::context::plain::Plain;
-pub use crate::context::Context;
-
-// Used to specify which operator to apply in `Context::apply(...)`
-pub use crate::op::OpHandle;
-
-// Coordinate traits and types
-pub use crate::coordinate::coor2d::Coor2D;
-pub use crate::coordinate::coor32::Coor32;
-pub use crate::coordinate::coor3d::Coor3D;
-pub use crate::coordinate::coor4d::Coor4D;
-pub use crate::coordinate::AngularUnits;
-pub use crate::coordinate::CoordinateMetadata;
-pub use crate::coordinate::CoordinateSet;
-
-// Additional types
-pub use crate::ellipsoid::Ellipsoid;
-pub use crate::math::jacobian::Factors;
-pub use crate::math::jacobian::Jacobian;
-
-// Constants - directionality in `Context::apply(...)`
-pub use crate::Direction::Fwd;
-pub use crate::Direction::Inv;
-
-// PROJ interoperability
-pub use crate::op::parse_proj;
-
 /// The bread-and-butter, shrink-wrapped for external use
 pub mod prelude {
+    // Context related
     pub use crate::Context;
+    pub use crate::Direction;
+    pub use crate::Direction::Fwd;
+    pub use crate::Direction::Inv;
     pub use crate::Minimal;
+    pub use crate::OpHandle;
     #[cfg(feature = "with_plain")]
     pub use crate::Plain;
 
+    // Coordinate related
+    pub use crate::math::angular;
     pub use crate::AngularUnits;
-    pub use crate::CoordinateMetadata;
-    pub use crate::CoordinateSet;
-
     pub use crate::Coor2D;
     pub use crate::Coor32;
     pub use crate::Coor3D;
     pub use crate::Coor4D;
+    pub use crate::CoordinateMetadata;
+    pub use crate::CoordinateSet;
 
+    // Et cetera
     pub use crate::Ellipsoid;
-    pub use crate::Factors;
-    pub use crate::Jacobian;
-
-    pub use crate::OpHandle;
-
-    pub use crate::Direction;
-    pub use crate::Direction::Fwd;
-    pub use crate::Direction::Inv;
     pub use crate::Error;
-
-    pub use crate::parse_proj;
 
     #[cfg(test)]
     pub fn some_basic_coor4dinates() -> [Coor4D; 2] {
@@ -90,23 +46,29 @@ pub mod prelude {
     }
 }
 
-/// Prelude for authoring Contexts and InnerOp modules (built-in or user defined)
+/// Extended prelude for authoring Contexts and InnerOp modules (built-in or user defined)
 pub mod authoring {
     pub use crate::prelude::*;
 
-    pub use crate::grid::Grid;
-    pub use crate::inner_op::InnerOp;
-    pub use crate::inner_op::OpConstructor;
     pub use crate::math::*;
-    pub use crate::op::split_into_steps;
-    pub use crate::op::Op;
-    pub use crate::op::OpDescriptor;
-    pub use crate::op::OpParameter;
-    pub use crate::op::ParsedParameters;
-    pub use crate::op::RawParameters;
+    pub use crate::Grid;
+    pub use crate::InnerOp;
+    pub use crate::Op;
+    pub use crate::OpConstructor;
+    pub use crate::OpDescriptor;
+    pub use crate::OpParameter;
+    pub use crate::ParsedParameters;
+    pub use crate::RawParameters;
 
     // All new contexts are supposed to support these
     pub use crate::context::BUILTIN_ADAPTORS;
+
+    // Map projection characteristics
+    pub use crate::math::jacobian::Factors;
+    pub use crate::math::jacobian::Jacobian;
+
+    pub use crate::parse_proj;
+    pub use crate::Tokenize;
 
     // External material
     pub use log::error;
@@ -172,6 +134,61 @@ pub enum Direction {
     Fwd,
     Inv,
 }
+
+mod bibliography;
+mod context;
+mod coordinate;
+mod ellipsoid;
+mod grid;
+mod inner_op;
+pub mod math;
+mod op;
+mod token;
+
+// ---- Context providers ----
+
+// The Context trait and the two implementing built-in types
+pub use crate::context::Context;
+
+pub use crate::context::minimal::Minimal;
+#[cfg(feature = "with_plain")]
+pub use crate::context::plain::Plain;
+
+// Specify which operator to apply in `Context::apply(...)`
+pub use crate::op::OpHandle;
+
+// ---- Coordinates and ellipsoids ----
+
+// Ellipsoidal operations
+pub use crate::ellipsoid::Ellipsoid;
+
+// Coordinate types
+pub use crate::coordinate::coor2d::Coor2D;
+pub use crate::coordinate::coor32::Coor32;
+pub use crate::coordinate::coor3d::Coor3D;
+pub use crate::coordinate::coor4d::Coor4D;
+// Coordinate traits
+pub use crate::coordinate::AngularUnits;
+pub use crate::coordinate::CoordinateMetadata;
+pub use crate::coordinate::CoordinateSet;
+
+// ---- Et cetera ----
+
+// Tokenizing Rust Geodesy operations
+pub use crate::token::Tokenize;
+
+// PROJ interoperability
+pub use crate::token::parse_proj;
+
+// The lower level data types, mostly use in the extended prelude 'authoring'
+pub use crate::grid::Grid;
+pub use crate::inner_op::InnerOp;
+pub use crate::inner_op::OpConstructor;
+pub use crate::op::Op;
+pub use crate::op::OpDescriptor;
+pub use crate::op::OpParameter;
+pub use crate::op::ParsedParameters;
+pub use crate::op::RawParameters;
 
 #[cfg(doc)]
 pub use crate::bibliography::Bibliography;

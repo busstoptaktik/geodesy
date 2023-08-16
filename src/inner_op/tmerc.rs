@@ -1,6 +1,5 @@
 //! Transverse Mercator, following Engsager & Poder (2007)
 use crate::authoring::*;
-use crate::math::*;
 
 // ----- F O R W A R D -----------------------------------------------------------------
 

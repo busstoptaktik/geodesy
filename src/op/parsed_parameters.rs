@@ -1,9 +1,4 @@
-// `ParsedParameters is the `InnerOp` specific representation of the operator
-// arguments. The `InnerOp`-constructor asks ParsedParameters::new(...) to
-// interpret the `RawParameters`-representation according to the `GAMUT` of
-// the `InnerOp`(i.e. the args it is willing to interpret and use).
-// Also, the constructor is free to compute up front derived parameters and
-// store them in the `ParsedParameters` struct, ready for use at run time.
+//! The `InnerOp` specific representation of the operator arguments
 
 #![allow(clippy::needless_range_loop)]
 use crate::math::angular;
@@ -25,6 +20,18 @@ const UNIT_VALUED_IMPLICIT_GAMUT_ELEMENTS: [&str; 4] = [
     "k_0", "k_1", "k_2", "k_3"
 ];
 
+/// The [InnerOp](crate::inner_op::InnerOp) specific
+/// representation of the operator arguments.
+///
+/// The [InnerOp](crate::inner_op::InnerOp)-constructor asks
+/// `ParsedParameters::new(...)` to interpret the
+/// [RawParameters](super::RawParameters)-representation
+/// according to the `GAMUT` of the `InnerOp` (i.e. the args it is willing
+/// to interpret and use).
+///
+/// Also, the `InnerOp` constructor is free to pre-compute
+/// derived parameters and store them in the `ParsedParameters`
+/// struct, ready for use at run time.
 #[derive(Debug, Clone)]
 pub struct ParsedParameters {
     pub name: String,
@@ -130,7 +137,7 @@ impl ParsedParameters {
         parameters: &RawParameters,
         gamut: &[OpParameter],
     ) -> Result<ParsedParameters, Error> {
-        let locals = super::split_into_parameters(&parameters.definition);
+        let locals = parameters.definition.split_into_parameters();
         let globals = &parameters.globals;
         let mut boolean = BTreeSet::<&'static str>::new();
         let mut natural = BTreeMap::<&'static str, usize>::new();

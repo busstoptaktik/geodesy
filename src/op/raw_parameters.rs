@@ -1,11 +1,15 @@
-// `RawParameters` is the vehicle used by the `Op`erator factory in `Op::op(...)`,
-// to ferry args around from the invocator into the constructor of the individual
-// `InnerOp`s. The `InnerOp`constructor typically interprets the contents of
-// `RawParameters`, and converts it into a more runtime friendly instance of
-// `ParsedParameters`.
-
 use super::*;
 
+/// Interface between the high level [Op::op()](crate::op::Op) and the low level
+/// functionality in the [InnerOp](crate::inner_op::InnerOp)s
+///
+/// `RawParameters` is the vehicle used by the `Op`erator factory in `Op::op(...)`,
+/// to ferry args around from the invocator into the constructor of the individual
+/// `InnerOp`s.
+///
+/// The `InnerOp`constructor typically interprets the contents of
+/// `RawParameters`, and converts it into a more runtime friendly instance of
+/// `ParsedParameters`.
 #[derive(Debug, Default)]
 pub struct RawParameters {
     pub invocation: String,
@@ -23,7 +27,7 @@ impl RawParameters {
 
         // If it is a macro invocation, the `next()` method is called
         // to do the parameter handling
-        if super::is_resource_name(&invocation) {
+        if invocation.is_resource_name() {
             let definition = "".to_string();
             let previous = RawParameters {
                 invocation,
@@ -52,9 +56,9 @@ impl RawParameters {
     pub fn next(&self, definition: &str) -> RawParameters {
         let mut recursion_level = self.recursion_level + 1;
         let mut globals = self.globals.clone();
-        if super::is_resource_name(definition) {
+        if definition.is_resource_name() {
             globals.remove("name");
-            globals.extend(super::split_into_parameters(definition).into_iter());
+            globals.extend(definition.split_into_parameters().into_iter());
             globals.remove("inv");
             recursion_level += 1;
         }

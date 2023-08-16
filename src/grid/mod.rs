@@ -1,13 +1,15 @@
-// The Grid struct handles grid characteristics and interpolation.
-// The actual grid may be either part of the Grid struct, or externally
-// provided (presumably by a Context).
-//
-// In principle grid format agnostic, but includes a parser for
-// Gravsoft format geodetic grids.
+//! Grid characteristics and interpolation.
 
 use crate::prelude::*;
 use std::io::BufRead;
 
+/// Grid characteristics and interpolation.
+///
+/// The actual grid may be part of the `Grid` struct, or
+/// provided externally (presumably by a [Context](crate::Context)).
+///
+/// In principle grid format agnostic, but includes a parser for
+/// geodetic grids in the Gravsoft format.
 #[derive(Debug, Default, Clone)]
 pub struct Grid {
     lat_0: f64, // Latitude of the first (typically northernmost) row of the grid
