@@ -39,7 +39,7 @@ With that noted, here comes the abstract
 
 ---
 
-### Divided by a common language: Bridging the gap between the ideal world of geoinformatics and the messy realities of geodesy.
+### Divided by a common language: Bridging the gap between the ideal world of geoinformatics and the messy realities of geodesy
 
 **Geodetic terminology** has always been messy - for instance, geodesists in general do not care whether point identification is given as geographic, geocentric or projected coordinates, as long as it makes geodetic sense, i.e. as long as the reference frame in use allows lossless conversion between those coordinates.
 
