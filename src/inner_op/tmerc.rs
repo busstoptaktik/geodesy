@@ -7,7 +7,6 @@ use crate::authoring::*;
 fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     // Make all precomputed parameters directly accessible
     let ellps = op.params.ellps(0);
-    let lat_0 = op.params.lat(0).to_radians();
     let lon_0 = op.params.lon(0).to_radians();
     let x_0 = op.params.x(0);
     let Some(conformal) = op.params.fourier_coefficients.get("conformal") else {
@@ -35,7 +34,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         // --- 1. Geographical -> Conformal latitude, rotated longitude
 
         // The conformal latitude
-        let lat = ellps.latitude_geographic_to_conformal(coord[1] + lat_0, conformal);
+        let lat = ellps.latitude_geographic_to_conformal(coord[1], conformal);
         // The longitude as reckoned from the central meridian
         let lon = coord[0] - lon_0;
 
@@ -313,7 +312,7 @@ mod tests {
             Coor2D::geo( 55.,  12.),
             Coor2D::geo(-55.,  12.),
             Coor2D::geo( 55., -6.),
-            Coor2D::geo(-55., -6.)
+            Coor2D::geo(-55., -6.),
         ];
 
         #[rustfmt::skip]
@@ -338,6 +337,26 @@ mod tests {
         ctx.apply(op, Inv, &mut operands)?;
         for i in 0..operands.len() {
             assert!(operands[i].hypot2(&geo[i]) < 5e-6);
+        }
+
+        // Test involving scale and all offsets, inspired by a bug reported by Sean Rennie
+        // over at https://github.com/busstoptaktik/geodesy/issues/59 - revealing the
+        // double correction for lat_0 in the forward case
+        let definition =
+            "tmerc lat_0=49 lon_0=-2 k_0=0.9996012717 x_0=400000 y_0=-100000 ellps=airy";
+        let op = ctx.op(definition)?;
+
+        let geo = [Coor2D::geo(52., 1.)];
+
+        // Expected value from PROJ:
+        // echo 1 52 0 0 | cct -d 15 proj=tmerc lat_0=49 lon_0=-2 k_0=0.9996012717 x_0=400000 y_0=-100000 ellps=airy  --
+        let projected = [Coor2D::raw(605909.130344302393496, 237803.365171569399536)];
+
+        let mut operands = geo.clone();
+        ctx.apply(op, Fwd, &mut operands)?;
+
+        for i in 0..operands.len() {
+            assert_float_eq!(operands[i].0, projected[i].0, abs_all <= 1e-8);
         }
 
         Ok(())
