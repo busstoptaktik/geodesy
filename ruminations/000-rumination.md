@@ -236,7 +236,7 @@ ctx.apply(ed50_wgs84, Fwd, data);
 Then a user defined operator:
 
 ```rust
-use geodesy::operator_authoring::*;
+use geodesy::authoring::*;
 
 // See examples/03-user-defined-operators.rs for implementation details
 pub struct MyNewOperator {
