@@ -84,6 +84,8 @@ impl NTv2Parser {
     }
 }
 
+/// Parse a subgrid header for an NTv2 grid
+/// Weird sign conventions like longitude being west positive are handled here.
 pub fn parse_subgrid_header(
     parser: &NTv2Parser,
     offset: usize,
@@ -121,12 +123,13 @@ pub fn parse_subgrid_header(
     ))
 }
 
+/// Parses the nodes of a sub grid into a vector of lon/lat shifts in radians
 pub fn parse_subgrid_grid(
     parser: &NTv2Parser,
     grid_start: usize,
     num_nodes: usize,
-    rows: usize,
-    cols: usize,
+    num_rows: usize,
+    row_size: usize,
 ) -> Result<Vec<Coor2D>, Error> {
     let mut grid = (0..num_nodes as usize)
         .map(|i| {
@@ -140,12 +143,12 @@ pub fn parse_subgrid_grid(
         .collect::<Vec<Coor2D>>();
 
     // Switch the row order. Taken from projrs
-    for i in 0..rows as usize {
-        let offs = i * cols as usize;
-        grid[offs..(offs + cols as usize)].reverse();
+    for i in 0..num_rows {
+        let offs = i * row_size;
+        grid[offs..(offs + row_size)].reverse();
     }
 
-    let grid_end_offset = grid_start + (num_nodes as usize) * NODE_SIZE;
+    let grid_end_offset = grid_start + num_nodes * NODE_SIZE;
 
     if grid_end_offset > parser.buf.len() {
         return Err(Error::Invalid("Grid Too Short".to_string()));
