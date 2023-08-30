@@ -122,6 +122,12 @@ pub enum Error {
     #[error("Unsupported: {0}")]
     Unsupported(String),
 
+    #[error("Invalid: {0}")]
+    Invalid(String),
+
+    #[error("UTF8 error")]
+    Utf8Error(#[from] std::str::Utf8Error),
+
     #[error("Unknown")]
     Unknown,
 }
