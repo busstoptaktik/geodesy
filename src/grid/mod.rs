@@ -1,5 +1,6 @@
 //! Grid characteristics and interpolation.
 
+pub mod ntv2;
 use crate::prelude::*;
 use std::{fmt::Debug, io::BufRead};
 
