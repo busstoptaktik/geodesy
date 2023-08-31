@@ -44,6 +44,9 @@ env_logger = {version="0.10.0"}
 
 [lib]
 name = "geodesy"
+# Needed for Wasm:
+#   wasm-pack build --target web --no-default-features --features js
+crate-type = ["cdylib", "rlib"]
 
 [features]
 js = ["uuid/js"]
@@ -62,4 +65,10 @@ required-features = ["binary"]
 #   cargo b --bin kp --features=with_plain,binary
 
 [profile.release]
+lto = true
 strip = true # Automatically strip symbols from the binary.
+
+[target.wasm32-unknown-unknown.dependencies]
+wasm-bindgen = "0.2"
+[target.wasm32-unknown-unknown.dev-dependencies]
+wasm-bindgen-test = "0.2"
