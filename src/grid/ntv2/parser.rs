@@ -111,7 +111,7 @@ pub fn parse_subgrid_header(
     Ok((
         nlat * SEC_TO_RAD,
         slat * SEC_TO_RAD,
-        // By default the longitude is positive west. By conventions we use positive east.
+        // By default the longitude is positive west. By conventions east is positive.
         // This is likely because the Canadian makers of NTv2 are always west of Greenwich.
         -wlon * SEC_TO_RAD,
         -elon * SEC_TO_RAD,
@@ -142,7 +142,7 @@ pub fn parse_subgrid_grid(
         })
         .collect::<Vec<Coor2D>>();
 
-    // Switch the row order. Taken from projrs
+    // Switch the row order so that the lower left is the SW corner
     for i in 0..num_rows {
         let offs = i * row_size;
         grid[offs..(offs + row_size)].reverse();
