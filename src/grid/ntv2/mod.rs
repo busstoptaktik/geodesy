@@ -76,17 +76,23 @@ impl Ntv2Grid {
     }
 
     // Matches the `interpolation` method signature of the `Grid` struct
-    // Implementation adapted from [projrs](https://github.com/3liz/proj4rs/blob/8b5eb762c6be65eed0ca0baea33f8c70d1cd56cb/src/nadgrids/grid.rs#L206C1-L252C6)
+    // Implementation adapted from [projrs](https://github.com/3liz/proj4rs/blob/8b5eb762c6be65eed0ca0baea33f8c70d1cd56cb/src/nadgrids/grid.rs#L206C1-L252C6) && [proj4js](https://github.com/proj4js/proj4js/blob/d9faf9f93ebeccac4b79fa80f3e9ad8a7032828b/lib/datum_transform.js#L167)
     pub fn interpolation(&self, coord: &Coor4D, _grid: Option<&Vec<Coor2D>>) -> Coor4D {
         // Normalise to the grid origin which is the SW corner
         let rlon = coord[0] - self.wlon;
         let rlat = coord[1] - self.slat;
 
         let (t_lon, t_lat) = (rlon / self.dlon, rlat / self.dlat);
+        let (i_lon, i_lat) = (t_lon.floor(), t_lat.floor());
+        let (f_lon, f_lat) = (t_lon - 1.0 * i_lon, t_lat - 1.0 * i_lat);
 
-        // NOTE: A robust implementation would need to throw outside of interpolation or change `interpolation` to return a Result
-        let (i_lon, f_lon) = check_limits(t_lon, self.num_rows).unwrap();
-        let (i_lat, f_lat) = check_limits(t_lat, self.row_size).unwrap();
+        if i_lon < 0. || i_lon >= self.row_size {
+            return Coor4D::raw(f64::NAN, f64::NAN, 0., 0.);
+        }
+
+        if i_lat < 0. || i_lat >= self.num_rows {
+            return Coor4D::raw(f64::NAN, f64::NAN, 0., 0.);
+        }
 
         let mut index = (i_lat * self.row_size + i_lon) as usize;
         let f00 = &self.grid[index];
@@ -106,27 +112,4 @@ impl Ntv2Grid {
 
         result
     }
-}
-
-fn check_limits(t: f64, cols: f64) -> Result<(f64, f64), Error> {
-    let mut i = t.floor();
-    let mut f = t - i;
-    if i < 0. {
-        if i == -1. && f > 0.99999999999 {
-            i += 1.;
-            f = 0.
-        } else {
-            return Err(Error::General("Point outside nad shift area"));
-        }
-    } else {
-        match i + 1. {
-            n if n == cols && f < 1.0e-11 => {
-                i -= 1.;
-                f = 1.;
-            }
-            n if n > cols => return Err(Error::General("Point outside nad shift area")),
-            _ => (),
-        }
-    }
-    Ok((i, f))
 }
