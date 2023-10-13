@@ -454,6 +454,20 @@ mod tests {
             "step step=quickstep | utm inv zone=32 | stepwise | quickstep"
         );
 
+        // Invert the entire pipeline, turning "zone 32-to-zone 33" into "zone 33-to-zone 32"
+        // Also throw a few additional spanners in the works, in the form of some ugly, but
+        // PROJ-accepted, syntactical abominations
+        assert_eq!(
+            parse_proj("inv ellps=intl proj=pipeline ugly=syntax +step inv proj=utm zone=32 step proj=utm zone=33")?,
+            "utm inv ellps=intl ugly=syntax zone=33 | utm ellps=intl ugly=syntax zone=32"
+        );
+
+        // Check for the proper inversion of directional omissions
+        assert_eq!(
+            parse_proj("proj=pipeline inv   +step   omit_fwd inv proj=utm zone=32   step   omit_inv proj=utm zone=33")?,
+            "utm inv omit_fwd zone=33 | utm omit_inv zone=32"
+        );
+
         // Nested pipelines are not supported...
 
         // Nested pipelines in PROJ requires an `init=` indirection
@@ -488,20 +502,6 @@ mod tests {
 
     #[test]
     fn tidy_proj() -> Result<(), Error> {
-        // Invert the entire pipeline, turning "zone 32-to-zone 33" into "zone 33-to-zone 32"
-        // Also throw a few additional spanners in the works, in the form of some ugly, but
-        // PROJ-accepted, syntactical abominations
-        assert_eq!(
-            parse_proj("inv ellps=intl proj=pipeline ugly=syntax +step inv proj=utm zone=32 step proj=utm zone=33")?,
-            "utm inv ellps=intl ugly=syntax zone=33 | utm ellps=intl ugly=syntax zone=32"
-        );
-
-        // Check for the proper inversion of directional omissions
-        assert_eq!(
-            parse_proj("proj=pipeline inv   +step   omit_fwd inv proj=utm zone=32   step   omit_inv proj=utm zone=33")?,
-            "utm inv omit_fwd zone=33 | utm omit_inv zone=32"
-        );
-
         // Ellipsoid defined with a and rf parameters instead of ellps
         assert_eq!(
                 parse_proj("+proj=pipeline +step +inv +proj=tmerc +a=6378249.145 +rf=293.465 +step +proj=step2")?,
