@@ -286,54 +286,7 @@ pub fn parse_proj(definition: &str) -> Result<String, Error> {
             }
         }
 
-        // Geodesy only supports ellipsoid definitions as named builtins or ellps=a,rf
-        // PROJ has richer support which we try navigate here
-        // First we find the indices of ellps, a and rf elements
-        let mut ellps_def: [Option<usize>; 3] = [None; 3];
-        for (i, element) in elements.iter().enumerate() {
-            if element.starts_with("ellps=") {
-                ellps_def[0] = Some(i);
-            }
-            if element.starts_with("a=") {
-                ellps_def[1] = Some(i);
-            }
-            if element.starts_with("rf=") {
-                ellps_def[2] = Some(i);
-            }
-        }
-
-        // Then if there there is an `a` AND and an `rf` element but NOT an `ellps` element
-        // we compose them into the `ellps=a,rf` format.
-        // Anything else we ignore, this means that if `ellps` is defined we do nothing
-        // and if an ellps is defined but is also modified with `a` or `rf`
-        // elements we ignore it and rely on operator instantiation to fail due to unknown elements
-        // A complete solution would need to include `a` and `rf` keys in the gamut of all operators so that
-        // the Ellipsoid struct can build the required ellipsoid.
-        match ellps_def {
-            [None, Some(a_idx), Some(rf_idx)] => {
-                let a = elements[a_idx][2..].to_string();
-                let rf = elements[rf_idx][3..].to_string();
-
-                elements.push(format!("ellps={},{}", a, rf).to_string());
-
-                // Remove the a and rf elements from the vector
-                if a_idx > rf_idx {
-                    elements.remove(a_idx);
-                    elements.remove(rf_idx);
-                } else {
-                    elements.remove(rf_idx);
-                    elements.remove(a_idx);
-                }
-            }
-            _ => {}
-        }
-
-        for (i, element) in elements.iter().enumerate() {
-            if element.starts_with("k=") {
-                elements[i] = "k_0=".to_string() + &element[2..];
-                break;
-            }
-        }
+        tidy_proj(&mut elements)?;
 
         // Skip empty steps, insert pipeline globals, handle step and pipeline
         // inversions, and handle directional omissions (omit_fwd, omit_inv)
@@ -368,6 +321,66 @@ pub fn parse_proj(definition: &str) -> Result<String, Error> {
         }
     }
     Ok(geodesy_steps.join(" | ").trim().to_string())
+}
+
+// Address some known incompatibilities between PROJ and Rust Geodesy
+// - Ellipsoid definitions
+// - Scaling via the deprecated `k` parameter
+fn tidy_proj(elements: &mut Vec<String>) -> Result<(), Error> {
+    // Geodesy only supports ellipsoid definitions as named builtins or ellps=a,rf
+    // PROJ has richer support which we try navigate here
+    // First we find the indices of ellps, a and rf elements
+    let mut ellps_def: [Option<usize>; 3] = [None; 3];
+    for (i, element) in elements.iter().enumerate() {
+        if element.starts_with("ellps=") {
+            ellps_def[0] = Some(i);
+        }
+        if element.starts_with("a=") {
+            ellps_def[1] = Some(i);
+        }
+        if element.starts_with("rf=") {
+            ellps_def[2] = Some(i);
+        }
+    }
+
+    // Then if there there is an `a` AND and an `rf` element but NOT an `ellps` element
+    // we compose them into the `ellps=a,rf` format.
+    // Anything else we ignore, this means that if `ellps` is defined we do nothing
+    // and if an ellps is defined but is also modified with `a` or `rf`
+    // elements we ignore it and rely on operator instantiation to fail due to unknown elements
+    // A complete solution would need to include `a` and `rf` keys in the gamut of all operators so that
+    // the Ellipsoid struct can build the required ellipsoid.
+    match ellps_def {
+        [None, Some(a_idx), Some(rf_idx)] => {
+            let a = elements[a_idx][2..].to_string();
+            let rf = elements[rf_idx][3..].to_string();
+
+            elements.push(format!("ellps={},{}", a, rf).to_string());
+
+            // Remove the a and rf elements from the vector
+            if a_idx > rf_idx {
+                elements.remove(a_idx);
+                elements.remove(rf_idx);
+            } else {
+                elements.remove(rf_idx);
+                elements.remove(a_idx);
+            }
+        }
+        _ => {}
+    }
+
+    // `projinfo`  still produces strings with scaling defined as `k` instead of `k_0`
+    // We replace `k` with `k_0` when ever it is encountered.
+    for (i, element) in elements.iter().enumerate() {
+        if element.starts_with("k=") {
+            elements[i] = "k_0=".to_string() + &element[2..];
+
+            // There should only be one scaling so it's safe to break here
+            break;
+        }
+    }
+
+    Ok(())
 }
 
 // ----- T E S T S ------------------------------------------------------------------
