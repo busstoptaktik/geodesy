@@ -167,21 +167,22 @@ where
 /// second that Rust Geodesy does not support init-files. Hence no support for
 /// any kind of nesting here.
 ///
-/// Known differences between PROJ and Rust Geodesy definitions:
-/// #Ellipsoid definitions
-/// - Geodesy only supports a limited set of named ellipsoids OR ellps=a,rf.
-/// - PROJ has richer ellipsoid support which {parse_proj} provides partial support for.
-/// - Specifically if an ellipsoid is defined via `a` and `rf` parameters, {parse_proj}
+/// ## Known differences between PROJ and Rust Geodesy definitions:
+///
+/// ## Ellipsoid definitions
+/// - Geodesy only supports a limited set of builtin ellipsoids OR ellps=a,rf.
+/// - PROJ has richer ellipsoid support which *parse_proj* provides partial support for.
+/// - Specifically if an ellipsoid is defined via `a` and `rf` parameters, *parse_proj*
 /// will redefine them as `ellps=a,rf` and remove the `a` and `rf` parameters.
 /// - A known limitation is that if an ellipsoid is defined via `ellps` but also
 /// attempts to modify the builtin with additional `a` or `rf` parameters. In this case
-/// {parse_proj} will do nothing and rely on the operator instantiation to fail due to
+/// *parse_proj* will do nothing and rely on the operator instantiation to fail due to
 /// unknown parameters.
 ///
-/// # Scaling via `k` parameter
+/// ## Scaling via `k` parameter
 /// - PROJ still supports the deprecated `k` parameter. Most output from `projinfo` will
 /// have the scaling defined as `k` instead of `k_0`.
-/// - {parse_proj} will replace `k` with `k_0` when ever it is encountered.
+/// - *parse_proj* will replace `k` with `k_0` when ever it is encountered.
 ///
 pub fn parse_proj(definition: &str) -> Result<String, Error> {
     // Impose some line ending sanity and remove the PROJ '+' prefix
