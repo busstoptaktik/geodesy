@@ -7,8 +7,7 @@
 ///     - [proj4rs](https://github.com/3liz/proj4rs/blob/main/src/projections/somerc.rs)
 ///     - [proj4js](https://github.com/proj4js/proj4js/blob/5995fa62fc7f4fdbbafb23d89b260bd863b0ca03/lib/projections/somerc.js)
 ///     - [PROJ](https://proj.org/operations/projections/somerc.html)
-use geodesy_rs::authoring::*;
-use geodesy_rs::Error as RGError;
+use crate::authoring::*;
 use std::f64::consts::{FRAC_PI_2, FRAC_PI_4};
 
 // ----- C O M M O N -------------------------------------------------------------------
@@ -152,7 +151,7 @@ pub const GAMUT: [OpParameter; 7] = [
     OpParameter::Real { key: "k_0",    default: Some(1_f64) },
 ];
 
-pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, RGError> {
+pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> {
     let def = &parameters.definition;
     let mut params = ParsedParameters::new(parameters, &GAMUT)?;
 
@@ -207,7 +206,7 @@ mod tests {
     use float_eq::assert_float_eq;
 
     #[test]
-    fn somerc_inv() -> Result<(), RGError> {
+    fn somerc_inv() -> Result<(), Error> {
         let mut ctx = Minimal::default();
         ctx.register_op("somerc", OpConstructor(new));
         let op = ctx.op("somerc lat_0=46.9524055555556 lon_0=7.43958333333333 k_0=1 x_0=2600000 y_0=1200000 ellps=bessel")?;
@@ -229,7 +228,7 @@ mod tests {
     }
 
     #[test]
-    fn somerc_fwd_and_round_trip() -> Result<(), RGError> {
+    fn somerc_fwd_and_round_trip() -> Result<(), Error> {
         let mut ctx = Minimal::default();
         ctx.register_op("somerc", OpConstructor(new));
         let op = ctx.op("somerc lat_0=46.9524055555556 lon_0=7.43958333333333 k_0=1 x_0=2600000 y_0=1200000 ellps=bessel")?;
@@ -254,7 +253,7 @@ mod tests {
     }
 
     #[test]
-    fn somerc_el() -> Result<(), RGError> {
+    fn somerc_el() -> Result<(), Error> {
         let mut ctx = Minimal::default();
         ctx.register_op("somerc", OpConstructor(new));
         let op = ctx.op("somerc ellps=GRS80")?;
