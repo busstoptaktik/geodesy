@@ -170,14 +170,14 @@ where
 /// ## Known differences between PROJ and Rust Geodesy definitions:
 ///
 /// ## Ellipsoid definitions
-/// - Geodesy only supports a limited set of builtin ellipsoids OR ellps=a,rf.
-/// - PROJ has richer ellipsoid support which *parse_proj* provides partial support for.
+/// - Geodesy only supports a limited set of builtin ellipsoids OR or definition
+/// via semi-major and reverse-flattening parameters  `ellps=a,rf`.
+/// - PROJ has [richer ellipsoid](https://proj.org/en/9.3/usage/ellipsoids.html#ellipsoid-size-parameters)
+/// support which *parse_proj* provides partial support for.
 /// - Specifically if an ellipsoid is defined via `a` and `rf` parameters, *parse_proj*
 /// will redefine them as `ellps=a,rf` and remove the `a` and `rf` parameters.
-/// - A known limitation is that if an ellipsoid is defined via `ellps` but also
-/// attempts to modify the builtin with additional `a` or `rf` parameters. In this case
-/// *parse_proj* will do nothing and rely on the operator instantiation to fail due to
-/// unknown parameters.
+/// - All other cases supported by PROJ are NOT handled by *parse_proj* and will
+/// fail when instantiating the operator.
 ///
 /// ## Scaling via `k` parameter
 /// - PROJ still supports the deprecated `k` parameter. Most output from `projinfo` will
