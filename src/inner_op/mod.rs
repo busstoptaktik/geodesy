@@ -23,6 +23,7 @@ mod molodensky;
 mod noop;
 mod omerc;
 pub(crate) mod pipeline; // Needed by Op for instantiation
+mod somerc;
 mod tmerc;
 mod webmerc;
 
@@ -48,6 +49,7 @@ const BUILTIN_OPERATORS: [(&str, OpConstructor); 25] = [
     ("molodensky",   OpConstructor(molodensky::new)),
     ("noop",         OpConstructor(noop::new)),
     ("omerc",        OpConstructor(omerc::new)),
+    ("somerc",      OpConstructor(somerc::new)),
     ("tmerc",        OpConstructor(tmerc::new)),
     ("utm",          OpConstructor(tmerc::utm)),
     ("pipeline",     OpConstructor(pipeline::new)),
