@@ -1,7 +1,13 @@
 //! Grid characteristics and interpolation.
 
 use crate::prelude::*;
-use std::io::BufRead;
+use std::{fmt::Debug, io::BufRead};
+
+pub trait GridTrait: Debug {
+    fn bands(&self) -> usize;
+    fn contains(&self, position: Coor4D) -> bool;
+    fn interpolation(&self, coord: &Coor4D, grid: Option<&[f32]>) -> Coor4D;
+}
 
 /// Grid characteristics and interpolation.
 ///
@@ -25,6 +31,93 @@ pub struct Grid {
     #[allow(dead_code)]
     last_valid_record_start: usize,
     grid: Vec<f32>, // May be zero sized in cases where the Context provides access to an externally stored grid
+}
+
+impl GridTrait for Grid {
+    fn bands(&self) -> usize {
+        self.bands
+    }
+    // Implement the methods of the GridTrait trait for the Grid struct here
+    /// Determine whether a given coordinate falls within the grid borders.
+    /// "On the border" qualifies as within.
+    fn contains(&self, position: Coor4D) -> bool {
+        // We start by assuming that the last row (latitude) is the southernmost
+        let mut min = self.lat_1;
+        let mut max = self.lat_0;
+        // If it's not, we swap
+        if self.dlat > 0. {
+            (min, max) = (max, min)
+        }
+        if position[1] != position[1].clamp(min, max) {
+            return false;
+        }
+
+        // The default assumption is the other way round for columns (longitudes)
+        min = self.lon_0;
+        max = self.lon_1;
+        // If it's not, we swap
+        if self.dlon < 0. {
+            (min, max) = (max, min)
+        }
+        if position[0] != position[0].clamp(min, max) {
+            return false;
+        }
+
+        // If we fell through all the way to the bottom, we're inside the grid
+        true
+    }
+
+    // Since we store the entire grid in a single vector, the interpolation
+    // routine here looks strongly like a case of "writing Fortran 77 in Rust".
+    // It is, however, one of the cases where a more extensive use of abstractions
+    // leads to a significantly larger code base, much harder to maintain and
+    // comprehend.
+    fn interpolation(&self, coord: &Coor4D, grid: Option<&[f32]>) -> Coor4D {
+        let grid = grid.unwrap_or(&self.grid);
+
+        // The interpolation coordinate relative to the grid origin
+        let rlon = coord[0] - self.lon_0;
+        let rlat = coord[1] - self.lat_0;
+
+        // The (row, column) of the lower left node of the grid cell containing
+        // coord or, in the case of extrapolation, the nearest cell inside the grid.
+        let row = (rlat / self.dlat).floor() as i64;
+        let col = (rlon / self.dlon).floor() as i64;
+
+        // let col = clamp(col, 0_i64, (self.cols - 2) as i64) as usize;
+        // let row = clamp(row, 1_i64, (self.rows - 1) as i64) as usize;
+        let col = col.clamp(0_i64, (self.cols - 2) as i64) as usize;
+        let row = row.clamp(1_i64, (self.rows - 1) as i64) as usize;
+
+        // Index of the first band element of each corner value
+        #[rustfmt::skip]
+        let (ll, lr, ur, ul) = (
+            self.offset + self.bands * (self.cols *  row      + col    ),
+            self.offset + self.bands * (self.cols *  row      + col + 1),
+            self.offset + self.bands * (self.cols * (row - 1) + col + 1),
+            self.offset + self.bands * (self.cols * (row - 1) + col    ),
+        );
+
+        // Cell relative, cell unit coordinates in a right handed CS (hence .abs())
+        let rlon = (coord[0] - (self.lon_0 + col as f64 * self.dlon)) / self.dlon.abs();
+        let rlat = (coord[1] - (self.lat_0 + row as f64 * self.dlat)) / self.dlat.abs();
+
+        // Interpolate
+        let mut left = Coor4D::origin();
+        for i in 0..self.bands {
+            left[i] = (1. - rlat) * grid[ll + i] as f64 + rlat * grid[ul + i] as f64;
+        }
+        let mut right = Coor4D::origin();
+        for i in 0..self.bands {
+            right[i] = (1. - rlat) * grid[lr + i] as f64 + rlat * grid[ur + i] as f64;
+        }
+
+        let mut result = Coor4D::origin();
+        for i in 0..self.bands {
+            result[i] = (1. - rlon) * left[i] + rlon * right[i];
+        }
+        result
+    }
 }
 
 impl Grid {
@@ -73,90 +166,9 @@ impl Grid {
         })
     }
 
-    /// Determine whether a given coordinate falls within the grid borders.
-    /// "On the border" qualifies as within.
-    pub fn contains(&self, position: Coor4D) -> bool {
-        // We start by assuming that the last row (latitude) is the southernmost
-        let mut min = self.lat_1;
-        let mut max = self.lat_0;
-        // If it's not, we swap
-        if self.dlat > 0. {
-            (min, max) = (max, min)
-        }
-        if position[1] != position[1].clamp(min, max) {
-            return false;
-        }
-
-        // The default assumption is the other way round for columns (longitudes)
-        min = self.lon_0;
-        max = self.lon_1;
-        // If it's not, we swap
-        if self.dlon < 0. {
-            (min, max) = (max, min)
-        }
-        if position[0] != position[0].clamp(min, max) {
-            return false;
-        }
-
-        // If we fell through all the way to the bottom, we're inside the grid
-        true
-    }
-
     pub fn gravsoft(buf: &[u8]) -> Result<Self, Error> {
         let (header, grid) = gravsoft_grid_reader(buf)?;
         Grid::plain(&header, Some(&grid), None)
-    }
-
-    // Since we store the entire grid in a single vector, the interpolation
-    // routine here looks strongly like a case of "writing Fortran 77 in Rust".
-    // It is, however, one of the cases where a more extensive use of abstractions
-    // leads to a significantly larger code base, much harder to maintain and
-    // comprehend.
-    pub fn interpolation(&self, coord: &Coor4D, grid: Option<&[f32]>) -> Coor4D {
-        let grid = grid.unwrap_or(&self.grid);
-
-        // The interpolation coordinate relative to the grid origin
-        let rlon = coord[0] - self.lon_0;
-        let rlat = coord[1] - self.lat_0;
-
-        // The (row, column) of the lower left node of the grid cell containing
-        // coord or, in the case of extrapolation, the nearest cell inside the grid.
-        let row = (rlat / self.dlat).floor() as i64;
-        let col = (rlon / self.dlon).floor() as i64;
-
-        // let col = clamp(col, 0_i64, (self.cols - 2) as i64) as usize;
-        // let row = clamp(row, 1_i64, (self.rows - 1) as i64) as usize;
-        let col = col.clamp(0_i64, (self.cols - 2) as i64) as usize;
-        let row = row.clamp(1_i64, (self.rows - 1) as i64) as usize;
-
-        // Index of the first band element of each corner value
-        #[rustfmt::skip]
-        let (ll, lr, ur, ul) = (
-            self.offset + self.bands * (self.cols *  row      + col    ),
-            self.offset + self.bands * (self.cols *  row      + col + 1),
-            self.offset + self.bands * (self.cols * (row - 1) + col + 1),
-            self.offset + self.bands * (self.cols * (row - 1) + col    ),
-        );
-
-        // Cell relative, cell unit coordinates in a right handed CS (hence .abs())
-        let rlon = (coord[0] - (self.lon_0 + col as f64 * self.dlon)) / self.dlon.abs();
-        let rlat = (coord[1] - (self.lat_0 + row as f64 * self.dlat)) / self.dlat.abs();
-
-        // Interpolate
-        let mut left = Coor4D::origin();
-        for i in 0..self.bands {
-            left[i] = (1. - rlat) * grid[ll + i] as f64 + rlat * grid[ul + i] as f64;
-        }
-        let mut right = Coor4D::origin();
-        for i in 0..self.bands {
-            right[i] = (1. - rlat) * grid[lr + i] as f64 + rlat * grid[ur + i] as f64;
-        }
-
-        let mut result = Coor4D::origin();
-        for i in 0..self.bands {
-            result[i] = (1. - rlon) * left[i] + rlon * right[i];
-        }
-        result
     }
 }
 
