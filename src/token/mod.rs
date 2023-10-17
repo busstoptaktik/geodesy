@@ -182,7 +182,7 @@ where
 /// ## Scaling via `k` parameter
 /// - PROJ still supports the deprecated `k` parameter. Most output from `projinfo` will
 /// have the scaling defined as `k` instead of `k_0`.
-/// - *parse_proj* will replace `k` with `k_0` when ever it is encountered.
+/// - *parse_proj* will replace `k` with `k_0` whenever it is encountered.
 ///
 pub fn parse_proj(definition: &str) -> Result<String, Error> {
     // Impose some line ending sanity and remove the PROJ '+' prefix
@@ -502,7 +502,7 @@ mod tests {
 
     #[test]
     fn tidy_proj() -> Result<(), Error> {
-        // Ellipsoid defined with a and rf parameters instead of ellps
+        // Ellipsoid defined with `a` and `rf` parameters instead of ellps
         assert_eq!(
                 parse_proj("+proj=pipeline +step +inv +proj=tmerc +a=6378249.145 +rf=293.465 +step +proj=step2")?,
                 "tmerc inv ellps=6378249.145,293.465 | step2"
@@ -511,7 +511,7 @@ mod tests {
         // Ellipsoid is defined with a builtin
         assert_eq!(parse_proj("+proj=tmerc +ellps=GRS80")?, "tmerc ellps=GRS80");
 
-        // Ellipsoid is defined with a builtin but is modified by a or rf
+        // Ellipsoid is defined with a builtin but is modified by `a` or `rf`
         // Note we don't remove `a` here even though this modification is not supported in RG
         // it's expected to fail in the operator instantiation
         assert_eq!(
@@ -519,7 +519,7 @@ mod tests {
             "tmerc ellps=GRS80 a=1"
         );
 
-        // Replace occurances of k= with k_0=
+        // Replace occurrences of `k=` with `k_0=`
         assert_eq!(parse_proj("+proj=tmerc +k=1.5")?, "tmerc k_0=1.5");
 
         Ok(())
