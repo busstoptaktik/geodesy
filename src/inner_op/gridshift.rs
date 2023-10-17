@@ -4,30 +4,32 @@ use crate::authoring::*;
 // ----- F O R W A R D --------------------------------------------------------------
 
 fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
-    let grid = &op.params.grids["grid"];
+    let grids = &op.params.get_grids().unwrap();
     let mut successes = 0_usize;
     let n = operands.len();
 
-    // Geoid
-    if grid.bands == 1 {
+    for grid in grids.iter() {
+        // Geoid
+        if grid.bands() == 1 {
+            for i in 0..n {
+                let mut coord = operands.get_coord(i);
+                let d = grid.interpolation(&coord, None);
+                coord[2] -= d[0];
+                successes += 1;
+                operands.set_coord(i, &coord);
+            }
+            return successes;
+        }
+
+        // Datum shift
         for i in 0..n {
             let mut coord = operands.get_coord(i);
             let d = grid.interpolation(&coord, None);
-            coord[2] -= d[0];
-            successes += 1;
+            coord[0] += d[0];
+            coord[1] += d[1];
             operands.set_coord(i, &coord);
+            successes += 1;
         }
-        return successes;
-    }
-
-    // Datum shift
-    for i in 0..n {
-        let mut coord = operands.get_coord(i);
-        let d = grid.interpolation(&coord, None);
-        coord[0] += d[0];
-        coord[1] += d[1];
-        operands.set_coord(i, &coord);
-        successes += 1;
     }
     successes
 }
@@ -35,40 +37,41 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
 // ----- I N V E R S E --------------------------------------------------------------
 
 fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
-    let grid = &op.params.grids["grid"];
+    let grids = &op.params.get_grids().unwrap();
     let mut successes = 0_usize;
     let n = operands.len();
 
-    // Geoid
-    if grid.bands == 1 {
+    for grid in grids.iter() {
+        // Geoid
+        if grid.bands() == 1 {
+            for i in 0..n {
+                let mut coord = operands.get_coord(i);
+                let t = grid.interpolation(&coord, None);
+                coord[2] += t[0];
+                operands.set_coord(i, &coord);
+                successes += 1;
+            }
+            return successes;
+        }
+
+        // Datum shift - here we need to iterate in the inverse case
         for i in 0..n {
-            let mut coord = operands.get_coord(i);
-            let t = grid.interpolation(&coord, None);
-            coord[2] += t[0];
-            operands.set_coord(i, &coord);
+            let coord = operands.get_coord(i);
+            let mut t = coord - grid.interpolation(&coord, None);
+
+            for _ in 0..10 {
+                let d = t - coord + grid.interpolation(&t, None);
+                t = t - d;
+                // i.e. d.dot(d).sqrt() < 1e-10
+                if d.dot(d) < 1e-20 {
+                    break;
+                }
+            }
+
+            operands.set_coord(i, &t);
             successes += 1;
         }
-        return successes;
     }
-
-    // Datum shift - here we need to iterate in the inverse case
-    for i in 0..n {
-        let coord = operands.get_coord(i);
-        let mut t = coord - grid.interpolation(&coord, None);
-
-        for _ in 0..10 {
-            let d = t - coord + grid.interpolation(&t, None);
-            t = t - d;
-            // i.e. d.dot(d).sqrt() < 1e-10
-            if d.dot(d) < 1e-20 {
-                break;
-            }
-        }
-
-        operands.set_coord(i, &t);
-        successes += 1;
-    }
-
     successes
 }
 
@@ -87,10 +90,17 @@ pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
     let mut params = ParsedParameters::new(parameters, &GAMUT)?;
 
     let grid_file_name = params.text("grids")?;
-    let buf = ctx.get_blob(&grid_file_name)?;
+    let grids = grid_file_name
+        .split(',')
+        .map(|name| ctx.get_grid(name))
+        .collect::<Result<Vec<_>, _>>()?;
 
-    let grid = Grid::gravsoft(&buf)?;
-    params.grids.insert("grid", grid);
+    params.set_grids(grids);
+
+    // for grid_name in grid_file_name.split(',') {
+    //     let grid = ctx.get_grid(grid_name)?;
+    //     params.grids.insert(grid_name, grid);
+    // }
 
     let fwd = InnerOp(fwd);
     let inv = InnerOp(inv);
