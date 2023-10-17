@@ -1,5 +1,5 @@
 use crate::authoring::*;
-use std::path::PathBuf;
+use std::{path::PathBuf, rc::Rc};
 
 // ----- T H E   M I N I M A L   P R O V I D E R ---------------------------------------
 
@@ -114,7 +114,7 @@ impl Context for Minimal {
     }
 
     /// Access grid resources by identifier
-    fn get_grid(&self, _name: &str) -> Result<Grid, Error> {
+    fn get_grid(&self, _name: &str) -> Result<Rc<dyn GridTrait>, Error> {
         Err(Error::General(
             "Grid access by identifier not supported by the Minimal context provider",
         ))
