@@ -1,12 +1,12 @@
-#![allow(non_snake_case)]
+#![allow(non_snake_case)] // So we can use the mathematical notation from the original paper
 
-/// Swiss Oblique Mercator Projection
-///
-/// Implementation base on https://download.osgeo.org/proj/swiss.pdf
-/// with inspirations taken from
-///     - [proj4rs](https://github.com/3liz/proj4rs/blob/main/src/projections/somerc.rs)
-///     - [proj4js](https://github.com/proj4js/proj4js/blob/5995fa62fc7f4fdbbafb23d89b260bd863b0ca03/lib/projections/somerc.js)
-///     - [PROJ](https://proj.org/operations/projections/somerc.html)
+// Swiss Oblique Mercator Projection
+//
+// Implementation based on https://download.osgeo.org/proj/swiss.pdf
+// with inspirations taken from
+//     - [proj4rs](https://github.com/3liz/proj4rs/blob/main/src/projections/somerc.rs)
+//     - [proj4js](https://github.com/proj4js/proj4js/blob/5995fa62fc7f4fdbbafb23d89b260bd863b0ca03/lib/projections/somerc.js)
+//     - [PROJ](https://proj.org/operations/projections/somerc.html)
 use crate::authoring::*;
 use std::f64::consts::{FRAC_PI_2, FRAC_PI_4};
 

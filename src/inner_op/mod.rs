@@ -49,7 +49,7 @@ const BUILTIN_OPERATORS: [(&str, OpConstructor); 26] = [
     ("molodensky",   OpConstructor(molodensky::new)),
     ("noop",         OpConstructor(noop::new)),
     ("omerc",        OpConstructor(omerc::new)),
-    ("somerc",      OpConstructor(somerc::new)),
+    ("somerc",       OpConstructor(somerc::new)),
     ("tmerc",        OpConstructor(tmerc::new)),
     ("utm",          OpConstructor(tmerc::utm)),
     ("pipeline",     OpConstructor(pipeline::new)),
