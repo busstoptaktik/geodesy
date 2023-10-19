@@ -3,8 +3,9 @@
 ## Rumination 002: The missing manual
 
 Thomas Knudsen <knudsen.thomas@gmail.com>
+Sean Rennie <rnnsea001@gmail.com>
 
-2021-08-20. Last [revision](#document-history) 2023-07-09
+2021-08-20. Last [revision](#document-history) 2023-10-19
 
 ### Abstract
 
@@ -627,6 +628,34 @@ Take a copy of one or more coordinate dimensions and push it onto the stack. If 
 
 ---
 
+### Operator `somerc`
+
+**Purpose:** Projection from geographic to Swiss oblique mercator coordinates
+
+**Description:**
+
+| Argument     | Description                             |
+| ------------ | --------------------------------------- |
+| `inv`        | Swap forward and inverse operations     |
+| `ellps=name` | Use ellipsoid `name` for the conversion |
+| `lon_0`      | Longitude of the projection center      |
+| `lat_0`      | Latitude of the projection center       |
+| `k_0`        | Scaling factor                          |
+| `x_0`        | False easting                           |
+| `y_0`        | False northing                          |
+
+**Example**: Forward transformation of EPSG:2056 (Swiss CH1903+ / LV95)
+
+```js
+somerc lat_0=46.9524055555556 lon_0=7.43958333333333 k_0=1 x_0=2600000 y_0=1200000 ellps=bessel
+```
+
+**See also:** [PROJ documentation](https://proj.org/operations/projections/somerc.html): _Swiss Oblique Mercator_.
+
+Note: Rust Geodesy does not support modifying the ellipsoid with and `R` parameter, as PROJ does.
+
+--
+
 ### Operator `tmerc`
 
 **Purpose:** Projection from geographic to transverse mercator coordinates
@@ -709,3 +738,4 @@ Major revisions and additions:
   registered update on 2022-05-08. a large number of new operators
   have been included and described
 - 2023-07-09: dm and dms liberated from their NMEA overlord
+- 2023-10-19: Add `somerc` operator description
