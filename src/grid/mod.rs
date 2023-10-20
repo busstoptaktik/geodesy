@@ -6,9 +6,11 @@ use std::{fmt::Debug, io::BufRead};
 pub trait GridTrait: Debug {
     fn bands(&self) -> usize;
     fn contains(&self, position: Coor4D) -> bool;
+    // NOTE: `grid` is included for backwards compatibility but could be removed
     fn interpolation(&self, coord: &Coor4D, grid: Option<&[f32]>) -> Coor4D;
 }
 
+// NOTE: Should this be renamed PlainGrid? Then rename the trait to Grid?
 /// Grid characteristics and interpolation.
 ///
 /// The actual grid may be part of the `Grid` struct, or
@@ -37,7 +39,7 @@ impl GridTrait for Grid {
     fn bands(&self) -> usize {
         self.bands
     }
-    // Implement the methods of the GridTrait trait for the Grid struct here
+
     /// Determine whether a given coordinate falls within the grid borders.
     /// "On the border" qualifies as within.
     fn contains(&self, position: Coor4D) -> bool {

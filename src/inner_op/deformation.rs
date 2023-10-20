@@ -233,8 +233,8 @@ pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
         ));
     }
 
-    let grid_file_name = params.text("grids")?;
-    for grid_name in grid_file_name.split(',') {
+    let grid_names = params.text("grids")?;
+    for grid_name in grid_names.split(',') {
         let grid = ctx.get_grid(grid_name)?;
         let n = grid.bands();
         if n != 3 {
