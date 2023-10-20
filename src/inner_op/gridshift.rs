@@ -4,7 +4,8 @@ use crate::authoring::*;
 // ----- F O R W A R D --------------------------------------------------------------
 
 fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
-    let grids = &op.params.get_grids().unwrap();
+    let grids = &op.params.grids;
+
     let mut successes = 0_usize;
     let n = operands.len();
 
@@ -37,7 +38,8 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
 // ----- I N V E R S E --------------------------------------------------------------
 
 fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
-    let grids = &op.params.get_grids().unwrap();
+    let grids = &op.params.grids;
+
     let mut successes = 0_usize;
     let n = operands.len();
 
@@ -90,17 +92,10 @@ pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
     let mut params = ParsedParameters::new(parameters, &GAMUT)?;
 
     let grid_file_name = params.text("grids")?;
-    let grids = grid_file_name
-        .split(',')
-        .map(|name| ctx.get_grid(name))
-        .collect::<Result<Vec<_>, _>>()?;
-
-    params.set_grids(grids);
-
-    // for grid_name in grid_file_name.split(',') {
-    //     let grid = ctx.get_grid(grid_name)?;
-    //     params.grids.insert(grid_name, grid);
-    // }
+    for grid_name in grid_file_name.split(',') {
+        let grid = ctx.get_grid(grid_name)?;
+        params.grids.push(grid);
+    }
 
     let fwd = InnerOp(fwd);
     let inv = InnerOp(inv);
@@ -125,10 +120,8 @@ mod tests {
 
     #[test]
     fn gridshift() -> Result<(), Error> {
-        let test_datum = include_str!("../../geodesy/datum/test.datum");
-        let mut ctx = Minimal::default();
-        ctx.register_resource("test.datum", test_datum);
-        let op = ctx.op("gridshift grids=test.datum")?;
+        let mut ctx = Plain::default();
+        let op = ctx.op("gridshift grids=../../geodesy/datum/test.datum")?;
         let cph = Coor4D::geo(55., 12., 0., 0.);
         let mut data = [cph];
 
@@ -136,6 +129,26 @@ mod tests {
         let res = data[0].to_geo();
         assert!((res[0] - 55.015278).abs() < 1e-6);
         assert!((res[1] - 12.003333).abs() < 1e-6);
+
+        ctx.apply(op, Inv, &mut data)?;
+        assert!((data[0][0] - cph[0]).abs() < 1e-10);
+        assert!((data[0][1] - cph[1]).abs() < 1e-10);
+
+        Ok(())
+    }
+
+    #[test]
+    fn multiple_grids() -> Result<(), Error> {
+        let mut ctx = Plain::default();
+        let op = ctx
+            .op("gridshift grids=../../geodesy/datum/test.datum,../../geodesy/datum/test.datum")?;
+        let cph = Coor4D::geo(55., 12., 0., 0.);
+        let mut data = [cph];
+
+        ctx.apply(op, Fwd, &mut data)?;
+        let res = data[0].to_geo();
+        assert!((res[0] - 55.030559).abs() < 1e-6);
+        assert!((res[1] - 12.006667).abs() < 1e-6);
 
         ctx.apply(op, Inv, &mut data)?;
         assert!((data[0][0] - cph[0]).abs() < 1e-10);
