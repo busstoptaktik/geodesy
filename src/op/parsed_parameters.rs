@@ -43,13 +43,17 @@ pub struct ParsedParameters {
     pub integer: BTreeMap<&'static str, i64>,
     pub real: BTreeMap<&'static str, f64>,
     pub series: BTreeMap<&'static str, Vec<f64>>,
-    pub grids: BTreeMap<&'static str, Rc<dyn GridTrait>>,
     pub text: BTreeMap<&'static str, String>,
     pub texts: BTreeMap<&'static str, Vec<String>>,
     pub uuid: BTreeMap<&'static str, uuid::Uuid>,
     pub fourier_coefficients: BTreeMap<&'static str, FourierCoefficients>,
     pub ignored: Vec<String>,
     pub given: BTreeMap<String, String>,
+
+    // Pointers to the grids required by the operator
+    // They should be inserted in the order they appear in the definition
+    // NOTE: We may want to consider use `Arc` instead of `Rc` here for concurrency reasons
+    pub grids: Vec<Rc<dyn GridTrait>>,
 }
 
 // Accessors
@@ -116,39 +120,6 @@ impl ParsedParameters {
         // If none of them existed, i.e. no defaults were given, we return the general default
         Ellipsoid::default()
     }
-    /// Returns the grid(s) associated with the operator
-    /// (typically a single grid, but some operators may
-    /// use multiple grids) which are provided as a Vec<&dyn GridTrait>
-    /// in the order they appear in the `grids` parameter.
-    pub fn get_grids(&self) -> Result<Vec<&Rc<dyn GridTrait>>, Error> {
-        //
-        if let Some(names) = self.text.get("grids") {
-            let grids = names
-                .split(",")
-                .map(|n| {
-                    self.grids.get(n).ok_or(Error::General(
-                        "Grid Not found, did you forget to set it with set_grid?",
-                    ))
-                })
-                .collect::<Result<Vec<_>, _>>()?;
-
-            Ok(grids)
-        } else {
-            return Err(Error::MissingParam("grids".to_string()));
-        }
-    }
-
-    /// Construct and set grids required by this parameter
-    /// Operators that require a grid should get and create them in Inner_Op::new()
-    /// and then set them here. Typically the Context will have a way of loading a raw grid
-    pub fn set_grids(&mut self, grid: Vec<Rc<dyn GridTrait>>) {
-        if let Some(names) = self.text.get("grids") {
-            let names = names.split(",").collect::<Vec<_>>();
-            for (i, name) in names.iter().enumerate() {
-                self.grids.insert(name, grid[i].clone());
-            }
-        }
-    }
     pub fn k(&self, index: usize) -> f64 {
         *(self.real.get(&format!("k_{index}")[..]).unwrap_or(&1.))
     }
@@ -180,7 +151,7 @@ impl ParsedParameters {
         let mut series = BTreeMap::<&'static str, Vec<f64>>::new();
         let mut text = BTreeMap::<&'static str, String>::new();
         let mut texts = BTreeMap::<&'static str, Vec<String>>::new();
-        let grids = BTreeMap::<&'static str, Rc<dyn GridTrait>>::new();
+        let grids = Vec::new();
         #[allow(unused_mut)]
         let mut uuid = BTreeMap::<&'static str, uuid::Uuid>::new();
         let fourier_coefficients = BTreeMap::<&'static str, FourierCoefficients>::new();
