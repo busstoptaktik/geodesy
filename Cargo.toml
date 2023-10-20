@@ -5,7 +5,7 @@ keywords = ["geospatial", "geodesy", "cartography", "geography"]
 categories = ["science"]
 license = "MIT OR Apache-2.0"
 version = "0.10.0"
-rust-version = "1.65"  # Uses the let-else construct introduce in 1.65
+rust-version = "1.65"                                                                  # Uses the let-else construct introduce in 1.65
 authors = ["Thomas Knudsen <knudsen.thomas@gmail.com>"]
 readme = "README.md"
 repository = "https://github.com/busstoptaktik/geodesy/"
@@ -26,7 +26,7 @@ anyhow = { version = "1.0", optional = true }
 
 # CLI + plain
 dirs = { version = "4.0", optional = true }
-env_logger = {version="0.10.0", optional = true}
+env_logger = { version = "0.10.0", optional = true }
 
 # Library level logging and error handling
 log = "0.4"
@@ -40,7 +40,7 @@ clap = { version = "4.3.11", features = ["derive"] }
 
 # Needed for building examples
 dirs = { version = "4.0" }
-env_logger = {version="0.10.0"}
+env_logger = { version = "0.10.0" }
 
 [lib]
 name = "geodesy"
@@ -52,6 +52,7 @@ crate-type = ["cdylib", "rlib"]
 js = ["uuid/js"]
 binary = ["dirs", "clap", "env_logger", "anyhow"]
 with_plain = ["dirs"]
+ntv2 = []
 default = ["binary", "with_plain"]
 
 [[bin]]
