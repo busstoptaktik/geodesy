@@ -52,7 +52,7 @@ pub mod authoring {
 
     pub use crate::grid::BaseGrid;
     pub use crate::math::*;
-    pub use crate::Grid;
+    pub use crate::GridTrait;
     pub use crate::InnerOp;
     pub use crate::Op;
     pub use crate::OpConstructor;
@@ -182,7 +182,7 @@ pub use crate::token::Tokenize;
 pub use crate::token::parse_proj;
 
 // The lower level data types, mostly use in the extended prelude 'authoring'
-pub use crate::grid::Grid;
+pub use crate::grid::GridTrait;
 pub use crate::inner_op::InnerOp;
 pub use crate::inner_op::OpConstructor;
 pub use crate::op::Op;

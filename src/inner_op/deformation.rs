@@ -1,5 +1,3 @@
-use std::rc::Rc;
-
 /// Kinematic datum shift using a 3D deformation model in ENU-space.
 ///
 /// Based on Kristian Evers' implementation of the
