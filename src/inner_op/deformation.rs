@@ -174,7 +174,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let ellps = op.params.ellps(0);
     let raw = op.params.boolean("raw");
 
-    for grid in grids.iter() {
+    for grid in grids.iter().rev() {
         // Datum shift
         for i in 0..n {
             let cart = operands.get_coord(i);
