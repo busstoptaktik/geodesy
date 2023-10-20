@@ -166,6 +166,24 @@ where
 /// nested pipelines (the nesting must be done indirectly through an init-file),
 /// second that Rust Geodesy does not support init-files. Hence no support for
 /// any kind of nesting here.
+///
+/// ## Known differences between PROJ and Rust Geodesy definitions:
+///
+/// ## Ellipsoid definitions
+/// - Geodesy only supports a limited set of builtin ellipsoids OR or definition
+/// via semi-major and reverse-flattening parameters  `ellps=a,rf`.
+/// - PROJ has [richer ellipsoid](https://proj.org/en/9.3/usage/ellipsoids.html#ellipsoid-size-parameters)
+/// support which *parse_proj* provides partial support for.
+/// - Specifically if an ellipsoid is defined via `a` and `rf` parameters, *parse_proj*
+/// will redefine them as `ellps=a,rf` and remove the `a` and `rf` parameters.
+/// - All other cases supported by PROJ are NOT handled by *parse_proj* and will
+/// fail when instantiating the operator.
+///
+/// ## Scaling via `k` parameter
+/// - PROJ still supports the deprecated `k` parameter. Most output from `projinfo` will
+/// have the scaling defined as `k` instead of `k_0`.
+/// - *parse_proj* will replace `k` with `k_0` whenever it is encountered.
+///
 pub fn parse_proj(definition: &str) -> Result<String, Error> {
     // Impose some line ending sanity and remove the PROJ '+' prefix
     let all = definition
@@ -213,7 +231,7 @@ pub fn parse_proj(definition: &str) -> Result<String, Error> {
     // For accumulating the pipeline steps converted to geodesy syntax
     let mut geodesy_steps = Vec::new();
 
-    // Geodesy does not suppport pipeline globals, so we must explicitly
+    // Geodesy does not support pipeline globals, so we must explicitly
     // insert them in the beginning of the argument list of each step
     let mut pipeline_globals = "".to_string();
     let mut pipeline_is_inverted = false;
@@ -268,6 +286,8 @@ pub fn parse_proj(definition: &str) -> Result<String, Error> {
             }
         }
 
+        tidy_proj(&mut elements)?;
+
         // Skip empty steps, insert pipeline globals, handle step and pipeline
         // inversions, and handle directional omissions (omit_fwd, omit_inv)
         let mut geodesy_step = elements.join(" ").trim().to_string();
@@ -301,6 +321,66 @@ pub fn parse_proj(definition: &str) -> Result<String, Error> {
         }
     }
     Ok(geodesy_steps.join(" | ").trim().to_string())
+}
+
+// Address some known incompatibilities between PROJ and Rust Geodesy
+// - Ellipsoid definitions
+// - Scaling via the deprecated `k` parameter
+fn tidy_proj(elements: &mut Vec<String>) -> Result<(), Error> {
+    // Geodesy only supports ellipsoid definitions as named builtins or ellps=a,rf
+    // PROJ has richer support which we try navigate here
+    // First we find the indices of ellps, a and rf elements
+    let mut ellps_def: [Option<usize>; 3] = [None; 3];
+    for (i, element) in elements.iter().enumerate() {
+        if element.starts_with("ellps=") {
+            ellps_def[0] = Some(i);
+        }
+        if element.starts_with("a=") {
+            ellps_def[1] = Some(i);
+        }
+        if element.starts_with("rf=") {
+            ellps_def[2] = Some(i);
+        }
+    }
+
+    // Then if there there is an `a` AND and an `rf` element but NOT an `ellps` element
+    // we compose them into the `ellps=a,rf` format.
+    // Anything else we ignore, this means that if `ellps` is defined we do nothing
+    // and if an ellps is defined but is also modified with `a` or `rf`
+    // elements we ignore it and rely on operator instantiation to fail due to unknown elements
+    // A complete solution would need to include `a` and `rf` keys in the gamut of all operators so that
+    // the Ellipsoid struct can build the required ellipsoid.
+    match ellps_def {
+        [None, Some(a_idx), Some(rf_idx)] => {
+            let a = elements[a_idx][2..].to_string();
+            let rf = elements[rf_idx][3..].to_string();
+
+            elements.push(format!("ellps={},{}", a, rf).to_string());
+
+            // Remove the a and rf elements from the vector
+            if a_idx > rf_idx {
+                elements.remove(a_idx);
+                elements.remove(rf_idx);
+            } else {
+                elements.remove(rf_idx);
+                elements.remove(a_idx);
+            }
+        }
+        _ => {}
+    }
+
+    // `projinfo`  still produces strings with scaling defined as `k` instead of `k_0`
+    // We replace `k` with `k_0` when ever it is encountered.
+    for (i, element) in elements.iter().enumerate() {
+        if element.starts_with("k=") {
+            elements[i] = "k_0=".to_string() + &element[2..];
+
+            // There should only be one scaling so it's safe to break here
+            break;
+        }
+    }
+
+    Ok(())
 }
 
 // ----- T E S T S ------------------------------------------------------------------
@@ -416,6 +496,31 @@ mod tests {
         assert_eq!(2, ctx.apply(op, Fwd, &mut operands)?);
         assert_eq!(operands[0][0], 57.0);
         assert_eq!(operands[1][0], 61.0);
+
+        Ok(())
+    }
+
+    #[test]
+    fn tidy_proj() -> Result<(), Error> {
+        // Ellipsoid defined with `a` and `rf` parameters instead of ellps
+        assert_eq!(
+                parse_proj("+proj=pipeline +step +inv +proj=tmerc +a=6378249.145 +rf=293.465 +step +proj=step2")?,
+                "tmerc inv ellps=6378249.145,293.465 | step2"
+            );
+
+        // Ellipsoid is defined with a builtin
+        assert_eq!(parse_proj("+proj=tmerc +ellps=GRS80")?, "tmerc ellps=GRS80");
+
+        // Ellipsoid is defined with a builtin but is modified by `a` or `rf`
+        // Note we don't remove `a` here even though this modification is not supported in RG
+        // it's expected to fail in the operator instantiation
+        assert_eq!(
+            parse_proj("+proj=tmerc +ellps=GRS80 +a=1")?,
+            "tmerc ellps=GRS80 a=1"
+        );
+
+        // Replace occurrences of `k=` with `k_0=`
+        assert_eq!(parse_proj("+proj=tmerc +k=1.5")?, "tmerc k_0=1.5");
 
         Ok(())
     }
