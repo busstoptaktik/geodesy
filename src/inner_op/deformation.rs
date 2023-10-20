@@ -1,5 +1,3 @@
-use std::rc::Rc;
-
 /// Kinematic datum shift using a 3D deformation model in ENU-space.
 ///
 /// Based on Kristian Evers' implementation of the
@@ -120,7 +118,7 @@ use crate::authoring::*;
 // ----- F O R W A R D --------------------------------------------------------------
 
 fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
-    let grids = &op.params.get_grids().unwrap();
+    let grids = &op.params.grids;
     let mut successes = 0_usize;
     let n = operands.len();
 
@@ -167,7 +165,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
 // ----- I N V E R S E --------------------------------------------------------------
 
 fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
-    let grids = &op.params.get_grids().unwrap();
+    let grids = &op.params.grids;
     let mut successes = 0_usize;
     let n = operands.len();
 
@@ -236,7 +234,6 @@ pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
     }
 
     let grid_file_name = params.text("grids")?;
-    let mut grids = Vec::<Rc<dyn GridTrait>>::new();
     for grid_name in grid_file_name.split(',') {
         let grid = ctx.get_grid(grid_name)?;
         let n = grid.bands();
@@ -247,9 +244,8 @@ pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
                 found: n.to_string(),
             });
         }
-        grids.push(grid);
+        params.grids.push(grid);
     }
-    params.set_grids(grids);
 
     let fwd = InnerOp(fwd);
     let inv = InnerOp(inv);
@@ -301,7 +297,7 @@ mod tests {
     #[test]
     fn deformation() -> Result<(), Error> {
         // Context and data
-        let mut ctx = Minimal::default();
+        let mut ctx = Plain::default();
         let cph = Coor4D::geo(55., 12., 0., 0.);
         let test_deformation = include_str!("../../geodesy/deformation/test.deformation");
 
