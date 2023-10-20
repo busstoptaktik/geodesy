@@ -43,7 +43,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let mut successes = 0_usize;
     let n = operands.len();
 
-    for grid in grids.iter() {
+    for grid in grids.iter().rev() {
         // Geoid
         if grid.bands() == 1 {
             for i in 0..n {
