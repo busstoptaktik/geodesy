@@ -376,7 +376,6 @@ impl ParsedParameters {
             real,
             series,
             grids,
-            ntv2_grids,
             text,
             texts,
             uuid,

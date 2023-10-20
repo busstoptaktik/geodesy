@@ -1,5 +1,5 @@
 use self::parser::{parse_subgrid_grid, parse_subgrid_header, HEADER_SIZE};
-use crate::{Coor2D, Coor4D, Error};
+use crate::{Coor2D, Coor4D, Error, GridTrait};
 use parser::NTv2Parser;
 mod parser;
 
@@ -17,7 +17,6 @@ pub struct Ntv2Grid {
     num_rows: f64,
     row_size: f64,
     grid: Vec<Coor2D>,
-    pub bands: usize,
 }
 
 impl Ntv2Grid {
@@ -63,21 +62,25 @@ impl Ntv2Grid {
             num_rows,
             row_size,
             grid,
-            // For compatibility with the `Grid` struct
-            bands: 2,
         })
+    }
+}
+
+impl GridTrait for Ntv2Grid {
+    fn bands(&self) -> usize {
+        2
     }
 
     /// Checks if a `Coord4D` is within the grid limits
-    pub fn contains(&self, position: Coor4D) -> bool {
+    fn contains(&self, position: Coor4D) -> bool {
         let lon = position[0];
         let lat = position[1];
         lat >= self.slat && lat <= self.nlat && lon >= self.wlon && lon <= self.elon
     }
 
     // Matches the `interpolation` method signature of the `Grid` struct
-    // Implementation adapted from [projrs](https://github.com/3liz/proj4rs/blob/8b5eb762c6be65eed0ca0baea33f8c70d1cd56cb/src/nadgrids/grid.rs#L206C1-L252C6) && [proj4js](https://github.com/proj4js/proj4js/blob/d9faf9f93ebeccac4b79fa80f3e9ad8a7032828b/lib/datum_transform.js#L167)
-    pub fn interpolation(&self, coord: &Coor4D, _grid: Option<&Vec<Coor2D>>) -> Coor4D {
+    /// Implementation adapted from [projrs](https://github.com/3liz/proj4rs/blob/8b5eb762c6be65eed0ca0baea33f8c70d1cd56cb/src/nadgrids/grid.rs#L206C1-L252C6) && [proj4js](https://github.com/proj4js/proj4js/blob/d9faf9f93ebeccac4b79fa80f3e9ad8a7032828b/lib/datum_transform.js#L167)
+    fn interpolation(&self, coord: &Coor4D, _grid: Option<&[f32]>) -> Coor4D {
         // Normalise to the grid origin which is the SW corner
         let rlon = coord[0] - self.wlon;
         let rlat = coord[1] - self.slat;
