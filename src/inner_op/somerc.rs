@@ -1,4 +1,4 @@
-#![allow(non_snake_case)] // So we can use the mathematical notation from the original paper
+#![allow(non_snake_case)] // So we can use the mathematical notation from the original text
 
 // Swiss Oblique Mercator Projection
 //
