@@ -18,7 +18,9 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let y_0 = op.params.y(0);
     let Ok(n) = op.params.real("n") else { return 0 };
     let Ok(c) = op.params.real("c") else { return 0 };
-    let Ok(rho0) = op.params.real("rho0") else { return 0 };
+    let Ok(rho0) = op.params.real("rho0") else {
+        return 0;
+    };
     let mut successes = 0_usize;
     let length = operands.len();
 
@@ -58,7 +60,9 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let y_0 = op.params.y(0);
     let Ok(n) = op.params.real("n") else { return 0 };
     let Ok(c) = op.params.real("c") else { return 0 };
-    let Ok(rho0) = op.params.real("rho0") else { return 0 };
+    let Ok(rho0) = op.params.real("rho0") else {
+        return 0;
+    };
     let mut successes = 0_usize;
     let length = operands.len();
 

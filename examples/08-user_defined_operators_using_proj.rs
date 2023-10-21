@@ -45,7 +45,10 @@ fn proj(args: &str, forward: bool, operands: &mut dyn CoordinateSet) -> usize {
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
-        .spawn() else {return 0};
+        .spawn()
+    else {
+        return 0;
+    };
 
     // Extract the 2D coordinates from the operands, and convert them into bytes
     // for interprocess communication

@@ -30,11 +30,21 @@ fn common(
     let f = ellps.flattening();
     let es = ellps.eccentricity_squared();
     let abridged = op.params.boolean("abridged");
-    let Ok(dx) = op.params.real("dx") else {return 0};
-    let Ok(dy) = op.params.real("dy") else {return 0};
-    let Ok(dz) = op.params.real("dz") else {return 0};
-    let Ok(da) = op.params.real("da") else {return 0};
-    let Ok(df) = op.params.real("df") else {return 0};
+    let Ok(dx) = op.params.real("dx") else {
+        return 0;
+    };
+    let Ok(dy) = op.params.real("dy") else {
+        return 0;
+    };
+    let Ok(dz) = op.params.real("dz") else {
+        return 0;
+    };
+    let Ok(da) = op.params.real("da") else {
+        return 0;
+    };
+    let Ok(df) = op.params.real("df") else {
+        return 0;
+    };
     let adffda = ellps.semimajor_axis() * df + ellps.flattening() * da;
     let moped = Molodensky {
         a,

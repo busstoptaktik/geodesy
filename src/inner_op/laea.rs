@@ -11,10 +11,16 @@ const EPS10: f64 = 1e-10;
 
 fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     // Oblique aspect: [IOGP, 2019](crate::Bibliography::Iogp19), pp. 78-80
-    let Ok(xi_0) = op.params.real("xi_0") else { return 0 };
-    let Ok(qp)   = op.params.real("qp")   else { return 0 };
-    let Ok(rq)   = op.params.real("rq")   else { return 0 };
-    let Ok(d)    = op.params.real("d")    else { return 0 };
+    let Ok(xi_0) = op.params.real("xi_0") else {
+        return 0;
+    };
+    let Ok(qp) = op.params.real("qp") else {
+        return 0;
+    };
+    let Ok(rq) = op.params.real("rq") else {
+        return 0;
+    };
+    let Ok(d) = op.params.real("d") else { return 0 };
 
     let oblique = op.params.boolean("oblique");
     let north_polar = op.params.boolean("north_polar");
@@ -87,10 +93,16 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
 
 fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     // Oblique aspect: [IOGP, 2019](crate::Bibliography::Iogp19), pp. 78-80
-    let Ok(xi_0) = op.params.real("xi_0") else { return 0 };
-    let Ok(rq)   = op.params.real("rq")   else { return 0 };
-    let Ok(d)    = op.params.real("d")    else { return 0 };
-    let Ok(authalic)  = op.params.fourier_coefficients("authalic") else { return 0 };
+    let Ok(xi_0) = op.params.real("xi_0") else {
+        return 0;
+    };
+    let Ok(rq) = op.params.real("rq") else {
+        return 0;
+    };
+    let Ok(d) = op.params.real("d") else { return 0 };
+    let Ok(authalic) = op.params.fourier_coefficients("authalic") else {
+        return 0;
+    };
 
     let north_polar = op.params.boolean("north_polar");
     let south_polar = op.params.boolean("south_polar");
