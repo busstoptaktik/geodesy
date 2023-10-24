@@ -120,10 +120,11 @@ impl Context for Maximal {
         Ok(std::fs::read(path)?)
     }
     /// Access grid resources by identifier
-    fn get_grid(&self, _name: &str) -> Result<Rc<dyn GridTrait>, Error> {
-        Err(Error::General(
-            "Grid access by identifier not supported by the Maximal context provider",
-        ))
+    fn get_grid(&self, name: &str) -> Result<Rc<dyn GridTrait>, Error> {
+        let buf = self.get_blob(name)?;
+        let grid = Grid::gravsoft(&buf)?;
+
+        Ok(Rc::new(grid))
     }
 }
 
