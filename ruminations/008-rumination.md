@@ -93,7 +93,9 @@ Unlike PROJ, however, RG supports the run-time integration of user defined opera
 
 #### The context interface
 
-In PROJ, the context type, `PJ_CONTEXT`
+In PROJ, the context type, `PJ_CONTEXT` was originally designed to enable multithreaded use of error messaging, and overloading of the `stdio` file access interface. It was bolted onto the existing API, and designed in a way making it "as invisible as possible", i.e. entirely invisible for singlethreaded programs, but imposing additional ceremony for multithreaded.
+
+Knowing from experience with both [PROJ](https://proj.org) and [trlib](https://github.com/busstoptaktik/trlib) that some kind of system interface context is unavoidable, RG makes a virtue out of necessity, by assigning the context the leading role in the API design. We cannot avoid it - so make it carry its own weight.
 
 #### The context-bound implementation of ISO 19111
 
