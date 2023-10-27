@@ -5,11 +5,12 @@ use crate::authoring::*;
 
 fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let grids = &op.params.grids;
+    let use_null_grid = op.params.boolean("null_grid");
 
     let mut successes = 0_usize;
     let n = operands.len();
 
-    for i in 0..n {
+    'points: for i in 0..n {
         let mut coord = operands.get_coord(i);
 
         for grid in grids.iter() {
@@ -22,7 +23,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
                     operands.set_coord(i, &coord);
                     successes += 1;
 
-                    break;
+                    continue 'points;
                 }
 
                 // Datum shift
@@ -32,9 +33,16 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
                 operands.set_coord(i, &coord);
                 successes += 1;
 
-                break;
+                continue 'points;
             }
         }
+
+        if use_null_grid {
+            continue;
+        }
+
+        // No grid found so we stomp on the coordinate
+        operands.set_coord(i, &Coor4D::nan());
     }
 
     successes
@@ -44,11 +52,12 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
 
 fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let grids = &op.params.grids;
+    let use_null_grid = op.params.boolean("null_grid");
 
     let mut successes = 0_usize;
     let n = operands.len();
 
-    for i in 0..n {
+    'points: for i in 0..n {
         let mut coord = operands.get_coord(i);
 
         for grid in grids.iter().rev() {
@@ -61,7 +70,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
                     operands.set_coord(i, &coord);
                     successes += 1;
 
-                    break;
+                    continue 'points;
                 }
 
                 // Datum shift - here we need to iterate in the inverse case
@@ -79,9 +88,16 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
                 operands.set_coord(i, &t);
                 successes += 1;
 
-                break;
+                continue 'points;
             }
         }
+
+        if use_null_grid {
+            continue;
+        }
+
+        // No grid found so we stomp on the coordinate
+        operands.set_coord(i, &Coor4D::nan());
     }
     successes
 }
@@ -99,9 +115,15 @@ pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
     let def = &parameters.definition;
     let mut params = ParsedParameters::new(parameters, &GAMUT)?;
 
-    // TODO: handle @null and @optional grids as per https://proj.org/en/9.3/usage/transformation.html#grid-based-datum-adjustments
     let grid_file_name = params.text("grids")?;
     for grid_name in grid_file_name.split(',') {
+        if grid_name.ends_with("@null") {
+            params.boolean.insert("null_grid");
+            continue;
+        }
+
+        // TODO: Handle @optional grids
+
         let grid = ctx.get_grid(grid_name)?;
         params.grids.push(grid);
     }
