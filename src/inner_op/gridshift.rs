@@ -38,6 +38,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         }
 
         if use_null_grid {
+            successes += 1;
             continue;
         }
 
@@ -93,6 +94,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         }
 
         if use_null_grid {
+            successes += 1;
             continue;
         }
 
@@ -184,6 +186,44 @@ mod tests {
         ctx.apply(op, Inv, &mut data)?;
         assert!((data[0][0] - cph[0]).abs() < 1e-10);
         assert!((data[0][1] - cph[1]).abs() < 1e-10);
+
+        Ok(())
+    }
+
+    #[test]
+    fn fails_without_null_grid() -> Result<(), Error> {
+        let mut ctx = Plain::default();
+        let op = ctx.op("gridshift grids=../../geodesy/datum/test.datum")?;
+
+        let ldn = Coor4D::geo(51.505, -0.09, 0., 0.);
+        let mut data = [ldn];
+
+        let successes = ctx.apply(op, Fwd, &mut data)?;
+        assert_eq!(successes, 0);
+        assert!(data[0][0].is_nan());
+        assert!(data[0][1].is_nan());
+
+        Ok(())
+    }
+
+    #[test]
+    fn passes_with_null_grid() -> Result<(), Error> {
+        let mut ctx = Plain::default();
+        let op = ctx.op("gridshift grids=../../geodesy/datum/test.datum, @null")?;
+
+        let ldn = Coor4D::geo(51.505, -0.09, 0., 0.);
+        let mut data = [ldn];
+
+        let successes = ctx.apply(op, Fwd, &mut data)?;
+        let res = data[0].to_geo();
+        assert_eq!(successes, 1);
+        assert_eq!(res[0], 51.505);
+        assert_eq!(res[1], -0.09);
+
+        let successes = ctx.apply(op, Inv, &mut data)?;
+        assert_eq!(successes, 1);
+        assert!((data[0][0] - ldn[0]).abs() < 1e-10);
+        assert!((data[0][1] - ldn[1]).abs() < 1e-10);
 
         Ok(())
     }

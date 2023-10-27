@@ -165,6 +165,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         }
 
         if use_null_grid {
+            successes += 1;
             continue;
         }
 
@@ -224,6 +225,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         }
 
         if use_null_grid {
+            successes += 1;
             continue;
         }
 
