@@ -9,29 +9,34 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let mut successes = 0_usize;
     let n = operands.len();
 
-    for grid in grids.iter() {
-        // Geoid
-        if grid.bands() == 1 {
-            for i in 0..n {
-                let mut coord = operands.get_coord(i);
-                let d = grid.interpolation(&coord, None);
-                coord[2] -= d[0];
-                successes += 1;
-                operands.set_coord(i, &coord);
-            }
-            return successes;
-        }
+    for i in 0..n {
+        let mut coord = operands.get_coord(i);
 
-        // Datum shift
-        for i in 0..n {
-            let mut coord = operands.get_coord(i);
-            let d = grid.interpolation(&coord, None);
-            coord[0] += d[0];
-            coord[1] += d[1];
-            operands.set_coord(i, &coord);
-            successes += 1;
+        for grid in grids.iter() {
+            // Pick the first grid that contains the point.
+            if grid.contains(coord) {
+                // Geoid
+                if grid.bands() == 1 {
+                    let d = grid.interpolation(&coord, None);
+                    coord[2] -= d[0];
+                    operands.set_coord(i, &coord);
+                    successes += 1;
+
+                    break;
+                }
+
+                // Datum shift
+                let d = grid.interpolation(&coord, None);
+                coord[0] += d[0];
+                coord[1] += d[1];
+                operands.set_coord(i, &coord);
+                successes += 1;
+
+                break;
+            }
         }
     }
+
     successes
 }
 
@@ -43,40 +48,43 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let mut successes = 0_usize;
     let n = operands.len();
 
-    for grid in grids.iter().rev() {
-        // Geoid
-        if grid.bands() == 1 {
-            for i in 0..n {
-                let mut coord = operands.get_coord(i);
-                let t = grid.interpolation(&coord, None);
-                coord[2] += t[0];
-                operands.set_coord(i, &coord);
-                successes += 1;
-            }
-            return successes;
-        }
+    for i in 0..n {
+        let mut coord = operands.get_coord(i);
 
-        // Datum shift - here we need to iterate in the inverse case
-        for i in 0..n {
-            let coord = operands.get_coord(i);
-            let mut t = coord - grid.interpolation(&coord, None);
+        for grid in grids.iter().rev() {
+            // Pick the first grid that contains the point.
+            if grid.contains(coord) {
+                // Geoid
+                if grid.bands() == 1 {
+                    let t = grid.interpolation(&coord, None);
+                    coord[2] += t[0];
+                    operands.set_coord(i, &coord);
+                    successes += 1;
 
-            for _ in 0..10 {
-                let d = t - coord + grid.interpolation(&t, None);
-                t = t - d;
-                // i.e. d.dot(d).sqrt() < 1e-10
-                if d.dot(d) < 1e-20 {
                     break;
                 }
-            }
 
-            operands.set_coord(i, &t);
-            successes += 1;
+                // Datum shift - here we need to iterate in the inverse case
+                let mut t = coord - grid.interpolation(&coord, None);
+
+                for _ in 0..10 {
+                    let d = t - coord + grid.interpolation(&t, None);
+                    t = t - d;
+                    // i.e. d.dot(d).sqrt() < 1e-10
+                    if d.dot(d) < 1e-20 {
+                        break;
+                    }
+                }
+
+                operands.set_coord(i, &t);
+                successes += 1;
+
+                break;
+            }
         }
     }
     successes
 }
-
 // ----- C O N S T R U C T O R ------------------------------------------------------
 
 // Example...
@@ -91,6 +99,7 @@ pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
     let def = &parameters.definition;
     let mut params = ParsedParameters::new(parameters, &GAMUT)?;
 
+    // TODO: handle @null and @optional grids as per https://proj.org/en/9.3/usage/transformation.html#grid-based-datum-adjustments
     let grid_file_name = params.text("grids")?;
     for grid_name in grid_file_name.split(',') {
         let grid = ctx.get_grid(grid_name)?;
@@ -147,8 +156,8 @@ mod tests {
 
         ctx.apply(op, Fwd, &mut data)?;
         let res = data[0].to_geo();
-        assert!((res[0] - 55.030559).abs() < 1e-6);
-        assert!((res[1] - 12.006667).abs() < 1e-6);
+        assert!((res[0] - 55.015278).abs() < 1e-6);
+        assert!((res[1] - 12.003333).abs() < 1e-6);
 
         ctx.apply(op, Inv, &mut data)?;
         assert!((data[0][0] - cph[0]).abs() < 1e-10);

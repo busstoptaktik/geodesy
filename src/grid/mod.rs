@@ -13,7 +13,7 @@ pub trait Grid: Debug {
 // NOTE: Should this be renamed PlainGrid? Then rename the trait to Grid?
 /// Grid characteristics and interpolation.
 ///
-/// The actual grid may be part of the `Grid` struct, or
+/// The actual grid may be part of the `BaseGrid` struct, or
 /// provided externally (presumably by a [Context](crate::Context)).
 ///
 /// In principle grid format agnostic, but includes a parser for
