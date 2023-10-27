@@ -10,7 +10,6 @@ pub trait Grid: Debug {
     fn interpolation(&self, coord: &Coor4D, grid: Option<&[f32]>) -> Coor4D;
 }
 
-// NOTE: Should this be renamed PlainGrid? Then rename the trait to Grid?
 /// Grid characteristics and interpolation.
 ///
 /// The actual grid may be part of the `BaseGrid` struct, or
