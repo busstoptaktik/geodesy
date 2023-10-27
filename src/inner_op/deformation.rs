@@ -126,9 +126,10 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let epoch = op.params.real("t_epoch").unwrap();
     let ellps = op.params.ellps(0);
     let raw = op.params.boolean("raw");
+    let use_null_grid = op.params.boolean("null_grid");
 
     // Datum shift
-    for i in 0..n {
+    'points: for i in 0..n {
         let cart = operands.get_coord(i);
         let geo = ellps.geographic(&cart);
         for grid in grids.iter() {
@@ -144,7 +145,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
                 // Outside of the grid? - stomp on the input coordinate and go on to the next
                 if v[0].is_nan() {
                     operands.set_coord(i, &Coor4D::nan());
-                    break;
+                    continue 'points;
                 }
 
                 // Finally apply the deformation to the input coordinate - or just
@@ -158,9 +159,17 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
                 }
                 successes += 1;
 
-                break;
+                // We've found the grid that contains the point, so we can move on
+                continue 'points;
             }
         }
+
+        if use_null_grid {
+            continue;
+        }
+
+        // No grid found so we stomp on the coordinate
+        operands.set_coord(i, &Coor4D::nan());
     }
     successes
 }
@@ -176,9 +185,10 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let epoch = op.params.real("t_epoch").unwrap();
     let ellps = op.params.ellps(0);
     let raw = op.params.boolean("raw");
+    let use_null_grid = op.params.boolean("null_grid");
 
     // Datum shift
-    for i in 0..n {
+    'points: for i in 0..n {
         let cart = operands.get_coord(i);
         let geo = ellps.geographic(&cart);
         for grid in grids.iter().rev() {
@@ -194,7 +204,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
                 // Outside of the grid? - stomp on the input coordinate and go on to the next
                 if v[0].is_nan() {
                     operands.set_coord(i, &Coor4D::nan());
-                    break;
+                    continue 'points;
                 }
 
                 // Finally apply the deformation to the input coordinate - or just
@@ -208,9 +218,17 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
                 }
                 successes += 1;
 
-                break;
+                // We've found the grid that contains the point, so we can move on
+                continue 'points;
             }
         }
+
+        if use_null_grid {
+            continue;
+        }
+
+        // No grid found so we stomp on the coordinate
+        operands.set_coord(i, &Coor4D::nan());
     }
     successes
 }
@@ -241,6 +259,13 @@ pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
 
     let grid_names = params.text("grids")?;
     for grid_name in grid_names.split(',') {
+        if grid_name.ends_with("@null") {
+            params.boolean.insert("null_grid");
+            continue;
+        }
+
+        // TODO: Handle @optional grids
+
         let grid = ctx.get_grid(grid_name)?;
         let n = grid.bands();
         if n != 3 {
