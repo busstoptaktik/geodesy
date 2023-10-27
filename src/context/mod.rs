@@ -54,7 +54,7 @@ pub trait Context {
     fn get_blob(&self, name: &str) -> Result<Vec<u8>, Error>;
 
     /// Access grid resources by identifier
-    fn get_grid(&self, name: &str) -> Result<Rc<dyn GridTrait>, Error>;
+    fn get_grid(&self, name: &str) -> Result<Rc<dyn Grid>, Error>;
 }
 
 /// Help context providers provide canonically named, built in coordinate adaptors

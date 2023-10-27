@@ -305,7 +305,7 @@ mod tests {
         ctx.register_resource("test.deformation", test_deformation);
 
         let buf = ctx.get_blob("test.deformation")?;
-        let grid = Grid::gravsoft(&buf)?;
+        let grid = BaseGrid::gravsoft(&buf)?;
 
         // Velocity in the ENU space
         let v = grid.interpolation(&cph, None);

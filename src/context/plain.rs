@@ -197,7 +197,7 @@ impl Context for Plain {
     }
 
     /// Access grid resources by identifier
-    fn get_grid(&self, name: &str) -> Result<Rc<dyn GridTrait>, Error> {
+    fn get_grid(&self, name: &str) -> Result<Rc<dyn Grid>, Error> {
         let n = PathBuf::from(name);
         let ext = n
             .extension()
@@ -211,7 +211,7 @@ impl Context for Plain {
             let Ok(grid) = std::fs::read(path) else {
                 continue;
             };
-            let grid = Rc::new(Grid::gravsoft(&grid)?);
+            let grid = Rc::new(BaseGrid::gravsoft(&grid)?);
             return Ok(grid);
         }
         Err(Error::NotFound(name.to_string(), ": Blob".to_string()))

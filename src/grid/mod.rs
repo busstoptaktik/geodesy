@@ -3,7 +3,7 @@
 use crate::prelude::*;
 use std::{fmt::Debug, io::BufRead};
 
-pub trait GridTrait: Debug {
+pub trait Grid: Debug {
     fn bands(&self) -> usize;
     fn contains(&self, position: Coor4D) -> bool;
     // NOTE: `grid` is included for backwards compatibility but could be removed
@@ -19,7 +19,7 @@ pub trait GridTrait: Debug {
 /// In principle grid format agnostic, but includes a parser for
 /// geodetic grids in the Gravsoft format.
 #[derive(Debug, Default, Clone)]
-pub struct Grid {
+pub struct BaseGrid {
     lat_0: f64, // Latitude of the first (typically northernmost) row of the grid
     lat_1: f64, // Latitude of the last (typically southernmost) row of the grid
     lon_0: f64, // Longitude of the first (typically westernmost) column of each row
@@ -35,7 +35,7 @@ pub struct Grid {
     grid: Vec<f32>, // May be zero sized in cases where the Context provides access to an externally stored grid
 }
 
-impl GridTrait for Grid {
+impl Grid for BaseGrid {
     fn bands(&self) -> usize {
         self.bands
     }
@@ -122,7 +122,7 @@ impl GridTrait for Grid {
     }
 }
 
-impl Grid {
+impl BaseGrid {
     pub fn plain(
         header: &[f64],
         grid: Option<&[f32]>,
@@ -152,7 +152,7 @@ impl Grid {
             return Err(Error::General("Malformed grid"));
         }
 
-        Ok(Grid {
+        Ok(BaseGrid {
             lat_0,
             lat_1,
             lon_0,
@@ -170,7 +170,7 @@ impl Grid {
 
     pub fn gravsoft(buf: &[u8]) -> Result<Self, Error> {
         let (header, grid) = gravsoft_grid_reader(buf)?;
-        Grid::plain(&header, Some(&grid), None)
+        BaseGrid::plain(&header, Some(&grid), None)
     }
 }
 
@@ -190,7 +190,7 @@ fn normalize_gravsoft_grid_values(header: &mut [f64], grid: &mut [f32]) {
     }
 
     // If we're handling a geoid grid, we're done: Grid values are in meters
-    let h = Grid::plain(header, Some(grid), None).unwrap_or_default();
+    let h = BaseGrid::plain(header, Some(grid), None).unwrap_or_default();
     if h.bands == 1 {
         return;
     }
@@ -312,14 +312,14 @@ mod tests {
         datum_header.push(2_f64); // 2 bands
         let mut datum_grid = Vec::from(DATUM);
         normalize_gravsoft_grid_values(&mut datum_header, &mut datum_grid);
-        let datum = Grid::plain(&datum_header, Some(&datum_grid), None)?;
+        let datum = BaseGrid::plain(&datum_header, Some(&datum_grid), None)?;
 
         // Create a geoid grid (1 band)
         let mut geoid_header = Vec::from(HEADER);
         geoid_header.push(1_f64); // 1 band
         let mut geoid_grid = Vec::from(GEOID);
         normalize_gravsoft_grid_values(&mut geoid_header, &mut geoid_grid);
-        let geoid = Grid::plain(&geoid_header, Some(&geoid_grid), None)?;
+        let geoid = BaseGrid::plain(&geoid_header, Some(&geoid_grid), None)?;
 
         let c = Coor4D::geo(58.75, 08.25, 0., 0.);
         assert_eq!(geoid.contains(c), false);
