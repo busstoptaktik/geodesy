@@ -1,6 +1,6 @@
 #[cfg(feature = "with_plain")]
 use crate::authoring::*;
-use std::{path::PathBuf, rc::Rc};
+use std::{path::PathBuf, sync::Arc};
 
 // ----- T H E   P L A I N   C O N T E X T ---------------------------------------------
 
@@ -197,7 +197,7 @@ impl Context for Plain {
     }
 
     /// Access grid resources by identifier
-    fn get_grid(&self, name: &str) -> Result<Rc<dyn Grid>, Error> {
+    fn get_grid(&self, name: &str) -> Result<Arc<dyn Grid>, Error> {
         let n = PathBuf::from(name);
         let ext = n
             .extension()
@@ -211,7 +211,7 @@ impl Context for Plain {
             let Ok(grid) = std::fs::read(path) else {
                 continue;
             };
-            let grid = Rc::new(BaseGrid::gravsoft(&grid)?);
+            let grid = Arc::new(BaseGrid::gravsoft(&grid)?);
             return Ok(grid);
         }
         Err(Error::NotFound(name.to_string(), ": Blob".to_string()))
