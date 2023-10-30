@@ -6,8 +6,9 @@ use std::{fmt::Debug, io::BufRead};
 pub trait Grid: Debug {
     fn bands(&self) -> usize;
     fn contains(&self, position: Coor4D) -> bool;
-    // NOTE: `grid` is included for backwards compatibility but could be removed
-    fn interpolation(&self, coord: &Coor4D, grid: Option<&[f32]>) -> Coor4D;
+    ///  Returns `None` if the grid or any of it's sub-grids do not contain the point.
+    // NOTE: `grid` is included for backwards compatibility but could be removed?
+    fn interpolation(&self, coord: &Coor4D, grid: Option<&[f32]>) -> Option<Coor4D>;
 }
 
 /// Grid characteristics and interpolation.
@@ -73,7 +74,7 @@ impl Grid for BaseGrid {
     // It is, however, one of the cases where a more extensive use of abstractions
     // leads to a significantly larger code base, much harder to maintain and
     // comprehend.
-    fn interpolation(&self, coord: &Coor4D, grid: Option<&[f32]>) -> Coor4D {
+    fn interpolation(&self, coord: &Coor4D, grid: Option<&[f32]>) -> Option<Coor4D> {
         let grid = grid.unwrap_or(&self.grid);
 
         // The interpolation coordinate relative to the grid origin
@@ -117,7 +118,7 @@ impl Grid for BaseGrid {
         for i in 0..self.bands {
             result[i] = (1. - rlon) * left[i] + rlon * right[i];
         }
-        result
+        Some(result)
     }
 }
 
@@ -323,16 +324,16 @@ mod tests {
         let c = Coor4D::geo(58.75, 08.25, 0., 0.);
         assert_eq!(geoid.contains(c), false);
 
-        let n = geoid.interpolation(&c, None);
+        let n = geoid.interpolation(&c, None).unwrap();
         assert!((n[0] - 58.83).abs() < 0.1);
 
-        let d = datum.interpolation(&c, None);
+        let d = datum.interpolation(&c, None).unwrap();
         assert!(c.default_ellps_dist(&d.to_arcsec().to_radians()) < 1.0);
 
         // Extrapolation
         let c = Coor4D::geo(100., 50., 0., 0.);
         // ...with output converted back to arcsec
-        let d = datum.interpolation(&c, None).to_arcsec();
+        let d = datum.interpolation(&c, None).unwrap().to_arcsec();
 
         // The grid is constructed to make the position in degrees equal to
         // the extrapolation value in arcsec.
@@ -347,7 +348,7 @@ mod tests {
         // Check that we're not extrapolating
         assert_eq!(datum.contains(c), true);
         // ...with output converted back to arcsec
-        let d = datum.interpolation(&c, None).to_arcsec();
+        let d = datum.interpolation(&c, None).unwrap().to_arcsec();
         // We can do slightly better for interpolation than for extrapolation,
         // but the grid values are f32, so we have only approx 7 significant
         // figures...
