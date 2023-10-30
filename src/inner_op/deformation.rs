@@ -133,13 +133,12 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         let cart = operands.get_coord(i);
         let geo = ellps.geographic(&cart);
         for grid in grids.iter() {
-            if grid.contains(geo) {
+            // Interpolated deformation velocity
+            if let Some(v) = grid.interpolation(&geo, None) {
                 // The deformation duration may be given either as a fixed duration or
                 // as the difference between the frame epoch and the observation epoch
                 let d = if dt.is_finite() { dt } else { epoch - geo[3] };
 
-                // Interpolated deformation velocity
-                let v = grid.interpolation(&geo, None);
                 let deformation = rotate_and_integrate_velocity(v.scale(-1.), geo[0], geo[1], d);
 
                 // Outside of the grid? - stomp on the input coordinate and go on to the next
@@ -193,13 +192,12 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         let cart = operands.get_coord(i);
         let geo = ellps.geographic(&cart);
         for grid in grids.iter().rev() {
-            if grid.contains(geo) {
+            // Interpolated deformation velocity
+            if let Some(v) = grid.interpolation(&geo, None) {
                 // The deformation duration may be given either as a fixed duration or
                 // as the difference between the frame epoch and the observation epoch
                 let d = if dt.is_finite() { dt } else { epoch - geo[3] };
 
-                // Interpolated deformation velocity
-                let v = grid.interpolation(&geo, None);
                 let deformation = rotate_and_integrate_velocity(v, geo[0], geo[1], d);
 
                 // Outside of the grid? - stomp on the input coordinate and go on to the next
@@ -341,7 +339,7 @@ mod tests {
         let grid = BaseGrid::gravsoft(&buf)?;
 
         // Velocity in the ENU space
-        let v = grid.interpolation(&cph, None);
+        let v = grid.interpolation(&cph, None).unwrap();
         // Which we rotate into the XYZ space and integrate for 1000 years
         let deformation = rotate_and_integrate_velocity(v, cph[0], cph[1], 1000.);
 
