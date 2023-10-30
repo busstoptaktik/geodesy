@@ -14,11 +14,9 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         let mut coord = operands.get_coord(i);
 
         for grid in grids.iter() {
-            // Pick the first grid that contains the point.
-            if grid.contains(coord) {
+            if let Some(d) = grid.interpolation(&coord, None) {
                 // Geoid
                 if grid.bands() == 1 {
-                    let d = grid.interpolation(&coord, None);
                     coord[2] -= d[0];
                     operands.set_coord(i, &coord);
                     successes += 1;
@@ -27,7 +25,6 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
                 }
 
                 // Datum shift
-                let d = grid.interpolation(&coord, None);
                 coord[0] += d[0];
                 coord[1] += d[1];
                 operands.set_coord(i, &coord);
@@ -62,11 +59,9 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         let mut coord = operands.get_coord(i);
 
         for grid in grids.iter().rev() {
-            // Pick the first grid that contains the point.
-            if grid.contains(coord) {
+            if let Some(t) = grid.interpolation(&coord, None) {
                 // Geoid
                 if grid.bands() == 1 {
-                    let t = grid.interpolation(&coord, None);
                     coord[2] += t[0];
                     operands.set_coord(i, &coord);
                     successes += 1;
@@ -75,10 +70,11 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
                 }
 
                 // Datum shift - here we need to iterate in the inverse case
-                let mut t = coord - grid.interpolation(&coord, None);
+                let mut t = coord - t;
 
                 for _ in 0..10 {
-                    let d = t - coord + grid.interpolation(&t, None);
+                    // NOTE: Is it safe to unwrap on subsequent interpolations?
+                    let d = t - coord + grid.interpolation(&t, None).unwrap();
                     t = t - d;
                     // i.e. d.dot(d).sqrt() < 1e-10
                     if d.dot(d) < 1e-20 {
