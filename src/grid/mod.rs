@@ -75,6 +75,10 @@ impl Grid for BaseGrid {
     // leads to a significantly larger code base, much harder to maintain and
     // comprehend.
     fn interpolation(&self, coord: &Coor4D, grid: Option<&[f32]>) -> Option<Coor4D> {
+        if !self.contains(*coord) {
+            return None;
+        };
+
         let grid = grid.unwrap_or(&self.grid);
 
         // The interpolation coordinate relative to the grid origin
