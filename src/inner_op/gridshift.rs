@@ -78,7 +78,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
                         t = t - d;
                         // i.e. d.dot(d).sqrt() < 1e-10
                         if d.dot(d) < 1e-20 {
-                            break;
+                            break 'iterate;
                         }
                         continue 'iterate;
                     }
