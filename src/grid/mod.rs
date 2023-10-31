@@ -5,10 +5,9 @@ use std::{fmt::Debug, io::BufRead};
 
 pub trait Grid: Debug {
     fn bands(&self) -> usize;
-    fn contains(&self, position: Coor4D) -> bool;
+    fn contains(&self, coord: &Coor4D) -> bool;
     ///  Returns `None` if the grid or any of it's sub-grids do not contain the point.
-    // NOTE: `grid` is included for backwards compatibility but could be removed?
-    fn interpolation(&self, coord: &Coor4D, grid: Option<&[f32]>) -> Option<Coor4D>;
+    fn interpolation(&self, coord: &Coor4D) -> Option<Coor4D>;
 }
 
 /// Grid characteristics and interpolation.
@@ -42,7 +41,7 @@ impl Grid for BaseGrid {
 
     /// Determine whether a given coordinate falls within the grid borders.
     /// "On the border" qualifies as within.
-    fn contains(&self, position: Coor4D) -> bool {
+    fn contains(&self, position: &Coor4D) -> bool {
         // We start by assuming that the last row (latitude) is the southernmost
         let mut min = self.lat_1;
         let mut max = self.lat_0;
@@ -74,12 +73,12 @@ impl Grid for BaseGrid {
     // It is, however, one of the cases where a more extensive use of abstractions
     // leads to a significantly larger code base, much harder to maintain and
     // comprehend.
-    fn interpolation(&self, coord: &Coor4D, grid: Option<&[f32]>) -> Option<Coor4D> {
-        if !self.contains(*coord) {
+    fn interpolation(&self, coord: &Coor4D) -> Option<Coor4D> {
+        if !self.contains(coord) {
             return None;
         };
 
-        let grid = grid.unwrap_or(&self.grid);
+        let grid = &self.grid;
 
         // The interpolation coordinate relative to the grid origin
         let rlon = coord[0] - self.lon_0;
@@ -326,18 +325,18 @@ mod tests {
         let geoid = BaseGrid::plain(&geoid_header, Some(&geoid_grid), None)?;
 
         let c = Coor4D::geo(58.75, 08.25, 0., 0.);
-        assert_eq!(geoid.contains(c), false);
+        assert_eq!(geoid.contains(&c), false);
 
-        let n = geoid.interpolation(&c, None).unwrap();
+        let n = geoid.interpolation(&c).unwrap();
         assert!((n[0] - 58.83).abs() < 0.1);
 
-        let d = datum.interpolation(&c, None).unwrap();
+        let d = datum.interpolation(&c).unwrap();
         assert!(c.default_ellps_dist(&d.to_arcsec().to_radians()) < 1.0);
 
         // Extrapolation
         let c = Coor4D::geo(100., 50., 0., 0.);
         // ...with output converted back to arcsec
-        let d = datum.interpolation(&c, None).unwrap().to_arcsec();
+        let d = datum.interpolation(&c).unwrap().to_arcsec();
 
         // The grid is constructed to make the position in degrees equal to
         // the extrapolation value in arcsec.
@@ -350,9 +349,9 @@ mod tests {
         // Interpolation
         let c = Coor4D::geo(55.06, 12.03, 0., 0.);
         // Check that we're not extrapolating
-        assert_eq!(datum.contains(c), true);
+        assert_eq!(datum.contains(&c), true);
         // ...with output converted back to arcsec
-        let d = datum.interpolation(&c, None).unwrap().to_arcsec();
+        let d = datum.interpolation(&c).unwrap().to_arcsec();
         // We can do slightly better for interpolation than for extrapolation,
         // but the grid values are f32, so we have only approx 7 significant
         // figures...
