@@ -72,14 +72,25 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
                 // Datum shift - here we need to iterate in the inverse case
                 let mut t = coord - t;
 
-                for _ in 0..10 {
-                    // NOTE: Is it safe to unwrap on subsequent interpolations?
-                    let d = t - coord + grid.interpolation(&t).unwrap();
-                    t = t - d;
-                    // i.e. d.dot(d).sqrt() < 1e-10
-                    if d.dot(d) < 1e-20 {
-                        break;
+                'iterate: for _ in 0..10 {
+                    if let Some(t2) = grid.interpolation(&t) {
+                        let d = t - coord + t2;
+                        t = t - d;
+                        // i.e. d.dot(d).sqrt() < 1e-10
+                        if d.dot(d) < 1e-20 {
+                            break;
+                        }
+                        continue 'iterate;
                     }
+
+                    if use_null_grid {
+                        successes += 1;
+                        break 'iterate;
+                    }
+
+                    // The iteration has wondered off the grid so we stomp on the coordinate
+                    t = Coor4D::nan();
+                    break 'iterate;
                 }
 
                 operands.set_coord(i, &t);
