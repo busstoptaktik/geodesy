@@ -14,7 +14,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         let mut coord = operands.get_coord(i);
 
         for grid in grids.iter() {
-            if let Some(d) = grid.interpolation(&coord, None) {
+            if let Some(d) = grid.interpolation(&coord) {
                 // Geoid
                 if grid.bands() == 1 {
                     coord[2] -= d[0];
@@ -59,7 +59,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         let mut coord = operands.get_coord(i);
 
         for grid in grids.iter().rev() {
-            if let Some(t) = grid.interpolation(&coord, None) {
+            if let Some(t) = grid.interpolation(&coord) {
                 // Geoid
                 if grid.bands() == 1 {
                     coord[2] += t[0];
@@ -74,7 +74,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
 
                 for _ in 0..10 {
                     // NOTE: Is it safe to unwrap on subsequent interpolations?
-                    let d = t - coord + grid.interpolation(&t, None).unwrap();
+                    let d = t - coord + grid.interpolation(&t).unwrap();
                     t = t - d;
                     // i.e. d.dot(d).sqrt() < 1e-10
                     if d.dot(d) < 1e-20 {
@@ -105,7 +105,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
 #[rustfmt::skip]
 pub const GAMUT: [OpParameter; 3] = [
     OpParameter::Flag { key: "inv" },
-    OpParameter::Text { key: "grids", default: None },
+    OpParameter::Texts { key: "grids", default: None },
     OpParameter::Real { key: "padding", default: Some(0.5) },
 ];
 
@@ -113,8 +113,7 @@ pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
     let def = &parameters.definition;
     let mut params = ParsedParameters::new(parameters, &GAMUT)?;
 
-    let grid_file_name = params.text("grids")?;
-    for grid_name in grid_file_name.split(',') {
+    for grid_name in params.texts("grids")?.clone() {
         if grid_name.ends_with("@null") {
             params.boolean.insert("null_grid");
             continue;
@@ -122,7 +121,7 @@ pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
 
         // TODO: Handle @optional grids
 
-        let grid = ctx.get_grid(grid_name)?;
+        let grid = ctx.get_grid(&grid_name)?;
         params.grids.push(grid);
     }
 

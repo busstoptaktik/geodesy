@@ -90,6 +90,12 @@ impl ParsedParameters {
         }
         Err(Error::MissingParam(key.to_string()))
     }
+    pub fn texts(&self, key: &str) -> Result<&Vec<String>, Error> {
+        if let Some(value) = self.texts.get(key) {
+            return Ok(value);
+        }
+        Err(Error::MissingParam(key.to_string()))
+    }
     pub fn uuid(&self, key: &str) -> Result<uuid::Uuid, Error> {
         if let Some(value) = self.uuid.get(key) {
             return Ok(*value);
