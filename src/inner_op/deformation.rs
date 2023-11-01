@@ -118,7 +118,7 @@ use crate::authoring::*;
 // ----- F O R W A R D --------------------------------------------------------------
 
 fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
-    let grid = &op.params.grids["grid"];
+    let grids = &op.params.grids;
     let mut successes = 0_usize;
     let n = operands.len();
 
@@ -126,36 +126,53 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let epoch = op.params.real("t_epoch").unwrap();
     let ellps = op.params.ellps(0);
     let raw = op.params.boolean("raw");
+    let use_null_grid = op.params.boolean("null_grid");
 
     // Datum shift
-    for i in 0..n {
+    'points: for i in 0..n {
         let cart = operands.get_coord(i);
         let geo = ellps.geographic(&cart);
+        for within in [0.0, 0.5] {
+            for grid in grids.iter() {
+                // Interpolated deformation velocity
+                if let Some(v) = grid.interpolation(&geo, within) {
+                    // The deformation duration may be given either as a fixed duration or
+                    // as the difference between the frame epoch and the observation epoch
+                    let d = if dt.is_finite() { dt } else { epoch - geo[3] };
 
-        // The deformation duration may be given either as a fixed duration or
-        // as the difference between the frame epoch and the observation epoch
-        let d = if dt.is_finite() { dt } else { epoch - geo[3] };
+                    let deformation =
+                        rotate_and_integrate_velocity(v.scale(-1.), geo[0], geo[1], d);
 
-        // Interpolated deformation velocity
-        let v = grid.interpolation(&geo, None);
-        let deformation = rotate_and_integrate_velocity(v.scale(-1.), geo[0], geo[1], d);
+                    // Outside of the grid? - stomp on the input coordinate and go on to the next
+                    if v[0].is_nan() {
+                        operands.set_coord(i, &Coor4D::nan());
+                        continue 'points;
+                    }
 
-        // Outside of the grid? - stomp on the input coordinate and go on to the next
-        if v[0].is_nan() {
-            operands.set_coord(i, &Coor4D::nan());
+                    // Finally apply the deformation to the input coordinate - or just
+                    // provide the raw correction if that was what was requested
+                    if raw {
+                        let mut deformation_with_length = deformation;
+                        deformation_with_length[3] = deformation.dot(deformation).sqrt();
+                        operands.set_coord(i, &deformation_with_length);
+                    } else {
+                        operands.set_coord(i, &(cart + deformation));
+                    }
+                    successes += 1;
+
+                    // We've found the grid that contains the point, so we can move on
+                    continue 'points;
+                }
+            }
+        }
+
+        if use_null_grid {
+            successes += 1;
             continue;
         }
 
-        // Finally apply the deformation to the input coordinate - or just
-        // provide the raw correction if that was what was requested
-        if raw {
-            let mut deformation_with_length = deformation;
-            deformation_with_length[3] = deformation.dot(deformation).sqrt();
-            operands.set_coord(i, &deformation_with_length);
-        } else {
-            operands.set_coord(i, &(cart + deformation));
-        }
-        successes += 1;
+        // No grid found so we stomp on the coordinate
+        operands.set_coord(i, &Coor4D::nan());
     }
     successes
 }
@@ -163,7 +180,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
 // ----- I N V E R S E --------------------------------------------------------------
 
 fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
-    let grid = &op.params.grids["grid"];
+    let grids = &op.params.grids;
     let mut successes = 0_usize;
     let n = operands.len();
 
@@ -171,36 +188,52 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let epoch = op.params.real("t_epoch").unwrap();
     let ellps = op.params.ellps(0);
     let raw = op.params.boolean("raw");
+    let use_null_grid = op.params.boolean("null_grid");
 
     // Datum shift
-    for i in 0..n {
+    'points: for i in 0..n {
         let cart = operands.get_coord(i);
         let geo = ellps.geographic(&cart);
+        for within in [0.0, 0.5] {
+            for grid in grids.iter().rev() {
+                // Interpolated deformation velocity
+                if let Some(v) = grid.interpolation(&geo, within) {
+                    // The deformation duration may be given either as a fixed duration or
+                    // as the difference between the frame epoch and the observation epoch
+                    let d = if dt.is_finite() { dt } else { epoch - geo[3] };
 
-        // The deformation duration may be given either as a fixed duration or
-        // as the difference between the frame epoch and the observation epoch
-        let d = if dt.is_finite() { dt } else { epoch - geo[3] };
+                    let deformation = rotate_and_integrate_velocity(v, geo[0], geo[1], d);
 
-        // Interpolated deformation velocity
-        let v = grid.interpolation(&geo, None);
-        let deformation = rotate_and_integrate_velocity(v, geo[0], geo[1], d);
+                    // Outside of the grid? - stomp on the input coordinate and go on to the next
+                    if v[0].is_nan() {
+                        operands.set_coord(i, &Coor4D::nan());
+                        continue 'points;
+                    }
 
-        // Outside of the grid? - stomp on the input coordinate and go on to the next
-        if v[0].is_nan() {
-            operands.set_coord(i, &Coor4D::nan());
+                    // Finally apply the deformation to the input coordinate - or just
+                    // provide the raw correction if that was what was requested
+                    if raw {
+                        let mut deformation_with_length = deformation;
+                        deformation_with_length[3] = deformation.dot(deformation).sqrt();
+                        operands.set_coord(i, &deformation_with_length);
+                    } else {
+                        operands.set_coord(i, &(cart + deformation));
+                    }
+                    successes += 1;
+
+                    // We've found the grid that contains the point, so we can move on
+                    continue 'points;
+                }
+            }
+        }
+
+        if use_null_grid {
+            successes += 1;
             continue;
         }
 
-        // Finally apply the deformation to the input coordinate - or just
-        // provide the raw correction if that was what was requested
-        if raw {
-            let mut deformation_with_length = deformation;
-            deformation_with_length[3] = deformation.dot(deformation).sqrt();
-            operands.set_coord(i, &deformation_with_length);
-        } else {
-            operands.set_coord(i, &(cart + deformation));
-        }
-        successes += 1;
+        // No grid found so we stomp on the coordinate
+        operands.set_coord(i, &Coor4D::nan());
     }
     successes
 }
@@ -212,7 +245,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
 pub const GAMUT: [OpParameter; 7] = [
     OpParameter::Flag { key: "inv" },
     OpParameter::Flag { key: "raw" },
-    OpParameter::Text { key: "grids",   default: None },
+    OpParameter::Texts { key: "grids",   default: None },
     OpParameter::Real { key: "padding", default: Some(0.5) },
     OpParameter::Real { key: "dt",      default: Some(f64::NAN) },
     OpParameter::Real { key: "t_epoch", default: Some(f64::NAN) },
@@ -229,19 +262,25 @@ pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
         ));
     }
 
-    let grid_file_name = params.text("grids")?;
-    let buf = ctx.get_blob(&grid_file_name)?;
+    for grid_name in params.texts("grids")?.clone() {
+        if grid_name.ends_with("@null") {
+            params.boolean.insert("null_grid");
+            continue;
+        }
 
-    let grid = Grid::gravsoft(&buf)?;
-    let n = grid.bands;
-    if n != 3 {
-        return Err(Error::Unexpected {
-            message: "Bad dimensionality of deformation model grid".to_string(),
-            expected: "3".to_string(),
-            found: n.to_string(),
-        });
+        // TODO: Handle @optional grids
+
+        let grid = ctx.get_grid(&grid_name)?;
+        let n = grid.bands();
+        if n != 3 {
+            return Err(Error::Unexpected {
+                message: "Bad dimensionality of deformation model grid".to_string(),
+                expected: "3".to_string(),
+                found: n.to_string(),
+            });
+        }
+        params.grids.push(grid);
     }
-    params.grids.insert("grid", grid);
 
     let fwd = InnerOp(fwd);
     let inv = InnerOp(inv);
@@ -293,7 +332,7 @@ mod tests {
     #[test]
     fn deformation() -> Result<(), Error> {
         // Context and data
-        let mut ctx = Minimal::default();
+        let mut ctx = Plain::default();
         let cph = Coor4D::geo(55., 12., 0., 0.);
         let test_deformation = include_str!("../../geodesy/deformation/test.deformation");
 
@@ -301,10 +340,10 @@ mod tests {
         ctx.register_resource("test.deformation", test_deformation);
 
         let buf = ctx.get_blob("test.deformation")?;
-        let grid = Grid::gravsoft(&buf)?;
+        let grid = BaseGrid::gravsoft(&buf)?;
 
         // Velocity in the ENU space
-        let v = grid.interpolation(&cph, None);
+        let v = grid.interpolation(&cph, 0.0).unwrap();
         // Which we rotate into the XYZ space and integrate for 1000 years
         let deformation = rotate_and_integrate_velocity(v, cph[0], cph[1], 1000.);
 

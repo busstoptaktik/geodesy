@@ -1,6 +1,7 @@
 use geodesy::authoring::*;
 use std::collections::BTreeMap;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 // ----- U S E R   P R O V I D E D   C O N T E X T ----------------------------------
 
@@ -118,12 +119,12 @@ impl Context for Maximal {
         let path: PathBuf = [".", "geodesy", ext, name].iter().collect();
         Ok(std::fs::read(path)?)
     }
-
     /// Access grid resources by identifier
-    fn get_grid(&self, _name: &str) -> Result<Grid, Error> {
-        Err(Error::General(
-            "Grid access by identifier not supported by the Maximal context provider",
-        ))
+    fn get_grid(&self, name: &str) -> Result<Arc<dyn Grid>, Error> {
+        let buf = self.get_blob(name)?;
+        let grid = BaseGrid::gravsoft(&buf)?;
+
+        Ok(Arc::new(grid))
     }
 }
 

@@ -4,6 +4,7 @@
 use crate::math::angular;
 use crate::math::FourierCoefficients;
 use std::collections::BTreeSet;
+use std::sync::Arc;
 
 use super::*;
 
@@ -42,13 +43,16 @@ pub struct ParsedParameters {
     pub integer: BTreeMap<&'static str, i64>,
     pub real: BTreeMap<&'static str, f64>,
     pub series: BTreeMap<&'static str, Vec<f64>>,
-    pub grids: BTreeMap<&'static str, Grid>,
     pub text: BTreeMap<&'static str, String>,
     pub texts: BTreeMap<&'static str, Vec<String>>,
     pub uuid: BTreeMap<&'static str, uuid::Uuid>,
     pub fourier_coefficients: BTreeMap<&'static str, FourierCoefficients>,
     pub ignored: Vec<String>,
     pub given: BTreeMap<String, String>,
+
+    // Pointers to the grids required by the operator
+    // They should be inserted in the order they appear in the definition
+    pub grids: Vec<Arc<dyn Grid>>,
 }
 
 // Accessors
@@ -83,6 +87,12 @@ impl ParsedParameters {
     pub fn text(&self, key: &str) -> Result<String, Error> {
         if let Some(value) = self.text.get(key) {
             return Ok(value.to_string());
+        }
+        Err(Error::MissingParam(key.to_string()))
+    }
+    pub fn texts(&self, key: &str) -> Result<&Vec<String>, Error> {
+        if let Some(value) = self.texts.get(key) {
+            return Ok(value);
         }
         Err(Error::MissingParam(key.to_string()))
     }
@@ -146,7 +156,7 @@ impl ParsedParameters {
         let mut series = BTreeMap::<&'static str, Vec<f64>>::new();
         let mut text = BTreeMap::<&'static str, String>::new();
         let mut texts = BTreeMap::<&'static str, Vec<String>>::new();
-        let grids = BTreeMap::<&'static str, Grid>::new();
+        let grids = Vec::new();
         #[allow(unused_mut)]
         let mut uuid = BTreeMap::<&'static str, uuid::Uuid>::new();
         let fourier_coefficients = BTreeMap::<&'static str, FourierCoefficients>::new();

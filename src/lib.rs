@@ -50,6 +50,7 @@ pub mod prelude {
 pub mod authoring {
     pub use crate::prelude::*;
 
+    pub use crate::grid::BaseGrid;
     pub use crate::math::*;
     pub use crate::Grid;
     pub use crate::InnerOp;

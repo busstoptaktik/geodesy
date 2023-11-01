@@ -1,17 +1,24 @@
 //! Grid characteristics and interpolation.
 
 use crate::prelude::*;
-use std::io::BufRead;
+use std::{fmt::Debug, io::BufRead};
+
+pub trait Grid: Debug {
+    fn bands(&self) -> usize;
+    fn contains(&self, coord: &Coor4D, within: f64) -> bool;
+    ///  Returns `None` if the grid or any of it's sub-grids do not contain the point.
+    fn interpolation(&self, coord: &Coor4D, within: f64) -> Option<Coor4D>;
+}
 
 /// Grid characteristics and interpolation.
 ///
-/// The actual grid may be part of the `Grid` struct, or
+/// The actual grid may be part of the `BaseGrid` struct, or
 /// provided externally (presumably by a [Context](crate::Context)).
 ///
 /// In principle grid format agnostic, but includes a parser for
 /// geodetic grids in the Gravsoft format.
 #[derive(Debug, Default, Clone)]
-pub struct Grid {
+pub struct BaseGrid {
     lat_0: f64, // Latitude of the first (typically northernmost) row of the grid
     lat_1: f64, // Latitude of the last (typically southernmost) row of the grid
     lon_0: f64, // Longitude of the first (typically westernmost) column of each row
@@ -27,63 +34,25 @@ pub struct Grid {
     grid: Vec<f32>, // May be zero sized in cases where the Context provides access to an externally stored grid
 }
 
-impl Grid {
-    pub fn plain(
-        header: &[f64],
-        grid: Option<&[f32]>,
-        offset: Option<usize>,
-    ) -> Result<Self, Error> {
-        if header.len() < 7 {
-            return Err(Error::General("Incomplete grid"));
-        }
-
-        let lat_0 = header[1];
-        let lat_1 = header[0];
-        let lon_0 = header[2];
-        let lon_1 = header[3];
-        let dlat = -header[4];
-        let dlon = header[5];
-        let bands = header[6] as usize;
-        let rows = ((lat_1 - lat_0) / dlat + 1.5).floor() as usize;
-        let cols = ((lon_1 - lon_0) / dlon + 1.5).floor() as usize;
-        let elements = rows * cols * bands;
-
-        let offset = offset.unwrap_or(0);
-        let last_valid_record_start = offset + (rows * cols - 1) * bands;
-
-        let grid = Vec::from(grid.unwrap_or(&[]));
-
-        if elements == 0 || (offset == 0 && elements > grid.len()) || bands < 1 {
-            return Err(Error::General("Malformed grid"));
-        }
-
-        Ok(Grid {
-            lat_0,
-            lat_1,
-            lon_0,
-            lon_1,
-            dlat,
-            dlon,
-            rows,
-            cols,
-            bands,
-            offset,
-            last_valid_record_start,
-            grid,
-        })
+impl Grid for BaseGrid {
+    fn bands(&self) -> usize {
+        self.bands
     }
 
     /// Determine whether a given coordinate falls within the grid borders.
     /// "On the border" qualifies as within.
-    pub fn contains(&self, position: Coor4D) -> bool {
+    fn contains(&self, position: &Coor4D, within: f64) -> bool {
         // We start by assuming that the last row (latitude) is the southernmost
         let mut min = self.lat_1;
         let mut max = self.lat_0;
+
         // If it's not, we swap
         if self.dlat > 0. {
             (min, max) = (max, min)
         }
-        if position[1] != position[1].clamp(min, max) {
+
+        let grace = within * self.dlat.abs();
+        if position[1] != position[1].clamp(min - grace, max + grace) {
             return false;
         }
 
@@ -94,7 +63,9 @@ impl Grid {
         if self.dlon < 0. {
             (min, max) = (max, min)
         }
-        if position[0] != position[0].clamp(min, max) {
+
+        let grace = within * self.dlon.abs();
+        if position[0] != position[0].clamp(min - grace, max + grace) {
             return false;
         }
 
@@ -102,18 +73,17 @@ impl Grid {
         true
     }
 
-    pub fn gravsoft(buf: &[u8]) -> Result<Self, Error> {
-        let (header, grid) = gravsoft_grid_reader(buf)?;
-        Grid::plain(&header, Some(&grid), None)
-    }
-
     // Since we store the entire grid in a single vector, the interpolation
     // routine here looks strongly like a case of "writing Fortran 77 in Rust".
     // It is, however, one of the cases where a more extensive use of abstractions
     // leads to a significantly larger code base, much harder to maintain and
     // comprehend.
-    pub fn interpolation(&self, coord: &Coor4D, grid: Option<&[f32]>) -> Coor4D {
-        let grid = grid.unwrap_or(&self.grid);
+    fn interpolation(&self, coord: &Coor4D, within: f64) -> Option<Coor4D> {
+        if !self.contains(coord, within) {
+            return None;
+        };
+
+        let grid = &self.grid;
 
         // The interpolation coordinate relative to the grid origin
         let rlon = coord[0] - self.lon_0;
@@ -156,7 +126,59 @@ impl Grid {
         for i in 0..self.bands {
             result[i] = (1. - rlon) * left[i] + rlon * right[i];
         }
-        result
+        Some(result)
+    }
+}
+
+impl BaseGrid {
+    pub fn plain(
+        header: &[f64],
+        grid: Option<&[f32]>,
+        offset: Option<usize>,
+    ) -> Result<Self, Error> {
+        if header.len() < 7 {
+            return Err(Error::General("Incomplete grid"));
+        }
+
+        let lat_0 = header[1];
+        let lat_1 = header[0];
+        let lon_0 = header[2];
+        let lon_1 = header[3];
+        let dlat = -header[4];
+        let dlon = header[5];
+        let bands = header[6] as usize;
+        let rows = ((lat_1 - lat_0) / dlat + 1.5).floor() as usize;
+        let cols = ((lon_1 - lon_0) / dlon + 1.5).floor() as usize;
+        let elements = rows * cols * bands;
+
+        let offset = offset.unwrap_or(0);
+        let last_valid_record_start = offset + (rows * cols - 1) * bands;
+
+        let grid = Vec::from(grid.unwrap_or(&[]));
+
+        if elements == 0 || (offset == 0 && elements > grid.len()) || bands < 1 {
+            return Err(Error::General("Malformed grid"));
+        }
+
+        Ok(BaseGrid {
+            lat_0,
+            lat_1,
+            lon_0,
+            lon_1,
+            dlat,
+            dlon,
+            rows,
+            cols,
+            bands,
+            offset,
+            last_valid_record_start,
+            grid,
+        })
+    }
+
+    pub fn gravsoft(buf: &[u8]) -> Result<Self, Error> {
+        let (header, grid) = gravsoft_grid_reader(buf)?;
+        BaseGrid::plain(&header, Some(&grid), None)
     }
 }
 
@@ -176,7 +198,7 @@ fn normalize_gravsoft_grid_values(header: &mut [f64], grid: &mut [f32]) {
     }
 
     // If we're handling a geoid grid, we're done: Grid values are in meters
-    let h = Grid::plain(header, Some(grid), None).unwrap_or_default();
+    let h = BaseGrid::plain(header, Some(grid), None).unwrap_or_default();
     if h.bands == 1 {
         return;
     }
@@ -298,28 +320,29 @@ mod tests {
         datum_header.push(2_f64); // 2 bands
         let mut datum_grid = Vec::from(DATUM);
         normalize_gravsoft_grid_values(&mut datum_header, &mut datum_grid);
-        let datum = Grid::plain(&datum_header, Some(&datum_grid), None)?;
+        let datum = BaseGrid::plain(&datum_header, Some(&datum_grid), None)?;
 
         // Create a geoid grid (1 band)
         let mut geoid_header = Vec::from(HEADER);
         geoid_header.push(1_f64); // 1 band
         let mut geoid_grid = Vec::from(GEOID);
         normalize_gravsoft_grid_values(&mut geoid_header, &mut geoid_grid);
-        let geoid = Grid::plain(&geoid_header, Some(&geoid_grid), None)?;
+        let geoid = BaseGrid::plain(&geoid_header, Some(&geoid_grid), None)?;
 
         let c = Coor4D::geo(58.75, 08.25, 0., 0.);
-        assert_eq!(geoid.contains(c), false);
+        assert_eq!(geoid.contains(&c, 0.0), false);
+        assert_eq!(geoid.contains(&c, 1.0), true);
 
-        let n = geoid.interpolation(&c, None);
+        let n = geoid.interpolation(&c, 1.0).unwrap();
         assert!((n[0] - 58.83).abs() < 0.1);
 
-        let d = datum.interpolation(&c, None);
+        let d = datum.interpolation(&c, 1.0).unwrap();
         assert!(c.default_ellps_dist(&d.to_arcsec().to_radians()) < 1.0);
 
         // Extrapolation
         let c = Coor4D::geo(100., 50., 0., 0.);
         // ...with output converted back to arcsec
-        let d = datum.interpolation(&c, None).to_arcsec();
+        let d = datum.interpolation(&c, 100.0).unwrap().to_arcsec();
 
         // The grid is constructed to make the position in degrees equal to
         // the extrapolation value in arcsec.
@@ -332,9 +355,9 @@ mod tests {
         // Interpolation
         let c = Coor4D::geo(55.06, 12.03, 0., 0.);
         // Check that we're not extrapolating
-        assert_eq!(datum.contains(c), true);
+        assert_eq!(datum.contains(&c, 0.0), true);
         // ...with output converted back to arcsec
-        let d = datum.interpolation(&c, None).to_arcsec();
+        let d = datum.interpolation(&c, 0.0).unwrap().to_arcsec();
         // We can do slightly better for interpolation than for extrapolation,
         // but the grid values are f32, so we have only approx 7 significant
         // figures...

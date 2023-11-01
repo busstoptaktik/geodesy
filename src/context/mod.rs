@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::authoring::*;
 pub mod minimal;
 pub use minimal::Minimal;
@@ -52,7 +54,7 @@ pub trait Context {
     fn get_blob(&self, name: &str) -> Result<Vec<u8>, Error>;
 
     /// Access grid resources by identifier
-    fn get_grid(&self, name: &str) -> Result<Grid, Error>;
+    fn get_grid(&self, name: &str) -> Result<Arc<dyn Grid>, Error>;
 }
 
 /// Help context providers provide canonically named, built in coordinate adaptors
