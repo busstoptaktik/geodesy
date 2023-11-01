@@ -131,10 +131,16 @@ pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
     for grid_name in params.texts("grids")?.clone() {
         if grid_name.ends_with("@null") {
             params.boolean.insert("null_grid");
-            continue;
+            // @null can only be used as the final grid
+            break;
         }
 
-        // TODO: Handle @optional grids
+        if grid_name.contains("@") {
+            if let Ok(grid) = ctx.get_grid(&grid_name) {
+                params.grids.push(grid);
+            }
+            continue;
+        }
 
         let grid = ctx.get_grid(&grid_name)?;
         params.grids.push(grid);
@@ -234,6 +240,34 @@ mod tests {
         assert_eq!(successes, 1);
         assert!((data[0][0] - ldn[0]).abs() < 1e-10);
         assert!((data[0][1] - ldn[1]).abs() < 1e-10);
+
+        Ok(())
+    }
+
+    #[test]
+    fn optional_grid() -> Result<(), Error> {
+        let mut ctx = Plain::default();
+        let op = ctx.op("gridshift grids=@optional.gsb,../../geodesy/datum/test.datum")?;
+        let cph = Coor4D::geo(55., 12., 0., 0.);
+        let mut data = [cph];
+
+        ctx.apply(op, Fwd, &mut data)?;
+        let res = data[0].to_geo();
+        assert!((res[0] - 55.015278).abs() < 1e-6);
+        assert!((res[1] - 12.003333).abs() < 1e-6);
+
+        ctx.apply(op, Inv, &mut data)?;
+        assert!((data[0][0] - cph[0]).abs() < 1e-10);
+        assert!((data[0][1] - cph[1]).abs() < 1e-10);
+
+        Ok(())
+    }
+
+    #[test]
+    fn missing_grid() -> Result<(), Error> {
+        let mut ctx = Plain::default();
+        let op = ctx.op("gridshift grids=missing.gsb");
+        assert!(op.is_err());
 
         Ok(())
     }
