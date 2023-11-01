@@ -5,8 +5,13 @@ use std::{fmt::Debug, io::BufRead};
 
 pub trait Grid: Debug {
     fn bands(&self) -> usize;
+    /// Returns true if `coord` is contained by `self` or lies within a margin of
+    /// `within` grid cell units. Typically `within` should be on the order of 1
     fn contains(&self, coord: &Coor4D, within: f64) -> bool;
-    ///  Returns `None` if the grid or any of it's sub-grids do not contain the point.
+    /// Returns `None` if the grid or any of its sub-grids do not contain the point.
+    /// **Contain** is in the sense of the `contains` method, i.e. the point is
+    /// considered contained if it is inside a margin of `within` grid units of
+    /// the grid.
     fn interpolation(&self, coord: &Coor4D, within: f64) -> Option<Coor4D>;
 }
 
