@@ -132,34 +132,37 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     'points: for i in 0..n {
         let cart = operands.get_coord(i);
         let geo = ellps.geographic(&cart);
-        for grid in grids.iter() {
-            // Interpolated deformation velocity
-            if let Some(v) = grid.interpolation(&geo) {
-                // The deformation duration may be given either as a fixed duration or
-                // as the difference between the frame epoch and the observation epoch
-                let d = if dt.is_finite() { dt } else { epoch - geo[3] };
+        for within in [0.0, 0.5] {
+            for grid in grids.iter() {
+                // Interpolated deformation velocity
+                if let Some(v) = grid.interpolation(&geo, within) {
+                    // The deformation duration may be given either as a fixed duration or
+                    // as the difference between the frame epoch and the observation epoch
+                    let d = if dt.is_finite() { dt } else { epoch - geo[3] };
 
-                let deformation = rotate_and_integrate_velocity(v.scale(-1.), geo[0], geo[1], d);
+                    let deformation =
+                        rotate_and_integrate_velocity(v.scale(-1.), geo[0], geo[1], d);
 
-                // Outside of the grid? - stomp on the input coordinate and go on to the next
-                if v[0].is_nan() {
-                    operands.set_coord(i, &Coor4D::nan());
+                    // Outside of the grid? - stomp on the input coordinate and go on to the next
+                    if v[0].is_nan() {
+                        operands.set_coord(i, &Coor4D::nan());
+                        continue 'points;
+                    }
+
+                    // Finally apply the deformation to the input coordinate - or just
+                    // provide the raw correction if that was what was requested
+                    if raw {
+                        let mut deformation_with_length = deformation;
+                        deformation_with_length[3] = deformation.dot(deformation).sqrt();
+                        operands.set_coord(i, &deformation_with_length);
+                    } else {
+                        operands.set_coord(i, &(cart + deformation));
+                    }
+                    successes += 1;
+
+                    // We've found the grid that contains the point, so we can move on
                     continue 'points;
                 }
-
-                // Finally apply the deformation to the input coordinate - or just
-                // provide the raw correction if that was what was requested
-                if raw {
-                    let mut deformation_with_length = deformation;
-                    deformation_with_length[3] = deformation.dot(deformation).sqrt();
-                    operands.set_coord(i, &deformation_with_length);
-                } else {
-                    operands.set_coord(i, &(cart + deformation));
-                }
-                successes += 1;
-
-                // We've found the grid that contains the point, so we can move on
-                continue 'points;
             }
         }
 
@@ -191,34 +194,36 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     'points: for i in 0..n {
         let cart = operands.get_coord(i);
         let geo = ellps.geographic(&cart);
-        for grid in grids.iter().rev() {
-            // Interpolated deformation velocity
-            if let Some(v) = grid.interpolation(&geo) {
-                // The deformation duration may be given either as a fixed duration or
-                // as the difference between the frame epoch and the observation epoch
-                let d = if dt.is_finite() { dt } else { epoch - geo[3] };
+        for within in [0.0, 0.5] {
+            for grid in grids.iter().rev() {
+                // Interpolated deformation velocity
+                if let Some(v) = grid.interpolation(&geo, within) {
+                    // The deformation duration may be given either as a fixed duration or
+                    // as the difference between the frame epoch and the observation epoch
+                    let d = if dt.is_finite() { dt } else { epoch - geo[3] };
 
-                let deformation = rotate_and_integrate_velocity(v, geo[0], geo[1], d);
+                    let deformation = rotate_and_integrate_velocity(v, geo[0], geo[1], d);
 
-                // Outside of the grid? - stomp on the input coordinate and go on to the next
-                if v[0].is_nan() {
-                    operands.set_coord(i, &Coor4D::nan());
+                    // Outside of the grid? - stomp on the input coordinate and go on to the next
+                    if v[0].is_nan() {
+                        operands.set_coord(i, &Coor4D::nan());
+                        continue 'points;
+                    }
+
+                    // Finally apply the deformation to the input coordinate - or just
+                    // provide the raw correction if that was what was requested
+                    if raw {
+                        let mut deformation_with_length = deformation;
+                        deformation_with_length[3] = deformation.dot(deformation).sqrt();
+                        operands.set_coord(i, &deformation_with_length);
+                    } else {
+                        operands.set_coord(i, &(cart + deformation));
+                    }
+                    successes += 1;
+
+                    // We've found the grid that contains the point, so we can move on
                     continue 'points;
                 }
-
-                // Finally apply the deformation to the input coordinate - or just
-                // provide the raw correction if that was what was requested
-                if raw {
-                    let mut deformation_with_length = deformation;
-                    deformation_with_length[3] = deformation.dot(deformation).sqrt();
-                    operands.set_coord(i, &deformation_with_length);
-                } else {
-                    operands.set_coord(i, &(cart + deformation));
-                }
-                successes += 1;
-
-                // We've found the grid that contains the point, so we can move on
-                continue 'points;
             }
         }
 
@@ -338,7 +343,7 @@ mod tests {
         let grid = BaseGrid::gravsoft(&buf)?;
 
         // Velocity in the ENU space
-        let v = grid.interpolation(&cph).unwrap();
+        let v = grid.interpolation(&cph, 0.0).unwrap();
         // Which we rotate into the XYZ space and integrate for 1000 years
         let deformation = rotate_and_integrate_velocity(v, cph[0], cph[1], 1000.);
 
