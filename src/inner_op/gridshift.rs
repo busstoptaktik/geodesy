@@ -13,24 +13,26 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     'points: for i in 0..n {
         let mut coord = operands.get_coord(i);
 
-        for grid in grids.iter() {
-            if let Some(d) = grid.interpolation(&coord) {
-                // Geoid
-                if grid.bands() == 1 {
-                    coord[2] -= d[0];
+        for within in [0.0, 0.5] {
+            for grid in grids.iter() {
+                if let Some(d) = grid.interpolation(&coord, within) {
+                    // Geoid
+                    if grid.bands() == 1 {
+                        coord[2] -= d[0];
+                        operands.set_coord(i, &coord);
+                        successes += 1;
+
+                        continue 'points;
+                    }
+
+                    // Datum shift
+                    coord[0] += d[0];
+                    coord[1] += d[1];
                     operands.set_coord(i, &coord);
                     successes += 1;
 
                     continue 'points;
                 }
-
-                // Datum shift
-                coord[0] += d[0];
-                coord[1] += d[1];
-                operands.set_coord(i, &coord);
-                successes += 1;
-
-                continue 'points;
             }
         }
 
@@ -58,45 +60,47 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     'points: for i in 0..n {
         let mut coord = operands.get_coord(i);
 
-        for grid in grids.iter().rev() {
-            if let Some(t) = grid.interpolation(&coord) {
-                // Geoid
-                if grid.bands() == 1 {
-                    coord[2] += t[0];
-                    operands.set_coord(i, &coord);
+        for within in [0.0, 0.5] {
+            for grid in grids.iter().rev() {
+                if let Some(t) = grid.interpolation(&coord, within) {
+                    // Geoid
+                    if grid.bands() == 1 {
+                        coord[2] += t[0];
+                        operands.set_coord(i, &coord);
+                        successes += 1;
+
+                        continue 'points;
+                    }
+
+                    // Datum shift - here we need to iterate in the inverse case
+                    let mut t = coord - t;
+
+                    'iterate: for _ in 0..10 {
+                        if let Some(t2) = grid.interpolation(&t, within) {
+                            let d = t - coord + t2;
+                            t = t - d;
+                            // i.e. d.dot(d).sqrt() < 1e-10
+                            if d.dot(d) < 1e-20 {
+                                break 'iterate;
+                            }
+                            continue 'iterate;
+                        }
+
+                        if use_null_grid {
+                            successes += 1;
+                            break 'iterate;
+                        }
+
+                        // The iteration has wondered off the grid so we stomp on the coordinate
+                        t = Coor4D::nan();
+                        break 'iterate;
+                    }
+
+                    operands.set_coord(i, &t);
                     successes += 1;
 
                     continue 'points;
                 }
-
-                // Datum shift - here we need to iterate in the inverse case
-                let mut t = coord - t;
-
-                'iterate: for _ in 0..10 {
-                    if let Some(t2) = grid.interpolation(&t) {
-                        let d = t - coord + t2;
-                        t = t - d;
-                        // i.e. d.dot(d).sqrt() < 1e-10
-                        if d.dot(d) < 1e-20 {
-                            break 'iterate;
-                        }
-                        continue 'iterate;
-                    }
-
-                    if use_null_grid {
-                        successes += 1;
-                        break 'iterate;
-                    }
-
-                    // The iteration has wondered off the grid so we stomp on the coordinate
-                    t = Coor4D::nan();
-                    break 'iterate;
-                }
-
-                operands.set_coord(i, &t);
-                successes += 1;
-
-                continue 'points;
             }
         }
 
