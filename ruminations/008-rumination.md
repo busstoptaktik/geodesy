@@ -45,11 +45,11 @@ But while born as a playground for potential PROJ improvements, today the main f
 
 ### Historical differences
 
-**PROJ** was originally written in the early 1980's, by Gerald Ian (Jerry) Evenden (GIE, 1935-2016), at the USGS Woods Hole Coastal and Marine Service Center. It appears to have been conceptualized as a companion to the **MAPGEN** cartographic system [1].
+**PROJ** was originally written in the early 1980's, by Gerald Ian (Jerry) Evenden (GIE, 1935-2016), at the USGS Woods Hole Coastal and Marine Service Center. It appears to have been conceptualized as a companion to the [MAPGEN][1] cartographic system.
 
 The code library, `libproj.a`, and its accompanying command line interface, the `proj` executable, were focused strictly on providing map projection functionality, and by design excluded any support for geodesy in general, and datum shifts in particular.
 
-Entirely ignoring these subjects was, however, not feasible at a time where the transition from the NAD27 datum, to NAD83 was imminent. Hence, the PROJ package included both the [nad2nad](https://github.com/OSGeo/PROJ/blob/4.7/src/nad2nad.c) tool for shifting between these two North American datums, and the [geod](https://github.com/OSGeo/PROJ/blob/4.7/src/geod.c) tool for computation of geodesics on the ellipsoid.
+Entirely ignoring these subjects was, however, not feasible, especially not at a time where the transition from the NAD27 datum, to NAD83 was imminent. Hence, the PROJ package included both the [nad2nad](https://github.com/OSGeo/PROJ/blob/4.7/src/nad2nad.c) tool for shifting between these two North American datums, and the [geod](https://github.com/OSGeo/PROJ/blob/4.7/src/geod.c) tool for computations involving geodesics on the ellipsoid.
 
 So even from the beginning (or at least since the long lasting version 4 of the package), PROJ has included some geodetic functionality, although in an implementation orthogonal and somewhat separate from the cartographic main functionality.
 
@@ -103,13 +103,38 @@ Knowing from experience with both [PROJ](https://proj.org) and [trlib](https://g
 
 ### Implementation differences
 
+#### Programming Language
+
+PROJ and RG differ in a large spectrum of implementation details. Most visibly through their programming language of choice. PROJ was originally a pure C project, but with the work towards implementation of the ISO-19111 model and WKT, switched to C++. RG has always been written in pure Rust.
+
+#### The data flow ("Plumbing")
+
+With its background in attempts to re-rationalise the PROJ data flow, RG obviously differs from PROJ in the plumbing aspect. Most evidently by moving scaling and offset factors from the data flow level into the individual operator implementations.
+
+On one hand, this increases the amount of boilerplate necessary for implementing projection-like operators, while on the other hand it decreases the amount of workaround kludges necessary for implementing non-projection operators.
+
+So the centralized handling makes much sense for a projection library ("classic PROJ"), but not really for a more general transformation library (modern PROJ, RG, trlib).
+
+The foundational data unit is another design decision deeply influencing the data flow. **PROJ** operators are designed to handle individual coordinates (`CoordinateTuple`s in ISO-19111 lingo), while **RG** takes a step further into the ISO wilderness, and forces the individual operators to handle ordered sets of coordinate tuples, i.e. the ISO-19111 `CoordinateSet` interface.
+
+This implies that PROJ handles sets of coordinate tuples at the data flow level, handing out one coordinate tuple after the other to the low level operators, while RG hands entire sets directly to the operators.
+
+This comes with the (modest) penalty of a loop construct in every operator implementation. But it also significantly increases the potential for compiler provided optimizations, e.g. parallelization, unrolling, and offloading to the GPU. Also, it makes it facilitates the simplification of the background data structures, by amortizing recomputations of ancillary factors over the entire coordinate set, rather than on each individual coordinate tuple.
+
+This eliminates the need for individual *opaque objects* for every operator: RG has only one data structure for all parameter handling, rather than PROJ's individual opaque object types for each operator implemented.
+
+
 ---
 
 ### Ergonomical differences
 
+From a developer's point of view, the ergonomical differences between PROJ and RG are largely a matter of Rust's opinionated take on the build process: Using RG in a Rust based project is as easy as adding an extra line in the `[Dependencies]` section of the project's `Cargo.toml` file: The `cargo` build tool will handle all direct and transitive dependencies for both native and cross compilation; [crates.io](https://crates.io/crates/geodesy) and [lib.rs](https://lib.rs/geodesy) will provide the general view of how RG relates to the Rust library landscape in general, and the [docs.rs](https://docs.rs/geodesy/0.10.0/geodesy/) service will provide the API documentation.
+
+While a.o. the ubiquity of `cmake` has simplified C++ multi-platform library handling significantly, its great flexibility also comes with increased responsibility for the developer. And while this is surmountable for experienced developers introducing PROJ in their workflow, and able to amortize the initial effort over thousands of builds, it may very well be prohibitive for a beginner, otherwise perfectly able to jump directly in and using RG. This despite the stellar quality of the [PROJ](https://proj.org) documentation, compared to the somewhat mediocre RG counterpart.
+
 #### The syntax
 
-#### The data flow (loops in fwd/inv versus loops in the ops)
+Developers aside. For end users of applications built with RG or PROJ, the operator syntax is probably the most important ergonomical aspect. And while there are great similarities in the foundational syntaxen, the RG mechanism for expressing operator pipelines is very different from PROJ's.
 
 ---
 
@@ -121,7 +146,9 @@ Parameters: Defined (conversion) vs. determined (transformation)
 
 ### Bibliography
 
-[1] [MAPGEN](https://www.usgs.gov/publications/mapgen-cartographic-system)
+[1]: https://www.usgs.gov/publications/mapgen-cartographic-system
+
+G.I.Evenden, 1986: [MAPGEN][1] Cartographic System. Proceedings - 1986 Working Symposium on Oceanographic Data Systems, pp. 239-245
 
 ### Document History
 
