@@ -76,7 +76,7 @@
 /// now introduce the designations *observed coordinates* for (X, Y, Z), and
 /// *canonical coordinates* for (X', Y', Z').
 ///
-/// What we wnat to do is to compute the canonical coordinates given the
+/// What we want to do is to compute the canonical coordinates given the
 /// observed ones, by applying a correction based on the deformation grid.
 ///
 /// The deformation grid is georeferenced with respect to the *canonical system*
@@ -143,12 +143,6 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
                     let deformation =
                         rotate_and_integrate_velocity(v.scale(-1.), geo[0], geo[1], d);
 
-                    // Outside of the grid? - stomp on the input coordinate and go on to the next
-                    if v[0].is_nan() {
-                        operands.set_coord(i, &Coor4D::nan());
-                        continue 'points;
-                    }
-
                     // Finally apply the deformation to the input coordinate - or just
                     // provide the raw correction if that was what was requested
                     if raw {
@@ -204,12 +198,6 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
 
                     let deformation = rotate_and_integrate_velocity(v, geo[0], geo[1], d);
 
-                    // Outside of the grid? - stomp on the input coordinate and go on to the next
-                    if v[0].is_nan() {
-                        operands.set_coord(i, &Coor4D::nan());
-                        continue 'points;
-                    }
-
                     // Finally apply the deformation to the input coordinate - or just
                     // provide the raw correction if that was what was requested
                     if raw {
@@ -262,12 +250,15 @@ pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
         ));
     }
 
-    for grid_name in params.texts("grids")?.clone() {
-        if grid_name.ends_with("@null") {
-            params.boolean.insert("null_grid");
-            continue;
+    for mut grid_name in params.texts("grids")?.clone() {
+        let optional = grid_name.starts_with('@');
+        if optional {
+            grid_name = grid_name.trim_start_matches('@').to_string();
         }
-
+        if grid_name == "null" {
+            params.boolean.insert("null_grid");
+            break; // ignore any additional grids after a null grid
+        }
         match ctx.get_grid(&grid_name) {
             Ok(grid) => {
                 let n = grid.bands();
@@ -280,11 +271,11 @@ pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
                 }
                 params.grids.push(grid);
             }
+
             Err(e) => {
-                if grid_name.contains("@") {
-                    continue;
+                if !optional {
+                    return Err(e);
                 }
-                return Err(e);
             }
         }
     }
@@ -342,9 +333,12 @@ mod tests {
         let mut ctx = Plain::default();
         let cph = Coor4D::geo(55., 12., 0., 0.);
         let test_deformation = include_str!("../../geodesy/deformation/test.deformation");
+        let another_test_deformation =
+            include_str!("../../geodesy/deformation/another_test.deformation");
 
         // Check that grid registration works
         ctx.register_resource("test.deformation", test_deformation);
+        ctx.register_resource("another_test.deformation", another_test_deformation);
 
         let buf = ctx.get_blob("test.deformation")?;
         let grid = BaseGrid::gravsoft(&buf)?;
@@ -398,7 +392,8 @@ mod tests {
         assert!(cph.hypot3(&data[0]) < 1e-3);
 
         // Check the "raw" functionality
-        let op = ctx.op("deformation raw dt=1000 grids=test.deformation")?;
+        let op =
+            ctx.op("deformation raw dt=1000 grids=@another_test.deformation,test.deformation")?;
 
         // Forward direction
         let mut data = [cph];
@@ -414,6 +409,22 @@ mod tests {
         dbg!(inv);
         assert!((inv[3] - expected_length_of_correction) < 0.001);
         assert!((inv[3] - fwd[3]) < 0.001);
+
+        // The Finnish town of Tornio is inside the "another_test" grid
+        let tio = Coor4D::geo(65.85, 24.10, 0., 0.);
+        let tio = ellps.cartesian(&tio);
+        let mut data = [tio];
+        ctx.apply(op, Fwd, &mut data)?;
+        let fwd = data[0];
+        dbg!(fwd);
+        assert!(fwd[0].is_finite());
+
+        // The Norwegian town of Longyearbyen is outside of both grids
+        let lyb = Coor4D::geo(78.25, 15.5, 0., 0.);
+        let lyb = ellps.cartesian(&lyb);
+        let mut data = [lyb];
+        ctx.apply(op, Fwd, &mut data)?;
+        assert!(data[0][0].is_nan());
 
         Ok(())
     }

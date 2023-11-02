@@ -1,0 +1,12 @@
+# Subset of test.datum, with slightly offset corrections
+# for tests of multi-grid functionality
+#
+# e.g. at P: (56, 11) we should get the
+# result (56.001, 11.001)
+
+
+55.5 57.5   11. 13.   1. 1.
+
+    57.501  11.001  57.501  12.001  57.501  13.001
+    56.501  11.001  56.501  12.001  56.501  13.001
+    55.501  11.001  55.501  12.001  55.501  13.001

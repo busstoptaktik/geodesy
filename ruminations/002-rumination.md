@@ -3,6 +3,7 @@
 ## Rumination 002: The missing manual
 
 Thomas Knudsen <knudsen.thomas@gmail.com>
+
 Sean Rennie <rnnsea001@gmail.com>
 
 2021-08-20. Last [revision](#document-history) 2023-11-02
@@ -45,7 +46,7 @@ $ echo 553036. -124509 | kp "dms:in | geo:out"
 
 Architecturally, the operators in Rust Geodesy (`cart`, `tmerc`, `helmert` etc.) live below the API surface. This means they are not (and should not be) described in the API documentation over at [docs.rs](https://docs.rs/geodesy). Rather, their use should be documented in a separate *Rust Geodesy User's Guide*, a book which may materialize some day, as time permits, interest demands, and RG has matured and stabilized sufficiently. Until then, this *Rumination* will serve as stop gap for operator documentation.
 
-A *Rust Geodesy Programmer's Guide* would probably also be useful, and wil definitely materialize before the next week with ten fridays. Until then, the [API documentation](https://docs.rs/geodesy), the [code examples](/examples), and the [architectural overview](/ruminations/000-rumination.md) may be useful. The RG transformation program `kp` is described in [RG Rumination 003](/ruminations/003-rumination.md). Its [source code](/src/bin/kp.rs) may also be of interest as  study material for programmers. But since it is particularly useful for practical experimentation with RG operators, let's start with a *very* brief description of `kp`.
+A *Rust Geodesy Programmer's Guide* would probably also be useful, and will definitely materialize before the next week with ten fridays. Until then, the [API documentation](https://docs.rs/geodesy), the [code examples](/examples), and the [architectural overview](/ruminations/000-rumination.md) may be useful. The RG transformation program `kp` is described in [RG Rumination 003](/ruminations/003-rumination.md). Its [source code](/src/bin/kp.rs) may also be of interest as  study material for programmers. But since it is particularly useful for practical experimentation with RG operators, let's start with a *very* brief description of `kp`.
 
 ### A brief `kp` HOWTO
 
@@ -654,7 +655,7 @@ Take a copy of one or more coordinate dimensions and push it onto the stack. If 
 somerc lat_0=46.9524055555556 lon_0=7.43958333333333 k_0=1 x_0=2600000 y_0=1200000 ellps=bessel
 ```
 
-**See also:** [PROJ documentation](https://proj.org/operations/projections/somerc.html): _Swiss Oblique Mercator_.
+**See also:** [PROJ documentation](https://proj.org/operations/projections/somerc.html): *Swiss Oblique Mercator*.
 
 Note: Rust Geodesy does not support modifying the ellipsoid with and `R` parameter, as PROJ does.
 
