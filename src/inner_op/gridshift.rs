@@ -131,19 +131,18 @@ pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
     for grid_name in params.texts("grids")?.clone() {
         if grid_name.ends_with("@null") {
             params.boolean.insert("null_grid");
-            // @null can only be used as the final grid
-            break;
-        }
-
-        if grid_name.contains("@") {
-            if let Ok(grid) = ctx.get_grid(&grid_name) {
-                params.grids.push(grid);
-            }
             continue;
         }
 
-        let grid = ctx.get_grid(&grid_name)?;
-        params.grids.push(grid);
+        match ctx.get_grid(&grid_name) {
+            Ok(grid) => params.grids.push(grid),
+            Err(e) => {
+                if grid_name.contains("@") {
+                    continue;
+                }
+                return Err(e);
+            }
+        }
     }
 
     let fwd = InnerOp(fwd);

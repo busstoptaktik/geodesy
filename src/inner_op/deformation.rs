@@ -268,18 +268,25 @@ pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
             continue;
         }
 
-        // TODO: Handle @optional grids
-
-        let grid = ctx.get_grid(&grid_name)?;
-        let n = grid.bands();
-        if n != 3 {
-            return Err(Error::Unexpected {
-                message: "Bad dimensionality of deformation model grid".to_string(),
-                expected: "3".to_string(),
-                found: n.to_string(),
-            });
+        match ctx.get_grid(&grid_name) {
+            Ok(grid) => {
+                let n = grid.bands();
+                if n != 3 {
+                    return Err(Error::Unexpected {
+                        message: "Bad dimensionality of deformation model grid".to_string(),
+                        expected: "3".to_string(),
+                        found: n.to_string(),
+                    });
+                }
+                params.grids.push(grid);
+            }
+            Err(e) => {
+                if grid_name.contains("@") {
+                    continue;
+                }
+                return Err(e);
+            }
         }
-        params.grids.push(grid);
     }
 
     let fwd = InnerOp(fwd);
