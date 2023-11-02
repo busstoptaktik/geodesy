@@ -5,7 +5,7 @@
 Thomas Knudsen <knudsen.thomas@gmail.com>
 Sean Rennie <rnnsea001@gmail.com>
 
-2021-08-20. Last [revision](#document-history) 2023-10-19
+2021-08-20. Last [revision](#document-history) 2023-11-02
 
 ### Abstract
 
@@ -304,7 +304,7 @@ The `gridshift` operator implements datum shifts by interpolation in correction 
 | Parameter | Description |
 |-----------|-------------|
 | `inv` | Inverse operation: output-to-input datum. For 2-D and 3-D cases, this involves an iterative refinement, typically converging after less than 5 iterations |
-| `grids` | Name of the grid file to use. RG supports only one file for each operation, but maintains the plural form of the `grids` option for alignment with the PROJ precedent |
+| `grids` | Name of the grid files to use. RG supports multiple comma separated grids where the first one to contain the point is the one used. Grids are considered optional if they are prefixed with `@` and do not error the operator if they aren't available. Additionally the `@null` parameter can be specified as the last grid which will prevent errors in shifts from stomping on the coordinate. That is to say the coordinate passes through unchanged. |
 
 The `gridshift` operator has built in support for the **Gravsoft** grid format. Support for additional file formats depends on the `Context` in use.
 
@@ -315,6 +315,10 @@ For grids with angular (geographical) spatial units, the corrections are suppose
 
 ```term
 geo:in | gridshift grids=ed50.datum | geo:out
+
+geo:in | gridshift grids=ed50.datum,@null | geo:out
+
+geo:in | gridshift grids=@not-available.gsb,ed50.datum | geo:out
 ```
 
 **See also:** PROJ documentation, [`hgridshift`](https://proj.org/operations/transformations/hgridshift.html) and [`vgridshift`](https://proj.org/operations/transformations/vgridshift.html). RG combines the functionality of the two: The dimensionality of the grid determines whether a plane or a vertical transformation is carried out.
@@ -739,3 +743,4 @@ Major revisions and additions:
   have been included and described
 - 2023-07-09: dm and dms liberated from their NMEA overlord
 - 2023-10-19: Add `somerc` operator description
+- 2023-11-02: Update `gridshift` operator description with multi, optional and null grid support
