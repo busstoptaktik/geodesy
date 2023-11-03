@@ -4,7 +4,7 @@
 use crate::math::angular;
 use crate::math::FourierCoefficients;
 use std::collections::BTreeSet;
-use std::rc::Rc;
+use std::sync::Arc;
 
 use super::*;
 
@@ -52,8 +52,7 @@ pub struct ParsedParameters {
 
     // Pointers to the grids required by the operator
     // They should be inserted in the order they appear in the definition
-    // NOTE: We may want to consider use `Arc` instead of `Rc` here for concurrency reasons
-    pub grids: Vec<Rc<dyn GridTrait>>,
+    pub grids: Vec<Arc<dyn Grid>>,
 }
 
 // Accessors
@@ -88,6 +87,12 @@ impl ParsedParameters {
     pub fn text(&self, key: &str) -> Result<String, Error> {
         if let Some(value) = self.text.get(key) {
             return Ok(value.to_string());
+        }
+        Err(Error::MissingParam(key.to_string()))
+    }
+    pub fn texts(&self, key: &str) -> Result<&Vec<String>, Error> {
+        if let Some(value) = self.texts.get(key) {
+            return Ok(value);
         }
         Err(Error::MissingParam(key.to_string()))
     }

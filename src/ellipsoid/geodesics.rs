@@ -92,7 +92,7 @@ impl Ellipsoid {
 
     /// See [`geodesic_fwd`](crate::Ellipsoid::geodesic_fwd)
     #[must_use]
-    #[allow(non_snake_case)] // allow math-like notation
+    #[allow(non_snake_case)] // So we can use the mathematical notation from the original text
     pub fn geodesic_inv(&self, from: &Coor4D, to: &Coor4D) -> Coor4D {
         let B1 = from[1];
         let B2 = to[1];

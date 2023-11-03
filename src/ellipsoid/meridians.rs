@@ -62,7 +62,7 @@ impl Ellipsoid {
     ///
     /// [Deakin et al](crate::Bibliography::Dea12) provides a higher order (*n⁸*) derivation.
     #[must_use]
-    #[allow(non_snake_case)] // make it possible to mimic math notation from the original paper
+    #[allow(non_snake_case)] // So we can use the mathematical notation from the original text
     #[allow(clippy::many_single_char_names)] // ditto
     pub fn meridian_latitude_to_distance(&self, latitude: f64) -> f64 {
         let n = self.third_flattening();
@@ -89,7 +89,7 @@ impl Ellipsoid {
     /// See also
     /// [meridian_latitude_to_distance](Ellipsoid::meridian_latitude_to_distance)
     #[must_use]
-    #[allow(non_snake_case)] // make it possible to mimic math notation from the original paper
+    #[allow(non_snake_case)] // So we can use the mathematical notation from the original text
     #[allow(clippy::many_single_char_names)] // ditto
     pub fn meridian_distance_to_latitude(&self, distance_from_equator: f64) -> f64 {
         let n = self.third_flattening();

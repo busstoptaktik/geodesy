@@ -1,7 +1,7 @@
 use geodesy::authoring::*;
 use std::collections::BTreeMap;
 use std::path::PathBuf;
-use std::rc::Rc;
+use std::sync::Arc;
 
 // ----- U S E R   P R O V I D E D   C O N T E X T ----------------------------------
 
@@ -120,11 +120,11 @@ impl Context for Maximal {
         Ok(std::fs::read(path)?)
     }
     /// Access grid resources by identifier
-    fn get_grid(&self, name: &str) -> Result<Rc<dyn GridTrait>, Error> {
+    fn get_grid(&self, name: &str) -> Result<Arc<dyn Grid>, Error> {
         let buf = self.get_blob(name)?;
-        let grid = Grid::gravsoft(&buf)?;
+        let grid = BaseGrid::gravsoft(&buf)?;
 
-        Ok(Rc::new(grid))
+        Ok(Arc::new(grid))
     }
 }
 
