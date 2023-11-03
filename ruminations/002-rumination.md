@@ -3,9 +3,10 @@
 ## Rumination 002: The missing manual
 
 Thomas Knudsen <knudsen.thomas@gmail.com>
+
 Sean Rennie <rnnsea001@gmail.com>
 
-2021-08-20. Last [revision](#document-history) 2023-10-19
+2021-08-20. Last [revision](#document-history) 2023-11-02
 
 ### Abstract
 
@@ -45,7 +46,7 @@ $ echo 553036. -124509 | kp "dms:in | geo:out"
 
 Architecturally, the operators in Rust Geodesy (`cart`, `tmerc`, `helmert` etc.) live below the API surface. This means they are not (and should not be) described in the API documentation over at [docs.rs](https://docs.rs/geodesy). Rather, their use should be documented in a separate *Rust Geodesy User's Guide*, a book which may materialize some day, as time permits, interest demands, and RG has matured and stabilized sufficiently. Until then, this *Rumination* will serve as stop gap for operator documentation.
 
-A *Rust Geodesy Programmer's Guide* would probably also be useful, and wil definitely materialize before the next week with ten fridays. Until then, the [API documentation](https://docs.rs/geodesy), the [code examples](/examples), and the [architectural overview](/ruminations/000-rumination.md) may be useful. The RG transformation program `kp` is described in [RG Rumination 003](/ruminations/003-rumination.md). Its [source code](/src/bin/kp.rs) may also be of interest as  study material for programmers. But since it is particularly useful for practical experimentation with RG operators, let's start with a *very* brief description of `kp`.
+A *Rust Geodesy Programmer's Guide* would probably also be useful, and will definitely materialize before the next week with ten fridays. Until then, the [API documentation](https://docs.rs/geodesy), the [code examples](/examples), and the [architectural overview](/ruminations/000-rumination.md) may be useful. The RG transformation program `kp` is described in [RG Rumination 003](/ruminations/003-rumination.md). Its [source code](/src/bin/kp.rs) may also be of interest as  study material for programmers. But since it is particularly useful for practical experimentation with RG operators, let's start with a *very* brief description of `kp`.
 
 ### A brief `kp` HOWTO
 
@@ -304,7 +305,7 @@ The `gridshift` operator implements datum shifts by interpolation in correction 
 | Parameter | Description |
 |-----------|-------------|
 | `inv` | Inverse operation: output-to-input datum. For 2-D and 3-D cases, this involves an iterative refinement, typically converging after less than 5 iterations |
-| `grids` | Name of the grid file to use. RG supports only one file for each operation, but maintains the plural form of the `grids` option for alignment with the PROJ precedent |
+| `grids` | Name of the grid files to use. RG supports multiple comma separated grids where the first one to contain the point is the one used. Grids are considered optional if they are prefixed with `@` and do not error the operator if they aren't available. Additionally the `@null` parameter can be specified as the last grid which will prevent errors in shifts from stomping on the coordinate. That is to say the coordinate passes through unchanged. |
 
 The `gridshift` operator has built in support for the **Gravsoft** grid format. Support for additional file formats depends on the `Context` in use.
 
@@ -315,6 +316,10 @@ For grids with angular (geographical) spatial units, the corrections are suppose
 
 ```term
 geo:in | gridshift grids=ed50.datum | geo:out
+
+geo:in | gridshift grids=ed50.datum,@null | geo:out
+
+geo:in | gridshift grids=@not-available.gsb,ed50.datum | geo:out
 ```
 
 **See also:** PROJ documentation, [`hgridshift`](https://proj.org/operations/transformations/hgridshift.html) and [`vgridshift`](https://proj.org/operations/transformations/vgridshift.html). RG combines the functionality of the two: The dimensionality of the grid determines whether a plane or a vertical transformation is carried out.
@@ -650,7 +655,7 @@ Take a copy of one or more coordinate dimensions and push it onto the stack. If 
 somerc lat_0=46.9524055555556 lon_0=7.43958333333333 k_0=1 x_0=2600000 y_0=1200000 ellps=bessel
 ```
 
-**See also:** [PROJ documentation](https://proj.org/operations/projections/somerc.html): _Swiss Oblique Mercator_.
+**See also:** [PROJ documentation](https://proj.org/operations/projections/somerc.html): *Swiss Oblique Mercator*.
 
 Note: Rust Geodesy does not support modifying the ellipsoid with and `R` parameter, as PROJ does.
 
@@ -739,3 +744,4 @@ Major revisions and additions:
   have been included and described
 - 2023-07-09: dm and dms liberated from their NMEA overlord
 - 2023-10-19: Add `somerc` operator description
+- 2023-11-02: Update `gridshift` operator description with multi, optional and null grid support

@@ -128,16 +128,25 @@ pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
     let def = &parameters.definition;
     let mut params = ParsedParameters::new(parameters, &GAMUT)?;
 
-    for grid_name in params.texts("grids")?.clone() {
-        if grid_name.ends_with("@null") {
-            params.boolean.insert("null_grid");
-            continue;
+    for mut grid_name in params.texts("grids")?.clone() {
+        let optional = grid_name.starts_with('@');
+        if optional {
+            grid_name = grid_name.trim_start_matches('@').to_string();
         }
 
-        // TODO: Handle @optional grids
+        if grid_name == "null" {
+            params.boolean.insert("null_grid");
+            break; // ignore any additional grids after a null grid
+        }
 
-        let grid = ctx.get_grid(&grid_name)?;
-        params.grids.push(grid);
+        match ctx.get_grid(&grid_name) {
+            Ok(grid) => params.grids.push(grid),
+            Err(e) => {
+                if !optional {
+                    return Err(e);
+                }
+            }
+        }
     }
 
     let fwd = InnerOp(fwd);
@@ -234,6 +243,46 @@ mod tests {
         assert_eq!(successes, 1);
         assert!((data[0][0] - ldn[0]).abs() < 1e-10);
         assert!((data[0][1] - ldn[1]).abs() < 1e-10);
+
+        Ok(())
+    }
+
+    #[test]
+    fn optional_grid() -> Result<(), Error> {
+        let mut ctx = Plain::default();
+        let op = ctx.op("gridshift grids=@../../geodesy/datum/test_subset.datum, @missing.gsb, ../../geodesy/datum/test.datum")?;
+
+        // Copenhagen is outside of the (optional, but present, subset grid)
+        let cph = Coor4D::geo(55., 12., 0., 0.);
+        let mut data = [cph];
+
+        ctx.apply(op, Fwd, &mut data)?;
+        let res = data[0].to_geo();
+        assert!((res[0] - 55.015278).abs() < 1e-6);
+        assert!((res[1] - 12.003333).abs() < 1e-6);
+
+        ctx.apply(op, Inv, &mut data)?;
+        assert!((data[0][0] - cph[0]).abs() < 1e-10);
+        assert!((data[0][1] - cph[1]).abs() < 1e-10);
+
+        // Havnebyen (a small town with a large geodetic installation) is inside the subset grid
+        let haby = Coor4D::geo(55.97, 11.33, 0., 0.);
+        let mut data = [haby];
+        let expected_correction = Coor4D([11.331, 55.971, 0., 0.]);
+        ctx.apply(op, Fwd, &mut data)?;
+        let correction = ((data[0] - haby) * Coor4D([3600., 3600., 3600., 3600.])).to_degrees();
+        dbg!(correction);
+        assert!((correction - expected_correction)[0].abs() < 1e-6);
+        assert!((correction - expected_correction)[1].abs() < 1e-6);
+
+        Ok(())
+    }
+
+    #[test]
+    fn missing_grid() -> Result<(), Error> {
+        let mut ctx = Plain::default();
+        let op = ctx.op("gridshift grids=missing.gsb");
+        assert!(op.is_err());
 
         Ok(())
     }

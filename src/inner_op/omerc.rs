@@ -152,9 +152,6 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let gamma_c = if laborde { alpha } else { gamma_c.to_radians() };
     let variant = op.params.boolean("variant") || laborde;
 
-    // Remove mutability
-    let gamma_c = gamma_c;
-
     // A horrible mess of constants. But by-and-large, just a transcription of
     // the material from Guidance Note 7-2.
     let (s, c) = latc.sin_cos();
