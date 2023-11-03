@@ -17,7 +17,6 @@ pub trait Grid: Debug {
     fn at(&self, at: &Coor4D, margin: f64) -> Option<Coor4D>;
 }
 
-// NOTE: Should this be renamed PlainGrid? Then rename the trait to Grid?
 /// Grid characteristics and interpolation.
 ///
 /// The actual grid may be part of the `BaseGrid` struct, or
