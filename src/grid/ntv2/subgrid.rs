@@ -29,7 +29,7 @@ impl Grid for Ntv2SubGrid {
         2
     }
 
-    // Checks if a `Coord4D` is within the grid limits +- `within` grid units
+    // Checks if a `Coor4D` is within the grid limits +- `within` grid units
     fn contains(&self, position: &Coor4D, within: f64) -> bool {
         let lon = position[0];
         let lat = position[1];
@@ -83,13 +83,13 @@ impl Grid for Ntv2SubGrid {
 }
 
 // Buffer offsets for the NTv2 subgrid header
-const NLAT: usize = 88; // (f64)
-const SLAT: usize = 72; // (f64)
-const ELON: usize = 104; // (f64)
-const WLON: usize = 120; // (f64)
-const DLAT: usize = 136; // (f64)
-const DLON: usize = 152; // (f64)
-const GSCOUNT: usize = 168; // (i32) grid node count
+const NLAT: usize = 88;
+const SLAT: usize = 72;
+const ELON: usize = 104;
+const WLON: usize = 120;
+const DLAT: usize = 136;
+const DLON: usize = 152;
+const GSCOUNT: usize = 168;
 
 #[derive(Debug, Clone)]
 pub(crate) struct SubGridHeader {
