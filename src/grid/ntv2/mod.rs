@@ -1,22 +1,19 @@
-use self::parser::{parse_subgrid_grid, parse_subgrid_header, HEADER_SIZE};
-use crate::{Coor2D, Coor4D, Error, Grid};
+use self::parser::HEADER_SIZE;
+use crate::{Coor4D, Error, Grid};
 use parser::NTv2Parser;
 mod parser;
+mod subgrid;
+use self::subgrid::Ntv2SubGrid;
 
 /// Grid for using the NTv2 format.
-/// Interpolation has been adapted from [projrs](https://github.com/3liz/proj4rs/blob/8b5eb762c6be65eed0ca0baea33f8c70d1cd56cb/src/nadgrids/grid.rs#L206C1-L252C6)
+/// Interpolation has been adapted from a few sources
+/// - [proj4rs](https://github.com/3liz/proj4rs/blob/8b5eb762c6be65eed0ca0baea33f8c70d1cd56cb/src/nadgrids/grid.rs#L206C1-L252C6)
+/// - [NTv2 Archived Spec](https://web.archive.org/web/20140127204822if_/http://www.mgs.gov.on.ca:80/stdprodconsume/groups/content/@mgs/@iandit/documents/resourcelist/stel02_047447.pdf)
+/// - [ESRI](https://github.com/Esri/ntv2-file-routines/blob/master/README.md)
 /// to work with Rust Geodesy
 #[derive(Debug, Default, Clone)]
 pub struct Ntv2Grid {
-    nlat: f64,
-    slat: f64,
-    wlon: f64,
-    elon: f64,
-    dlat: f64,
-    dlon: f64,
-    num_rows: f64,
-    row_size: f64,
-    grid: Vec<Coor2D>,
+    subgrids: Vec<Ntv2SubGrid>,
 }
 
 impl Ntv2Grid {
@@ -29,7 +26,7 @@ impl Ntv2Grid {
         }
 
         if num_sub_grids != 1 {
-            // Multi grid support is out of scope for now given how few seem to exist
+            // TODO: Add support for subgrids
             return Err(Error::Unsupported(
                 "Contains more than one subgrid".to_string(),
             ));
@@ -39,30 +36,10 @@ impl Ntv2Grid {
             return Err(Error::Invalid("Not in seconds".to_string()));
         }
 
-        let (nlat, slat, wlon, elon, dlat, dlon, num_rows, row_size, num_nodes) =
-            parse_subgrid_header(&parser, HEADER_SIZE)?;
+        let mut subgrids = Vec::with_capacity(num_sub_grids);
+        subgrids.push(Ntv2SubGrid::new(&parser, HEADER_SIZE)?);
 
-        let grid_start_offset = HEADER_SIZE * 2;
-
-        let grid = parse_subgrid_grid(
-            &parser,
-            grid_start_offset,
-            num_nodes as usize,
-            num_rows as usize,
-            row_size as usize,
-        )?;
-
-        Ok(Self {
-            nlat,
-            slat,
-            wlon,
-            elon,
-            dlat,
-            dlon,
-            num_rows,
-            row_size,
-            grid,
-        })
+        Ok(Self { subgrids })
     }
 }
 
@@ -72,54 +49,49 @@ impl Grid for Ntv2Grid {
     }
 
     /// Checks if a `Coord4D` is within the grid limits +- `within` grid units
-    fn contains(&self, position: &Coor4D, _within: f64) -> bool {
-        let lon = position[0];
-        let lat = position[1];
-
-        let grace = _within * self.dlat;
-        if lat != lat.clamp(self.slat - grace, self.nlat + grace) {
-            return false;
-        }
-
-        let grace = _within * self.dlon;
-        if lon != lon.clamp(self.wlon - grace, self.elon + grace) {
-            return false;
-        }
-
-        // If we fall through to here we're within the grid
-        true
+    fn contains(&self, position: &Coor4D, within: f64) -> bool {
+        // Ntv2 spec does not allow grid extensions, so we only need to check the root grid
+        // https://web.archive.org/web/20140127204822if_/http://www.mgs.gov.on.ca:80/stdprodconsume/groups/content/@mgs/@iandit/documents/resourcelist/stel02_047447.pdf (pg 27)
+        self.subgrids[0].contains(position, within)
     }
 
     /// Implementation adapted from [projrs](https://github.com/3liz/proj4rs/blob/8b5eb762c6be65eed0ca0baea33f8c70d1cd56cb/src/nadgrids/grid.rs#L206C1-L252C6) && [proj4js](https://github.com/proj4js/proj4js/blob/d9faf9f93ebeccac4b79fa80f3e9ad8a7032828b/lib/datum_transform.js#L167)
     fn interpolation(&self, coord: &Coor4D, within: f64) -> Option<Coor4D> {
-        if !self.contains(coord, within) {
-            return None;
+        // NOTE: This may be naive as the spec suggests the order of subgrids is not guaranteed
+        // It's ok for now because we're only supporting single subgrid grids
+        for subgrid in self.subgrids.iter().rev() {
+            if let Some(result) = subgrid.interpolation(coord, within) {
+                return Some(result);
+            }
         }
 
-        // Normalise to the grid origin which is the SW corner
-        let rlon = coord[0] - self.wlon;
-        let rlat = coord[1] - self.slat;
+        // If we get here the grid does not contain the coordinate
+        None
+    }
+}
 
-        let (t_lon, t_lat) = (rlon / self.dlon, rlat / self.dlat);
-        let (i_lon, i_lat) = (t_lon.floor(), t_lat.floor());
-        let (f_lon, f_lat) = (t_lon - 1.0 * i_lon, t_lat - 1.0 * i_lat);
+// ----- T E S T S ---------------------------------------------------------------------
 
-        let mut index = (i_lat * self.row_size + i_lon) as usize;
-        let f00 = &self.grid[index];
-        let f10 = &self.grid[index + 1];
-        index += self.row_size as usize;
-        let f01 = &self.grid[index];
-        let f11 = &self.grid[index + 1];
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-        let m00 = (1. - f_lon) * (1. - f_lat);
-        let m01 = (1. - f_lon) * f_lat;
-        let m10 = f_lon * (1. - f_lat);
-        let m11 = f_lon * f_lat;
+    #[test]
+    fn ntv2_grid() -> Result<(), Error> {
+        // 100800401.gsb is used in the ED50 to ETRS89 (14) transformation for the catalonia region - transformation is EPSG:5661
+        let grid_buff = std::fs::read("tests/fixtures/100800401.gsb").unwrap();
+        let ntv2_grid = Ntv2Grid::new(&grid_buff)?;
 
-        let mut result = Coor4D::origin();
-        result[0] = -(m00 * f00[0] + m10 * f10[0] + m01 * f01[0] + m11 * f11[0]); // lon
-        result[1] = m00 * f00[1] + m10 * f10[1] + m01 * f01[1] + m11 * f11[1]; // lat
+        let barc = Coor4D::geo(41.3874, 2.1686, 0.0, 0.0);
+        let ldn = Coor4D::geo(51.505, -0.09, 0., 0.);
 
-        Some(result)
+        assert_eq!(ntv2_grid.subgrids.len(), 1);
+        assert_eq!(ntv2_grid.subgrids[0].grid.len(), 1591);
+
+        assert_eq!(ntv2_grid.bands(), 2);
+        assert!(ntv2_grid.contains(&barc, 0.5));
+        assert!(!ntv2_grid.contains(&ldn, 0.5));
+
+        Ok(())
     }
 }
