@@ -40,7 +40,7 @@ fn main() -> Result<(), Error> {
     println!("    c   =  {c:.4}");
     println!("    n   =  {n}");
     println!("    es  =  {es}");
-    println!("");
+    println!();
 
     // A geodesic is the shortest line between two points on the
     // surface of the ellipsoid. Let's compute the distance and
@@ -61,7 +61,7 @@ fn main() -> Result<(), Error> {
     println!("    Distance:                {:.3} km", dd[2] / 1000.);
     println!("    Azimuth at departure:    {:.1} deg", dd[0]);
     println!("    Azimuth at destination:  {:.1} deg", dd[1]);
-    println!("");
+    println!();
 
     // Now we have the azimuth from CPH to CDG - so let's take the same trip
     // again, this time using the "forward" version:
@@ -69,7 +69,7 @@ fn main() -> Result<(), Error> {
     // In this case, output is [longitude, latitude, 0, 0]
     println!("GRS80 - Copenhagen->Paris, fwd algorithm");
     println!("    Location:   {} {}", b[0], b[1]);
-    println!("");
+    println!();
 
     // We assert to hit the spot within a nanometer
     assert!((b[0] - 2.).abs() < 1e-9);
@@ -81,7 +81,7 @@ fn main() -> Result<(), Error> {
     let b = GRS80.geodesic_fwd(&CDG, az_back, d[2]).to_degrees();
     println!("GRS80 - Paris->Copenhagen, fwd algorithm, with swapped azimuth");
     println!("    Location:   {} {}", b[0], b[1]);
-    println!("");
+    println!();
 
     let d = GRS80.geodesic_inv(&CDG, &CPH);
     let dd = d.to_degrees();
@@ -92,7 +92,7 @@ fn main() -> Result<(), Error> {
     println!("    Distance:                {:.3} km", dd[2] / 1000.);
     println!("    Azimuth at departure:    {:.1} deg", dd[0]);
     println!("    Azimuth at destination:  {:.1} deg", dd[1]);
-    println!("");
+    println!();
 
     // But how would it be, if we were not handling a Boeing 737 on the
     // GRS80 ellipsoid in 2021, but a Montgolfière on the Maupertuis
@@ -103,7 +103,7 @@ fn main() -> Result<(), Error> {
     println!("    Distance:                {:.3} km", dd[2] / 1000.);
     println!("    Azimuth at departure:    {:.1} deg", dd[0]);
     println!("    Azimuth at destination:  {:.1} deg", dd[1]);
-    println!("");
+    println!();
 
     // So the Montgolfier brothers would have thought they had flown
     // approximately 3 km longer than the modern day airline pilot.

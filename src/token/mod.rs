@@ -350,32 +350,27 @@ fn tidy_proj(elements: &mut Vec<String>) -> Result<(), Error> {
     // elements we ignore it and rely on operator instantiation to fail due to unknown elements
     // A complete solution would need to include `a` and `rf` keys in the gamut of all operators so that
     // the Ellipsoid struct can build the required ellipsoid.
-    match ellps_def {
-        [None, Some(a_idx), Some(rf_idx)] => {
-            let a = elements[a_idx][2..].to_string();
-            let rf = elements[rf_idx][3..].to_string();
+    if let [None, Some(a_idx), Some(rf_idx)] = ellps_def {
+        let a = elements[a_idx][2..].to_string();
+        let rf = elements[rf_idx][3..].to_string();
+        elements.push(format!("ellps={},{}", a, rf).to_string());
 
-            elements.push(format!("ellps={},{}", a, rf).to_string());
-
-            // Remove the a and rf elements from the vector
-            if a_idx > rf_idx {
-                elements.remove(a_idx);
-                elements.remove(rf_idx);
-            } else {
-                elements.remove(rf_idx);
-                elements.remove(a_idx);
-            }
+        // Remove the a and rf elements from the vector
+        if a_idx > rf_idx {
+            elements.remove(a_idx);
+            elements.remove(rf_idx);
+        } else {
+            elements.remove(rf_idx);
+            elements.remove(a_idx);
         }
-        _ => {}
     }
 
     // `projinfo`  still produces strings with scaling defined as `k` instead of `k_0`
-    // We replace `k` with `k_0` when ever it is encountered.
+    // We replace `k` with `k_0` wherever it is encountered.
     for (i, element) in elements.iter().enumerate() {
-        if element.starts_with("k=") {
-            elements[i] = "k_0=".to_string() + &element[2..];
-
-            // There should only be one scaling so it's safe to break here
+        if let Some(stripped) = element.strip_prefix("k=") {
+            elements[i] = "k_0=".to_string() + stripped;
+            // There should be at most one scaling so it's safe to break here
             break;
         }
     }

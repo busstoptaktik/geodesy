@@ -90,7 +90,7 @@ fn main() -> anyhow::Result<()> {
     for coord in slice {
         println!("    {:?}", coord.to_geo());
     }
-    for coord in (&mut data[2..]).into_iter() {
+    for coord in (&mut data[2..]).iter_mut() {
         println!("    {:?}", coord.to_geo());
     }
 
