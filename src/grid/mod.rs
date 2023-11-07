@@ -6,13 +6,13 @@ use std::{fmt::Debug, io::BufRead};
 pub trait Grid: Debug {
     fn bands(&self) -> usize;
     /// Returns true if `coord` is contained by `self` or lies within a margin of
-    /// `within` grid cell units. Typically `within` should be on the order of 1
-    fn contains(&self, coord: &Coor4D, within: f64) -> bool;
+    /// `margin` grid cell units. Typically `margin` should be on the order of 1
+    fn contains(&self, coord: &Coor4D, margin: f64) -> bool;
     /// Returns `None` if the grid or any of its sub-grids do not contain the point.
     /// **Contain** is in the sense of the `contains` method, i.e. the point is
-    /// considered contained if it is inside a margin of `within` grid units of
+    /// considered contained if it is inside a margin of `margin` grid units of
     /// the grid.
-    fn interpolation(&self, coord: &Coor4D, within: f64) -> Option<Coor4D>;
+    fn at(&self, at: &Coor4D, margin: f64) -> Option<Coor4D>;
 }
 
 /// Grid characteristics and interpolation.
@@ -39,14 +39,15 @@ pub struct BaseGrid {
     grid: Vec<f32>, // May be zero sized in cases where the Context provides access to an externally stored grid
 }
 
+
 impl Grid for BaseGrid {
     fn bands(&self) -> usize {
         self.bands
     }
 
-    /// Determine whether a given coordinate falls within the grid borders.
+    /// Determine whether a given coordinate falls within the grid borders + margin.
     /// "On the border" qualifies as within.
-    fn contains(&self, position: &Coor4D, within: f64) -> bool {
+    fn contains(&self, position: &Coor4D, margin: f64) -> bool {
         // We start by assuming that the last row (latitude) is the southernmost
         let mut min = self.lat_1;
         let mut max = self.lat_0;
@@ -56,7 +57,7 @@ impl Grid for BaseGrid {
             (min, max) = (max, min)
         }
 
-        let grace = within * self.dlat.abs();
+        let grace = margin * self.dlat.abs();
         if position[1] != position[1].clamp(min - grace, max + grace) {
             return false;
         }
@@ -69,7 +70,7 @@ impl Grid for BaseGrid {
             (min, max) = (max, min)
         }
 
-        let grace = within * self.dlon.abs();
+        let grace = margin * self.dlon.abs();
         if position[0] != position[0].clamp(min - grace, max + grace) {
             return false;
         }
@@ -83,24 +84,22 @@ impl Grid for BaseGrid {
     // It is, however, one of the cases where a more extensive use of abstractions
     // leads to a significantly larger code base, much harder to maintain and
     // comprehend.
-    fn interpolation(&self, coord: &Coor4D, within: f64) -> Option<Coor4D> {
-        if !self.contains(coord, within) {
+    fn at(&self, at: &Coor4D, margin: f64) -> Option<Coor4D> {
+        if !self.contains(at, margin) {
             return None;
         };
 
         let grid = &self.grid;
 
         // The interpolation coordinate relative to the grid origin
-        let rlon = coord[0] - self.lon_0;
-        let rlat = coord[1] - self.lat_0;
+        let rlon = at[0] - self.lon_0;
+        let rlat = at[1] - self.lat_0;
 
         // The (row, column) of the lower left node of the grid cell containing
         // coord or, in the case of extrapolation, the nearest cell inside the grid.
         let row = (rlat / self.dlat).floor() as i64;
         let col = (rlon / self.dlon).floor() as i64;
 
-        // let col = clamp(col, 0_i64, (self.cols - 2) as i64) as usize;
-        // let row = clamp(row, 1_i64, (self.rows - 1) as i64) as usize;
         let col = col.clamp(0_i64, (self.cols - 2) as i64) as usize;
         let row = row.clamp(1_i64, (self.rows - 1) as i64) as usize;
 
@@ -114,8 +113,8 @@ impl Grid for BaseGrid {
         );
 
         // Cell relative, cell unit coordinates in a right handed CS (hence .abs())
-        let rlon = (coord[0] - (self.lon_0 + col as f64 * self.dlon)) / self.dlon.abs();
-        let rlat = (coord[1] - (self.lat_0 + row as f64 * self.dlat)) / self.dlat.abs();
+        let rlon = (at[0] - (self.lon_0 + col as f64 * self.dlon)) / self.dlon.abs();
+        let rlat = (at[1] - (self.lat_0 + row as f64 * self.dlat)) / self.dlat.abs();
 
         // Interpolate
         let mut left = Coor4D::origin();
@@ -149,8 +148,8 @@ impl BaseGrid {
         let lat_1 = header[0];
         let lon_0 = header[2];
         let lon_1 = header[3];
-        let dlat = -header[4];
-        let dlon = header[5];
+        let dlat = header[4].copysign(lat_1 - lat_0);
+        let dlon = header[5].copysign(lon_1 - lon_0);
         let bands = header[6] as usize;
         let rows = ((lat_1 - lat_0) / dlat + 1.5).floor() as usize;
         let cols = ((lon_1 - lon_0) / dlon + 1.5).floor() as usize;
@@ -338,16 +337,16 @@ mod tests {
         assert_eq!(geoid.contains(&c, 0.0), false);
         assert_eq!(geoid.contains(&c, 1.0), true);
 
-        let n = geoid.interpolation(&c, 1.0).unwrap();
+        let n = geoid.at(&c, 1.0).unwrap();
         assert!((n[0] - 58.83).abs() < 0.1);
 
-        let d = datum.interpolation(&c, 1.0).unwrap();
+        let d = datum.at(&c, 1.0).unwrap();
         assert!(c.default_ellps_dist(&d.to_arcsec().to_radians()) < 1.0);
 
         // Extrapolation
         let c = Coor4D::geo(100., 50., 0., 0.);
         // ...with output converted back to arcsec
-        let d = datum.interpolation(&c, 100.0).unwrap().to_arcsec();
+        let d = datum.at(&c, 100.0).unwrap().to_arcsec();
 
         // The grid is constructed to make the position in degrees equal to
         // the extrapolation value in arcsec.
@@ -362,7 +361,7 @@ mod tests {
         // Check that we're not extrapolating
         assert_eq!(datum.contains(&c, 0.0), true);
         // ...with output converted back to arcsec
-        let d = datum.interpolation(&c, 0.0).unwrap().to_arcsec();
+        let d = datum.at(&c, 0.0).unwrap().to_arcsec();
         // We can do slightly better for interpolation than for extrapolation,
         // but the grid values are f32, so we have only approx 7 significant
         // figures...

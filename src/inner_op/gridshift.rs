@@ -13,9 +13,9 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     'points: for i in 0..n {
         let mut coord = operands.get_coord(i);
 
-        for within in [0.0, 0.5] {
+        for margin in [0.0, 0.5] {
             for grid in grids.iter() {
-                if let Some(d) = grid.interpolation(&coord, within) {
+                if let Some(d) = grid.at(&coord, margin) {
                     // Geoid
                     if grid.bands() == 1 {
                         coord[2] -= d[0];
@@ -60,9 +60,9 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     'points: for i in 0..n {
         let mut coord = operands.get_coord(i);
 
-        for within in [0.0, 0.5] {
+        for margin in [0.0, 0.5] {
             for grid in grids.iter().rev() {
-                if let Some(t) = grid.interpolation(&coord, within) {
+                if let Some(t) = grid.at(&coord, margin) {
                     // Geoid
                     if grid.bands() == 1 {
                         coord[2] += t[0];
@@ -76,7 +76,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
                     let mut t = coord - t;
 
                     'iterate: for _ in 0..10 {
-                        if let Some(t2) = grid.interpolation(&t, within) {
+                        if let Some(t2) = grid.at(&t, margin) {
                             let d = t - coord + t2;
                             t = t - d;
                             // i.e. d.dot(d).sqrt() < 1e-10

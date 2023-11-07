@@ -132,10 +132,10 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     'points: for i in 0..n {
         let cart = operands.get_coord(i);
         let geo = ellps.geographic(&cart);
-        for within in [0.0, 0.5] {
+        for margin in [0.0, 0.5] {
             for grid in grids.iter() {
                 // Interpolated deformation velocity
-                if let Some(v) = grid.interpolation(&geo, within) {
+                if let Some(v) = grid.at(&geo, margin) {
                     // The deformation duration may be given either as a fixed duration or
                     // as the difference between the frame epoch and the observation epoch
                     let d = if dt.is_finite() { dt } else { epoch - geo[3] };
@@ -188,10 +188,10 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     'points: for i in 0..n {
         let cart = operands.get_coord(i);
         let geo = ellps.geographic(&cart);
-        for within in [0.0, 0.5] {
+        for margin in [0.0, 0.5] {
             for grid in grids.iter().rev() {
                 // Interpolated deformation velocity
-                if let Some(v) = grid.interpolation(&geo, within) {
+                if let Some(v) = grid.at(&geo, margin) {
                     // The deformation duration may be given either as a fixed duration or
                     // as the difference between the frame epoch and the observation epoch
                     let d = if dt.is_finite() { dt } else { epoch - geo[3] };
@@ -344,7 +344,7 @@ mod tests {
         let grid = BaseGrid::gravsoft(&buf)?;
 
         // Velocity in the ENU space
-        let v = grid.interpolation(&cph, 0.0).unwrap();
+        let v = grid.at(&cph, 0.0).unwrap();
         // Which we rotate into the XYZ space and integrate for 1000 years
         let deformation = rotate_and_integrate_velocity(v, cph[0], cph[1], 1000.);
 
