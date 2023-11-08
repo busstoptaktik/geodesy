@@ -154,12 +154,11 @@ On the occasion of Knud Poder's 90th birthday in 2015, I wrote a few words about
 > /Thomas Knudsen, Danish Geodata Agency
 >
 >
-> [1] Thomas Knudsen, Simon L. Kokkendorff, Karsten E. Engsager (2012): A Vivid Relic Under Rapid Transformation, OSGeo Journal vol. 10, pp. 55-57, URL https://journal.osgeo.org/index.php/journal/article/download/200/167
+> [1] Thomas Knudsen, Simon L. Kokkendorff, Karsten E. Engsager (2012): A Vivid Relic Under Rapid Transformation, OSGeo Journal vol. 10, pp. 55-57, URL <https://journal.osgeo.org/index.php/journal/article/download/200/167>
 >
 > [2] R. König and K. H. Weise (1951): Mathematische Grundlagen der Höheren Geodäsie und Kartographie, Erster Band. Springer, Berlin/Göttingen/Heidelberg, 1951.
 >
-> [3] L. Krüger (1912): Konforme Abbildung des Erdellipsoids in der Ebene. Neue Folge 52. Royal Prussian Geodetic Institute, Potsdam. URL http://bib.gfz-potsdam.de/pub/digi/krueger2.pdf
-
+> [3] L. Krüger (1912): Konforme Abbildung des Erdellipsoids in der Ebene. Neue Folge 52. Royal Prussian Geodetic Institute, Potsdam. URL <http://bib.gfz-potsdam.de/pub/digi/krueger2.pdf>
 
 ### Document History
 

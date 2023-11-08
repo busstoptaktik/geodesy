@@ -70,7 +70,7 @@ In a sense, this reflects the modularity of the transformation operator implemen
 
 ### Problem #3: The geodetic registry interface ("the resolver")
 
-In PROJ, much automation effort is spent trying to guess the most appropriate transformation betwwen any two CRS. Let's call this effort "resolving" and the contraption implementing that "the resolver".
+In PROJ, much automation effort is spent trying to guess the most appropriate transformation between any two CRS. Let's call this effort "resolving" and the contraption implementing that "the resolver".
 
 PROJ is built on the idea that the users should know what system (e.g. represented as an EPSG CRS code) their data are comming from, and which system they want them transformed to. RG on the other hand is built on the much simpler idea, that the users should know which transformation they want to apply.
 
