@@ -29,7 +29,7 @@ impl Grid for Ntv2SubGrid {
         2
     }
 
-    // Checks if a `Coord4D` is within the grid limits +- `within` grid units
+    // Checks if a `Coor4D` is within the grid limits +- `within` grid units
     fn contains(&self, position: &Coor4D, within: f64) -> bool {
         let lon = position[0];
         let lat = position[1];
@@ -49,7 +49,7 @@ impl Grid for Ntv2SubGrid {
     }
 
     // Implementation adapted from [projrs](https://github.com/3liz/proj4rs/blob/8b5eb762c6be65eed0ca0baea33f8c70d1cd56cb/src/nadgrids/grid.rs#L206C1-L252C6) && [proj4js](https://github.com/proj4js/proj4js/blob/d9faf9f93ebeccac4b79fa80f3e9ad8a7032828b/lib/datum_transform.js#L167)
-    fn interpolation(&self, coord: &Coor4D, within: f64) -> Option<Coor4D> {
+    fn at(&self, coord: &Coor4D, within: f64) -> Option<Coor4D> {
         if !self.contains(coord, within) {
             return None;
         }
@@ -83,13 +83,13 @@ impl Grid for Ntv2SubGrid {
 }
 
 // Buffer offsets for the NTv2 subgrid header
-const NLAT: usize = 88; // (f64)
-const SLAT: usize = 72; // (f64)
-const ELON: usize = 104; // (f64)
-const WLON: usize = 120; // (f64)
-const DLAT: usize = 136; // (f64)
-const DLON: usize = 152; // (f64)
-const GSCOUNT: usize = 168; // (i32) grid node count
+const NLAT: usize = 88;
+const SLAT: usize = 72;
+const ELON: usize = 104;
+const WLON: usize = 120;
+const DLAT: usize = 136;
+const DLON: usize = 152;
+const GSCOUNT: usize = 168;
 
 #[derive(Debug, Clone)]
 pub(crate) struct SubGridHeader {
