@@ -1,5 +1,4 @@
-use super::parser::{NTv2Parser, HEADER_SIZE};
-use crate::{grid::BaseGrid, Error};
+use super::*;
 
 pub(super) fn ntv2_subgrid(parser: &NTv2Parser, head_offset: usize) -> Result<BaseGrid, Error> {
     let head = SubGridHeader::new(parser, head_offset)?;
@@ -21,8 +20,7 @@ const DLAT: usize = 136;
 const DLON: usize = 152;
 const GSCOUNT: usize = 168;
 
-#[derive(Debug, Clone)]
-pub(crate) struct SubGridHeader {
+struct SubGridHeader {
     pub num_nodes: u64,
     pub nlat: f64,
     pub slat: f64,
@@ -35,7 +33,7 @@ pub(crate) struct SubGridHeader {
 impl SubGridHeader {
     // Parse a subgrid header for an NTv2 grid
     // Weird sign conventions like longitude being west positive are handled here.
-    pub(crate) fn new(parser: &NTv2Parser, offset: usize) -> Result<Self, Error> {
+    fn new(parser: &NTv2Parser, offset: usize) -> Result<Self, Error> {
         let nlat = parser.get_f64(offset + NLAT);
         let slat = parser.get_f64(offset + SLAT);
         let wlon = parser.get_f64(offset + WLON);
@@ -68,10 +66,11 @@ impl SubGridHeader {
 }
 
 // Buffer offsets for the NTv2 grid nodes
-const NODE_LON_CORRN: usize = 4; // (f32) correction to the longitude at this node point (secs)
+const NODE_LAT_CORRECTION: usize = 0;
+const NODE_LON_CORRECTION: usize = 4;
 const NODE_SIZE: usize = 16;
 
-// Parses the nodes of a sub grid into a vector of lon/lat shifts in radians
+// Parse the nodes of a sub grid into a vector of lon/lat shifts in radians
 fn parse_subgrid_grid(
     parser: &NTv2Parser,
     grid_start: usize,
@@ -82,15 +81,18 @@ fn parse_subgrid_grid(
         return Err(Error::Invalid("Grid Too Short".to_string()));
     }
 
-    let mut grid = Vec::with_capacity(num_nodes);
+    let mut grid = Vec::with_capacity(2 * num_nodes);
     for i in 0..num_nodes {
         let offset = grid_start + i * NODE_SIZE;
-        let lon_offset = offset + NODE_LON_CORRN;
+        let lat_offset = offset + NODE_LAT_CORRECTION;
+        let lon_offset = offset + NODE_LON_CORRECTION;
 
-        let lat_corr = parser.get_f32(offset).to_radians() / 3600.;
-        let lon_corr = -parser.get_f32(lon_offset).to_radians() / 3600.;
-        grid.push(lon_corr);
-        grid.push(lat_corr);
+        let mut lat_corr = parser.get_f32(lat_offset) as f64;
+        let mut lon_corr = -parser.get_f32(lon_offset) as f64;
+        lat_corr = (lat_corr / 3600.).to_radians();
+        lon_corr = (lon_corr / 3600.).to_radians();
+        grid.push(lon_corr as f32);
+        grid.push(lat_corr as f32);
     }
 
     Ok(grid)

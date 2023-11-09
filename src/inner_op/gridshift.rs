@@ -61,7 +61,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         let mut coord = operands.get_coord(i);
 
         for margin in [0.0, 0.5] {
-            for grid in grids.iter().rev() {
+            for grid in grids.iter() {
                 if let Some(t) = grid.at(&coord, margin) {
                     // Geoid
                     if grid.bands() == 1 {
