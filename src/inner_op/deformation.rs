@@ -189,7 +189,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         let cart = operands.get_coord(i);
         let geo = ellps.geographic(&cart);
         for margin in [0.0, 0.5] {
-            for grid in grids.iter().rev() {
+            for grid in grids.iter() {
                 // Interpolated deformation velocity
                 if let Some(v) = grid.at(&geo, margin) {
                     // The deformation duration may be given either as a fixed duration or

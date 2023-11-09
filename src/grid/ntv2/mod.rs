@@ -1,9 +1,9 @@
-use self::parser::HEADER_SIZE;
-use crate::{Coor4D, Error, Grid};
-use parser::NTv2Parser;
 mod parser;
 mod subgrid;
+
 use super::BaseGrid;
+use crate::{Coor4D, Error, Grid};
+use parser::{NTv2Parser, HEADER_SIZE};
 
 /// Grid for using the NTv2 format.
 #[derive(Debug, Default, Clone)]
@@ -15,11 +15,19 @@ impl Ntv2Grid {
     pub fn new(buf: &[u8]) -> Result<Self, Error> {
         let parser = NTv2Parser::new(buf.into());
 
-        let num_sub_grids = parser.get_u32(40) as usize;
-        if num_sub_grids != 11 && parser.cmp_str(8, "NUM_OREC") {
-            return Err(Error::Unsupported("Wrong header".to_string()));
+        // NUM_OREC is the NTv2 signature, i.e. "magic bytes"
+        if !parser.cmp_str(0, "NUM_OREC") {
+            return Err(Error::Unsupported("Not a NTv2 file".to_string()));
         }
 
+        // If the number of records in the overview record is not 11, then
+        // we have misdetermined the endianness (i.e. the file is corrupt)
+        let num_overview_records = parser.get_u32(8) as usize;
+        if num_overview_records != 11 {
+            return Err(Error::Unsupported("Bad header".to_string()));
+        }
+
+        let num_sub_grids = parser.get_u32(40) as usize;
         if num_sub_grids != 1 {
             // TODO: Add support for subgrids
             return Err(Error::Unsupported(
@@ -35,6 +43,10 @@ impl Ntv2Grid {
         subgrids.push(subgrid::ntv2_subgrid(&parser, HEADER_SIZE)?);
 
         Ok(Self { subgrids })
+    }
+
+    fn _get(&self, index: usize) -> f32 {
+        self.subgrids[0].grid[index]
     }
 }
 
@@ -69,6 +81,7 @@ impl Grid for Ntv2Grid {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use float_eq::assert_float_eq;
 
     #[test]
     fn ntv2_grid() -> Result<(), Error> {
@@ -79,6 +92,8 @@ mod tests {
 
         let barc = Coor4D::geo(41.3874, 2.1686, 0.0, 0.0);
         let ldn = Coor4D::geo(51.505, -0.09, 0., 0.);
+        let first = Coor4D::geo(40.0, 3.5, 0., 0.);
+        let next = Coor4D::geo(40.0, 0., 0., 0.);
 
         assert_eq!(ntv2_grid.subgrids.len(), 1);
         assert_eq!(ntv2_grid.subgrids[0].grid.len(), 1591 * 2);
@@ -87,6 +102,28 @@ mod tests {
         assert!(ntv2_grid.contains(&barc, 0.5));
         assert!(!ntv2_grid.contains(&ldn, 0.5));
 
+        // Interpolation to a point on the southern boundary
+        // expected values from
+        //     ntv2_cvt -f 100800401.gsb 40 0
+        // Followed by
+        //     eva (39.99882421665721-40)*3600
+        //     eva (-0.001203127834531996)*3600
+        let v = ntv2_grid.at(&next, 0.0).unwrap();
+        let dlon = v[0].to_degrees() * 3600.0;
+        let dlat = v[1].to_degrees() * 3600.0;
+        dbg!((dlon, dlat));
+        assert_float_eq!(dlat, -4.2328200340, abs_all <= 1e-6);
+        assert_float_eq!(dlon, -4.3312602043, abs_all <= 1e-6);
+
+        // Interpolation to the south-eastern corner, i.e. the
+        // set of corrections placed physically first in the
+        // file
+        let v = ntv2_grid.at(&first, 1.0).unwrap();
+        let dlon = v[0].to_degrees() * 3600.0;
+        let dlat = v[1].to_degrees() * 3600.0;
+        dbg!((dlon, dlat));
+        assert_float_eq!(dlat, -4.1843700409, abs_all <= 1e-6);
+        assert_float_eq!(dlon, -3.9602699280, abs_all <= 1e-6);
         Ok(())
     }
 }
