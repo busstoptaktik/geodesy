@@ -52,7 +52,6 @@ crate-type = ["cdylib", "rlib"]
 js = ["uuid/js"]
 binary = ["dirs", "clap", "env_logger", "anyhow"]
 with_plain = ["dirs"]
-ntv2 = []
 default = ["binary", "with_plain"]
 
 [[bin]]

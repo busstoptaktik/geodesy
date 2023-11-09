@@ -1,5 +1,6 @@
 #[cfg(feature = "with_plain")]
 use crate::authoring::*;
+use crate::grid::ntv2::Ntv2Grid;
 use std::{path::PathBuf, sync::Arc};
 
 // ----- T H E   P L A I N   C O N T E X T ---------------------------------------------
@@ -211,8 +212,10 @@ impl Context for Plain {
             let Ok(grid) = std::fs::read(path) else {
                 continue;
             };
-            let grid = Arc::new(BaseGrid::gravsoft(&grid)?);
-            return Ok(grid);
+            if ext == "gsb" {
+                return Ok(Arc::new(Ntv2Grid::new(&grid)?));
+            }
+            return Ok(Arc::new(BaseGrid::gravsoft(&grid)?));
         }
         Err(Error::NotFound(name.to_string(), ": Blob".to_string()))
     }
