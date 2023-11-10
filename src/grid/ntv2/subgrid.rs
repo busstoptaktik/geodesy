@@ -1,6 +1,13 @@
 use super::*;
 
-pub(super) fn ntv2_subgrid(parser: &NTv2Parser, head_offset: usize) -> Result<BaseGrid, Error> {
+#[derive(Debug, Default, Clone)]
+struct SubGrid {
+    name: &'static str,
+    parent: &'static str,
+    grid: BaseGrid,
+}
+
+pub(super) fn ntv2_subgrid(parser: &NTv2Parser, head_offset: usize) -> Result<SubGrid, Error> {
     let head = SubGridHeader::new(parser, head_offset)?;
 
     let grid_start = head_offset + HEADER_SIZE;
@@ -9,10 +16,16 @@ pub(super) fn ntv2_subgrid(parser: &NTv2Parser, head_offset: usize) -> Result<Ba
         //head.slat, head.nlat, head.elon, head.wlon, head.dlat, head.dlon, 2.0,
         head.nlat, head.slat, head.wlon, head.elon, head.dlat, head.dlon, 2.0,
     ];
-    BaseGrid::plain(&header, Some(&grid), Some(0))
+    Ok(SubGrid {
+        name: head.name,
+        parent: head.parent,
+        grid: BaseGrid::plain(&header, Some(&grid), Some(0))?,
+    })
 }
 
 // Buffer offsets for the NTv2 subgrid header
+const NAME: usize = 8;
+const PARENT: usize = 24;
 const NLAT: usize = 88;
 const SLAT: usize = 72;
 const ELON: usize = 104;
@@ -22,6 +35,8 @@ const DLON: usize = 152;
 const GSCOUNT: usize = 168;
 
 struct SubGridHeader {
+    pub name: &'static str,
+    pub parent: &'static str,
     pub num_nodes: u64,
     pub nlat: f64,
     pub slat: f64,
@@ -53,6 +68,8 @@ impl SubGridHeader {
         }
 
         Ok(Self {
+            name: parser.get_str(offset + NAME, 8)?,
+            parent: parser.get_str(offset + PARENT, 8)?,
             nlat: nlat.to_radians() / 3600.,
             slat: slat.to_radians() / 3600.,
             // By default the longitude is positive west. By conventions east is positive.
