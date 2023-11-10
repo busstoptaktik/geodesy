@@ -6,7 +6,8 @@ pub(super) fn ntv2_subgrid(parser: &NTv2Parser, head_offset: usize) -> Result<Ba
     let grid_start = head_offset + HEADER_SIZE;
     let grid = parse_subgrid_grid(parser, grid_start, head.num_nodes as usize)?;
     let header = [
-        head.slat, head.nlat, head.elon, head.wlon, head.dlat, head.dlon, 2.0,
+        //head.slat, head.nlat, head.elon, head.wlon, head.dlat, head.dlon, 2.0,
+        head.nlat, head.slat, head.wlon, head.elon, head.dlat, head.dlon, 2.0,
     ];
     BaseGrid::plain(&header, Some(&grid), Some(0))
 }
@@ -91,9 +92,10 @@ fn parse_subgrid_grid(
         let mut lon_corr = -parser.get_f32(lon_offset) as f64;
         lat_corr = (lat_corr / 3600.).to_radians();
         lon_corr = (lon_corr / 3600.).to_radians();
-        grid.push(lon_corr as f32);
         grid.push(lat_corr as f32);
+        grid.push(lon_corr as f32);
     }
+    grid.reverse();
 
     Ok(grid)
 }
