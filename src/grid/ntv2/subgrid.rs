@@ -1,14 +1,12 @@
 use super::*;
 
-#[derive(Debug, Default, Clone)]
-struct SubGrid {
-    name: &'static str,
-    parent: &'static str,
-    grid: BaseGrid,
-}
-
-pub(super) fn ntv2_subgrid(parser: &NTv2Parser, head_offset: usize) -> Result<SubGrid, Error> {
+pub(super) fn ntv2_subgrid(
+    parser: &NTv2Parser,
+    head_offset: usize,
+) -> Result<(String, String, BaseGrid), Error> {
     let head = SubGridHeader::new(parser, head_offset)?;
+    let name = head.name.clone();
+    let parent = head.parent.clone();
 
     let grid_start = head_offset + HEADER_SIZE;
     let grid = parse_subgrid_grid(parser, grid_start, head.num_nodes as usize)?;
@@ -24,8 +22,8 @@ pub(super) fn ntv2_subgrid(parser: &NTv2Parser, head_offset: usize) -> Result<Su
 }
 
 // Buffer offsets for the NTv2 subgrid header
-const NAME: usize = 8;
-const PARENT: usize = 24;
+pub(super) const NAME: usize = 8;
+pub(super) const PARENT: usize = 24;
 const NLAT: usize = 88;
 const SLAT: usize = 72;
 const ELON: usize = 104;
@@ -35,8 +33,8 @@ const DLON: usize = 152;
 const GSCOUNT: usize = 168;
 
 struct SubGridHeader {
-    pub name: &'static str,
-    pub parent: &'static str,
+    pub name: String,
+    pub parent: String,
     pub num_nodes: u64,
     pub nlat: f64,
     pub slat: f64,
@@ -68,8 +66,8 @@ impl SubGridHeader {
         }
 
         Ok(Self {
-            name: parser.get_str(offset + NAME, 8)?,
-            parent: parser.get_str(offset + PARENT, 8)?,
+            name: parser.get_str(offset + NAME, 8)?.trim().to_string(),
+            parent: parser.get_str(offset + PARENT, 8)?.trim().to_string(),
             nlat: nlat.to_radians() / 3600.,
             slat: slat.to_radians() / 3600.,
             // By default the longitude is positive west. By conventions east is positive.
@@ -81,12 +79,18 @@ impl SubGridHeader {
             num_nodes,
         })
     }
+
+    fn into_header(self) -> [f64; 7] {
+        [
+            self.slat, self.nlat, self.elon, self.wlon, self.dlat, self.dlon, 2.0,
+        ]
+    }
 }
 
 // Buffer offsets for the NTv2 grid nodes
 const NODE_LAT_CORRECTION: usize = 0;
 const NODE_LON_CORRECTION: usize = 4;
-const NODE_SIZE: usize = 16;
+pub(super) const NODE_SIZE: usize = 16;
 
 // Parse the nodes of a sub grid into a vector of lon/lat shifts in radians
 fn parse_subgrid_grid(

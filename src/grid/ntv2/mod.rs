@@ -1,6 +1,10 @@
 mod parser;
 mod subgrid;
 
+use std::collections::BTreeMap;
+
+use self::subgrid::NODE_SIZE;
+
 use super::BaseGrid;
 use crate::{Coor4D, Error, Grid};
 use parser::{NTv2Parser, HEADER_SIZE};
@@ -8,7 +12,8 @@ use parser::{NTv2Parser, HEADER_SIZE};
 /// Grid for using the NTv2 format.
 #[derive(Debug, Default, Clone)]
 pub struct Ntv2Grid {
-    subgrids: Vec<BaseGrid>,
+    subgrids: BTreeMap<String, BaseGrid>,
+    lookup_table: BTreeMap<String, Vec<String>>,
 }
 
 impl Ntv2Grid {
@@ -27,26 +32,31 @@ impl Ntv2Grid {
             return Err(Error::Unsupported("Bad header".to_string()));
         }
 
-        let num_sub_grids = parser.get_u32(40) as usize;
-        if num_sub_grids != 1 {
-            // TODO: Add support for subgrids
-            return Err(Error::Unsupported(
-                "Contains more than one subgrid".to_string(),
-            ));
-        }
-
         if !parser.cmp_str(56, "SECONDS") {
             return Err(Error::Invalid("Not in seconds".to_string()));
         }
 
-        let mut subgrids = Vec::with_capacity(num_sub_grids);
-        subgrids.push(subgrid::ntv2_subgrid(&parser, HEADER_SIZE)?);
+        let num_sub_grids = parser.get_u32(40) as usize;
 
-        Ok(Self { subgrids })
-    }
+        let mut subgrids = BTreeMap::new();
+        let mut lookup_table = BTreeMap::new();
 
-    fn _get(&self, index: usize) -> f32 {
-        self.subgrids[0].grid[index]
+        let mut offset = HEADER_SIZE;
+        for _ in 0..num_sub_grids {
+            let (name, parent, grid) = subgrid::ntv2_subgrid(&parser, offset)?;
+            offset += HEADER_SIZE + grid.grid.len() * NODE_SIZE;
+
+            subgrids.insert(name.clone(), grid);
+            lookup_table
+                .entry(parent)
+                .or_insert_with(Vec::new)
+                .push(name);
+        }
+
+        Ok(Self {
+            subgrids,
+            lookup_table,
+        })
     }
 }
 
@@ -55,24 +65,21 @@ impl Grid for Ntv2Grid {
         2
     }
 
-    /// Checks if a `Coord4D` is within the grid limits +- `within` grid units
-    fn contains(&self, position: &Coor4D, within: f64) -> bool {
+    /// Checks if a `Coord4D` is margin the grid limits +- `margin` grid units
+    fn contains(&self, position: &Coor4D, margin: f64) -> bool {
         // Ntv2 spec does not allow grid extensions, so we only need to check the root grid
         // https://web.archive.org/web/20140127204822if_/http://www.mgs.gov.on.ca:80/stdprodconsume/groups/content/@mgs/@iandit/documents/resourcelist/stel02_047447.pdf (pg 27)
-        self.subgrids[0].contains(position, within)
+        self.subgrids
+            .get("0INT2GRS")
+            .unwrap()
+            .contains(position, margin)
     }
 
-    fn at(&self, coord: &Coor4D, within: f64) -> Option<Coor4D> {
-        // NOTE: This may be naive as the spec suggests the order of subgrids is not guaranteed
-        // It's ok for now because we're only supporting single subgrid grids
-        for subgrid in self.subgrids.iter().rev() {
-            if let Some(result) = subgrid.at(coord, within) {
-                return Some(result);
-            }
-        }
+    fn at(&self, coord: &Coor4D, margin: f64) -> Option<Coor4D> {
+        return self.subgrids.get("0INT2GRS").unwrap().at(coord, margin);
 
         // If we get here the grid does not contain the coordinate
-        None
+        // None
     }
 }
 
@@ -96,7 +103,10 @@ mod tests {
         let next = Coor4D::geo(40.0, 0., 0., 0.);
 
         assert_eq!(ntv2_grid.subgrids.len(), 1);
-        assert_eq!(ntv2_grid.subgrids[0].grid.len(), 1591 * 2);
+        assert_eq!(
+            ntv2_grid.subgrids.get("0INT2GRS").unwrap().grid.len(),
+            1591 * 2
+        );
 
         assert_eq!(ntv2_grid.bands(), 2);
         assert!(ntv2_grid.contains(&barc, 0.5));
