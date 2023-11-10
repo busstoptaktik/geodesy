@@ -88,35 +88,49 @@ impl Grid for BaseGrid {
         };
 
         let grid = &self.grid;
+        let mut slef = self.clone();
+        // slef.grid = Vec::new();
+        // slef.lat_0 = slef.lat_0.to_degrees();
+        // slef.lat_1 = slef.lat_1.to_degrees();
+        // slef.lon_0 = slef.lon_0.to_degrees();
+        // slef.lon_1 = slef.lon_1.to_degrees();
+        // slef.dlat = slef.dlat.to_degrees() * 60.;
+        // slef.dlon = slef.dlon.to_degrees() * 60.;
+        // dbg!(slef);
 
         // The interpolation coordinate relative to the grid origin
         let rlon = at[0] - self.lon_0;
-        let rlat = at[1] - self.lat_0;
+        let rlat = self.lat_0 - at[1];
+
 
         // The (row, column) of the lower left node of the grid cell containing
         // the interpolation coordinate - or, in the case of extrapolation:
         // the nearest cell inside the grid.
-        let row = (rlat / self.dlat).floor() as i64;
+        let row = (rlat / -self.dlat).ceil() as i64;
         let col = (rlon / self.dlon).floor() as i64;
+        dbg!((row, col));
 
         let col = col.clamp(0_i64, (self.cols - 2) as i64) as usize;
         let row = row.clamp(1_i64, (self.rows - 1) as i64) as usize;
 
         // Index of the first band element of each corner value
         #[rustfmt::skip]
-        let (ll, lr, ur, ul) = (
+        let (ll, lr, ul, ur) = (
             self.offset + self.bands * (self.cols *  row      + col    ),
             self.offset + self.bands * (self.cols *  row      + col + 1),
-            self.offset + self.bands * (self.cols * (row - 1) + col + 1),
             self.offset + self.bands * (self.cols * (row - 1) + col    ),
+            self.offset + self.bands * (self.cols * (row - 1) + col + 1),
         );
 
         let ll_lon = self.lon_0 + col as f64 * self.dlon;
         let ll_lat = self.lat_0 + row as f64 * self.dlat;
+        dbg!((ll_lon.to_degrees(), ll_lat.to_degrees()));
 
         // Cell relative, cell unit coordinates in a right handed CS
         let rlon = (at[0] - ll_lon) / self.dlon;
         let rlat = (at[1] - ll_lat) / -self.dlat;
+        // dbg!(((rlon*self.dlon).to_degrees(), (rlat*self.dlat).to_degrees()));
+        dbg!((rlon, rlat));
 
         // We cannot return more than 4 bands in a Coor4D, so we ignore
         // any exceeding bands
@@ -140,10 +154,11 @@ impl Grid for BaseGrid {
         for i in 0..bands {
             result[i] = (1. - rlon) * left[i] + rlon * right[i];
         }
+        dbg!(result.to_arcsec());
+        // dbg!((ll, lr, ul, ur));
+        // dbg!((ll-ul, lr-ur));
 
 
-        // let rlat = rlat as f32;
-        // let rlon = rlon as f32;
         // for i in 0..bands {
         //     let lower_left = grid[ll + i] as f64;
         //     let upper_left = grid[ul + i] as f64;
@@ -152,7 +167,6 @@ impl Grid for BaseGrid {
         //     let b = lower_left - lower_right;
         //     let c = upper_right - lower_right;
         //     let d = (upper_left - lower_left) - (upper_right - lower_right);
-//
         //     result[i]  = lower_right + b * rlon + c * rlat + d * rlon * rlat; //) as f64;
         // }
 
@@ -160,7 +174,6 @@ impl Grid for BaseGrid {
         // b = (ll_shift - lr_shift);
         // c = (ur_shift - lr_shift);
         // d = (ul_shift - ll_shift) - (ur_shift - lr_shift);
-//
         // shift = lr_shift + (b * x_cellfrac)
         //                  + (c * y_cellfrac)
         //                  + (d * x_cellfrac * y_cellfrac);
@@ -186,9 +199,13 @@ impl BaseGrid {
         let lon_1 = header[3];
         let dlat = header[4].copysign(lat_1 - lat_0);
         let dlon = header[5].copysign(lon_1 - lon_0);
+        dbg!((lat_0.to_degrees(), lat_1.to_degrees()));
+        dbg!((lon_0.to_degrees(), lon_1.to_degrees()));
+        dbg!((dlon.to_degrees()*60., dlat.to_degrees()*60.));
         let bands = header[6] as usize;
         let rows = ((lat_1 - lat_0) / dlat + 1.5).floor() as usize;
         let cols = ((lon_1 - lon_0) / dlon + 1.5).floor() as usize;
+        dbg!((rows, cols));
         let elements = rows * cols * bands;
 
         let offset = offset.unwrap_or(0);
