@@ -211,8 +211,7 @@ mod tests {
     #[test]
     fn multiple_grids() -> Result<(), Error> {
         let mut ctx = Plain::default();
-        let op = ctx
-            .op("gridshift grids=test.datum, test.datum")?;
+        let op = ctx.op("gridshift grids=test.datum, test.datum")?;
         let cph = Coor4D::geo(55., 12., 0., 0.);
         let mut data = [cph];
 
@@ -290,7 +289,6 @@ mod tests {
         let expected_correction = Coor4D([11.331, 55.971, 0., 0.]);
         ctx.apply(op, Fwd, &mut data)?;
         let correction = ((data[0] - haby) * Coor4D([3600., 3600., 3600., 3600.])).to_degrees();
-        dbg!(correction);
         assert!((correction - expected_correction)[0].abs() < 1e-6);
         assert!((correction - expected_correction)[1].abs() < 1e-6);
 

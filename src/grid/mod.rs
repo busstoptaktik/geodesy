@@ -25,10 +25,10 @@ pub trait Grid: Debug {
 /// geodetic grids in the Gravsoft format.
 #[derive(Debug, Default, Clone)]
 pub struct BaseGrid {
-    lat_0: f64, // Latitude of the first (typically northernmost) row of the grid
-    lat_1: f64, // Latitude of the last (typically southernmost) row of the grid
-    lon_0: f64, // Longitude of the first (typically westernmost) column of each row
-    lon_1: f64, // Longitude of the last (typically easternmost) column of each row
+    lat_n: f64, // Latitude of the first (typically northernmost) row of the grid
+    lat_s: f64, // Latitude of the last (typically southernmost) row of the grid
+    lon_w: f64, // Longitude of the first (typically westernmost) column of each row
+    lon_e: f64, // Longitude of the last (typically easternmost) column of each row
     dlat: f64,  // Signed distance between two consecutive rows
     dlon: f64,  // Signed distance between two consecutive columns
     rows: usize,
@@ -47,8 +47,8 @@ impl Grid for BaseGrid {
     /// "On the border" qualifies as within.
     fn contains(&self, position: &Coor4D, margin: f64) -> bool {
         // We start by assuming that the last row (latitude) is the southernmost
-        let mut min = self.lat_1;
-        let mut max = self.lat_0;
+        let mut min = self.lat_s;
+        let mut max = self.lat_n;
 
         // If it's not, we swap
         if self.dlat > 0. {
@@ -61,8 +61,8 @@ impl Grid for BaseGrid {
         }
 
         // The default assumption is the other way round for columns (longitudes)
-        min = self.lon_0;
-        max = self.lon_1;
+        min = self.lon_w;
+        max = self.lon_e;
         // If it's not, we swap
         if self.dlon < 0. {
             (min, max) = (max, min)
@@ -88,27 +88,23 @@ impl Grid for BaseGrid {
         };
 
         let grid = &self.grid;
-        let mut slef = self.clone();
-        // slef.grid = Vec::new();
-        // slef.lat_0 = slef.lat_0.to_degrees();
-        // slef.lat_1 = slef.lat_1.to_degrees();
-        // slef.lon_0 = slef.lon_0.to_degrees();
-        // slef.lon_1 = slef.lon_1.to_degrees();
-        // slef.dlat = slef.dlat.to_degrees() * 60.;
-        // slef.dlon = slef.dlon.to_degrees() * 60.;
-        // dbg!(slef);
+
+        // For now, we support top-to-bottom, left-to-right scan order only.
+        // This is the common case for most non-block grid formats, with
+        // NTv2 the odd man out. But since we normalize the NTv2 scan order
+        // during parsing, we just cruise along here
+        let dlat = self.dlat.abs();
+        let dlon = self.dlon.abs();
 
         // The interpolation coordinate relative to the grid origin
-        let rlon = at[0] - self.lon_0;
-        let rlat = self.lat_0 - at[1];
-
+        let rlon = at[0] - self.lon_w;
+        let rlat = self.lat_n - at[1];
 
         // The (row, column) of the lower left node of the grid cell containing
         // the interpolation coordinate - or, in the case of extrapolation:
         // the nearest cell inside the grid.
-        let row = (rlat / -self.dlat).ceil() as i64;
-        let col = (rlon / self.dlon).floor() as i64;
-        dbg!((row, col));
+        let row = (rlat / dlat).ceil() as i64;
+        let col = (rlon / dlon).floor() as i64;
 
         let col = col.clamp(0_i64, (self.cols - 2) as i64) as usize;
         let row = row.clamp(1_i64, (self.rows - 1) as i64) as usize;
@@ -122,22 +118,19 @@ impl Grid for BaseGrid {
             self.offset + self.bands * (self.cols * (row - 1) + col + 1),
         );
 
-        let ll_lon = self.lon_0 + col as f64 * self.dlon;
-        let ll_lat = self.lat_0 + row as f64 * self.dlat;
-        dbg!((ll_lon.to_degrees(), ll_lat.to_degrees()));
+        let ll_lon = self.lon_w + col as f64 * dlon;
+        let ll_lat = self.lat_n - row as f64 * dlat;
 
         // Cell relative, cell unit coordinates in a right handed CS
-        let rlon = (at[0] - ll_lon) / self.dlon;
-        let rlat = (at[1] - ll_lat) / -self.dlat;
-        // dbg!(((rlon*self.dlon).to_degrees(), (rlat*self.dlat).to_degrees()));
-        dbg!((rlon, rlat));
+        let rlon = (at[0] - ll_lon) / dlon;
+        let rlat = (at[1] - ll_lat) / dlat;
 
         // We cannot return more than 4 bands in a Coor4D, so we ignore
         // any exceeding bands
         let bands = self.bands.min(4);
+        let mut left = Coor4D::origin();
 
         // Interpolate (or extrapolate, if we're outside of the physical grid)
-        let mut left = Coor4D::origin();
         for i in 0..bands {
             let lower = grid[ll + i] as f64;
             let upper = grid[ul + i] as f64;
@@ -154,30 +147,6 @@ impl Grid for BaseGrid {
         for i in 0..bands {
             result[i] = (1. - rlon) * left[i] + rlon * right[i];
         }
-        dbg!(result.to_arcsec());
-        // dbg!((ll, lr, ul, ur));
-        // dbg!((ll-ul, lr-ur));
-
-
-        // for i in 0..bands {
-        //     let lower_left = grid[ll + i] as f64;
-        //     let upper_left = grid[ul + i] as f64;
-        //     let lower_right = grid[lr + i] as f64;
-        //     let upper_right = grid[ur + i] as f64;
-        //     let b = lower_left - lower_right;
-        //     let c = upper_right - lower_right;
-        //     let d = (upper_left - lower_left) - (upper_right - lower_right);
-        //     result[i]  = lower_right + b * rlon + c * rlat + d * rlon * rlat; //) as f64;
-        // }
-
-
-        // b = (ll_shift - lr_shift);
-        // c = (ur_shift - lr_shift);
-        // d = (ul_shift - ll_shift) - (ur_shift - lr_shift);
-        // shift = lr_shift + (b * x_cellfrac)
-        //                  + (c * y_cellfrac)
-        //                  + (d * x_cellfrac * y_cellfrac);
-
 
         Some(result)
     }
@@ -190,22 +159,18 @@ impl BaseGrid {
         offset: Option<usize>,
     ) -> Result<Self, Error> {
         if header.len() < 7 {
-            return Err(Error::General("Incomplete grid"));
+            return Err(Error::General("Malformed header"));
         }
 
-        let lat_0 = header[0];
-        let lat_1 = header[1];
-        let lon_0 = header[2];
-        let lon_1 = header[3];
-        let dlat = header[4].copysign(lat_1 - lat_0);
-        let dlon = header[5].copysign(lon_1 - lon_0);
-        dbg!((lat_0.to_degrees(), lat_1.to_degrees()));
-        dbg!((lon_0.to_degrees(), lon_1.to_degrees()));
-        dbg!((dlon.to_degrees()*60., dlat.to_degrees()*60.));
+        let lat_n = header[0];
+        let lat_s = header[1];
+        let lon_w = header[2];
+        let lon_e = header[3];
+        let dlat = header[4].copysign(lat_s - lat_n);
+        let dlon = header[5].copysign(lon_e - lon_w);
         let bands = header[6] as usize;
-        let rows = ((lat_1 - lat_0) / dlat + 1.5).floor() as usize;
-        let cols = ((lon_1 - lon_0) / dlon + 1.5).floor() as usize;
-        dbg!((rows, cols));
+        let rows = ((lat_s - lat_n) / dlat + 1.5).floor() as usize;
+        let cols = ((lon_e - lon_w) / dlon + 1.5).floor() as usize;
         let elements = rows * cols * bands;
 
         let offset = offset.unwrap_or(0);
@@ -217,10 +182,10 @@ impl BaseGrid {
         }
 
         Ok(BaseGrid {
-            lat_0,
-            lat_1,
-            lon_0,
-            lon_1,
+            lat_n,
+            lat_s,
+            lon_w,
+            lon_e,
             dlat,
             dlon,
             rows,
@@ -309,22 +274,22 @@ fn gravsoft_grid_reader(buf: &[u8]) -> Result<(Vec<f64>, Vec<f32>), Error> {
         return Err(Error::General("Incomplete Gravsoft header"));
     }
 
-    // The Gravsoft header has lat_1 before lat_0
+    // The Gravsoft header has lat_s before lat_n
     header.swap(0, 1);
 
     // Count the number of bands
-    let lat_0 = header[0];
-    let lat_1 = header[1];
-    let lon_0 = header[2];
-    let lon_1 = header[3];
+    let lat_n = header[0];
+    let lat_s = header[1];
+    let lon_w = header[2];
+    let lon_e = header[3];
 
     // The Gravsoft header has inverted sign for dlat. We force
     // the two deltas to have signs compatible with the grid
     // organization
-    let dlat = header[4].copysign(lat_1 - lat_0);
-    let dlon = header[5].copysign(lon_1 - lon_0);
-    let rows = ((lat_1 - lat_0) / dlat + 1.5).floor() as usize;
-    let cols = ((lon_1 - lon_0) / dlon + 1.5).floor() as usize;
+    let dlat = header[4].copysign(lat_s - lat_n);
+    let dlon = header[5].copysign(lon_e - lon_w);
+    let rows = ((lat_s - lat_n) / dlat + 1.5).floor() as usize;
+    let cols = ((lon_e - lon_w) / dlon + 1.5).floor() as usize;
     let bands = grid.len() / (rows * cols);
     if (rows * cols * bands) > grid.len() || bands < 1 {
         return Err(Error::General("Incomplete Gravsoft grid"));
@@ -355,7 +320,7 @@ fn gravsoft_grid_reader(buf: &[u8]) -> Result<(Vec<f64>, Vec<f32>), Error> {
 mod tests {
     use super::*;
 
-    // lat_0, lat_1, lon_0, lon_1, dlat, dlon
+    // lat_n, lat_s, lon_w, lon_e, dlat, dlon
     const HEADER: [f64; 6] = [58., 54., 8., 16., -1., 1.];
 
     #[allow(dead_code)]
@@ -377,33 +342,6 @@ mod tests {
         54.08, 54.09, 54.10, 54.11, 54.12, 54.13, 54.14, 54.15, 54.16,
     ];
 
-    // A geoid in inverse row order
-    #[rustfmt::skip]
-    const UPSIDE_DOWN_GEOID: [f32; 5*9] = [
-        54.08, 54.09, 54.10, 54.11, 54.12, 54.13, 54.14, 54.15, 54.16,
-        55.08, 55.09, 55.10, 55.11, 55.12, 55.13, 55.14, 55.15, 55.16,
-        56.08, 56.09, 56.10, 56.11, 56.12, 56.13, 56.14, 56.15, 56.16,
-        57.08, 57.09, 57.10, 57.11, 57.12, 57.13, 57.14, 57.15, 57.16,
-        58.08, 58.09, 58.10, 58.11, 58.12, 58.13, 58.14, 58.15, 58.16,
-    ];
-
-    #[rustfmt::skip]
-    const MIRRORED_GEOID: [f32; 5*9] = [
-        58.16, 58.15, 58.14, 58.13, 58.12, 58.11, 58.10, 58.09, 58.08,
-        57.16, 57.15, 57.14, 57.13, 57.12, 57.11, 57.10, 57.09, 57.08,
-        56.16, 56.15, 56.14, 56.13, 56.12, 56.11, 56.10, 56.09, 56.08,
-        55.16, 55.15, 55.14, 55.13, 55.12, 55.11, 55.10, 55.09, 55.08,
-        54.16, 54.15, 54.14, 54.13, 54.12, 54.11, 54.10, 54.09, 54.08,
-    ];
-
-    #[rustfmt::skip]
-    const MIRRORED_UPSIDE_DOWN_GEOID: [f32; 5*9] = [
-        54.16, 54.15, 54.14, 54.13, 54.12, 54.11, 54.10, 54.09, 54.08,
-        55.16, 55.15, 55.14, 55.13, 55.12, 55.11, 55.10, 55.09, 55.08,
-        56.16, 56.15, 56.14, 56.13, 56.12, 56.11, 56.10, 56.09, 56.08,
-        57.16, 57.15, 57.14, 57.13, 57.12, 57.11, 57.10, 57.09, 57.08,
-        58.16, 58.15, 58.14, 58.13, 58.12, 58.11, 58.10, 58.09, 58.08,
-    ];
     #[test]
     fn grid_header() -> Result<(), Error> {
         // Create a datum correction grid (2 bands)
@@ -421,10 +359,6 @@ mod tests {
         datum_header.swap(0, 1);
         datum_header[4] = -datum_header[4];
         let datum = BaseGrid::plain(&datum_header, Some(&datum_grid), None)?;
-
-        let c = Coor4D::geo(55.06, 12.03, 0., 0.);
-        let d = datum.at(&c, 1.0).unwrap();
-        assert!(c.default_ellps_dist(&d.to_arcsec().to_radians()) < 1.0);
 
         // Extrapolation
         let c = Coor4D::geo(100., 50., 0., 0.);
@@ -462,70 +396,6 @@ mod tests {
 
         let n = geoid.at(&c, 1.0).unwrap();
         assert!((n[0] - (58.75 + 0.0825)).abs() < 0.0001);
-
-        // Create an upside-down geoid grid (1 band)
-        let mut geoid_header = datum_header.clone();
-        geoid_header.swap(0, 1); // lat_0=54, lat_1=58
-        geoid_header[6] = 1.0; // 1 band
-        let geoid_grid = Vec::from(UPSIDE_DOWN_GEOID);
-        let geoid = BaseGrid::plain(&geoid_header, Some(&geoid_grid), None)?;
-
-        let c = Coor4D::geo(58.75, 08.25, 0., 0.);
-        assert_eq!(geoid.contains(&c, 0.0), false);
-        assert_eq!(geoid.contains(&c, 1.0), true);
-
-        let n = geoid.at(&c, 1.0).unwrap();
-        assert!((n[0] - 58.83).abs() < 0.1);
-
-        let c = Coor4D::geo(53.25, 8.0, 0., 0.);
-        assert_eq!(geoid.contains(&c, 0.0), false);
-        assert_eq!(geoid.contains(&c, 1.0), true);
-
-        let n = geoid.at(&c, 1.0).unwrap();
-        assert!((n[0] - (53.25 + 0.08)).abs() < 0.0001);
-
-        // Create a mirrored geoid grid (1 band)
-        let mut geoid_header = datum_header.clone();
-        geoid_header.swap(2, 3); // lon_0=16, lon_1=8
-        geoid_header[5] = -geoid_header[5];
-        geoid_header[6] = 1.0; // 1 band
-        let geoid_grid = Vec::from(MIRRORED_GEOID);
-        let geoid = BaseGrid::plain(&geoid_header, Some(&geoid_grid), None)?;
-
-        let c = Coor4D::geo(58.75, 08.25, 0., 0.);
-        assert_eq!(geoid.contains(&c, 0.0), false);
-        assert_eq!(geoid.contains(&c, 1.0), true);
-
-        let n = geoid.at(&c, 1.0).unwrap();
-        assert!((n[0] - 58.83).abs() < 0.1);
-
-        let c = Coor4D::geo(53.25, 8.0, 0., 0.);
-        assert_eq!(geoid.contains(&c, 0.0), false);
-        assert_eq!(geoid.contains(&c, 1.0), true);
-
-        let n = geoid.at(&c, 1.0).unwrap();
-        assert!((n[0] - (53.25 + 0.08)).abs() < 0.001);
-
-        // Create a mirrored upside down geoid grid (1 band)
-        geoid_header.swap(0, 1); // lon_0=16, lon_1=8
-        geoid_header[4] = -geoid_header[4];
-        let geoid_grid = Vec::from(MIRRORED_UPSIDE_DOWN_GEOID);
-        let geoid = BaseGrid::plain(&geoid_header, Some(&geoid_grid), None)?;
-
-        let c = Coor4D::geo(58.75, 08.25, 0., 0.);
-        assert_eq!(geoid.contains(&c, 0.0), false);
-        assert_eq!(geoid.contains(&c, 1.0), true);
-
-        let n = geoid.at(&c, 1.0).unwrap();
-        assert!((n[0] - 58.83).abs() < 0.1);
-
-        let c = Coor4D::geo(53.25, 8.0, 0., 0.);
-        assert_eq!(geoid.contains(&c, 0.0), false);
-        assert_eq!(geoid.contains(&c, 1.0), true);
-
-        let n = geoid.at(&c, 1.0).unwrap();
-        assert!((n[0] - (53.25 + 0.08)).abs() < 0.001);
-
         Ok(())
     }
 }
