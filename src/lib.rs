@@ -197,7 +197,6 @@ pub use crate::op::OpParameter;
 pub use crate::op::ParsedParameters;
 pub use crate::op::RawParameters;
 
-#[cfg(feature = "ntv2")]
 pub use crate::grid::ntv2::Ntv2Grid;
 
 #[cfg(doc)]
