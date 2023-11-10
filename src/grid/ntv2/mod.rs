@@ -58,6 +58,31 @@ impl Ntv2Grid {
             lookup_table,
         })
     }
+
+    // As defined by the FGRID subroutine in the NTv2 spec: https://web.archive.org/web/20140127204822if_/http://www.mgs.gov.on.ca:80/stdprodconsume/groups/content/@mgs/@iandit/documents/resourcelist/stel02_047447.pdf (page 42)
+    fn find_grid(&self, coord: &Coor4D, margin: f64) -> Option<&BaseGrid> {
+        // Start with grids whose parent grid id is `NONE`
+        let mut current_parent_id: String = "NONE".to_string();
+        let mut queue = self.lookup_table.get(&current_parent_id).unwrap().clone();
+
+        while let Some(child_id) = queue.pop() {
+            // It will be safe to unwrap as a panic means we didn't
+            // properly add the grids to the lookup table subgrids properties
+            let current_grid = self.subgrids.get(&child_id).unwrap();
+
+            if current_grid.contains(coord, margin) {
+                current_parent_id = child_id.clone();
+                if let Some(children) = self.lookup_table.get(&current_parent_id) {
+                    queue = children.clone();
+                    continue;
+                }
+                // If we get here it means the current_parent_id has no children and we have found the grid
+                break;
+            }
+        }
+
+        self.subgrids.get(&current_parent_id)
+    }
 }
 
 impl Grid for Ntv2Grid {
@@ -67,19 +92,21 @@ impl Grid for Ntv2Grid {
 
     /// Checks if a `Coord4D` is margin the grid limits +- `margin` grid units
     fn contains(&self, position: &Coor4D, margin: f64) -> bool {
-        // Ntv2 spec does not allow grid extensions, so we only need to check the root grid
-        // https://web.archive.org/web/20140127204822if_/http://www.mgs.gov.on.ca:80/stdprodconsume/groups/content/@mgs/@iandit/documents/resourcelist/stel02_047447.pdf (pg 27)
-        self.subgrids
-            .get("0INT2GRS")
-            .unwrap()
-            .contains(position, margin)
+        // If `.get` returns Some then the grid contains the coordinate
+        if let Some(_) = self.find_grid(position, margin) {
+            return true;
+        }
+
+        false
     }
 
     fn at(&self, coord: &Coor4D, margin: f64) -> Option<Coor4D> {
-        return self.subgrids.get("0INT2GRS").unwrap().at(coord, margin);
+        if let Some(grid) = self.find_grid(coord, margin) {
+            return grid.at(coord, margin);
+        }
 
         // If we get here the grid does not contain the coordinate
-        // None
+        None
     }
 }
 
