@@ -118,20 +118,54 @@ impl Grid for BaseGrid {
         let rlon = (at[0] - ll_lon) / self.dlon;
         let rlat = (at[1] - ll_lat) / -self.dlat;
 
-        // Interpolate
+        // We cannot return more than 4 bands in a Coor4D, so we ignore
+        // any exceeding bands
+        let bands = self.bands.min(4);
+
+        // Interpolate (or extrapolate, if we're outside of the physical grid)
         let mut left = Coor4D::origin();
-        for i in 0..self.bands {
-            left[i] = (1. - rlat) * grid[ll + i] as f64 + rlat * grid[ul + i] as f64;
+        for i in 0..bands {
+            let lower = grid[ll + i] as f64;
+            let upper = grid[ul + i] as f64;
+            left[i] = (1. - rlat) * lower + rlat * upper;
         }
         let mut right = Coor4D::origin();
-        for i in 0..self.bands {
-            right[i] = (1. - rlat) * grid[lr + i] as f64 + rlat * grid[ur + i] as f64;
+        for i in 0..bands {
+            let lower = grid[lr + i] as f64;
+            let upper = grid[ur + i] as f64;
+            right[i] = (1. - rlat) * lower + rlat * upper;
         }
 
         let mut result = Coor4D::origin();
-        for i in 0..self.bands {
+        for i in 0..bands {
             result[i] = (1. - rlon) * left[i] + rlon * right[i];
         }
+
+
+        // let rlat = rlat as f32;
+        // let rlon = rlon as f32;
+        // for i in 0..bands {
+        //     let lower_left = grid[ll + i] as f64;
+        //     let upper_left = grid[ul + i] as f64;
+        //     let lower_right = grid[lr + i] as f64;
+        //     let upper_right = grid[ur + i] as f64;
+        //     let b = lower_left - lower_right;
+        //     let c = upper_right - lower_right;
+        //     let d = (upper_left - lower_left) - (upper_right - lower_right);
+//
+        //     result[i]  = lower_right + b * rlon + c * rlat + d * rlon * rlat; //) as f64;
+        // }
+
+
+        // b = (ll_shift - lr_shift);
+        // c = (ur_shift - lr_shift);
+        // d = (ul_shift - ll_shift) - (ur_shift - lr_shift);
+//
+        // shift = lr_shift + (b * x_cellfrac)
+        //                  + (c * y_cellfrac)
+        //                  + (d * x_cellfrac * y_cellfrac);
+
+
         Some(result)
     }
 }

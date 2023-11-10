@@ -173,7 +173,7 @@ mod tests {
     #[test]
     fn gridshift() -> Result<(), Error> {
         let mut ctx = Plain::default();
-        let op = ctx.op("gridshift grids=../../geodesy/datum/test.datum")?;
+        let op = ctx.op("gridshift grids=test.datum")?;
         let cph = Coor4D::geo(55., 12., 0., 0.);
         let mut data = [cph];
 
@@ -190,10 +190,29 @@ mod tests {
     }
 
     #[test]
+    fn ntv2() -> Result<(), Error> {
+        let mut ctx = Plain::default();
+        let op = ctx.op("gridshift grids=100800401.gsb")?;
+        let bcn = Coor2D::geo(41.3874, 2.1686);
+        let mut data = [bcn];
+
+        ctx.apply(op, Fwd, &mut data)?;
+        let res = data[0].to_geo();
+        assert!((res[0] - 41.38627500250805).abs() < 1e-8);
+        assert!((res[1] - 2.167450821894838).abs() < 1e-8);
+
+        ctx.apply(op, Inv, &mut data)?;
+        assert!((data[0][0] - bcn[0]).abs() < 1e-10);
+        assert!((data[0][1] - bcn[1]).abs() < 1e-10);
+
+        Ok(())
+    }
+
+    #[test]
     fn multiple_grids() -> Result<(), Error> {
         let mut ctx = Plain::default();
         let op = ctx
-            .op("gridshift grids=../../geodesy/datum/test.datum,../../geodesy/datum/test.datum")?;
+            .op("gridshift grids=test.datum, test.datum")?;
         let cph = Coor4D::geo(55., 12., 0., 0.);
         let mut data = [cph];
 
@@ -212,7 +231,7 @@ mod tests {
     #[test]
     fn fails_without_null_grid() -> Result<(), Error> {
         let mut ctx = Plain::default();
-        let op = ctx.op("gridshift grids=../../geodesy/datum/test.datum")?;
+        let op = ctx.op("gridshift grids=test.datum")?;
 
         let ldn = Coor4D::geo(51.505, -0.09, 0., 0.);
         let mut data = [ldn];
@@ -228,7 +247,7 @@ mod tests {
     #[test]
     fn passes_with_null_grid() -> Result<(), Error> {
         let mut ctx = Plain::default();
-        let op = ctx.op("gridshift grids=../../geodesy/datum/test.datum, @null")?;
+        let op = ctx.op("gridshift grids=test.datum, @null")?;
 
         let ldn = Coor4D::geo(51.505, -0.09, 0., 0.);
         let mut data = [ldn];
@@ -250,7 +269,7 @@ mod tests {
     #[test]
     fn optional_grid() -> Result<(), Error> {
         let mut ctx = Plain::default();
-        let op = ctx.op("gridshift grids=@../../geodesy/datum/test_subset.datum, @missing.gsb, ../../geodesy/datum/test.datum")?;
+        let op = ctx.op("gridshift grids=@test_subset.datum, @missing.gsb, test.datum")?;
 
         // Copenhagen is outside of the (optional, but present, subset grid)
         let cph = Coor4D::geo(55., 12., 0., 0.);
