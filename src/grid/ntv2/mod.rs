@@ -1,18 +1,21 @@
 mod parser;
 mod subgrid;
 
-use std::collections::BTreeMap;
-
 use self::subgrid::NODE_SIZE;
-
 use super::BaseGrid;
 use crate::{Coor4D, Error, Grid};
 use parser::{NTv2Parser, HEADER_SIZE};
+use std::collections::BTreeMap;
 
 /// Grid for using the NTv2 format.
 #[derive(Debug, Default, Clone)]
 pub struct Ntv2Grid {
+    // Subgrids stored by their `SUBNAME` property
     subgrids: BTreeMap<String, BaseGrid>,
+
+    // Lookup table for finding subgrids by their `PARENT` property
+    // The key is the `PARENT` property and the value is a vector of `SUBNAME` properties
+    // It's expected that root subgrids have a `PARENT` property of `NONE`
     lookup_table: BTreeMap<String, Vec<String>>,
 }
 
@@ -44,8 +47,11 @@ impl Ntv2Grid {
         let mut offset = HEADER_SIZE;
         for _ in 0..num_sub_grids {
             let (name, parent, grid) = subgrid::ntv2_subgrid(&parser, offset)?;
-            offset += HEADER_SIZE + grid.grid.len() * NODE_SIZE;
+            offset += HEADER_SIZE + grid.grid.len() / 2 * NODE_SIZE;
 
+            // The NTv2 spec does not guarantee the order of subgrids, so we must create
+            // a lookup table from parent to children to make it possible for `find_grid` to
+            // have a start point for working out which subgrid, if any, contains the point
             subgrids.insert(name.clone(), grid);
             lookup_table
                 .entry(parent)
@@ -59,19 +65,26 @@ impl Ntv2Grid {
         })
     }
 
-    // As defined by the FGRID subroutine in the NTv2 spec: https://web.archive.org/web/20140127204822if_/http://www.mgs.gov.on.ca:80/stdprodconsume/groups/content/@mgs/@iandit/documents/resourcelist/stel02_047447.pdf (page 42)
+    // As defined by the FGRID subroutine in the NTv2 [spec](https://web.archive.org/web/20140127204822if_/http://www.mgs.gov.on.ca:80/stdprodconsume/groups/content/@mgs/@iandit/documents/resourcelist/stel02_047447.pdf) (page 42)
     fn find_grid(&self, coord: &Coor4D, margin: f64) -> Option<&BaseGrid> {
         // Start with grids whose parent grid id is `NONE`
         let mut current_parent_id: String = "NONE".to_string();
         let mut queue = self.lookup_table.get(&current_parent_id).unwrap().clone();
 
         while let Some(child_id) = queue.pop() {
-            // It will be safe to unwrap as a panic means we didn't
-            // properly add the grids to the lookup table subgrids properties
+            // Unwrappping is safe as a panic means we didn't
+            // properly populate the `lookup_table` & `subgrids` properties
             let current_grid = self.subgrids.get(&child_id).unwrap();
 
+            // The NTv2 spec has a myriad of different options for handling coordinates
+            // that fall on the boundaries of a grid. We've chosen to ignore them for now
+            // and return most dense AND first grid that contains the coordinate.
+            // This should be relatively safe given then NTv2 spec does ensure that grids cannot overlap.
+            // See the FGRID subroutine in the NTv2 spec linked above for more details.
+            // NOTE: We may want to consider enforcing a margin of 0.0 for inner grids.
             if current_grid.contains(coord, margin) {
                 current_parent_id = child_id.clone();
+
                 if let Some(children) = self.lookup_table.get(&current_parent_id) {
                     queue = children.clone();
                     continue;
@@ -90,10 +103,9 @@ impl Grid for Ntv2Grid {
         2
     }
 
-    /// Checks if a `Coord4D` is margin the grid limits +- `margin` grid units
+    /// Checks if a `Coord4D` is within the grid limits +- `margin` grid units
     fn contains(&self, position: &Coor4D, margin: f64) -> bool {
-        // If `.get` returns Some then the grid contains the coordinate
-        if let Some(_) = self.find_grid(position, margin) {
+        if self.find_grid(position, margin).is_some() {
             return true;
         }
 

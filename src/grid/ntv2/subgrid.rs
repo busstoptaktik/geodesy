@@ -22,8 +22,8 @@ pub(super) fn ntv2_subgrid(
 }
 
 // Buffer offsets for the NTv2 subgrid header
-pub(super) const NAME: usize = 8;
-pub(super) const PARENT: usize = 24;
+const NAME: usize = 8;
+const PARENT: usize = 24;
 const NLAT: usize = 88;
 const SLAT: usize = 72;
 const ELON: usize = 104;
