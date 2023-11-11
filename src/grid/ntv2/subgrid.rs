@@ -10,15 +10,9 @@ pub(super) fn ntv2_subgrid(
 
     let grid_start = head_offset + HEADER_SIZE;
     let grid = parse_subgrid_grid(parser, grid_start, head.num_nodes as usize)?;
-    let header = [
-        //head.slat, head.nlat, head.elon, head.wlon, head.dlat, head.dlon, 2.0,
-        head.nlat, head.slat, head.wlon, head.elon, head.dlat, head.dlon, 2.0,
-    ];
-    Ok(SubGrid {
-        name: head.name,
-        parent: head.parent,
-        grid: BaseGrid::plain(&header, Some(&grid), Some(0))?,
-    })
+    let header = head.into_header();
+    let base_grid = BaseGrid::plain(&header, Some(&grid), Some(0))?;
+    Ok((name, parent, base_grid))
 }
 
 // Buffer offsets for the NTv2 subgrid header
@@ -82,7 +76,7 @@ impl SubGridHeader {
 
     fn into_header(self) -> [f64; 7] {
         [
-            self.slat, self.nlat, self.elon, self.wlon, self.dlat, self.dlon, 2.0,
+            self.nlat, self.slat, self.wlon, self.elon, self.dlat, self.dlon, 2.0,
         ]
     }
 }
