@@ -212,7 +212,7 @@ mod tests {
         let op = ctx.op("latitude conformal ellps=GRS80")?;
         let mut operands = [Coor4D::geo(55., 12., 0., 0.)];
         ctx.apply(op, Fwd, &mut operands)?;
-        assert!((operands[0][1].to_degrees() - 54.819_109_023_689_023_275).abs() < 1e-12);
+        assert!((operands[0][1].to_degrees() - 54.819_109_023_689_02).abs() < 1e-12);
         ctx.apply(op, Inv, &mut operands)?;
         assert!((operands[0][1].to_degrees() - 55.).abs() < 1e-12);
 

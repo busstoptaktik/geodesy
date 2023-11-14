@@ -376,7 +376,7 @@ mod tests {
         // Interpolation
         let c = Coor4D::geo(55.06, 12.03, 0., 0.);
         // Check that we're not extrapolating
-        assert_eq!(datum.contains(&c, 0.0), true);
+        assert!(datum.contains(&c, 0.0));
         // ...with output converted back to arcsec
         let d = datum.at(&c, 0.0).unwrap().to_arcsec();
         // We can do slightly better for interpolation than for extrapolation,
@@ -391,8 +391,8 @@ mod tests {
         let geoid = BaseGrid::plain(&geoid_header, Some(&geoid_grid), None)?;
 
         let c = Coor4D::geo(58.75, 08.25, 0., 0.);
-        assert_eq!(geoid.contains(&c, 0.0), false);
-        assert_eq!(geoid.contains(&c, 1.0), true);
+        assert!(!geoid.contains(&c, 0.0));
+        assert!(geoid.contains(&c, 1.0));
 
         let n = geoid.at(&c, 1.0).unwrap();
         assert!((n[0] - (58.75 + 0.0825)).abs() < 0.0001);

@@ -294,7 +294,7 @@ mod tests {
         let projected = [Coor2D::raw(679245.7281740266, 596562.7774687681)];
 
         // Forward
-        let mut operands = geo.clone();
+        let mut operands = geo;
 
         assert_eq!(1, ctx.apply(op, Fwd, &mut operands)?);
         for i in 0..operands.len() {
@@ -308,7 +308,7 @@ mod tests {
         }
 
         // Forward
-        let mut operands = geo.clone();
+        let mut operands = geo;
 
         ctx.apply(op, Fwd, &mut operands)?;
         for i in 0..operands.len() {

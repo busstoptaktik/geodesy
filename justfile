@@ -13,17 +13,18 @@ default: list
 list:
     just -l
 
-# Basic test: Just library unit tests. Use target "test-all" or "check" for successively more in depth check ups.
+# Basic test: Just library unit tests. Use target "test-all", "check" or "clean-check" for successively more in depth check ups.
 test:
     cargo test --lib
 
-# Unit tests, doc tests, pile test, and compiling of examples
+# Unit tests, doc tests, and compiling of examples
 test-all:
-    cargo test
+    cargo test --all
 
 # Check that all tests pass, and that formatting and coding conventions are OK.
 check:
-    cargo clippy
+    cargo clippy -- --deny warnings
+    cargo clippy --tests -- --deny warnings
     cargo fmt -- --check
     cargo test
     cargo doc --all-features --no-deps

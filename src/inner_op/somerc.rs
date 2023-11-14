@@ -212,7 +212,7 @@ mod tests {
         let op = ctx.op("somerc lat_0=46.9524055555556 lon_0=7.43958333333333 k_0=1 x_0=2600000 y_0=1200000 ellps=bessel")?;
 
         let input = [Coor4D::raw(2531098.0, 1167363.0, 452.0, 0.0)];
-        let mut operands = input.clone();
+        let mut operands = input;
 
         let expected = [Coor4D::raw(
             0.11413236074541264,
@@ -239,7 +239,7 @@ mod tests {
             452.0,
             0.0,
         )];
-        let mut operands = input.clone();
+        let mut operands = input;
         let expected = [Coor4D::raw(2531098.0, 1167363.0, 452.0, 0.0)];
 
         ctx.apply(op, Fwd, &mut operands)?;
@@ -265,7 +265,7 @@ mod tests {
             Coor4D::gis(-2., -1., 0., 0.0),
         ];
 
-        let mut operands = input.clone();
+        let mut operands = input;
 
         let expected = [
             Coor4D::raw(222638.98158654713, 110579.96521824898, 0., 0.0),

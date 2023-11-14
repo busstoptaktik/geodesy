@@ -294,7 +294,7 @@ mod tests {
         let p = Coor2D::raw(3962799.45, 2999718.85);
         let projected = [p];
 
-        let mut operands = geo.clone();
+        let mut operands = geo;
 
         // Forward
         ctx.apply(op, Fwd, &mut operands)?;

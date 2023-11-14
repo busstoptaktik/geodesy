@@ -202,10 +202,10 @@ mod tests {
 
         let ellps = Ellipsoid::named("GRS80")?;
         assert_eq!(ellps.semimajor_axis(), 6378137.0);
-        assert_eq!(ellps.flattening(), 1. / 298.25722_21008_82711_24316);
+        assert_eq!(ellps.flattening(), 1. / 298.257_222_100_882_7);
 
-        assert!((ellps.normalized_meridian_arc_unit() - 0.9983242984230415).abs() < 1e-13);
-        assert!((4.0 * ellps.meridian_quadrant() - 40007862.9169218).abs() < 1e-7);
+        assert!((ellps.normalized_meridian_arc_unit() - 0.998_324_298_423_041_5).abs() < 1e-13);
+        assert!((4.0 * ellps.meridian_quadrant() - 40_007_862.916_921_8).abs() < 1e-7);
         Ok(())
     }
 
@@ -215,11 +215,11 @@ mod tests {
         let ellps = Ellipsoid::new(ellps.semimajor_axis(), ellps.flattening());
         let ellps = Ellipsoid::triaxial(ellps.a, ellps.a - 1., ellps.f);
         assert_eq!(ellps.semimajor_axis(), 6378137.0);
-        assert_eq!(ellps.flattening(), 1. / 298.25722_21008_82711_24316);
+        assert_eq!(ellps.flattening(), 1. / 298.257_222_100_882_7);
 
         // Additional shape descriptors
         assert!((ellps.eccentricity() - 0.081819191).abs() < 1.0e-10);
-        assert!((ellps.eccentricity_squared() - 0.00669_43800_22903_41574).abs() < 1.0e-10);
+        assert!((ellps.eccentricity_squared() - 0.006_694_380_022_903_416).abs() < 1.0e-10);
 
         // Additional size descriptors
         assert!((ellps.semiminor_axis() - 6_356_752.31414_0347).abs() < 1e-9);
@@ -245,10 +245,11 @@ mod tests {
         let ellps = Ellipsoid::named("GRS80")?;
         // The curvatures at the North Pole
         assert!(
-            (ellps.meridian_radius_of_curvature(90_f64.to_radians()) - 6_399_593.6259).abs() < 1e-4
+            (ellps.meridian_radius_of_curvature(90_f64.to_radians()) - 6_399_593.625_9).abs()
+                < 1e-4
         );
         assert!(
-            (ellps.prime_vertical_radius_of_curvature(90_f64.to_radians()) - 6_399_593.6259).abs()
+            (ellps.prime_vertical_radius_of_curvature(90_f64.to_radians()) - 6_399_593.625_9).abs()
                 < 1e-4
         );
         assert!(
@@ -265,7 +266,7 @@ mod tests {
         );
 
         // The curvatures at the Equator
-        assert!((ellps.meridian_radius_of_curvature(0.0) - 6_335_439.3271).abs() < 1.0e-4);
+        assert!((ellps.meridian_radius_of_curvature(0.0) - 6_335_439.327_1).abs() < 1.0e-4);
         assert!(
             (ellps.prime_vertical_radius_of_curvature(0.0) - ellps.semimajor_axis()).abs() < 1.0e-4
         );
@@ -274,6 +275,8 @@ mod tests {
         let latitudes = [
             50f64, 51.0, 52.0, 53.0, 54.0, 55.0, 56.0, 57.0, 58.0, 59.0, 60.0,
         ];
+
+        #[allow(clippy::excessive_precision)]
         let prime_vertical_radii_of_curvature = [
             6390702.044256360,
             6391069.984921544,
@@ -288,6 +291,7 @@ mod tests {
             6394209.173926849,
         ];
 
+        #[allow(clippy::excessive_precision)]
         let meridian_radii_of_curvature = [
             6372955.9257095090,
             6374056.7459167000,
@@ -301,16 +305,12 @@ mod tests {
             6382470.6113096075,
             6383453.8572549970,
         ];
-        // println!("lat; N; M; R");
 
         for (i, lat) in latitudes.iter().enumerate() {
             let n = ellps.prime_vertical_radius_of_curvature(lat.to_radians());
             let m = ellps.meridian_radius_of_curvature(lat.to_radians());
-            // let r = (n*m).sqrt();
             assert!((n - prime_vertical_radii_of_curvature[i]).abs() < 1e-9);
             assert!((m - meridian_radii_of_curvature[i]).abs() < 1e-9);
-
-            // println!("{lat}; {n}; {m}; {r}");
         }
         Ok(())
     }

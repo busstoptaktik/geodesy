@@ -301,11 +301,11 @@ mod tests {
         assert_eq!([-1., 1., -1., 1.], descriptor("sedf_any").unwrap().mult);
 
         // noop
-        assert_eq!(false, descriptor("sedf_any").unwrap().noop);
-        assert_eq!(true, descriptor("enuf_any").unwrap().noop);
-        assert_eq!(true, descriptor("enuf_rad").unwrap().noop);
-        assert_eq!(true, descriptor("enuf").unwrap().noop);
-        assert_eq!(true, descriptor("pass").unwrap().noop);
+        assert!(!descriptor("sedf_any").unwrap().noop);
+        assert!(descriptor("enuf_any").unwrap().noop);
+        assert!(descriptor("enuf_rad").unwrap().noop);
+        assert!(descriptor("enuf").unwrap().noop);
+        assert!(descriptor("pass").unwrap().noop);
 
         // Invalid angular unit "pap"
         assert!(descriptor("sedf_pap").is_none());
@@ -322,7 +322,7 @@ mod tests {
         assert!(give.mult[1] - 400. / 360. < 1e-10); // mult[1] is positive for northish
         assert!(give.mult[2] + 1.0 < 1e-10); // mult[2] is negative for downish
         assert!(give.mult[3] - 1.0 < 1e-10); // mult[3] is positive for timeish
-        assert!(give.noop == false);
+        assert!(!give.noop);
     }
 
     // Test the basic adapt functionality

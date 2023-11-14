@@ -194,7 +194,7 @@ mod tests {
             Coor4D::raw(-455_673.814_189_040,-6_198_246.671_090_279, 0., 0.)
         ];
 
-        let mut operands = geo.clone();
+        let mut operands = geo;
         ctx.apply(op, Fwd, &mut operands)?;
         for i in 0..operands.len() {
             assert!(operands[i].hypot2(&projected[i]) < 5e-3);
@@ -231,7 +231,7 @@ mod tests {
             Coor4D::raw(-455_673.814_189_040,-6_198_246.671_090_279, 0., 0.)
         ];
 
-        let mut operands = geo.clone();
+        let mut operands = geo;
         ctx.apply(op, Fwd, &mut operands)?;
         for i in 0..operands.len() {
             assert!(operands[i].hypot2(&projected[i]) < 5e-3);
@@ -265,7 +265,7 @@ mod tests {
             Coor4D::raw(-455_673.814_189_040, 1e7-6_198_246.671_090_279, 0., 0.)
         ];
 
-        let mut operands = geo.clone();
+        let mut operands = geo;
         ctx.apply(op, Fwd, &mut operands)?;
         for i in 0..operands.len() {
             assert!(operands[i].hypot2(&projected[i]) < 5e-3);
