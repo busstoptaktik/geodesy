@@ -131,15 +131,15 @@ mod tests {
         ];
 
         let projected = [
-            Coor4D::raw(1335833.889519282850, 7326837.714873877354, 0., 0.),
-            Coor4D::raw(222638.981586547, 110579.965218249, 0., 0.),
-            Coor4D::raw(222638.981586547, -110579.965218249, 0., 0.),
-            Coor4D::raw(-222638.981586547, 110579.965218249, 0., 0.),
-            Coor4D::raw(-222638.981586547, -110579.965218249, 0., 0.),
+            Coor4D::raw(1_335_833.889_519_282_8, 7_326_837.714_873_877, 0., 0.),
+            Coor4D::raw(222_638.981_586_547, 110_579.965_218_249, 0., 0.),
+            Coor4D::raw(222_638.981_586_547, -110_579.965_218_249, 0., 0.),
+            Coor4D::raw(-222_638.981_586_547, 110_579.965_218_249, 0., 0.),
+            Coor4D::raw(-222_638.981_586_547, -110_579.965_218_249, 0., 0.),
         ];
 
         // Forward
-        let mut operands = geo.clone();
+        let mut operands = geo;
         ctx.apply(op, Fwd, &mut operands)?;
         for i in 0..operands.len() {
             assert!(operands[i].hypot2(&projected[i]) < 20e-9);
@@ -164,14 +164,14 @@ mod tests {
         let geo = [Coor4D::geo(55., 12., 0., 0.)];
 
         let projected = [Coor4D::raw(
-            748_713.257_925_886_777,
-            4_106_573.862_841_270_398,
+            748_713.257_925_886_8,
+            4_106_573.862_841_270_4,
             0.,
             0.,
         )];
 
         // Forward
-        let mut operands = geo.clone();
+        let mut operands = geo;
         ctx.apply(op, Fwd, &mut operands)?;
         for i in 0..operands.len() {
             assert!(operands[i].hypot2(&projected[i]) < 20e-9);

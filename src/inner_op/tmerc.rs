@@ -327,7 +327,7 @@ mod tests {
         let definition = "tmerc k_0=0.9996 lon_0=9 x_0=500000";
         let op = ctx.op(definition)?;
 
-        let mut operands = geo.clone();
+        let mut operands = geo;
         ctx.apply(op, Fwd, &mut operands)?;
 
         for i in 0..operands.len() {
@@ -350,9 +350,9 @@ mod tests {
 
         // Expected value from PROJ:
         // echo 1 52 0 0 | cct -d 15 proj=tmerc lat_0=49 lon_0=-2 k_0=0.9996012717 x_0=400000 y_0=-100000 ellps=airy  --
-        let projected = [Coor2D::raw(605909.130344302393496, 237803.365171569399536)];
+        let projected = [Coor2D::raw(605_909.130_344_302_4, 237_803.365_171_569_4)];
 
-        let mut operands = geo.clone();
+        let mut operands = geo;
         ctx.apply(op, Fwd, &mut operands)?;
 
         for i in 0..operands.len() {
@@ -386,7 +386,7 @@ mod tests {
             Coor2D::raw(-455_673.814_189_040,-6_198_246.671_090_279)
         ];
 
-        let mut operands = geo.clone();
+        let mut operands = geo;
         assert_eq!(ctx.apply(op, Fwd, &mut operands)?, 4);
         for i in 0..operands.len() {
             assert_float_eq!(operands[i].0, projected[i].0, abs_all <= 1e-8);
@@ -421,7 +421,7 @@ mod tests {
             Coor4D::raw(-455_673.814_189_040, 1e7-6_198_246.671_090_279, 0., 0.)
         ];
 
-        let mut operands = geo.clone();
+        let mut operands = geo;
         ctx.apply(op, Fwd, &mut operands)?;
         for i in 0..operands.len() {
             assert!(operands[i].hypot2(&projected[i]) < 5e-3);

@@ -279,7 +279,7 @@ mod tests {
     fn array() {
         let mut operands = some_basic_coor4dinates();
         assert_eq!(operands.len(), 2);
-        assert_eq!(operands.is_empty(), false);
+        assert!(!operands.is_empty());
 
         let cph = operands.get_coord(0);
         assert_eq!(cph[0], 55.);
@@ -301,7 +301,7 @@ mod tests {
     fn vector() {
         let mut operands = Vec::from(some_basic_coor4dinates());
         assert_eq!(operands.len(), 2);
-        assert_eq!(operands.is_empty(), false);
+        assert!(!operands.is_empty());
 
         let cph = operands.get_coord(0);
         assert_eq!(cph[0], 55.);

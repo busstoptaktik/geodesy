@@ -239,12 +239,12 @@ mod tests {
         ];
 
         let projected = [
-            Coor4D::raw(-0.000000000101829246, -222728.122307816054672003, 0., 0.),
-            Coor4D::raw(-128046.4724386522429995, -220853.7001605064142495, 0., 0.),
-            Coor4D::raw(115005.41456620067765471, 224484.5143763388914522, 0., 0.),
+            Coor4D::raw(-0.000000000101829246, -222_728.122_307_816_05, 0., 0.),
+            Coor4D::raw(-128_046.472_438_652_24, -220_853.700_160_506_4, 0., 0.),
+            Coor4D::raw(115_005.414_566_200_68, 224_484.514_376_338_9, 0., 0.),
         ];
 
-        let mut operands = geo.clone();
+        let mut operands = geo;
         ctx.apply(op, Fwd, &mut operands)?;
         for i in 0..operands.len() {
             assert!(operands[i].hypot2(&projected[i]) < 2e-9);
@@ -267,13 +267,13 @@ mod tests {
         // echo 12 40 0 0 | cct -d12 proj=lcc lat_1=33 lat_2=45 lon_0=10 -- | clip
         let geo = [Coor4D::geo(40., 12., 0., 0.)];
         let projected = [Coor4D::raw(
-            169863.026093938301,
-            4735925.219292450696,
+            169_863.026_093_938_3,
+            4_735_925.219_292_451,
             0.,
             0.,
         )];
 
-        let mut operands = geo.clone();
+        let mut operands = geo;
         ctx.apply(op, Fwd, &mut operands)?;
         for i in 0..operands.len() {
             assert!(operands[i].hypot2(&projected[i]) < 9e-9);
@@ -295,9 +295,14 @@ mod tests {
         // Validation value from PROJ:
         // echo 12 40 0 0 | cct -d12 proj=lcc lat_1=39 lat_0=35 lon_0=10 -- | clip
         let geo = [Coor4D::geo(40., 12., 0., 0.)];
-        let projected = [Coor4D([170800.011728740647, 557172.361112929415, 0., 0.])];
+        let projected = [Coor4D([
+            170_800.011_728_740_65,
+            557_172.361_112_929_4,
+            0.,
+            0.,
+        ])];
 
-        let mut operands = geo.clone();
+        let mut operands = geo;
         ctx.apply(op, Fwd, &mut operands)?;
         for i in 0..operands.len() {
             assert!(operands[i].hypot2(&projected[i]) < 2e-9);
@@ -320,13 +325,13 @@ mod tests {
         // echo 12 40 0 0 | cct -d12 proj=lcc lat_1=33 lat_2=45 lat_0=35 lon_0=10 -- | clip
         let geo = [Coor4D::geo(40., 12., 0., 0.)];
         let projected = [Coor4D::raw(
-            169863.026093938359,
-            554155.440793916583,
+            169_863.026_093_938_36,
+            554_155.440_793_916_6,
             0.,
             0.,
         )];
 
-        let mut operands = geo.clone();
+        let mut operands = geo;
         ctx.apply(op, Fwd, &mut operands)?;
         for i in 0..operands.len() {
             assert!(operands[i].hypot2(&projected[i]) < 2e-9);
@@ -348,9 +353,14 @@ mod tests {
         // Validation value from PROJ:
         // echo 12 40 0 0 | cct -d12 proj=lcc lat_1=33 lat_2=45 lat_0=35 lon_0=10  x_0=12345 y_0=67890 -- | clip
         let geo = [Coor4D::geo(40., 12., 0., 0.)];
-        let projected = [Coor4D([182208.026093938301, 622045.440793916583, 0., 0.])];
+        let projected = [Coor4D([
+            182_208.026_093_938_3,
+            622_045.440_793_916_6,
+            0.,
+            0.,
+        ])];
 
-        let mut operands = geo.clone();
+        let mut operands = geo;
         ctx.apply(op, Fwd, &mut operands)?;
         for i in 0..operands.len() {
             assert!(operands[i].hypot2(&projected[i]) < 2e-9);
@@ -372,9 +382,14 @@ mod tests {
         // Validation value from PROJ:
         // echo 12 40 0 0 | cct -d12 proj=lcc lat_1=33 lat_2=45 lat_0=35 lon_0=10  x_0=12345 y_0=67890 k_0=0.99 -- | clip
         let geo = [Coor4D::geo(40., 12., 0., 0.)];
-        let projected = [Coor4D([180509.395832998911, 616503.886385977501, 0., 0.])];
+        let projected = [Coor4D([
+            180_509.395_832_998_9,
+            616_503.886_385_977_5,
+            0.,
+            0.,
+        ])];
 
-        let mut operands = geo.clone();
+        let mut operands = geo;
         ctx.apply(op, Fwd, &mut operands)?;
         for i in 0..operands.len() {
             assert!(operands[i].hypot2(&projected[i]) < 2e-9);

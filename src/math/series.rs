@@ -248,8 +248,8 @@ mod tests {
         let coefficients = [6., 5., 4., 3., 2., 1.];
         let arg = [30f64.to_radians(), 60f64.to_radians()];
         // Canonical result from Poder/Engsager implementation
-        let r = 248.658846388817693;
-        let i = -463.436347907636559;
+        let r = 248.658_846_388_817_7;
+        let i = -463.436_347_907_636_56;
         // Let's see if we can reproduce that...
         let sum = fourier::complex_sin(arg, &coefficients);
         assert!((sum[0] - r).abs() < 1e-14);

@@ -199,7 +199,7 @@ mod tests {
         let ntv2_grid = Ntv2Grid::new(&grid_buff)?;
 
         assert!(ntv2_grid.subgrids.len() == 2);
-        assert!(ntv2_grid.lookup_table.get("NONE").unwrap().len() > 0);
+        assert!(!ntv2_grid.lookup_table.get("NONE").unwrap().is_empty());
         assert!(ntv2_grid
             .lookup_table
             .get("NONE")

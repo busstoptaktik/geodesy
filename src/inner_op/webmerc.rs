@@ -93,14 +93,14 @@ mod tests {
         let geo = [Coor4D::geo(55., 12., 0., 0.)];
 
         let projected = [Coor4D::raw(
-            1335833.889519282849505544,
-            7361866.113051188178360462,
+            1_335_833.889_519_282_8,
+            7_361_866.113_051_188,
             0.,
             0.,
         )];
 
         // Forward
-        let mut operands = geo.clone();
+        let mut operands = geo;
         ctx.apply(op, Fwd, &mut operands)?;
         for i in 0..operands.len() {
             assert_float_eq!(operands[i].0, projected[i].0, abs_all <= 1e-8);

@@ -156,7 +156,7 @@ mod tests {
         let ellps = Ellipsoid::named("GRS80")?;
         let lats = Vec::from([35., 45., 55.]);
         for lat in &lats {
-            let lat = *lat as f64;
+            let lat: f64 = *lat;
             let theta = ellps.latitude_geographic_to_geocentric(lat.to_radians());
             let roundtrip = ellps.latitude_geocentric_to_geographic(theta).to_degrees();
             assert!((lat - roundtrip).abs() < 1e-14);
@@ -195,9 +195,10 @@ mod tests {
     #[test]
     fn rectifying() -> Result<(), Error> {
         let ellps = Ellipsoid::named("GRS80")?;
-        let latitudes = vec![35., 45., 55., -35., -45., -55., 0., 90.];
+        let latitudes = [35., 45., 55., -35., -45., -55., 0., 90.];
         let coefficients = ellps.coefficients_for_rectifying_latitude_computations();
         // Roundtrip 𝜙 -> 𝜇 -> 𝜙
+        #[allow(clippy::unnecessary_cast)]
         for phi in latitudes {
             let lat = (phi as f64).to_radians();
             let mu = ellps.latitude_geographic_to_rectifying(lat, &coefficients);
@@ -213,9 +214,10 @@ mod tests {
     #[test]
     fn conformal() -> Result<(), Error> {
         let ellps = Ellipsoid::named("GRS80")?;
-        let latitudes = vec![35., 45., 55., -35., -45., -55., 0., 90.];
+        let latitudes = [35., 45., 55., -35., -45., -55., 0., 90.];
         #[rustfmt::skip]
-        let conformal_latitudes = vec![
+        #[allow(clippy::excessive_precision)]
+        let conformal_latitudes = [
             34.819454814955349775,  44.807684055145067248,  54.819109023689023275, // Northern hemisphere
            -34.819454814955349775, -44.807684055145067248, -54.819109023689023275, // Symmetry wrt. the Equator
             0., 90., // Extreme values are invariant
@@ -224,6 +226,7 @@ mod tests {
         let chi_coefs = ellps.latitude_fourier_coefficients(&constants::CONFORMAL);
         let pairs = latitudes.iter().zip(conformal_latitudes.iter());
 
+        #[allow(clippy::unnecessary_cast)]
         for pair in pairs {
             // The casts are necessary, at least as of Rust 1.66
             let phi = (*(pair.0) as f64).to_radians();
@@ -235,7 +238,7 @@ mod tests {
         let lat = 55_f64.to_radians();
         let chi = ellps.latitude_geographic_to_conformal(lat, &chi_coefs);
         let phi = ellps.latitude_conformal_to_geographic(chi, &chi_coefs);
-        assert!((chi.to_degrees() - 54.819109023689023275).abs() < 1e-12);
+        assert!((chi.to_degrees() - 54.819_109_023_689_02).abs() < 1e-12);
         assert_eq!(phi.to_degrees(), 55.0);
         Ok(())
     }
@@ -264,8 +267,9 @@ mod tests {
 
         let pairs = geographic_latitudes.iter().zip(authalic_latitudes.iter());
 
+        #[allow(clippy::unnecessary_cast)]
         for pair in pairs.clone() {
-            // These casts to f64 are necessary, at least as of Rust 1.66. It appears that the 'Chalk'
+            // These casts to f64 are necessary, at least as of Rust 1.66..1.73. It appears that the 'Chalk'
             // trait checker used in Rust-Analyzer has this correctly, so perhaps the need for these
             // casts may be eliminated in a later Rust version
             let phi = (*(pair.0) as f64).to_radians();
@@ -287,6 +291,7 @@ mod tests {
         // Despite the name "authlat", the PROJ implementation appears to go from
         // authalic to geographic latitudes.
         let proj_coefs = authset(ellps.eccentricity_squared());
+        #[allow(clippy::unnecessary_cast)]
         for pair in pairs {
             let phi = (*(pair.0) as f64).to_radians();
             let xi = (*(pair.1) as f64).to_radians();

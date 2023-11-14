@@ -272,7 +272,7 @@ mod tests {
         assert!(ctx.get_resource("stupid:way_three")?.starts_with("addone"));
 
         // And just to be sure: once again for the plain resource file
-        assert!(ctx.get_resource("stupid:way")?.starts_with("#"));
+        assert!(ctx.get_resource("stupid:way")?.starts_with('#'));
         assert!(ctx.get_resource("stupid:way")?.ends_with("addone"));
 
         // Now make sure, we can actually also *instantiate* a recipe

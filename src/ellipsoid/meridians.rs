@@ -167,19 +167,21 @@ mod tests {
 
         // Meridional distances for angles 0, 10, 20, 30 ... 90, obtained from Charles Karney's
         // online geodesic solver, https://geographiclib.sourceforge.io/cgi-bin/GeodSolve
+        #[allow(clippy::excessive_precision)]
         let s = [
-            0_000_000.000000000,
-            1_105_854.833198446,
-            2_212_366.254102976,
-            3_320_113.397845014,
-            4_429_529.030236580,
-            5_540_847.041560960,
-            6_654_072.819367435,
-            7_768_980.727655508,
-            8_885_139.871836751,
-            10_001_965.729230457,
+            0_000_000.000_000_000,
+            1_105_854.833_198_446,
+            2_212_366.254_102_976,
+            3_320_113.397_845_014,
+            4_429_529.030_236_580,
+            5_540_847.041_560_960,
+            6_654_072.819_367_435,
+            7_768_980.727_655_508,
+            8_885_139.871_836_751,
+            10_001_965.729_230_457,
         ];
 
+        #[allow(clippy::needless_range_loop)]
         for i in 0..s.len() {
             let angle = (10.0 * i as f64).to_radians();
             assert!((ellps.meridian_latitude_to_distance(angle) - s[i]).abs() < 6e-6);
@@ -188,7 +190,7 @@ mod tests {
 
         // Since we suspect the deviation might be worst at 45°, we check that as well
         let angle = 45f64.to_radians();
-        let length = 4984944.377857987;
+        let length = 4_984_944.377_857_987;
         assert!((ellps.meridian_latitude_to_distance(angle) - length).abs() < 4e-6);
         assert!((ellps.meridian_distance_to_latitude(length) - angle).abs() < 4e-6);
         Ok(())
