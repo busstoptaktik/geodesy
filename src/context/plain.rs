@@ -1,7 +1,10 @@
 #[cfg(feature = "with_plain")]
 use crate::authoring::*;
 use crate::grid::ntv2::Ntv2Grid;
-use std::{path::PathBuf, sync::Arc};
+use std::{
+    path::PathBuf,
+    sync::{Arc, Mutex},
+};
 
 // ----- T H E   P L A I N   C O N T E X T ---------------------------------------------
 
@@ -16,6 +19,55 @@ pub struct Plain {
     resources: BTreeMap<String, String>,
     operators: BTreeMap<OpHandle, Op>,
     paths: Vec<std::path::PathBuf>,
+}
+
+// Helper for Plain: Provide grid access for all `Op`s
+// in all instantiations of `Plain` by handing out
+// reference counted clones
+static mut GRIDS: Mutex<GridCollection> = Mutex::new(GridCollection(BTreeMap::<String, Arc<dyn Grid>>::new()));
+
+struct GridCollection(BTreeMap<String, Arc<dyn Grid>>);
+impl GridCollection {
+    fn get_grid(
+        &mut self,
+        name: &str,
+        paths: Vec<std::path::PathBuf>,
+    ) -> Result<Arc<dyn Grid>, Error> {
+        // If the grid is already there, just return a clone
+        if let Some(grid) = self.0.get(name) {
+            // It's a reference clone
+            return Ok(grid.clone());
+        }
+
+        // Otherwise, we must look for it in the data path
+        let n = PathBuf::from(name);
+        let ext = n
+            .extension()
+            .unwrap_or_default()
+            .to_str()
+            .unwrap_or_default();
+
+        for path in paths {
+            let mut path = path.clone();
+            path.push(ext);
+            path.push(name);
+            let Ok(grid) = std::fs::read(path) else {
+                continue;
+            };
+
+            if ext == "gsb" {
+                self.0
+                    .insert(name.to_string(), Arc::new(Ntv2Grid::new(&grid)?));
+            } else {
+                self.0
+                    .insert(name.to_string(), Arc::new(BaseGrid::gravsoft(&grid)?));
+            }
+            if let Some(grid) = self.0.get(name) {
+                return Ok(grid.clone());
+            }
+        }
+        Err(Error::NotFound(name.to_string(), ": Grid".to_string()))
+    }
 }
 
 const BAD_ID_MESSAGE: Error = Error::General("Plain: Unknown operator id");
@@ -199,25 +251,8 @@ impl Context for Plain {
 
     /// Access grid resources by identifier
     fn get_grid(&self, name: &str) -> Result<Arc<dyn Grid>, Error> {
-        let n = PathBuf::from(name);
-        let ext = n
-            .extension()
-            .unwrap_or_default()
-            .to_str()
-            .unwrap_or_default();
-        for path in &self.paths {
-            let mut path = path.clone();
-            path.push(ext);
-            path.push(name);
-            let Ok(grid) = std::fs::read(path) else {
-                continue;
-            };
-            if ext == "gsb" {
-                return Ok(Arc::new(Ntv2Grid::new(&grid)?));
-            }
-            return Ok(Arc::new(BaseGrid::gravsoft(&grid)?));
-        }
-        Err(Error::NotFound(name.to_string(), ": Blob".to_string()))
+        // The GridCollection does all the hard work here...
+        unsafe { GRIDS.lock().unwrap().get_grid(name, self.paths.clone()) }
     }
 }
 
