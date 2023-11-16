@@ -270,18 +270,33 @@ mod tests {
         let mut ctx = Plain::default();
         let op = ctx.op("gridshift grids=@test_subset.datum, @missing.gsb, test.datum")?;
 
+        // Check that the Arc reference counting and the clear-GRIDS-by-instantiation
+        // works together correctly (i.e. the Arcs used by op are kept alive when
+        // GRIDS is cleared on the instantiation of ctx2)
+        let mut ctx2 = Plain::default();
+        let op2 = ctx2.op("gridshift grids=@test_subset.datum, @missing.gsb, test.datum")?;
+
         // Copenhagen is outside of the (optional, but present, subset grid)
         let cph = Coor4D::geo(55., 12., 0., 0.);
         let mut data = [cph];
+        let mut data2 = [cph];
 
         ctx.apply(op, Fwd, &mut data)?;
         let res = data[0].to_geo();
         assert!((res[0] - 55.015278).abs() < 1e-6);
         assert!((res[1] - 12.003333).abs() < 1e-6);
 
+        // Same procedure on the other context gives same result
+        ctx2.apply(op2, Fwd, &mut data2)?;
+        assert_eq!(data, data2);
+
         ctx.apply(op, Inv, &mut data)?;
         assert!((data[0][0] - cph[0]).abs() < 1e-10);
         assert!((data[0][1] - cph[1]).abs() < 1e-10);
+
+        // Same procedure on the other context gives same result
+        ctx2.apply(op2, Inv, &mut data2)?;
+        assert_eq!(data, data2);
 
         // Havnebyen (a small town with a large geodetic installation) is inside the subset grid
         let haby = Coor4D::geo(55.97, 11.33, 0., 0.);

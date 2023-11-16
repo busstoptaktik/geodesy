@@ -23,19 +23,15 @@ pub struct Plain {
 
 // Helper for Plain: Provide grid access for all `Op`s
 // in all instantiations of `Plain` by handing out
-// reference counted clones
-static mut GRIDS: Mutex<GridCollection> = Mutex::new(GridCollection(BTreeMap::<String, Arc<dyn Grid>>::new()));
+// reference counted clones to a single heap allocation
+static mut GRIDS: Mutex<GridCollection> =
+    Mutex::new(GridCollection(BTreeMap::<String, Arc<dyn Grid>>::new()));
 
 struct GridCollection(BTreeMap<String, Arc<dyn Grid>>);
 impl GridCollection {
-    fn get_grid(
-        &mut self,
-        name: &str,
-        paths: Vec<std::path::PathBuf>,
-    ) -> Result<Arc<dyn Grid>, Error> {
-        // If the grid is already there, just return a clone
+    fn get_grid(&mut self, name: &str, paths: &[PathBuf]) -> Result<Arc<dyn Grid>, Error> {
+        // If the grid is already there, just return a reference clone
         if let Some(grid) = self.0.get(name) {
-            // It's a reference clone
             return Ok(grid.clone());
         }
 
@@ -78,6 +74,10 @@ impl Default for Plain {
         let resources = BTreeMap::new();
         let operators = BTreeMap::new();
         let mut paths = Vec::new();
+
+        // To avoid having GRIDS growing through the roof, we clear it
+        // out every time a new Plain context is instantiated
+        unsafe { GRIDS.lock().unwrap().0.clear() }
 
         let localpath: PathBuf = [".", "geodesy"].iter().collect();
         paths.push(localpath);
@@ -251,8 +251,10 @@ impl Context for Plain {
 
     /// Access grid resources by identifier
     fn get_grid(&self, name: &str) -> Result<Arc<dyn Grid>, Error> {
-        // The GridCollection does all the hard work here...
-        unsafe { GRIDS.lock().unwrap().get_grid(name, self.paths.clone()) }
+        // The GridCollection does all the hard work here, but accessing GRIDS,
+        // which is a mutable static is (mis-)diagnosed as unsafe by the compiler,
+        // even though the mutable static is behind a Mutex guard
+        unsafe { GRIDS.lock().unwrap().get_grid(name, &self.paths) }
     }
 }
 
@@ -336,6 +338,20 @@ mod tests {
         let expected = [691875.6321396609, 6098907.825005002];
         assert_float_eq!(data[0].0, expected, abs_all <= 1e-9);
 
+        Ok(())
+    }
+
+    #[test]
+    fn grids() -> Result<(), Error> {
+        let mut ctx = Plain::new();
+
+        // Here, we only invoke reference counting in the GridCollection. The tests in
+        // gridshift and deformation makes sure that the correct grids are actually
+        // provided by GridCollection::get_grid()
+        let _op1 = ctx.op("gridshift grids=5458.gsb, 5458_with_subgrid.gsb")?;
+        let _op2 = ctx.op("gridshift grids=5458.gsb, 5458_with_subgrid.gsb")?;
+        let _op3 = ctx.op("gridshift grids=test.geoid")?;
+        assert!(ctx.op("gridshift grids=non.existing").is_err());
         Ok(())
     }
 }
