@@ -4,7 +4,7 @@ pub mod ntv2;
 use crate::prelude::*;
 use std::{fmt::Debug, io::BufRead};
 
-pub trait Grid: Debug {
+pub trait Grid: Debug + Sync + Send {
     fn bands(&self) -> usize;
     /// Returns true if `coord` is contained by `self` or lies within a margin of
     /// `margin` grid cell units. Typically `margin` should be on the order of 1

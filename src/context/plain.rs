@@ -1,6 +1,7 @@
 #[cfg(feature = "with_plain")]
 use crate::authoring::*;
 use crate::grid::ntv2::Ntv2Grid;
+use once_cell::sync::Lazy;
 use std::{
     path::PathBuf,
     sync::{Arc, Mutex},
@@ -24,8 +25,9 @@ pub struct Plain {
 // Helper for Plain: Provide grid access for all `Op`s
 // in all instantiations of `Plain` by handing out
 // reference counted clones to a single heap allocation
-static mut GRIDS: Mutex<GridCollection> =
-    Mutex::new(GridCollection(BTreeMap::<String, Arc<dyn Grid>>::new()));
+
+static GRIDS: Lazy<Mutex<GridCollection>> =
+    Lazy::new(|| Mutex::new(GridCollection(BTreeMap::<String, Arc<dyn Grid>>::new())));
 
 struct GridCollection(BTreeMap<String, Arc<dyn Grid>>);
 impl GridCollection {
@@ -77,7 +79,7 @@ impl Default for Plain {
 
         // To avoid having GRIDS growing through the roof, we clear it
         // out every time a new Plain context is instantiated
-        unsafe { GRIDS.lock().unwrap().0.clear() }
+        GRIDS.lock().unwrap().0.clear();
 
         let localpath: PathBuf = [".", "geodesy"].iter().collect();
         paths.push(localpath);
@@ -254,7 +256,7 @@ impl Context for Plain {
         // The GridCollection does all the hard work here, but accessing GRIDS,
         // which is a mutable static is (mis-)diagnosed as unsafe by the compiler,
         // even though the mutable static is behind a Mutex guard
-        unsafe { GRIDS.lock().unwrap().get_grid(name, &self.paths) }
+        GRIDS.lock().unwrap().get_grid(name, &self.paths)
     }
 }
 
