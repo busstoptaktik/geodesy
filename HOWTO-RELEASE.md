@@ -1,9 +1,15 @@
 # DRAFT: How to release
 
-- update `Cargo.toml` with new version id, e.g. `"0.11.0"`
+- manually check that all [issues](https://github.com/busstoptaktik/geodesy/issues/)
+  assigned to the
+  [milestone for upcomming release](https://github.com/busstoptaktik/geodesy/issues?q=is%3Aopen+is%3Aissue+milestone%3A0.11.0)
+  are resolved
+- update `Cargo.toml` and `README.md` with new version id, i.e. `"0.11.0"`
+
 - `just check-all`
-- `just changes` preview a new `CHANGELOG`
-- `just changelog` generate a new `CHANGELOG`
+- `just changes` (to preview a new `CHANGELOG`)
+- update `CHANGES.md`
+- `just changelog` (to generate a new `CHANGELOG`)
 - `git commit ...`
 - `git push`
 - `git tag v0.11.0`
@@ -13,3 +19,6 @@
 - `git push ...`
 - `git switch main`
 - `cargo publish`
+- update `HOWTO-RELEASE.md` to say 0.12
+- `git commit -a -m "Start of work towards 0.12.0`
+- `git push ...`
