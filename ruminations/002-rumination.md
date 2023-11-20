@@ -6,7 +6,7 @@ Thomas Knudsen <knudsen.thomas@gmail.com>
 
 Sean Rennie <rnnsea001@gmail.com>
 
-2021-08-20. Last [revision](#document-history) 2023-11-02
+2021-08-20. Last [revision](#document-history) 2023-11-20
 
 ### Abstract
 
@@ -24,6 +24,8 @@ $ echo 553036. -124509 | kp "dms:in | geo:out"
 - [`adapt`](#operator-adapt): The order-and-unit adaptor
 - [`cart`](#operator-cart): The geographical-to-cartesian converter
 - [`curvature`](#operator-curvature): Radii of curvature
+- [`deformation`](#operator-deformation): Kinematic datum shift using a
+  3D deformation model in ENU-space
 - [`dm`](#operator-dm): DDMM.mmm encoding.
 - [`dms`](#operator-dms): DDMMSS.sss encoding.
 - [`geodesic`](#operator-geodesic): Origin, Distance, Azimuth, Destination and v.v.
@@ -186,6 +188,146 @@ curvature prime ellps=GRS80
 
 ---
 
+### Operator `deformation`
+
+**Purpose:**
+Kinematic datum shift using a 3D deformation model in ENU-space
+
+**Description:**
+
+Based on Kristian Evers' implementation of the
+[corresponding PROJ operator](https://github.com/OSGeo/PROJ/blob/effac63ae5360e737790defa5bdc3d070d19a49b/src/transformations/deformation.cpp).
+The deformation operation takes cartesian coordinates as input and
+yields cartesian coordinates as output. The deformation model is
+assumed to come from a 3 channel grid of deformation velocities,
+with the grid georeference given as geographical coordinates in a
+compatible frame.
+
+#### The Deformation
+
+The deformation expressed by the grid is given in the local
+east-north-up (ENU) frame. It is converted to the cartesian XYZ
+frame when applied to the input coordinates.
+The total deformation at the position P: (X, Y, Z), at the time T1 is
+given by:
+
+```txt
+         DX(X, Y, Z) = (T1 - T0) * Vx(φ, λ)
+   (1)   DY(X, Y, Z) = (T1 - T0) * Vy(φ, λ)
+         DZ(X, Y, Z) = (T1 - T0) * Vz(φ, λ)
+```
+
+where:
+
+- (X, Y, Z) is the cartesian coordinate tuple for P
+- (DX, DY, DZ) is the deformation along the cartesian earth centered
+  axes of the input frame
+- (Vx, Vy, Vz) is the deformation velocity vector (m/year), obtained
+  from interpolation in the model grid, and converted from the local
+  ENU frame, to the global, cartesian XYZ frame
+- (φ, λ) is the latitude and longitude, i.e. the grid coordinates,
+  of P, computed from its cartesian coordinates (X, Y, Z)
+- T0 is the frame epoch of the kinematic reference frame associated
+  with the deformation model.
+- T1 is the observation epoch of the input coordinate tuple (X, Y, Z)
+
+#### The transformation
+
+While you may obtain the deformation vector and its Euclidean norm
+by specifying the `raw` option, that is not the primary use case for
+the `deformation` operator. Rather, the primary use case is to *apply*
+the deformation to the input coordinates and return the deformed
+coordinates. Naively, but incorrectly, we may write this as
+
+```txt
+         X'   =   X + DX   =   X + (T1 - T0) * Vx(φ, λ)
+   (2)   Y'   =   Y + DY   =   Y + (T1 - T0) * Vy(φ, λ)
+         Z'   =   Z + DZ   =   Z + (T1 - T0) * Vz(φ, λ)
+```
+
+Where (X, Y, Z) is the *observed* coordinate tuple, and (X', Y', Z')
+is the same tuple after applying the deformation. While formally
+correct, this is not the operation we intend to carry out. Neither
+are the names used for the two types of coordinates fully useful
+for understanding what goes on.
+
+Rather, when we transform a set of observations, we want to obtain the
+position of P at the time T0, i.e. at the *epoch* of the deforming
+frame. In other words, we want to remove the deformation effect such
+that *no matter when* we go and re-survey a given point, we will always
+obtain the same coordinate tuple, after transforming the observed
+coordinates back in time to the frame epoch. Hence, for the forward
+transformation we must *remove* the effect of the deformation by negating
+the sign of the deformation terms in eq. 2:
+
+```txt
+         X'   =   X - DX   =   X - (T1 - T0) * Vx(φ, λ)
+   (3)   Y'   =   Y - DY   =   Y - (T1 - T0) * Vy(φ, λ)
+         Z'   =   Z - DZ   =   Z - (T1 - T0) * Vz(φ, λ)
+```
+
+In order to be able to discuss the remaining intricacies of the task, we
+now introduce the designations *observed coordinates* for (X, Y, Z), and
+*canonical coordinates* for (X', Y', Z').
+
+What we want to do is to compute the canonical coordinates given the
+observed ones, by applying a correction based on the deformation grid.
+The deformation grid is georeferenced with respect to the *canonical system*
+(this is necessary, since the deforming system changes as time goes).
+
+But we cannot *observe* anything with respect to the canonical system:
+It represents the world as it was at the epoch of the system. So the observed
+coordinates are given in a system slightly different from the canonical.
+The deformation model makes it possible to *predict* the coordinates we will
+observe at any given time, for any given point that was originally observed
+at the epoch of the system.
+
+But we are really more interested in the opposite: To look back in time and
+figure out "what were the coordinates at time T0, of the point P, which we
+*actually observed at time T1*".
+
+But since the georefererence of the deformation grid is given in the canonical
+system, we actually need to know the canonical coordinates already in order to
+look up the deformation needed to convert the observed coordinates to the
+canonical, leaving us with a circular dependency ("to understand recursion, we
+must first understand recursion").
+
+To solve this, we do not actually need recursion - there is a perfectly
+fine solution based on iteration, which is widely used in the inverse case
+of plain 2D grid based datum shifts (whereas here, we need it in the forward
+case).
+
+There is however an even simpler solution to the problem - simply to ignore it.
+
+The deformations are typically so small compared to the grid node distance,
+that the iterative correction is way below the accuracy of the transformation
+grid information, so we may simply look up in the grid using the observed
+coordinates, and correct the same coordinates with the correction obtained
+from the grid.
+
+For now, this is the solution implemented here.
+
+| Parameter | Description |
+|-----------|-------------|
+| `inv` | Inverse operation: output-to-input datum. Currently implemented using sign reversion, *without* iterative refinement |
+| `raw` | Replace the input coordinate by the correction values, rather than applying them |
+| `dt` | Specify a fixed deformation interval, rather than using the difference between `t_epoch` and the point coordinate time |
+| `t_epoch` | The temporal origin of the deformation proces, given as decimal year |
+| `ellps` | The ellipsoid for the deforming system. Used for converting the ENU elements of the grid, to dLat, dLon, dHeight corrections |
+| `grids` | Name of the grid files to use. RG supports multiple comma separated grids where the first one to contain the point is the one used. Grids are considered optional if they are prefixed with `@` and hence do block instantiation of the operator if they are unavailable. Additionally, if the `@null` parameter is specified as the last grid, points outside of the grid coverage will be passed through unchanged, rather than being stomped on with the NaN shoes and counted as errors |
+
+**Example**:
+
+```txt
+deformation dt=1000 ellps=GRS80 grids=test.deformation
+
+deformation raw dt=1000 grids=test.deformation,@another.deformation,@null
+```
+
+**See also:** The documentation for the corresponding [PROJ operator](https://proj.org/en/9.3/operations/transformations/deformation.html)
+
+---
+
 ### Operator `dm`
 
 **Purpose:** Convert from/to the ISO-6709 DDDMM.mmm format.
@@ -305,7 +447,7 @@ The `gridshift` operator implements datum shifts by interpolation in correction 
 | Parameter | Description |
 |-----------|-------------|
 | `inv` | Inverse operation: output-to-input datum. For 2-D and 3-D cases, this involves an iterative refinement, typically converging after less than 5 iterations |
-| `grids` | Name of the grid files to use. RG supports multiple comma separated grids where the first one to contain the point is the one used. Grids are considered optional if they are prefixed with `@` and do not error the operator if they aren't available. Additionally the `@null` parameter can be specified as the last grid which will prevent errors in shifts from stomping on the coordinate. That is to say the coordinate passes through unchanged. |
+| `grids` | Name of the grid files to use. RG supports multiple comma separated grids where the first one to contain the point is the one used. Grids are considered optional if they are prefixed with `@` and hence do block instantiation of the operator if they are unavailable. Additionally, if the `@null` parameter is specified as the last grid, points outside of the grid coverage will be passed through unchanged, rather than being stomped on with the NaN shoes and counted as errors |
 
 The `gridshift` operator has built in support for the **Gravsoft** grid format. Support for additional file formats depends on the `Context` in use.
 
@@ -745,3 +887,4 @@ Major revisions and additions:
 - 2023-07-09: dm and dms liberated from their NMEA overlord
 - 2023-10-19: Add `somerc` operator description
 - 2023-11-02: Update `gridshift` operator description with multi, optional and null grid support
+- 2023-11-20: Add documentation for the `deformation` operator
