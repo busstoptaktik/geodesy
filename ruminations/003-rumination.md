@@ -4,7 +4,7 @@
 
 Thomas Knudsen <knudsen.thomas@gmail.com>
 
-2021-08-28. Last [revision](#document-history) 2022-05-08
+2021-08-28. Last [revision](#document-history) 2023-11-20
 
 ### Abstract
 
@@ -88,39 +88,28 @@ The `help` option gives the list of options:
 
 ```txt
 $ kp --help
-kp 0.7.1
-KP: The Rust Geodesy "Coordinate Processing" program.
-Called `kp` in honor of Knud Poder (1925-2019), the
-nestor of computational geodesy, who would have found
-it amusing to know that he provides a reasonable
-abbreviation for something that would otherwise have
-collided with the name of the Unix file copying program `cp`
 
-USAGE:
-    kp.exe [FLAGS] [OPTIONS] <OPERATION> [FILE]...
+KP: The Rust Geodesy 'Coordinate Processing' program
 
-FLAGS:
-    -d, --debug        Activate debug mode
-    -e, --echo         Echo input to output
-    -h, --help         Prints help information
-    -i, --inv          Inverse. Use of `inverse` mode excludes the use
-                       of `roundtrip` mode
-    -r, --roundtrip    Roundtrip mode - a signature feature of Knud
-                       Poder's programs: Evaluate the accuracy of the
-                       transformation by comparing the input argument
-                       with its supposedly identical alter ego after
-                       a forward+inverse transformation pair. Use of
-                       `roundtrip` mode excludes the use of `inverse`
-                       mode
-    -V, --version      Prints version information
-    -v, --verbose      Verbose mode (-v, -vv, -vvv, etc.)
+Usage: kp.exe [OPTIONS] <OPERATION> [ARGS]...
 
-OPTIONS:
-    -o, --output <output>    Output file, stdout if not present
+Arguments:
+  <OPERATION>  The operation to carry out e.g. 'kp "utm zone=32"'
+  [ARGS]...    The files to operate on
 
-ARGS:
-    <OPERATION>    Operation to apply
-    <FILE>...      Files to process
+Options:
+      --inv                  Inverse operation
+  -z, --height <HEIGHT>      Specify a fixed height for all coordinates
+  -t, --time <TIME>          Specify a fixed observation time for all coordinates
+  -d, --decimals <DECIMALS>
+      --debug                Activate debug mode
+  -r, --roundtrip            Report fwd-inv roundtrip deviation
+  -e, --echo                 Echo input to output
+  -v, --verbose...           More output per occurrence
+  -q, --quiet...             Less output per occurrence
+  -o, --output <OUTPUT>      Output file, stdout if not present
+  -h, --help                 Print help
+  -V, --version              Print version
 ```
 
 ### Operators
@@ -167,3 +156,4 @@ Major revisions and additions:
 - 2021-08-28: Initial version
 - 2022-05-08: Reflect current syntax
 - 2023-08-17: Graphical clean up
+- 2023-11-20: Reflect the current --help text
