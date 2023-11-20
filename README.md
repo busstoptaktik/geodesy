@@ -25,7 +25,7 @@ Add Geodesy to your `Cargo.toml` file
 
 ```toml
 [dependencies]
-geodesy = "0.10.0"
+geodesy = "0.11.0"
 ```
 
 Then try this minimal example, computing the UTM coordinates of some Scandinavian capitals
