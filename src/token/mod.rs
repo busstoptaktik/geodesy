@@ -185,6 +185,10 @@ where
 /// - *parse_proj* will replace `k` with `k_0` whenever it is encountered.
 ///
 pub fn parse_proj(definition: &str) -> Result<String, Error> {
+    // If it doesn't look like a PROJ string, we return it unchanged
+    if definition.contains('|') | !definition.contains("proj") {
+        return Ok(definition.to_string());
+    }
     // Impose some line ending sanity and remove the PROJ '+' prefix
     let all = definition
         .replace("\r\n", "\n")

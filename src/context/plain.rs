@@ -70,16 +70,23 @@ impl GridCollection {
 
 const BAD_ID_MESSAGE: Error = Error::General("Plain: Unknown operator id");
 
+impl Plain {
+    /// To avoid having the heap allocated collection of grids stored in `GRIDS`
+    /// growing through the roof, we may clear it occasionally.
+    /// As the grids are behind an `Arc` reference counter, this is safe to do
+    /// even though they may still be in use by some remaining operator
+    /// instantiations.
+    pub fn clear_grids() {
+        GRIDS.lock().unwrap().0.clear();
+    }
+}
+
 impl Default for Plain {
     fn default() -> Plain {
         let constructors = BTreeMap::new();
         let resources = BTreeMap::new();
         let operators = BTreeMap::new();
         let mut paths = Vec::new();
-
-        // To avoid having GRIDS growing through the roof, we clear it
-        // out every time a new Plain context is instantiated
-        GRIDS.lock().unwrap().0.clear();
 
         let localpath: PathBuf = [".", "geodesy"].iter().collect();
         paths.push(localpath);
@@ -107,8 +114,14 @@ impl Context for Plain {
         ctx
     }
 
+    /// Instantiate an operator. Recognizes PROJ syntax and converts it to Geodesy syntax.
+    /// Bear in mind, however, that Geodesy does not support all PROJ operators, and that
+    /// the input/output conventions differ.
     fn op(&mut self, definition: &str) -> Result<OpHandle, Error> {
-        let op = Op::new(definition, self)?;
+        // It may be a PROJ string, so we filter it through the PROJ parser
+        let definition = parse_proj(definition)?;
+
+        let op = Op::new(&definition, self)?;
         let id = op.id;
         self.operators.insert(id, op);
         assert!(self.operators.contains_key(&id));

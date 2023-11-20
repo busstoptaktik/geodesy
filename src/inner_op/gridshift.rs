@@ -220,6 +220,10 @@ mod tests {
         assert!((res[0] - 55.015278).abs() < 1e-6);
         assert!((res[1] - 12.003333).abs() < 1e-6);
 
+        // Check that the reference counting works as expected
+        Plain::clear_grids();
+        Plain::clear_grids();
+
         ctx.apply(op, Inv, &mut data)?;
         assert!((data[0][0] - cph[0]).abs() < 1e-10);
         assert!((data[0][1] - cph[1]).abs() < 1e-10);

@@ -13,7 +13,7 @@ use std::time;
 /// Unix file copying program `cp`.
 #[derive(Parser, Debug)]
 #[command(name = "kp")]
-#[command(author, version, about, long_about = None)]
+#[command(author, version, about = "KP: The Rust Geodesy 'Coordinate Processing' program", long_about = None)]
 struct Cli {
     /// The operation to carry out e.g. 'kp "utm zone=32"'
     operation: String,

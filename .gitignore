@@ -2,3 +2,4 @@
 /.vscode
 Cargo.lock
 *.code-workspace
+draft_commit_message.md
