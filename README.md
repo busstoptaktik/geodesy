@@ -79,13 +79,13 @@ All four aims are guided by a wish to amend explicitly identified shortcomings i
 
 The documentation is currently limited, but take a look at:
 
-- The coordinate operator [documentation](/ruminations/002-rumination.md)
-- The [description of `kp`](/ruminations/003-rumination.md), the *Rust Geodesy* coordinate processing program
-- This essayistic [rumination](/ruminations/000-rumination.md), outlining the overall philosophy and architecture of *Rust Geodesy*.
+- The coordinate operator [documentation](https://github.com/busstoptaktik/geodesy/blob/main/ruminations/002-rumination.md)
+- The [description of `kp`](https://github.com/busstoptaktik/geodesy/blob/main/ruminations/003-rumination.md), the *Rust Geodesy* coordinate processing program
+- This essayistic [rumination](https://github.com/busstoptaktik/geodesy/blob/main/ruminations/000-rumination.md), outlining the overall philosophy and architecture of *Rust Geodesy*, and [this related](https://github.com/busstoptaktik/geodesy/blob/main/ruminations/008-rumination.md) comparison between PROJ and RG
 - The API documentation at [Docs.rs](https://docs.rs/geodesy)
-- The [`examples`](/examples/)
-- The tests embedded in the [source code](/src/)
-- [This](/ruminations/006-rumination.md) rather concrete and [this](/ruminations/005-rumination.md) more philosophical description of the main discrepancy between geodesy and geomatics, *RG* tries to elucidate and amend.
+- The [`examples`](https://github.com/busstoptaktik/geodesy/tree/main/examples)
+- The tests embedded in the [source code](https://github.com/busstoptaktik/geodesy/tree/main/src)
+- [This](https://github.com/busstoptaktik/geodesy/blob/main/ruminations/006-rumination.md) rather concrete and [this](https://github.com/busstoptaktik/geodesy/blob/main/ruminations/005-rumination.md) more philosophical description of the main discrepancy between geodesy and geomatics, *RG* tries to elucidate and amend.
 
 ## License
 
