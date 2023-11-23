@@ -25,10 +25,12 @@ mod omerc;
 pub(crate) mod pipeline; // Needed by Op for instantiation
 mod somerc;
 mod tmerc;
+mod unitconvert;
+mod units;
 mod webmerc;
 
 #[rustfmt::skip]
-const BUILTIN_OPERATORS: [(&str, OpConstructor); 30] = [
+const BUILTIN_OPERATORS: [(&str, OpConstructor); 31] = [
     ("adapt",        OpConstructor(adapt::new)),
     ("addone",       OpConstructor(addone::new)),
     ("btmerc",       OpConstructor(btmerc::new)),
@@ -52,6 +54,7 @@ const BUILTIN_OPERATORS: [(&str, OpConstructor); 30] = [
     ("somerc",       OpConstructor(somerc::new)),
     ("tmerc",        OpConstructor(tmerc::new)),
     ("utm",          OpConstructor(tmerc::utm)),
+    ("unitconvert", OpConstructor(unitconvert::new)),
     ("pipeline",     OpConstructor(pipeline::new)),
     ("pop",          OpConstructor(pipeline::pop)),
     ("push",         OpConstructor(pipeline::push)),
