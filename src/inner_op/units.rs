@@ -59,7 +59,7 @@ pub const ANGULAR_UNITS: [Unit; 3] = [
 pub fn linear_units_map() -> HashMap<&'static str, &'static Unit> {
     LINEAR_UNITS
         .iter()
-        .map(|&ref unit| (unit.name(), unit))
+        .map(|unit| (unit.name(), unit))
         .collect()
 }
 
@@ -67,6 +67,6 @@ pub fn linear_units_map() -> HashMap<&'static str, &'static Unit> {
 pub fn angular_units_map() -> HashMap<&'static str, &'static Unit> {
     ANGULAR_UNITS
         .iter()
-        .map(|&ref unit| (unit.name(), unit))
+        .map(|unit| (unit.name(), unit))
         .collect()
 }
