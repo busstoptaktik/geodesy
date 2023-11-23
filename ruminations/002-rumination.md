@@ -42,6 +42,7 @@ $ echo 553036. -124509 | kp "dms:in | geo:out"
 - [`push`](#operator-push): Push a dimension from the operands onto the stack
 - [`tmerc`](#operator-tmerc): The transverse Mercator projection
 - [`utm`](#operator-utm): The UTM projection
+- [`unitconvert`](#operator-unitconvert): The unit converter
 - [`webmerc`](#operator-webmerc): The Web Pseudomercator projection
 
 ### Prologue
@@ -851,6 +852,36 @@ utm zone=32
 
 ---
 
+### Operator `unitconvert`
+
+**Purpose:** Converts angular and linear units
+
+**Description:**
+Conversions are performed by means of a pivot unit. For horizontal conversions, the pivot unit is meters for linear units and radians for angular units. Vertical units always pivot around meters.
+Unit_A => (meters || radians) => Unit_B
+In all cases the default unit is meters.
+
+Supported vertical and horizontal units can be found on the [PROJ documentation](https://proj.org/operations/conversions/unitconvert.html) page.
+
+| Argument | Description |
+|----------|-------------|
+| `inv` | Swap forward and inverse operations |
+| `xy_in` | The unit of the input xy values |
+| `xy_out` | The target unit for xy values |
+| `z_in` | The unit of the input z values |
+| `z_out` | The target unit for z values |
+
+**Example**: Convert from degrees to radians
+
+```js
+unitconvert xy_in=deg xy_out=rad
+```
+
+**See also:** [PROJ documentation](https://proj.org/en/9.2/operations/conversions/unitconvert.html): *Unit Conversion*.
+A noticeable difference from PROJ is that time unit conversions are not yet supported. 
+
+---
+
 ### Operator `webmerc`
 
 **Purpose:** Projection from geographic to web pseudomercator coordinates
@@ -888,3 +919,4 @@ Major revisions and additions:
 - 2023-10-19: Add `somerc` operator description
 - 2023-11-02: Update `gridshift` operator description with multi, optional and null grid support
 - 2023-11-20: Add documentation for the `deformation` operator
+- 2023-11-21: Add documentation for the `unitconvert` operator
