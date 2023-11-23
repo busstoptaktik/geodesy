@@ -28,7 +28,7 @@ mod tmerc;
 mod webmerc;
 
 #[rustfmt::skip]
-const BUILTIN_OPERATORS: [(&str, OpConstructor); 26] = [
+const BUILTIN_OPERATORS: [(&str, OpConstructor); 30] = [
     ("adapt",        OpConstructor(adapt::new)),
     ("addone",       OpConstructor(addone::new)),
     ("btmerc",       OpConstructor(btmerc::new)),
@@ -55,6 +55,12 @@ const BUILTIN_OPERATORS: [(&str, OpConstructor); 26] = [
     ("pipeline",     OpConstructor(pipeline::new)),
     ("pop",          OpConstructor(pipeline::pop)),
     ("push",         OpConstructor(pipeline::push)),
+
+    // Some commonly used noop-aliases
+    ("longlat",      OpConstructor(noop::new)),
+    ("latlon",       OpConstructor(noop::new)),
+    ("latlong",      OpConstructor(noop::new)),
+    ("lonlat",       OpConstructor(noop::new)),
 ];
 // A BTreeMap would have been a better choice for BUILTIN_OPERATORS, except
 // for the annoying fact that it cannot be compile-time const-constructed.
