@@ -1,5 +1,13 @@
 # Geodesy
 
+## 0.11.1 Release notes
+
+2023-11-23:
+
+- Implement unitconvert operator
+- Repair links in README.md
+- Support latlon, lonlat, latlong, and longlat as noop-aliases
+
 ## 0.11.0 Release notes
 
 ### Improvements

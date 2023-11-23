@@ -1,3 +1,8 @@
+2023-11-23: Implement unitconvert operator (#80) (Sean Rennie)
+2023-11-23: Repair links in README.md (Thomas Knudsen)
+2023-11-23: Support latlon, lonlat, latlong, and longlat as noop-aliases (Thomas Knudsen)
+2023-11-20: Merge pull request #78 from busstoptaktik/prepare-for-0110 (Thomas Knudsen)
+2023-11-20: CHANGES.md and CHANGELOG for v 0.11.0 (Thomas Knudsen)
 2023-11-20: Update code examples and Cargo.toml to reflect v0.11.0 (Thomas Knudsen)
 2023-11-20: Remove an unintended version id in the Docs URL (Thomas Knudsen)
 2023-11-20: Plain Context improvements (Thomas Knudsen)
