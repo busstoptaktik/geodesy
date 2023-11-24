@@ -21,7 +21,7 @@ uuid = { version = "1", features = ["v4"] }
 
 # Command line program helpers
 clap = { version = "4.3.11", features = ["derive"], optional = true }
-clap-verbosity-flag = { version = "2.0.1" }
+clap-verbosity-flag = { version = "2.0.1", optional = true }
 anyhow = { version = "1.0", optional = true }
 
 # CLI + plain
@@ -51,7 +51,7 @@ crate-type = ["cdylib", "rlib"]
 
 [features]
 js = ["uuid/js"]
-binary = ["dirs", "clap", "env_logger", "anyhow"]
+binary = ["dirs", "clap", "clap-verbosity-flag", "env_logger", "anyhow"]
 with_plain = ["dirs"]
 default = ["binary", "with_plain"]
 
