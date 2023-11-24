@@ -30,8 +30,13 @@ struct Cli {
     #[clap(short = 't', long)]
     time: Option<f64>,
 
+    /// Number of decimals in output
     #[clap(short = 'd', long)]
     decimals: Option<usize>,
+
+    /// Output dimensionality - default: Estimate from input
+    #[clap(short = 'D', long)]
+    dimension: Option<usize>,
 
     /// Activate debug mode
     #[clap(long)]
@@ -90,6 +95,7 @@ fn main() -> Result<(), anyhow::Error> {
     // Get ready to read and transform input data
     let mut number_of_operands_read = 0_usize;
     let mut number_of_operands_succesfully_transformed = 0_usize;
+    let mut number_of_dimensions_in_input = 0;
     let mut operands = Vec::new();
     let start = time::Instant::now();
 
@@ -119,6 +125,8 @@ fn main() -> Result<(), anyhow::Error> {
                 continue;
             }
 
+            number_of_dimensions_in_input = number_of_dimensions_in_input.max(n);
+
             // Convert the text representation to a Coor4D
             args.extend(&(["0", "0", "0", "NaN", "0"][args.len()..]));
             let mut b: Vec<f64> = vec![];
@@ -136,15 +144,26 @@ fn main() -> Result<(), anyhow::Error> {
             // on to the transformation factory every time, we have
             // 25000 operands to operate on
             if operands.len() == 25000 {
-                number_of_operands_succesfully_transformed +=
-                    transform(&options, op, &mut operands, &ctx)?;
+                number_of_operands_succesfully_transformed += transform(
+                    &options,
+                    op,
+                    number_of_dimensions_in_input,
+                    &mut operands,
+                    &ctx,
+                )?;
                 operands.truncate(0);
             }
         }
     }
 
     // Transform the remaining coordinates
-    number_of_operands_succesfully_transformed += transform(&options, op, &mut operands, &ctx)?;
+    number_of_operands_succesfully_transformed += transform(
+        &options,
+        op,
+        number_of_dimensions_in_input,
+        &mut operands,
+        &ctx,
+    )?;
 
     let duration = start.elapsed();
     info!("Read {number_of_operands_read} coordinates and succesfully transformed {number_of_operands_succesfully_transformed} in {duration:?}");
@@ -152,13 +171,15 @@ fn main() -> Result<(), anyhow::Error> {
     Ok(())
 }
 
+// Transformation - this is the actual geodetic content
 fn transform(
     options: &Cli,
     op: OpHandle,
+    number_of_dimensions_in_input: usize,
     operands: &mut Vec<Coor4D>,
     ctx: &Plain,
 ) -> Result<usize, geodesy::Error> {
-    // Transformation - this is the actual geodetic content
+    let output_dimension = options.dimension.unwrap_or(number_of_dimensions_in_input);
 
     // When roundtripping, we must keep a copy of the input to be able
     // to compute the roundtrip differences
@@ -208,10 +229,22 @@ fn transform(
 
     // Finally output the transformed coordinates
     for coord in operands {
-        println!(
-            "{1:.0$} {2:.0$} {3:.0$} {4:.0$} ",
-            decimals, coord[0], coord[1], coord[2], coord[3]
-        );
+        match output_dimension {
+            0 | 4 => println!(
+                "{1:.0$} {2:.0$} {3:.0$} {4:.0$} ",
+                decimals, coord[0], coord[1], coord[2], coord[3]
+            ),
+            1 => println!("{1:.0$} ", decimals, coord[0]),
+            2 => println!("{1:.0$} {2:.0$} ", decimals, coord[0], coord[1]),
+            3 => println!(
+                "{1:.0$} {2:.0$} {3:.0$} ",
+                decimals, coord[0], coord[1], coord[2]
+            ),
+            _ => println!(
+                "{1:.0$} {2:.0$} {3:.0$} {4:.0$} ",
+                decimals, coord[0], coord[1], coord[2], coord[3]
+            ),
+        }
     }
     Ok(n)
 }

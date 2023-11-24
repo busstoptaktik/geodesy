@@ -4,13 +4,13 @@
 
 Thomas Knudsen <knudsen.thomas@gmail.com>
 
-2021-08-28. Last [revision](#document-history) 2023-11-20
+2021-08-28. Last [revision](#document-history) 2023-11-24
 
 ### Abstract
 
-```sh
+```console
 $ echo 55 12 | kp "geo:in | utm zone=32"
-> 691875.6321 6098907.8250 0.0000 0.0000
+> 691875.6321 6098907.8250
 ```
 
 ---
@@ -27,20 +27,23 @@ For many years, Poder was in charge of the GI department for computational geode
 
 The basic operation of `kp` is very simple. Any complexity in `kp` usage is related to the description of the operation to carry out, which is the subject of [Rumination 002](/ruminations/002-rumination.md). The `kp` command line syntax is:
 
-```sh
-kp "operation" file1 file2 ...
+```console
+$ kp "operation" file1 file2 ...
+> ...
 ```
 
 or, with input from `stdin`:
 
-```sh
-echo coordinate | kp "operation"
+```console
+$ echo coordinate | kp "operation"
+> ...
 ```
 
 or, with output to the file `result`:
 
-```sh
-kp -o result "operation" file1 file2 ...
+```console
+$ kp -o result "operation" file1 file2 ...
+> ...
 ```
 
 ### Examples
@@ -49,37 +52,38 @@ Convert the coordinate tuple (55 N, 12 E) from geographical coordinates  on the 
 
 ```sh
 $ echo 55 12 0 0 | kp "geo:in | utm zone=32"
-> 691875.6321 6098907.8250 0.0000 0.0000
+> 691875.6321 6098907.8250
 ```
 
-While RG coordinates are always 4D, `kp` will provide zero-values for any left-out postfix dimensions:
+While RG coordinates are always 4D, `kp` will provide zero-values for any left-out postfix dimensions, and try to guess a proper number of output dimensions (unless the `-D n` option is given):
 
-```sh
+```console
 $ echo 55 12 | kp "geo:in | utm zone=32"
-> 691875.6321 6098907.8250 0.0000 0.0000
+> 691875.6321 6098907.8250
+
+$ echo 55 12 | kp -D3 "geo:in | utm zone=32"
+> 691875.6321 6098907.8250 0.0000
+
+$ echo 55 | kp "curvature mean"
+> 6385431.75306
+
+$ echo 55 | kp -D4 "curvature mean"
+> 6385431.75306 0.00000 0.00000 NaN
 ```
 
 The `roundtrip` option measures the roundtrip accuracy of a transformation
 (i.e. how close to the origin you end up after a forward+inverse dance). Knud Poder championed this practise with his ingeniously constructed *Poder dual autochecking* method, which was essential at a time where computers were less robust than today (more about that [below](#a-few-more-words-about-knud-poder)).
 
-```sh
+```console
 $ echo 55 12 | kp --roundtrip "geo:in | utm zone=32"
-> 55 12:  d = 0.05 mm
+> -0.0000000000 -0.0000000000
 ```
 
 The `inv` option runs the specified pipeline inversely:
 
-```sh
+```console
 $ echo 691875.6321 6098907.8250 | kp --inv "geo:in | utm zone=32"
 > 54.9999999996 11.9999999994 0.00000 0.00000
-```
-
-The `inv` and `roundtrip` options are mutually exclusive:
-
-```txt
-$ echo 691875.6321 6098907.8250 | kp --inv --roundtrip "geo:in | utm zone=32"
-> Options `inverse` and `roundtrip` are mutually exclusive
-> error: process didn't exit successfully: ...
 ```
 
 ### Options
@@ -98,18 +102,19 @@ Arguments:
   [ARGS]...    The files to operate on
 
 Options:
-      --inv                  Inverse operation
-  -z, --height <HEIGHT>      Specify a fixed height for all coordinates
-  -t, --time <TIME>          Specify a fixed observation time for all coordinates
-  -d, --decimals <DECIMALS>
-      --debug                Activate debug mode
-  -r, --roundtrip            Report fwd-inv roundtrip deviation
-  -e, --echo                 Echo input to output
-  -v, --verbose...           More output per occurrence
-  -q, --quiet...             Less output per occurrence
-  -o, --output <OUTPUT>      Output file, stdout if not present
-  -h, --help                 Print help
-  -V, --version              Print version
+      --inv                    Inverse operation
+  -z, --height <HEIGHT>        Specify a fixed height for all coordinates
+  -t, --time <TIME>            Specify a fixed observation time for all coordinates
+  -d, --decimals <DECIMALS>    Number of decimals in output
+  -D, --dimension <DIMENSION>  Output dimensionality - default: Estimate from input
+      --debug                  Activate debug mode
+  -r, --roundtrip              Report fwd-inv roundtrip deviation
+  -e, --echo                   Echo input to output
+  -v, --verbose...             More output per occurrence
+  -q, --quiet...               Less output per occurrence
+  -o, --output <OUTPUT>        Output file, stdout if not present
+  -h, --help                   Print help
+  -V, --version                Print version
 ```
 
 ### Operators
@@ -157,3 +162,4 @@ Major revisions and additions:
 - 2022-05-08: Reflect current syntax
 - 2023-08-17: Graphical clean up
 - 2023-11-20: Reflect the current --help text
+- 2023-11-24: Automatic selection of output dimensionality
