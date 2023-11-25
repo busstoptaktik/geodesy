@@ -1,10 +1,9 @@
 #[cfg(feature = "with_plain")]
 use crate::authoring::*;
 use crate::grid::ntv2::Ntv2Grid;
-use once_cell::sync::Lazy;
 use std::{
     path::PathBuf,
-    sync::{Arc, Mutex},
+    sync::{Arc, Mutex, OnceLock},
 };
 
 // ----- T H E   P L A I N   C O N T E X T ---------------------------------------------
@@ -26,8 +25,11 @@ pub struct Plain {
 // in all instantiations of `Plain` by handing out
 // reference counted clones to a single heap allocation
 
-static GRIDS: Lazy<Mutex<GridCollection>> =
-    Lazy::new(|| Mutex::new(GridCollection(BTreeMap::<String, Arc<dyn Grid>>::new())));
+static GRIDS: OnceLock<Mutex<GridCollection>> = OnceLock::new();
+
+fn init_grids() -> Mutex<GridCollection> {
+    Mutex::new(GridCollection(BTreeMap::<String, Arc<dyn Grid>>::new()))
+}
 
 struct GridCollection(BTreeMap<String, Arc<dyn Grid>>);
 impl GridCollection {
@@ -77,7 +79,9 @@ impl Plain {
     /// even though they may still be in use by some remaining operator
     /// instantiations.
     pub fn clear_grids() {
-        GRIDS.lock().unwrap().0.clear();
+        if let Some(grids) = GRIDS.get() {
+            grids.lock().unwrap().0.clear();
+        }
     }
 }
 
@@ -269,7 +273,11 @@ impl Context for Plain {
         // The GridCollection does all the hard work here, but accessing GRIDS,
         // which is a mutable static is (mis-)diagnosed as unsafe by the compiler,
         // even though the mutable static is behind a Mutex guard
-        GRIDS.lock().unwrap().get_grid(name, &self.paths)
+        GRIDS
+            .get_or_init(init_grids)
+            .lock()
+            .unwrap()
+            .get_grid(name, &self.paths)
     }
 }
 
