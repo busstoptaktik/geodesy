@@ -7,6 +7,7 @@ use crate::authoring::*;
 
 mod adapt;
 mod addone;
+mod axisswap;
 mod btmerc;
 mod cart;
 mod curvature;
@@ -30,9 +31,10 @@ mod units;
 mod webmerc;
 
 #[rustfmt::skip]
-const BUILTIN_OPERATORS: [(&str, OpConstructor); 31] = [
+const BUILTIN_OPERATORS: [(&str, OpConstructor); 32] = [
     ("adapt",        OpConstructor(adapt::new)),
     ("addone",       OpConstructor(addone::new)),
+    ("axisswap",     OpConstructor(axisswap::new)),
     ("btmerc",       OpConstructor(btmerc::new)),
     ("butm",         OpConstructor(btmerc::utm)),
     ("cart",         OpConstructor(cart::new)),
@@ -49,17 +51,19 @@ const BUILTIN_OPERATORS: [(&str, OpConstructor); 31] = [
     ("merc",         OpConstructor(merc::new)),
     ("webmerc",      OpConstructor(webmerc::new)),
     ("molodensky",   OpConstructor(molodensky::new)),
-    ("noop",         OpConstructor(noop::new)),
     ("omerc",        OpConstructor(omerc::new)),
     ("somerc",       OpConstructor(somerc::new)),
     ("tmerc",        OpConstructor(tmerc::new)),
+    ("unitconvert",  OpConstructor(unitconvert::new)),
     ("utm",          OpConstructor(tmerc::utm)),
-    ("unitconvert", OpConstructor(unitconvert::new)),
+
+    // Pipeline handlers
     ("pipeline",     OpConstructor(pipeline::new)),
     ("pop",          OpConstructor(pipeline::pop)),
     ("push",         OpConstructor(pipeline::push)),
 
     // Some commonly used noop-aliases
+    ("noop",         OpConstructor(noop::new)),
     ("longlat",      OpConstructor(noop::new)),
     ("latlon",       OpConstructor(noop::new)),
     ("latlong",      OpConstructor(noop::new)),
