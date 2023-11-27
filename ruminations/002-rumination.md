@@ -22,6 +22,7 @@ $ echo 553036. -124509 | kp "dms:in | geo:out"
 - [Prologue](#prologue)
 - [A brief `kp` HOWTO](#a-brief-kp-howto)
 - [`adapt`](#operator-adapt): The order-and-unit adaptor
+- [`axisswap`](#operator-axisswap): The axis order adaptor
 - [`cart`](#operator-cart): The geographical-to-cartesian converter
 - [`curvature`](#operator-curvature): Radii of curvature
 - [`deformation`](#operator-deformation): Kinematic datum shift using a
@@ -135,6 +136,46 @@ geo:in | cart ... | helmert ... | cart inv ... | geo:out
 ```
 
 where `geo:out` could be defined as `geo:in inv`.
+
+---
+
+### Operator `axisswap`
+
+**Purpose:** Swap the order of coordinate elements in a coordinate tuple
+
+**Description:** In the `axisswap` model, the coordinate axes are numbered 1,2,3,4 and the axis swapping process is specified through the `order` argument, by providing a comma separated list of the reorganized order e.g.:
+
+```txt
+order=2,1,3,4
+```
+
+for swapping the first two axes.
+
+Axis indices may be prefixed by a minus sign, `-` to indicate a 180 degree swapping of the axis in question:
+
+```txt
+order=2,-1,3,4
+```
+
+which will make the second axis of the output equal to the negative of the first axis of the input.
+
+Postfix nonconsequential axis indices may be left out so:
+
+```txt
+order=2,-1
+```
+
+will give the same result as the previous example.
+
+**Usage:** Typically, `axisswap` (like `adapt` and `unitconvert`) is used in one or both ends of a pipeline, to match data between the RG internal representation and the requirements of the external coordinate representation:
+
+```txt
+axisswap order=2,1 | utm zone=32 | axisswap order=2,1
+```
+
+**Note:** This is an attempt to replicate Kristian Evers' PROJ operator of the [same name](https://proj.org/en/9.3/operations/conversions/axisswap.html), and any discrepancies should, as a general rule, be interpreted as errors in this implementation. Exceptions to this rule are all functionality related to PROJ's continued (but deprecated and undocumented) support of the classsical PROJ.4 syntax `axis=enu`, etc.
+
+**See also:** The documentation for the corresponding [PROJ operator](https://proj.org/en/9.3/operations/conversions/axisswap.html)
 
 ---
 
@@ -878,7 +919,7 @@ unitconvert xy_in=deg xy_out=rad
 ```
 
 **See also:** [PROJ documentation](https://proj.org/en/9.2/operations/conversions/unitconvert.html): *Unit Conversion*.
-A noticeable difference from PROJ is that time unit conversions are not yet supported. 
+A noticeable difference from PROJ is that time unit conversions are not yet supported.
 
 ---
 
