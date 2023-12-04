@@ -1,6 +1,5 @@
 //! The `InnerOp` specific representation of the operator arguments
 
-#![allow(clippy::needless_range_loop)]
 use crate::math::angular;
 use crate::math::FourierCoefficients;
 use std::collections::BTreeSet;
