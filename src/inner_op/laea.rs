@@ -273,7 +273,6 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     })
 }
 
-
 // ----- T E S T S ---------------------------------------------------------------------
 
 #[cfg(test)]
@@ -321,7 +320,9 @@ mod tests {
     #[test]
     fn origin() {
         let mut ctx = Minimal::new();
-        let op = ctx.op("laea lon_0=10 lat_0=52 x_0=4321000 y_0=3210000").unwrap();
+        let op = ctx
+            .op("laea lon_0=10 lat_0=52 x_0=4321000 y_0=3210000")
+            .unwrap();
         let mut data = [Coor2D::geo(52.0, 10.0)];
         let clone = data;
         ctx.apply(op, Fwd, &mut data).unwrap();
