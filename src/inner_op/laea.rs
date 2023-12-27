@@ -149,9 +149,10 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         let x = coord[0];
         let y = coord[1];
         let rho = ((x - x_0) / d).hypot(d * (y - y_0));
+
         // A bit of reality hardening ported from the PROJ implementation
         if rho < EPS10 {
-            coord[0] = 0.0;
+            coord[0] = lon_0;
             coord[1] = lat_0;
             operands.set_coord(i, &coord);
             successes += 1;
@@ -272,8 +273,6 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     })
 }
 
-// ----- A N C I L L A R Y   F U N C T I O N S -----------------------------------------
-
 // ----- T E S T S ---------------------------------------------------------------------
 
 #[cfg(test)]
@@ -313,5 +312,21 @@ mod tests {
         // Missing test points for the polar aspects
 
         Ok(())
+    }
+
+    // Test the "if rho < EPS10" brach in the inverse case.
+    // From this issue: https://github.com/busstoptaktik/geodesy/issues/89
+    // reported by @maximkaaa
+    #[test]
+    fn origin() {
+        let mut ctx = Minimal::new();
+        let op = ctx
+            .op("laea lon_0=10 lat_0=52 x_0=4321000 y_0=3210000")
+            .unwrap();
+        let mut data = [Coor2D::geo(52.0, 10.0)];
+        let clone = data;
+        ctx.apply(op, Fwd, &mut data).unwrap();
+        ctx.apply(op, Inv, &mut data).unwrap();
+        assert_eq!(data, clone);
     }
 }
