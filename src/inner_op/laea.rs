@@ -323,7 +323,7 @@ mod tests {
         let mut ctx = Minimal::new();
         let op = ctx.op("laea lon_0=10 lat_0=52 x_0=4321000 y_0=3210000").unwrap();
         let mut data = [Coor2D::geo(52.0, 10.0)];
-        let clone = data.clone();
+        let clone = data;
         ctx.apply(op, Fwd, &mut data).unwrap();
         ctx.apply(op, Inv, &mut data).unwrap();
         assert_eq!(data, clone);
