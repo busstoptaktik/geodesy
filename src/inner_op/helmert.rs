@@ -451,7 +451,7 @@ mod tests {
     fn fixed_dynamic() -> Result<(), Error> {
         let mut ctx = Minimal::default();
         let definition = "
-            helmert  exact  convention = coordinate_frame
+            helmert  exact    convention = coordinate_frame
             drx = 0.00150379  dry = 0.00118346  drz = 0.00120716
             t_epoch = 2020.0  t_obs = 2018
         ";
@@ -519,7 +519,7 @@ mod tests {
         let definition = "
             helmert  exact    convention = coordinate_frame
             angular_velocity = 0.00150379, 0.00118346,  0.00120716
-            t_epoch = 2020.0
+            t_epoch = 2020.0 
         ";
         let op = ctx.op(definition)?;
 
