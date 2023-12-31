@@ -129,7 +129,7 @@ fn helmert_inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) ->
 // ----- C O N S T R U C T O R ------------------------------------------------------
 
 #[rustfmt::skip]
-pub const GAMUT: [OpParameter; 24] = [
+pub const GAMUT: [OpParameter; 25] = [
     OpParameter::Flag { key: "inv" },
 
     // Translation
@@ -163,6 +163,7 @@ pub const GAMUT: [OpParameter; 24] = [
     // Scale and its time evoution
     OpParameter::Real { key: "scale", default: Some(0f64) },
     OpParameter::Real { key: "s",  default: Some(0f64) },
+    OpParameter::Real { key: "scale_trend", default: Some(0f64) },
     OpParameter::Real { key: "ds", default: Some(0f64) },  // TODO: scale by 1e-6
 
     // Epoch - "beginning of time for this transformation"
@@ -250,8 +251,9 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     }
 
     // Scale and its time evolution
-    let mut S = 1.0 + params.real("s")? * 1e-6;
-    let DS = params.real("ds")? * 1e-6;
+    let mut S = 1.0 + (params.real("s")? + params.real("scale")?)* 1e-6;
+
+    let DS = (params.real("ds")? + params.real("scale_trend")?) * 1e-6;
 
     let dynamic = !(DT == [0., 0., 0.] && DR == [0., 0., 0.] && DS == 0.);
     if dynamic {
@@ -492,7 +494,7 @@ mod tests {
     fn translation_rotation_and_scale_alt_params() -> Result<(), Error> {
         let mut ctx = Minimal::default();
         let definition = "
-            helmert  convention = coordinate_frame
+            helmert convention = coordinate_frame
             translation = 0.06155, -0.01087, -0.04019
             rotation = -0.0394924, -0.0327221, -0.0328979
             scale = -0.009994 exact
