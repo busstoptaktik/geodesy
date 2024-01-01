@@ -2,12 +2,9 @@ use std::sync::Arc;
 
 use crate::authoring::*;
 pub mod minimal;
-pub use minimal::Minimal;
 
 #[cfg(feature = "with_plain")]
 pub mod plain;
-#[cfg(feature = "with_plain")]
-pub use plain::Plain;
 
 // ----- T H E   C O N T E X T   T R A I T ---------------------------------------------
 
