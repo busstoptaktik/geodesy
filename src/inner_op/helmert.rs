@@ -180,9 +180,24 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     // Translation
     let translation = params.texts("translation")?.clone();
     if translation.len() == 3 {
-        params.real.insert("x", translation[0].parse::<f64>().expect("Failed parsing translation"));
-        params.real.insert("y", translation[1].parse::<f64>().expect("Failed parsing translation"));
-        params.real.insert("z", translation[2].parse::<f64>().expect("Failed parsing translation"));
+        params.real.insert(
+            "x",
+            translation[0]
+                .parse::<f64>()
+                .expect("Failed parsing translation"),
+        );
+        params.real.insert(
+            "y",
+            translation[1]
+                .parse::<f64>()
+                .expect("Failed parsing translation"),
+        );
+        params.real.insert(
+            "z",
+            translation[2]
+                .parse::<f64>()
+                .expect("Failed parsing translation"),
+        );
     }
     let x = params.real("x")?;
     let y = params.real("y")?;
@@ -190,11 +205,20 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     let mut T = [x, y, z];
 
     // Time evolution of translation
-    let velocity: Vec<String>= params.texts("velocity")?.clone();
+    let velocity: Vec<String> = params.texts("velocity")?.clone();
     if velocity.len() == 3 {
-        params.real.insert("dx", velocity[0].parse::<f64>().expect("Failed parsing velocity"));
-        params.real.insert("dy", velocity[1].parse::<f64>().expect("Failed parsing velocity"));
-        params.real.insert("dz", velocity[2].parse::<f64>().expect("Failed parsing velocity"));
+        params.real.insert(
+            "dx",
+            velocity[0].parse::<f64>().expect("Failed parsing velocity"),
+        );
+        params.real.insert(
+            "dy",
+            velocity[1].parse::<f64>().expect("Failed parsing velocity"),
+        );
+        params.real.insert(
+            "dz",
+            velocity[2].parse::<f64>().expect("Failed parsing velocity"),
+        );
     }
     let dx = params.real("dx")?;
     let dy = params.real("dy")?;
@@ -204,9 +228,18 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     // Rotation
     let rotation: Vec<String> = params.texts("rotation")?.clone();
     if rotation.len() == 3 {
-        params.real.insert("rx", rotation[0].parse::<f64>().expect("Failed parsing rotation"));
-        params.real.insert("ry", rotation[1].parse::<f64>().expect("Failed parsing rotation"));
-        params.real.insert("rz", rotation[2].parse::<f64>().expect("Failed parsing rotation"));
+        params.real.insert(
+            "rx",
+            rotation[0].parse::<f64>().expect("Failed parsing rotation"),
+        );
+        params.real.insert(
+            "ry",
+            rotation[1].parse::<f64>().expect("Failed parsing rotation"),
+        );
+        params.real.insert(
+            "rz",
+            rotation[2].parse::<f64>().expect("Failed parsing rotation"),
+        );
     }
     let rx = params.real("rx")?;
     let ry = params.real("ry")?;
@@ -220,9 +253,24 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     // Time evolution of rotation
     let angular_velocity: Vec<String> = params.texts("angular_velocity")?.clone();
     if angular_velocity.len() == 3 {
-        params.real.insert("drx", angular_velocity[0].parse::<f64>().expect("Failed parsing angular_velocity"));
-        params.real.insert("dry", angular_velocity[1].parse::<f64>().expect("Failed parsing angular_velocity"));
-        params.real.insert("drz", angular_velocity[2].parse::<f64>().expect("Failed parsing angular_velocity"));
+        params.real.insert(
+            "drx",
+            angular_velocity[0]
+                .parse::<f64>()
+                .expect("Failed parsing angular_velocity"),
+        );
+        params.real.insert(
+            "dry",
+            angular_velocity[1]
+                .parse::<f64>()
+                .expect("Failed parsing angular_velocity"),
+        );
+        params.real.insert(
+            "drz",
+            angular_velocity[2]
+                .parse::<f64>()
+                .expect("Failed parsing angular_velocity"),
+        );
     }
     let drx = params.real("drx")?;
     let dry = params.real("dry")?;
@@ -251,7 +299,7 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     }
 
     // Scale and its time evolution
-    let mut S = 1.0 + (params.real("s")? + params.real("scale")?)* 1e-6;
+    let mut S = 1.0 + (params.real("s")? + params.real("scale")?) * 1e-6;
 
     let DS = (params.real("ds")? + params.real("scale_trend")?) * 1e-6;
 
@@ -467,7 +515,6 @@ mod tests {
         Ok(())
     }
 
-
     //& MY TESTS
 
     #[test]
@@ -534,5 +581,4 @@ mod tests {
 
         Ok(())
     }
-
 }
