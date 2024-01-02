@@ -530,6 +530,20 @@ Both conventions are common, and trivially converted between as they differ by s
 | Parameter | Description |
 |-----------|-------------|
 | `inv` | Inverse operation: output-to-input datum. Mathematically, a sign reversion of all parameters. |
+| `translation` | comma separated list of translations along the 3 axes |
+| `rotation` | comma separated list of rotations around the 3 axes the 3 axes |
+| `velocity` | comma separated list of the deformation velocity wrt. the 3 axes |
+| `angular_velocity` | comma separated list of the rate-of-change of the rotations wrt. the 3 axes |
+| `scale` | scaling factor given in parts-per-million |
+| `scale_trend` | rate-of-change for the scaling factor |
+| `t_epoch` | origin of the time evolution |
+| `t_obs` | fixed value for observation time. Ignore fourth coordinate |
+| `exact` | Do not use small-angle approximations when constructing the rotation matrix |
+| `convention` | Either `position_vector` or `coordinate_frame`, as described above. Mandatory if any of the rotation parameters are used. |
+
+**Additional parameters for PROJ compatibility:**
+| Parameter | Description |
+|-----------|-------------|
 | `x`  | offset along the first axis  |
 | `y`  | offset along the second axis |
 | `z`  | offset along the third axis  |
@@ -544,12 +558,13 @@ Both conventions are common, and trivially converted between as they differ by s
 | `dry` | rate-of-change for rotation around the second axis |
 | `drz` | rate-of-change for rotation around the third axis  |
 | `ds`  | rate-of-change for scaling factor |
-| `t_epoch` | origin of the time evolution |
-| `t_obs` | fixed value for observation time. Ignore fourth coordinate |
-| `exact` | Do not use small-angle approximations when constructing the rotation matrix |
-| `convention` | Either `position_vector` or `coordinate_frame`, as described above. Mandatory if any of the rotation parameters are used. |
 
 **Example**:
+
+```js
+geo:in | cart ellps=intl | helmert translation=-87,-96,-120 | cart inv ellps=GRS80 | geo:out
+```
+Same example, now using the PROJ compatible parameter names:
 
 ```js
 geo:in | cart ellps=intl | helmert x=-87 y=-96 z=-120 | cart inv ellps=GRS80 | geo:out
