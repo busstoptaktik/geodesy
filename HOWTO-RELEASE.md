@@ -10,15 +10,15 @@
 - `just changes` (to preview a new `CHANGELOG`)
 - update `CHANGES.md`
 - `just changelog` (to generate a new `CHANGELOG`)
-- `git commit -a -m "CHANGES.md and CHANGELOG for v 0.12.0"`
+- `git commit -a -m "CHANGES.md and CHANGELOG for v0.12.0"`
 - `git push`
-- `git tag v0.11.0`
+- `git tag v0.12.0`
 - `git push --tags`
-- `git branch 0.11`
-- `git switch 0.11`
-- `git push ...`
+- `git branch 0.12`
+- `git switch 0.12`
+- `git push --set-upstream origin 0.12`
 - `git switch main`
 - `cargo publish`
-- update `HOWTO-RELEASE.md` to say 0.12
-- `git commit -a -m "Start of work towards 0.12.0`
+- update `HOWTO-RELEASE.md` to say 0.13
+- `git commit -a -m "Start of work towards 0.13.0`
 - `git push ...`
