@@ -140,7 +140,7 @@ pub fn proj_constructor(parameters: &RawParameters, _ctx: &dyn Context) -> Resul
     let mut proj_args = String::new();
     for (k, v) in given_args {
         // Remove "proj" or "proj inv" prefixes
-        if k == "inv" || k == "name" {
+        if k == "inv" || k == "_name" {
             continue;
         }
         proj_args += " +";

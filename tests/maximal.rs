@@ -148,13 +148,13 @@ mod tests {
             "foo |  bar baz  =  bonk, bonk , bonk".split_into_steps().0[0],
             "foo"
         );
-        assert_eq!("foo bar baz=bonk".split_into_parameters()["name"], "foo");
+        assert_eq!("foo bar baz=bonk".split_into_parameters()["_name"], "foo");
         assert_eq!("foo bar baz=bonk".split_into_parameters()["bar"], "true");
         assert_eq!("foo bar baz=bonk".split_into_parameters()["baz"], "bonk");
         assert!("foo | bar".is_pipeline());
         assert!("foo:bar".is_resource_name());
-        assert_eq!("foo bar baz=bonk".operator_name(""), "foo");
-        assert_eq!("foo bar baz=  $bonk".operator_name(""), "foo");
+        assert_eq!("foo bar baz=bonk".operator_name(), "foo");
+        assert_eq!("foo bar baz=  $bonk".operator_name(), "foo");
         Ok(())
     }
 

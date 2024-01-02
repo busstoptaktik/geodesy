@@ -57,7 +57,7 @@ impl RawParameters {
         let mut recursion_level = self.recursion_level + 1;
         let mut globals = self.globals.clone();
         if definition.is_resource_name() {
-            globals.remove("name");
+            globals.remove("_name");
             globals.extend(definition.split_into_parameters());
             globals.remove("inv");
             recursion_level += 1;

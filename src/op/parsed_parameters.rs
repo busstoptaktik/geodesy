@@ -362,7 +362,7 @@ impl ParsedParameters {
         }
 
         let name = locals
-            .get("name")
+            .get("_name")
             .unwrap_or(&"unknown".to_string())
             .to_string();
 
