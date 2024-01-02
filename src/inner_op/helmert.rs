@@ -179,7 +179,6 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
 
     // Translation
     let translation = params.series("translation")?;
-    println!("translation: {:?}", translation);
     if translation.len() != 3 {
         return Err(Error::BadParam(
             "translation".to_string(),
