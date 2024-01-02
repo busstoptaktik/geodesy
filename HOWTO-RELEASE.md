@@ -10,7 +10,7 @@
 - `just changes` (to preview a new `CHANGELOG`)
 - update `CHANGES.md`
 - `just changelog` (to generate a new `CHANGELOG`)
-- `git commit -a -m "CHANGES.md and CHANGELOG for v0.12.0"`
+- `git commit -a -m "CHANGES.md and CHANGELOG for v0.13.0"`
 - `git push`
 - `git tag v0.13.0`
 - `git push --tags`
