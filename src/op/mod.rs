@@ -105,7 +105,7 @@ impl Op {
             ));
         }
 
-        let name = parameters.definition.operator_name("");
+        let name = parameters.definition.operator_name();
 
         // A pipeline?
         if parameters.definition.is_pipeline() {

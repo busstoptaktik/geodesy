@@ -210,6 +210,18 @@ Also, since pipelines are obviously akin to Unix style shell pipes, we use the U
 cart ellps=intl | helmert x=-87 y=-96 z=-120 | cart inv ellps=GRS80
 ```
 
+RG also supports the PROJ step modifiers `omit_fwd` and `omit_inv`, indicating that a given step should be omitted if the pipeline is executed in the forward (respectively inverse) direction. And while they may be used exactly as in the PROJ case, RG also provices a bit of syntactic sugar by introducing the alternative step delimiters '>' (for `omit_inv` steps) and '<' (for `omit_fwd` steps).
+
+This is especially useful for very long pipelines, utilizing a block-formatted syntax, where the start of each line clearly indicates in which direction(s) each step is taken:
+
+```geodesy
+> inv utm zone=33 ellps=intl   # only fwd
+| cart ellps=intl
+| helmert x=-87 y=-96 z=-120
+| cart inv ellps=GRS80
+< inv utm zone=32 ellps=GRS80  # only inv
+```
+
 ### Redefining the world
 
 Being intended for authoring of geodetic functionality, customization is a very important aspect of the RG design. Hence, RG allows temporal overshadowing of built in functionality by registering user defined macros and operators. This is treated in detail in examples [02 (macros)](/examples/02-user_defined_macros.rs) and [03 (operators)](/examples/03-user_defined_operators.rs). Here, let's just take a minimal look at the workflow, which can be described briefly as *define, register, instantiate, and use:*
@@ -333,7 +345,7 @@ From the detailed walkthrough of the example above, we can summarize "the philos
 
 ... and, although only sparsely touched upon above:
 
-- **Operator pipelines are awesome:** Perhaps not a surprising stance, since I invented the concept and implemented it in PROJ five years ago, through the [Plumbing for Pipelines](https://github.com/OSGeo/PROJ/pull/453) pull request.
+- **Operator pipelines are awesome:** Perhaps not a surprising stance, since I invented the concept and implemented it in PROJ in 2016, through the [Plumbing for Pipelines](https://github.com/OSGeo/PROJ/pull/453) pull request.
 
 While operator pipelines superficically look like the ISO-19100 series concept of *concatenated operations*, they are more general and as we pointed out in `[Knudsen et al, 2019]`, also very powerful as a system of bricks and mortar for the construction of new conceptual buildings. Use more pipelines!
 
@@ -351,7 +363,7 @@ Thomas Knudsen, Kristian Evers, Geir Arne Hjelle, Guðmundur Valsson, Martin Lid
 
 #### **Note:** ellps implied
 
-In both cases, the use of the GRS80 ellipsoid is implied, but may be expressly stated as  `utm zone=32 ellps=GRS80}` resp. `proj=utm zone=32 ellps=GRS80`
+In both cases, the use of the GRS80 ellipsoid is implied, but may be expressly stated as  `utm zone=32 ellps=GRS80` resp. `proj=utm zone=32 ellps=GRS80`
 
 In C, using PROJ, the demo program would resemble this (untested) snippet:
 

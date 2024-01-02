@@ -4,7 +4,7 @@ use std::collections::BTreeMap;
 /// Convenience methods for lexical analysis of operator definitions.
 /// - For splitting a pipeline into steps
 /// - For splitting a step into parameters (i.e. key=value-pairs)
-/// - For syntactical normalization by eliminating non-significant whitespace
+/// - For syntactical normalization by desugaring and elimination of non-significant whitespace
 /// - For checking whether a given operator is singular or a pipeline
 /// - For checking whether a key is a macro name ("resource name"), and
 /// - For accessing the name of a given operator.
@@ -36,11 +36,15 @@ pub trait Tokenize {
     ///    ```txt
     ///     foo | bar baz=bonk   ,    bonk  ->  foo|bar baz=bonk,bonk
     ///    ```
+    /// 4. Desugar the one-way sequence separators '<' and '>':
+    ///    ```txt
+    ///     foo > bar < baz  ->  foo|omit_inv bar|omit_fwd baz
+    ///    ```
     fn normalize(&self) -> String;
 
     fn is_pipeline(&self) -> bool;
     fn is_resource_name(&self) -> bool;
-    fn operator_name(&self, default: &str) -> String;
+    fn operator_name(&self) -> String;
 }
 
 /// Tokenize implementation for string-like objects
@@ -103,7 +107,17 @@ where
         // Remove non-significant whitespace
         let step = self.normalize();
         let mut params = BTreeMap::new();
-        let elements: Vec<_> = step.split_whitespace().collect();
+        let mut elements: Vec<_> = step.split_whitespace().collect();
+        if elements.is_empty() {
+            return params;
+        }
+
+        // Rotate any desugared modifiers to the end of the list
+        let modifiers = ["inv", "omit_fwd", "omit_inv"];
+        while modifiers.contains(&elements[0]) {
+            elements.rotate_left(1);
+        }
+
         for element in elements {
             // Split a key=value-pair into key and value parts
             let mut parts: Vec<&str> = element.trim().split('=').collect();
@@ -114,7 +128,7 @@ where
 
             // If the first arg is a key-without-value, it is the name of the operator
             if params.is_empty() && parts.len() == 2 {
-                params.insert(String::from("name"), String::from(parts[0]));
+                params.insert(String::from("_name"), String::from(parts[0]));
                 continue;
             }
 
@@ -132,28 +146,42 @@ where
             .replace(": ", ":")
             .replace(", ", ",")
             .replace("| ", "|")
+            .replace("> ", "|omit_inv ")
+            .replace("< ", "|omit_fwd ")
             .replace(" =", "=")
             .replace(" :", ":")
             .replace(" ,", ",")
             .replace(" |", "|")
+            .replace(" >", "|omit_inv ")
+            .replace(" <", "|omit_fwd ")
+            .replace("₀=", "_0=")
+            .replace("₁=", "_1=")
+            .replace("₂=", "_2=")
+            .replace("₃=", "_3=")
+            .replace("₄=", "_4=")
+            .replace("₅=", "_5=")
+            .replace("₆=", "_6=")
+            .replace("₇=", "_7=")
+            .replace("₈=", "_8=")
+            .replace("₉=", "_9=")
             .replace("$ ", "$") // But keep " $" as is!
     }
 
     fn is_pipeline(&self) -> bool {
-        self.as_ref().contains('|')
+        self.as_ref().contains('|') || self.as_ref().contains('<') || self.as_ref().contains('>')
     }
 
     fn is_resource_name(&self) -> bool {
-        self.operator_name("").contains(':')
+        self.operator_name().contains(':')
     }
 
-    fn operator_name(&self, default: &str) -> String {
+    fn operator_name(&self) -> String {
         if self.is_pipeline() {
-            return default.to_string();
+            return "".to_string();
         }
         self.split_into_parameters()
-            .get("name")
-            .unwrap_or(&default.to_string())
+            .get("_name")
+            .unwrap_or(&"".to_string())
             .to_string()
     }
 }
@@ -392,6 +420,7 @@ mod tests {
     // Test the fundamental tokenization functionality
     #[test]
     fn token() -> Result<(), Error> {
+        // Whitespace normalization
         assert_eq!("foo bar $ baz = bonk".normalize(), "foo bar $baz=bonk");
         assert_eq!(
             "foo |  bar baz  =  bonk, bonk , bonk".normalize(),
@@ -401,13 +430,44 @@ mod tests {
             "foo |  bar baz  =  bonk, bonk , bonk".split_into_steps().0[0],
             "foo"
         );
-        assert_eq!("foo bar baz=bonk".split_into_parameters()["name"], "foo");
-        assert_eq!("foo bar baz=bonk".split_into_parameters()["bar"], "true");
-        assert_eq!("foo bar baz=bonk".split_into_parameters()["baz"], "bonk");
+
+        // Parameter splitting
+        let args = "foo bar baz=bonk".split_into_parameters();
+        assert_eq!(args["_name"], "foo");
+        assert_eq!(args["bar"], "true");
+        assert_eq!(args["baz"], "bonk");
+        assert_eq!("foo bar baz=bonk".operator_name(), "foo");
+
+        // Detection of pipelines and resources
         assert!("foo | bar".is_pipeline());
+        assert!("foo > bar".is_pipeline());
+        assert!("foo < bar".is_pipeline());
         assert!("foo:bar".is_resource_name());
-        assert_eq!("foo bar baz=bonk".operator_name(""), "foo");
-        assert_eq!("foo bar baz=  $bonk".operator_name(""), "foo");
+
+        // Desugaring of pipeline step delimiters
+        assert_eq!(
+            "foo |bar > baz <bonk".normalize(),
+            "foo|bar|omit_inv baz|omit_fwd bonk"
+        );
+
+        // Proper handling of prefix modifiers
+        let args = "omit_inv baz".split_into_parameters();
+        assert_eq!(args["_name"], "baz");
+        assert_eq!(args["omit_inv"], "true");
+        let args = "omit_fwd baz".split_into_parameters();
+        assert_eq!(args["_name"], "baz");
+        assert_eq!(args["omit_fwd"], "true");
+        let args = "inv baz".split_into_parameters();
+        assert_eq!(args["_name"], "baz");
+        assert_eq!(args["inv"], "true");
+
+        // Proper handling of subscripts
+        let args = "foo x₁=42".split_into_parameters();
+        assert_eq!(args["_name"], "foo");
+        assert_eq!(args["x_1"], "42");
+
+        // ... and the operator name
+        assert_eq!("foo bar baz=  $bonk".operator_name(), "foo");
         Ok(())
     }
 
