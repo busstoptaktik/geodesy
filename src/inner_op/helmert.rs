@@ -129,25 +129,29 @@ fn helmert_inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) ->
 // ----- C O N S T R U C T O R ------------------------------------------------------
 
 #[rustfmt::skip]
-pub const GAMUT: [OpParameter; 19] = [
+pub const GAMUT: [OpParameter; 25] = [
     OpParameter::Flag { key: "inv" },
 
     // Translation
+    OpParameter::Series { key: "translation", default: Some("0,0,0") },
     OpParameter::Real { key: "x", default: Some(0f64) },
     OpParameter::Real { key: "y", default: Some(0f64) },
     OpParameter::Real { key: "z", default: Some(0f64) },
 
     // Time evolution of translation
+    OpParameter::Series { key: "velocity", default: Some("0,0,0") },
     OpParameter::Real { key: "dx", default: Some(0f64) },
     OpParameter::Real { key: "dy", default: Some(0f64) },
     OpParameter::Real { key: "dz", default: Some(0f64) },
 
     // Rotation
+    OpParameter::Series { key: "rotation", default: Some("0,0,0") },
     OpParameter::Real { key: "rx", default: Some(0f64) },
     OpParameter::Real { key: "ry", default: Some(0f64) },
     OpParameter::Real { key: "rz", default: Some(0f64) },
 
     // Time evolution of rotation
+    OpParameter::Series { key: "angular_velocity", default: Some("0,0,0") },
     OpParameter::Real { key: "drx", default: Some(0f64) },
     OpParameter::Real { key: "dry", default: Some(0f64) },
     OpParameter::Real { key: "drz", default: Some(0f64) },
@@ -157,7 +161,9 @@ pub const GAMUT: [OpParameter; 19] = [
     OpParameter::Flag { key: "exact" },
 
     // Scale and its time evoution
+    OpParameter::Real { key: "scale", default: Some(0f64) },
     OpParameter::Real { key: "s",  default: Some(0f64) },
+    OpParameter::Real { key: "scale_trend", default: Some(0f64) },
     OpParameter::Real { key: "ds", default: Some(0f64) },  // TODO: scale by 1e-6
 
     // Epoch - "beginning of time for this transformation"
@@ -172,21 +178,78 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     let mut params = ParsedParameters::new(parameters, &GAMUT)?;
 
     // Translation
-    let x = params.real("x")?;
-    let y = params.real("y")?;
-    let z = params.real("z")?;
+    let translation = params.series("translation")?;
+    if translation.len() != 3 {
+        return Err(Error::BadParam(
+            "translation".to_string(),
+            parameters.invocation.clone(),
+        ));
+    }
+    let x = if params.real("x")? != 0. {
+        params.real("x")?
+    } else {
+        translation[0]
+    };
+    let y = if params.real("y")? != 0. {
+        params.real("y")?
+    } else {
+        translation[1]
+    };
+    let z = if params.real("z")? != 0. {
+        params.real("z")?
+    } else {
+        translation[2]
+    };
     let mut T = [x, y, z];
 
     // Time evolution of translation
-    let dx = params.real("dx")?;
-    let dy = params.real("dy")?;
-    let dz = params.real("dz")?;
+    let velocity = params.series("velocity")?;
+    if velocity.len() != 3 {
+        return Err(Error::BadParam(
+            "velocity".to_string(),
+            parameters.invocation.clone(),
+        ));
+    }
+    let dx = if params.real("dx")? != 0. {
+        params.real("dx")?
+    } else {
+        velocity[0]
+    };
+    let dy = if params.real("dy")? != 0. {
+        params.real("dy")?
+    } else {
+        velocity[1]
+    };
+    let dz = if params.real("dz")? != 0. {
+        params.real("dz")?
+    } else {
+        velocity[2]
+    };
     let DT = [dx, dy, dz];
 
     // Rotation
-    let rx = params.real("rx")?;
-    let ry = params.real("ry")?;
-    let rz = params.real("rz")?;
+    let rotation = params.series("rotation")?;
+    if rotation.len() != 3 {
+        return Err(Error::BadParam(
+            "rotation".to_string(),
+            parameters.invocation.clone(),
+        ));
+    }
+    let rx = if params.real("rx")? != 0. {
+        params.real("rx")?
+    } else {
+        rotation[0]
+    };
+    let ry = if params.real("ry")? != 0. {
+        params.real("ry")?
+    } else {
+        rotation[1]
+    };
+    let rz = if params.real("rz")? != 0. {
+        params.real("rz")?
+    } else {
+        rotation[2]
+    };
     let mut R = [
         (rx / 3600.).to_radians(),
         (ry / 3600.).to_radians(),
@@ -194,9 +257,28 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     ];
 
     // Time evolution of rotation
-    let drx = params.real("drx")?;
-    let dry = params.real("dry")?;
-    let drz = params.real("drz")?;
+    let angular_velocity = params.series("angular_velocity")?;
+    if angular_velocity.len() != 3 {
+        return Err(Error::BadParam(
+            "angular_velocity".to_string(),
+            parameters.invocation.clone(),
+        ));
+    }
+    let drx = if params.real("drx")? != 0. {
+        params.real("drx")?
+    } else {
+        angular_velocity[0]
+    };
+    let dry = if params.real("dry")? != 0. {
+        params.real("dry")?
+    } else {
+        angular_velocity[1]
+    };
+    let drz = if params.real("drz")? != 0. {
+        params.real("drz")?
+    } else {
+        angular_velocity[2]
+    };
     let DR = [
         (drx / 3600.).to_radians(),
         (dry / 3600.).to_radians(),
@@ -221,8 +303,20 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     }
 
     // Scale and its time evolution
-    let mut S = 1.0 + params.real("s")? * 1e-6;
-    let DS = params.real("ds")? * 1e-6;
+
+    let scale = if params.real("scale")? != 0. {
+        params.real("scale")?
+    } else {
+        params.real("s")?
+    };
+    let mut S = 1.0 + scale * 1e-6;
+
+    let scale_trend = if params.real("scale_trend")? != 0. {
+        params.real("scale_trend")?
+    } else {
+        params.real("ds")?
+    };
+    let DS = scale_trend * 1e-6;
 
     let dynamic = !(DT == [0., 0., 0.] && DR == [0., 0., 0.] && DS == 0.);
     if dynamic {
@@ -430,6 +524,73 @@ mod tests {
         let op = ctx.op(definition)?;
         ctx.apply(op, Fwd, &mut operands)?;
         assert!(GDA2020B.hypot3(&operands[0]) < 40e-6);
+        ctx.apply(op, Inv, &mut operands)?;
+        assert!(ITRF2014.hypot3(&operands[0]) < 40e-8);
+
+        Ok(())
+    }
+
+    //& MY TESTS
+
+    #[test]
+    fn translation_alt_params() -> Result<(), Error> {
+        let mut ctx = Minimal::default();
+        let op = ctx.op("helmert translation = -87, -96, -120")?;
+
+        // EPSG:1134 - 3 parameter, ED50/WGS84, s = sqrt(27) m
+        let mut operands = [Coor4D::origin()];
+
+        ctx.apply(op, Fwd, &mut operands)?;
+        assert_eq!(operands[0][0], -87.);
+        assert_eq!(operands[0][1], -96.);
+        assert_eq!(operands[0][2], -120.);
+
+        ctx.apply(op, Inv, &mut operands)?;
+        assert_eq!(operands[0][0], 0.);
+        assert_eq!(operands[0][1], 0.);
+        assert_eq!(operands[0][2], 0.);
+        Ok(())
+    }
+
+    #[test]
+    fn translation_rotation_and_scale_alt_params() -> Result<(), Error> {
+        let mut ctx = Minimal::default();
+        let definition = "
+            helmert convention = coordinate_frame
+            translation = 0.06155, -0.01087, -0.04019
+            rotation = -0.0394924, -0.0327221, -0.0328979
+            scale = -0.009994 exact
+        ";
+        let op = ctx.op(definition)?;
+
+        // The forward transformation should hit closer than 75 um
+        let mut operands = [GDA94];
+        ctx.apply(op, Fwd, &mut operands)?;
+        assert!(GDA2020A.hypot3(&operands[0]) < 75e-6);
+
+        // ... and an even better roundtrip
+        ctx.apply(op, Inv, &mut operands)?;
+        assert!(GDA94.hypot3(&operands[0]) < 75e-7);
+
+        Ok(())
+    }
+
+    #[test]
+    fn dynamic_alt_params() -> Result<(), Error> {
+        let mut ctx = Minimal::default();
+        let definition = "
+            helmert  exact    convention = coordinate_frame
+            angular_velocity = 0.00150379, 0.00118346,  0.00120716
+            t_epoch = 2020.0 
+        ";
+        let op = ctx.op(definition)?;
+
+        // The forward transformation should hit closeer than 40 um
+        let mut operands = [ITRF2014];
+        ctx.apply(op, Fwd, &mut operands)?;
+        assert!(GDA2020B.hypot3(&operands[0]) < 40e-6);
+
+        // ... and even closer on the way back
         ctx.apply(op, Inv, &mut operands)?;
         assert!(ITRF2014.hypot3(&operands[0]) < 40e-8);
 
