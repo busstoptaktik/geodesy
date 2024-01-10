@@ -2,7 +2,7 @@
 
 pub mod ntv2;
 use crate::prelude::*;
-use std::{fmt::Debug, io::BufRead};
+use std::{fmt::Debug, io::BufRead, sync::Arc};
 
 pub trait Grid: Debug + Sync + Send {
     fn bands(&self) -> usize;
@@ -312,6 +312,27 @@ fn gravsoft_grid_reader(buf: &[u8]) -> Result<(Vec<f64>, Vec<f32>), Error> {
     // Handle linear/angular conversions
     normalize_gravsoft_grid_values(&mut header, &mut grid);
     Ok((header, grid))
+}
+
+/// Find the most appropriate grid value from a stack (i.e. slice) of grids.
+/// Search the grids in slice order and return the first hit.
+/// If no hits are found, try once more, this time adding a half grid-cell
+/// margin around each grid
+pub fn grids_at(grids: &[Arc<dyn Grid>], coord: &Coor4D, use_null_grid: bool) -> Option<Coor4D> {
+    for margin in [0.0, 0.5] {
+        for grid in grids.iter() {
+            let d = grid.at(coord, margin);
+            if d.is_some() {
+                return d;
+            }
+        }
+    }
+
+    if use_null_grid {
+        return Some(Coor4D::origin());
+    }
+
+    None
 }
 
 // ----- T E S T S ------------------------------------------------------------------
