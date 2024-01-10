@@ -146,14 +146,16 @@ where
             .replace(": ", ":")
             .replace(", ", ",")
             .replace("| ", "|")
-            .replace("> ", "|omit_inv ")
-            .replace("< ", "|omit_fwd ")
+            .replace("> ", ">")
+            .replace("< ", "<")
             .replace(" =", "=")
             .replace(" :", ":")
             .replace(" ,", ",")
             .replace(" |", "|")
-            .replace(" >", "|omit_inv ")
-            .replace(" <", "|omit_fwd ")
+            .replace(" >", ">")
+            .replace(" <", "<")
+            .replace('>', "|omit_inv ")
+            .replace('<', "|omit_fwd ")
             .replace("₀=", "_0=")
             .replace("₁=", "_1=")
             .replace("₂=", "_2=")
@@ -426,9 +428,19 @@ mod tests {
             "foo |  bar baz  =  bonk, bonk , bonk".normalize(),
             "foo|bar baz=bonk,bonk,bonk"
         );
+
+        // Whitespace agnostic desugaring of '<', '>' into '|omit_fwd', '|omit_inv'
         assert_eq!(
-            "foo |  bar baz  =  bonk, bonk , bonk".split_into_steps().0[0],
-            "foo"
+            "foo>bar <baz  =  bonk, bonk , bonk<zap".normalize(),
+            "foo|omit_inv bar|omit_fwd baz=bonk,bonk,bonk|omit_fwd zap"
+        );
+
+        // Splitting a pipeline into steps
+        assert_eq!(
+            "foo>bar <baz  =  bonk, bonk , bonk<zap"
+                .split_into_steps()
+                .0[3],
+            "omit_fwd zap"
         );
 
         // Parameter splitting
@@ -443,12 +455,6 @@ mod tests {
         assert!("foo > bar".is_pipeline());
         assert!("foo < bar".is_pipeline());
         assert!("foo:bar".is_resource_name());
-
-        // Desugaring of pipeline step delimiters
-        assert_eq!(
-            "foo |bar > baz <bonk".normalize(),
-            "foo|bar|omit_inv baz|omit_fwd bonk"
-        );
 
         // Proper handling of prefix modifiers
         let args = "omit_inv baz".split_into_parameters();
