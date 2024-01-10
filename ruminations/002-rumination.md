@@ -25,6 +25,8 @@ $ echo 553036. -124509 | kp "dms:in | geo:out"
 - [`axisswap`](#operator-axisswap): The axis order adaptor
 - [`cart`](#operator-cart): The geographical-to-cartesian converter
 - [`curvature`](#operator-curvature): Radii of curvature
+- [`deflection`](#operator-deflection): Deflection of the vertical
+  coarsely estimated from a geoid model
 - [`deformation`](#operator-deformation): Kinematic datum shift using a
   3D deformation model in ENU-space
 - [`dm`](#operator-dm): DDMM.mmm encoding.
@@ -227,6 +229,36 @@ curvature prime ellps=GRS80
 ```
 
 **See also:** The [Earth radius](https://en.wikipedia.org/wiki/Earth_radius) article on Wikipedia
+
+---
+
+### Operator `deflection`
+
+**Purpose:**
+Datum shift using grid interpolation.
+
+**Description:**
+The `deflection` operator provides a coars estimate of the deflection of the vertical, based on the local gradient in a geoid model.
+
+This is mostly for manual look-ups, so it takes input in degrees and conventional
+nautical latitude-longitude order, and provides output in arcsec in the
+corresponding (ξ, η) order.
+
+Note that this is mostly for order-of-magnitude considerations:
+Typically observations of deflections of the vertical are input
+data for geoid determination, not the other way round, as here.
+
+| Parameter | Description |
+|-----------|-------------|
+| `grids` | Name of the grid files to use. RG supports multiple comma separated grids where the first one to contain the point is the one used. Grids are considered optional if they are prefixed with `@` and hence do block instantiation of the operator if they are unavailable. Additionally, if the `@null` parameter is specified as the last grid, points outside of the grid coverage will be passed through unchanged, rather than being stomped on with the NaN shoes and counted as errors |
+
+The `deflection` operator has built in support for the **Gravsoft** grid format. Support for additional file formats depends on the `Context` in use.
+
+**Example**:
+
+```term
+deflection grids=test.geoid
+```
 
 ---
 
@@ -564,6 +596,7 @@ Both conventions are common, and trivially converted between as they differ by s
 ```js
 geo:in | cart ellps=intl | helmert translation=-87,-96,-120 | cart inv ellps=GRS80 | geo:out
 ```
+
 Same example, now using the PROJ compatible parameter names:
 
 ```js

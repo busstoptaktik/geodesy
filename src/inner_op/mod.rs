@@ -11,6 +11,7 @@ mod axisswap;
 mod btmerc;
 mod cart;
 mod curvature;
+mod deflection;
 mod deformation;
 mod geodesic;
 mod gridshift;
@@ -31,7 +32,7 @@ mod units;
 mod webmerc;
 
 #[rustfmt::skip]
-const BUILTIN_OPERATORS: [(&str, OpConstructor); 32] = [
+const BUILTIN_OPERATORS: [(&str, OpConstructor); 33] = [
     ("adapt",        OpConstructor(adapt::new)),
     ("addone",       OpConstructor(addone::new)),
     ("axisswap",     OpConstructor(axisswap::new)),
@@ -39,6 +40,7 @@ const BUILTIN_OPERATORS: [(&str, OpConstructor); 32] = [
     ("butm",         OpConstructor(btmerc::utm)),
     ("cart",         OpConstructor(cart::new)),
     ("curvature",    OpConstructor(curvature::new)),
+    ("deflection",   OpConstructor(deflection::new)),
     ("deformation",  OpConstructor(deformation::new)),
     ("dm",           OpConstructor(iso6709::dm)),
     ("dms",          OpConstructor(iso6709::dms)),
