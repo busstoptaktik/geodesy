@@ -10,38 +10,34 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let mut successes = 0_usize;
     let n = operands.len();
 
-    'points: for i in 0..n {
+    // Nothing to do?
+    if grids.is_empty() {
+        return n;
+    }
+
+    for i in 0..n {
         let mut coord = operands.get_coord(i);
 
-        for margin in [0.0, 0.5] {
-            for grid in grids.iter() {
-                if let Some(d) = grid.at(&coord, margin) {
-                    // Geoid
-                    if grid.bands() == 1 {
-                        coord[2] -= d[0];
-                        operands.set_coord(i, &coord);
-                        successes += 1;
+        if let Some(d) = grids_at(grids, &coord, use_null_grid) {
+            // Geoid
+            if grids[0].bands() == 1 {
+                coord[2] -= d[0];
+                operands.set_coord(i, &coord);
+                successes += 1;
 
-                        continue 'points;
-                    }
-
-                    // Datum shift
-                    coord[0] += d[0];
-                    coord[1] += d[1];
-                    operands.set_coord(i, &coord);
-                    successes += 1;
-
-                    continue 'points;
-                }
+                continue;
             }
-        }
 
-        if use_null_grid {
+            // Datum shift
+            coord[0] += d[0];
+            coord[1] += d[1];
+            operands.set_coord(i, &coord);
             successes += 1;
+
             continue;
         }
 
-        // No grid found so we stomp on the coordinate
+        // No grid contained the point, so we stomp on the coordinate
         operands.set_coord(i, &Coor4D::nan());
     }
 
@@ -57,66 +53,49 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let mut successes = 0_usize;
     let n = operands.len();
 
+    // Nothing to do?
+    if grids.is_empty() {
+        return n;
+    }
+
     'points: for i in 0..n {
         let mut coord = operands.get_coord(i);
+        if let Some(t) = grids_at(grids, &coord, use_null_grid) {
+            // Geoid
+            if grids[0].bands() == 1 {
+                coord[2] += t[0];
+                operands.set_coord(i, &coord);
+                successes += 1;
+                continue;
+            }
 
-        for margin in [0.0, 0.5] {
-            for grid in grids.iter() {
-                if let Some(t) = grid.at(&coord, margin) {
-                    // Geoid
-                    if grid.bands() == 1 {
-                        coord[2] += t[0];
-                        operands.set_coord(i, &coord);
+            // Inverse case datum shift - iteration needed
+            let mut t = coord - t;
+            for _ in 0..10 {
+                if let Some(t2) = grids_at(grids, &t, use_null_grid) {
+                    let d = t - coord + t2;
+                    t = t - d;
+                    if d[0].hypot(d[1]) < 1e-12 {
+                        operands.set_coord(i, &t);
                         successes += 1;
-
                         continue 'points;
                     }
-
-                    // Datum shift - here we need to iterate in the inverse case
-                    let mut t = coord - t;
-
-                    'iterate: for _ in 0..10 {
-                        if let Some(t2) = grid.at(&t, margin) {
-                            let d = t - coord + t2;
-                            t = t - d;
-                            // i.e. d.dot(d).sqrt() < 1e-10
-                            if d.dot(d) < 1e-20 {
-                                break 'iterate;
-                            }
-                            continue 'iterate;
-                        }
-
-                        if use_null_grid {
-                            successes += 1;
-                            break 'iterate;
-                        }
-
-                        // The iteration has wondered off the grid so we stomp on the coordinate
-                        t = Coor4D::nan();
-                        break 'iterate;
-                    }
-
-                    operands.set_coord(i, &t);
-                    successes += 1;
-
-                    continue 'points;
+                    continue;
                 }
+
+                // The iteration has wandered off the grids, so we stomp
+                // on the coordinate and go on with the next
+                operands.set_coord(i, &Coor4D::nan());
+                continue 'points;
             }
         }
-
-        if use_null_grid {
-            successes += 1;
-            continue;
-        }
-
-        // No grid found so we stomp on the coordinate
-        operands.set_coord(i, &Coor4D::nan());
     }
+
     successes
 }
+
 // ----- C O N S T R U C T O R ------------------------------------------------------
 
-// Example...
 #[rustfmt::skip]
 pub const GAMUT: [OpParameter; 3] = [
     OpParameter::Flag { key: "inv" },
