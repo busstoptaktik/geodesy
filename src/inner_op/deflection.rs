@@ -64,8 +64,9 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
 // ----- C O N S T R U C T O R ------------------------------------------------------
 
 #[rustfmt::skip]
-pub const GAMUT: [OpParameter; 1] = [
+pub const GAMUT: [OpParameter; 2] = [
     OpParameter::Texts { key: "grids", default: None },
+    OpParameter::Text { key: "ellps", default: Some("GRS80") }
 ];
 
 pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {

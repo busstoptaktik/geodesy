@@ -238,7 +238,7 @@ curvature prime ellps=GRS80
 Datum shift using grid interpolation.
 
 **Description:**
-The `deflection` operator provides a coars estimate of the deflection of the vertical, based on the local gradient in a geoid model.
+The `deflection` operator provides a coarse estimate of the deflection of the vertical, based on the local gradient in a geoid model.
 
 This is mostly for manual look-ups, so it takes input in degrees and conventional
 nautical latitude-longitude order, and provides output in arcsec in the
@@ -251,13 +251,14 @@ data for geoid determination, not the other way round, as here.
 | Parameter | Description |
 |-----------|-------------|
 | `grids` | Name of the grid files to use. RG supports multiple comma separated grids where the first one to contain the point is the one used. Grids are considered optional if they are prefixed with `@` and hence do block instantiation of the operator if they are unavailable. Additionally, if the `@null` parameter is specified as the last grid, points outside of the grid coverage will be passed through unchanged, rather than being stomped on with the NaN shoes and counted as errors |
+| `ellps=name` | Use ellipsoid `name` for the conversion|
 
 The `deflection` operator has built in support for the **Gravsoft** grid format. Support for additional file formats depends on the `Context` in use.
 
 **Example**:
 
 ```term
-deflection grids=test.geoid
+deflection grids=test.geoid ellps=GRS80
 ```
 
 ---
