@@ -2,52 +2,52 @@
 
 ## Stupid way of adding three
 
-```geodesy:way_three;
+```geodesy:way_three
 addone | addone inv | addone | addone | addone
 ```
 
 ## Yep! - adding two, too
 
-```geodesy:way_too;
+```geodesy:way_too
 addone | addone inv | addone | addone
 ```
 
 ## Another name for a stupid way of adding two
 
-```geodesy:way_two;
+```geodesy:way_two
 
 addone | addone inv | addone | addone
 ```
 
 ## Make Helmert do the hard work
 
-```geodesy:addone;
+```geodesy:addone
 helmert x=1
 ```
 
 ## Add one unless a different value for x is supplied
 
-```geodesy:add_x;
+```geodesy:add_x
 helmert x=*1
 ```
 
 ## Add whichever value of 'something' is supplied
 
-```geodesy:add_something;
+```geodesy:add_something
 helmert x=$something
 ```
 
 ## And use the ones above in stupid ways
 
-```geodesy:addthree_one_by_one;
+```geodesy:addthree_one_by_one
 stupid:addone | stupid:addone | stupid:add_x x=-1 | stupid:add_x x=2
 ```
 
-```geodesy:addthree;
+```geodesy:addthree
 stupid:addone | stupid:add_something something=2
 ```
 
-```geodesy:bad;
+```geodesy:bad
 stupid:addone | stupid:add_something
 ```
 

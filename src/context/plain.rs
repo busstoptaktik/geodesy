@@ -214,7 +214,7 @@ impl Context for Plain {
         // both cases.
         let resource = prefix.to_string() + "_" + suffix + ".resource";
         let register = prefix.to_string() + ".md";
-        let tag = "```geodesy:".to_string() + suffix + ";";
+        let tag = "```geodesy:".to_string() + suffix + "\n";
 
         for path in &self.paths {
             // Is it in a separate file?
@@ -229,7 +229,8 @@ impl Context for Plain {
             let mut full_path = path.clone();
             full_path.push(section);
             full_path.push(&register);
-            if let Ok(result) = std::fs::read_to_string(full_path) {
+            if let Ok(mut result) = std::fs::read_to_string(full_path) {
+                result = result.replace('\r', "\n");
                 let Some(mut start) = result.find(&tag) else {
                     continue;
                 };
