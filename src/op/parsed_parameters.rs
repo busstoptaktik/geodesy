@@ -473,11 +473,12 @@ mod tests {
 
     #[test]
     fn basic() -> Result<(), Error> {
+        let mut globals = BTreeMap::<String, String>::new();
+        globals.insert("indirection".to_string(), "123".to_string());
+
         let invocation = String::from(
             "cucumber flag ellps_0=123 , 456 natural=$indirection sexagesimal=1:30:36 names=alice, bob",
         );
-        let mut globals = BTreeMap::<String, String>::new();
-        globals.insert("indirection".to_string(), "123".to_string());
         let raw = RawParameters::new(&invocation, &globals);
         let p = ParsedParameters::new(&raw, &GAMUT)?;
 
@@ -519,11 +520,20 @@ mod tests {
             Ellipsoid::new(123., 1. / 456.).semimajor_axis()
         );
 
+        // Mismatching series format
         let invocation = String::from("cucumber bad_series=no, numbers, here");
         let raw = RawParameters::new(&invocation, &globals);
         assert!(matches!(
             ParsedParameters::new(&raw, &GAMUT),
             Err(Error::BadParam(_, _))
+        ));
+
+        // Invalid indirection (i.e. missing macro argument)
+        let invocation = String::from("cucumber integer=$not_given");
+        let raw = RawParameters::new(&invocation, &globals);
+        assert!(matches!(
+            ParsedParameters::new(&raw, &GAMUT),
+            Err(Error::Syntax(_))
         ));
 
         Ok(())

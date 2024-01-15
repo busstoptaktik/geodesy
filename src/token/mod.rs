@@ -139,8 +139,14 @@ where
     }
 
     fn normalize(&self) -> String {
-        let elements: Vec<_> = self.as_ref().split_whitespace().collect();
-        elements
+        // First remove cosmetical line-continuation glyphs (':' at the start of a line, as opposed to ':' as macro indicator)
+        let decolonialized = String::from(self.as_ref().trim().trim_matches(':').trim())
+            .replace("\r:", "")
+            .replace("\n:", "");
+        // Then tweak everything into canonical form
+        decolonialized
+            .split_whitespace()
+            .collect::<Vec<_>>()
             .join(" ")
             .replace("= ", "=")
             .replace(": ", ":")
@@ -431,7 +437,7 @@ mod tests {
 
         // Whitespace agnostic desugaring of '<', '>' into '|omit_fwd', '|omit_inv'
         assert_eq!(
-            "foo>bar <baz  =  bonk, bonk , bonk<zap".normalize(),
+            "  : foo>bar <baz  =  bonk,\n: bonk , bonk<zap".normalize(),
             "foo|omit_inv bar|omit_fwd baz=bonk,bonk,bonk|omit_fwd zap"
         );
 
