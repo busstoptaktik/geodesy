@@ -213,8 +213,8 @@ impl Context for Plain {
         // file or in a resource register, so we generate file names for
         // both cases.
         let resource = prefix.to_string() + "_" + suffix + ".resource";
-        let register = prefix.to_string() + ".register";
-        let tag = "<".to_string() + suffix + ">";
+        let register = prefix.to_string() + ".md";
+        let tag = "```geodesy:".to_string() + suffix + ";";
 
         for path in &self.paths {
             // Is it in a separate file?
@@ -234,7 +234,7 @@ impl Context for Plain {
                     continue;
                 };
                 start += tag.len();
-                let Some(length) = result[start..].find('<') else {
+                let Some(length) = result[start..].find("```") else {
                     // Search for end-of-item reached end-of-file
                     let result = result[start..].trim().to_string();
                     return Ok(result);

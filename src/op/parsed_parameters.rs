@@ -419,7 +419,9 @@ pub fn chase(
                 return Ok(Some(String::from(default)));
             }
             if chasing {
-                return Err(Error::Syntax(format!("Incomplete definition for '{key}'")));
+                return Err(Error::Syntax(format!(
+                    "Incomplete definition for '{key}' ('{needle}' not found)"
+                )));
             }
             return Ok(None);
         }
