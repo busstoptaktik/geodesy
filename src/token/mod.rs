@@ -58,8 +58,8 @@ where
             .as_ref()
             .trim()
             .replace("\r\n", "\n") // The fenestration company
-            .replace('\r', "\n")   // The fruit company
-            .replace("\n:", "\n")  // Line continuation markers
+            .replace('\r', "\n") // The fruit company
+            .replace("\n:", "\n") // Line continuation markers
             .to_string();
         // Collect docstrings and remove plain comments
         let mut trimmed = String::new();
@@ -140,7 +140,10 @@ where
 
     fn normalize(&self) -> String {
         // Tweak everything into canonical form
-        self.as_ref().trim().trim_matches(':').replace("\n:", "\n")
+        self.as_ref()
+            .trim()
+            .trim_matches(':')
+            .replace("\n:", "\n")
             .split_whitespace()
             .collect::<Vec<_>>()
             .join(" ")

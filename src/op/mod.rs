@@ -298,12 +298,12 @@ mod tests {
     }
 
     #[test]
-    fn macro_expansion_with_defaults_provided() -> Result<(), Error> {
+    fn macro_expansion_with_defaults() -> Result<(), Error> {
         let mut data = some_basic_coor2dinates();
         let mut ctx = Minimal::default();
 
         // A macro providing a default value of 1 for the x parameter
-        ctx.register_resource("helmert:one", "helmert x=*1");
+        ctx.register_resource("helmert:one", "helmert x=(1)");
 
         // Instantiating the macro without parameters - getting the default
         let op = ctx.op("helmert:one")?;
@@ -339,13 +339,50 @@ mod tests {
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
 
-        // Overwrite the default, and provide additional args
+        // Overwrite the default, and provide additional args in a pipeline
         let op = ctx.op("addone|helmert:one inv x=2")?;
 
         ctx.apply(op, Fwd, &mut data)?;
         assert_eq!(data[0][0], 54.);
         assert_eq!(data[1][0], 58.);
 
+        ctx.apply(op, Inv, &mut data)?;
+        assert_eq!(data[0][0], 55.);
+        assert_eq!(data[1][0], 59.);
+
+        // A macro providing a default value of 1 for the x parameter, unless
+        // a macro-parameter called eggs is given
+        ctx.register_resource("helmert:won", "helmert x=$eggs(1)");
+
+        // Instantiating the macro without parameters - getting the default
+        let op = ctx.op("helmert:won")?;
+        ctx.apply(op, Fwd, &mut data)?;
+        assert_eq!(data[0][0], 56.);
+        assert_eq!(data[1][0], 60.);
+        ctx.apply(op, Inv, &mut data)?;
+        assert_eq!(data[0][0], 55.);
+        assert_eq!(data[1][0], 59.);
+
+        // Instantiating the macro with eggs = 2
+        let op = ctx.op("helmert:won eggs=2")?;
+        ctx.apply(op, Fwd, &mut data)?;
+        assert_eq!(data[0][0], 57.);
+        assert_eq!(data[1][0], 61.);
+        ctx.apply(op, Inv, &mut data)?;
+        assert_eq!(data[0][0], 55.);
+        assert_eq!(data[1][0], 59.);
+
+        // A macro taking an argument, ham, without any default provided
+        ctx.register_resource("helmert:ham", "helmert x=$ham");
+
+        // Instantiating the macro without arguments - getting an error
+        assert!(matches!(ctx.op("helmert:ham"), Err(Error::Syntax(_))));
+
+        // Now instantiating the macro with ham = 2
+        let op = ctx.op("helmert:ham ham=2")?;
+        ctx.apply(op, Fwd, &mut data)?;
+        assert_eq!(data[0][0], 57.);
+        assert_eq!(data[1][0], 61.);
         ctx.apply(op, Inv, &mut data)?;
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);

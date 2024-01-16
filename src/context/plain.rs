@@ -347,6 +347,22 @@ mod tests {
         assert_eq!(data[0][0], 57.);
         assert_eq!(data[1][0], 61.);
 
+        // 3 Console tests from stupid.md
+        let op = ctx.op("stupid:bad");
+        assert!(matches!(op, Err(Error::Syntax(_))));
+
+        let op = ctx.op("stupid:addthree")?;
+        let mut data = some_basic_coor2dinates();
+        ctx.apply(op, Fwd, &mut data)?;
+        assert_eq!(data[0][0], 58.);
+        assert_eq!(data[1][0], 62.);
+
+        let op = ctx.op("stupid:addthree_one_by_one")?;
+        let mut data = some_basic_coor2dinates();
+        ctx.apply(op, Fwd, &mut data)?;
+        assert_eq!(data[0][0], 58.);
+        assert_eq!(data[1][0], 62.);
+
         // Make sure we can access "sigil-less runtime defined resources"
         ctx.register_resource("foo", "bar");
         assert!(ctx.get_resource("foo")? == "bar");

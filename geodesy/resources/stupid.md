@@ -28,7 +28,7 @@ helmert x=1
 ## Add one unless a different value for x is supplied
 
 ```geodesy:add_x
-helmert x=*1
+helmert x=(1)
 ```
 
 ## Add whichever value of 'something' is supplied
