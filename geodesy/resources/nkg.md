@@ -45,7 +45,7 @@ deformation is much smaller in Copenhagen than in Stockholm.
 :       drx = 0.000085  dry = 0.000531  drz = -0.00077
 :       t_epoch = 1989  convention = position_vector
 |   deformation inv
-:       t_epoch=2000.0 grids=eur_nkg_nkgrf17vel.deformation
+       t_epoch=2000.0 grids=eur_nkg_nkgrf17vel.deformation
 |   helmert
 :       x = 0.66818  rx = 0.00312883
 :       y = 0.04453  ry =-0.02373423
@@ -53,6 +53,21 @@ deformation is much smaller in Copenhagen than in Stockholm.
 :       s =-0.003136 convention=position_vector
 |   deformation inv
 :       dt=15.829 grids=eur_nkg_nkgrf17vel.deformation
+|   cart inv ellps=GRS80
+|   adapt to=neuf_deg
+```
+
+```geodesy:test
+|   adapt from=neuf_deg
+|   cart ellps=GRS80
+|   helmert
+:       drx = 0.000085  dry = 0.000531  drz = -0.00077
+:       t_epoch = 1989  convention = position_vector
+|   helmert
+:       x = 0.66818  rx = 0.00312883
+:       y = 0.04453  ry =-0.02373423
+:       z =-0.45049  rz = 0.00442969
+:       s =-0.003136 convention=position_vector
 |   cart inv ellps=GRS80
 |   adapt to=neuf_deg
 ```
