@@ -56,11 +56,11 @@ where
         // Impose some line ending sanity
         let all = self
             .as_ref()
-            .replace("\r\n", "\n")
-            .replace('\r', "\n")
             .trim()
+            .replace("\r\n", "\n") // The fenestration company
+            .replace('\r', "\n") // The fruit company
+            .replace("\n:", "\n") // Line continuation markers
             .to_string();
-
         // Collect docstrings and remove plain comments
         let mut trimmed = String::new();
         let mut docstring = Vec::<String>::new();
@@ -105,7 +105,7 @@ where
 
     fn split_into_parameters(&self) -> BTreeMap<String, String> {
         // Remove non-significant whitespace
-        let step = self.normalize();
+        let step = self.as_ref().normalize();
         let mut params = BTreeMap::new();
         let mut elements: Vec<_> = step.split_whitespace().collect();
         if elements.is_empty() {
@@ -139,8 +139,13 @@ where
     }
 
     fn normalize(&self) -> String {
-        let elements: Vec<_> = self.as_ref().split_whitespace().collect();
-        elements
+        // Tweak everything into canonical form
+        self.as_ref()
+            .trim()
+            .trim_matches(':')
+            .replace("\n:", "\n")
+            .split_whitespace()
+            .collect::<Vec<_>>()
             .join(" ")
             .replace("= ", "=")
             .replace(": ", ":")
@@ -167,6 +172,9 @@ where
             .replace("₈=", "_8=")
             .replace("₉=", "_9=")
             .replace("$ ", "$") // But keep " $" as is!
+            .split_whitespace()
+            .collect::<Vec<_>>()
+            .join(" ")
     }
 
     fn is_pipeline(&self) -> bool {
@@ -431,7 +439,7 @@ mod tests {
 
         // Whitespace agnostic desugaring of '<', '>' into '|omit_fwd', '|omit_inv'
         assert_eq!(
-            "foo>bar <baz  =  bonk, bonk , bonk<zap".normalize(),
+            "  : foo>bar <baz  =  bonk,\n: bonk , bonk<zap".normalize(),
             "foo|omit_inv bar|omit_fwd baz=bonk,bonk,bonk|omit_fwd zap"
         );
 

@@ -419,7 +419,9 @@ pub fn chase(
                 return Ok(Some(String::from(default)));
             }
             if chasing {
-                return Err(Error::Syntax(format!("Incomplete definition for '{key}'")));
+                return Err(Error::Syntax(format!(
+                    "Incomplete definition for '{key}' ('{needle}' not found)"
+                )));
             }
             return Ok(None);
         }
@@ -428,18 +430,33 @@ pub fn chase(
         // If the value is a(nother) lookup, we continue the search in the same iterator,
         // now using a *new search key*, as specified by the current value
         if let Some(stripped) = thevalue.strip_prefix('$') {
+            let mut parts: Vec<_> = stripped
+                .trim()
+                .split(&['(', ')'][..])
+                .filter(|x| !x.trim().is_empty())
+                .collect();
+            if ![1, 2].contains(&parts.len()) {
+                return Err(Error::Syntax(format!(
+                    "Bad format for optional default in  '{thevalue}'"
+                )));
+            }
+
+            // Do we have a default value?, i.e. $arg_name(defualt_value)
+            if parts.len() == 2 && !chasing {
+                default = parts.pop().unwrap();
+            }
             chasing = true;
-            needle = stripped;
+            needle = parts.pop().unwrap();
             continue;
         }
 
         // If the value is a provided default, we continue the search using the *same key*,
         // in case a proper value is provided.
-        // cf. the test `macro_expansion_with_defaults_provided()` in `./mod.rs`
-        if let Some(stripped) = thevalue.strip_prefix('*') {
+        // cf. the test `macro_expansion_with_defaults_provided_in_parenthesis()` in `./mod.rs`
+        if let Some(stripped) = thevalue.strip_prefix('(') {
             chasing = true;
             needle = key;
-            default = stripped;
+            default = stripped.trim_end_matches(')');
             continue;
         }
 
@@ -473,11 +490,12 @@ mod tests {
 
     #[test]
     fn basic() -> Result<(), Error> {
+        let mut globals = BTreeMap::<String, String>::new();
+        globals.insert("indirection".to_string(), "123".to_string());
+
         let invocation = String::from(
             "cucumber flag ellps_0=123 , 456 natural=$indirection sexagesimal=1:30:36 names=alice, bob",
         );
-        let mut globals = BTreeMap::<String, String>::new();
-        globals.insert("indirection".to_string(), "123".to_string());
         let raw = RawParameters::new(&invocation, &globals);
         let p = ParsedParameters::new(&raw, &GAMUT)?;
 
@@ -519,12 +537,46 @@ mod tests {
             Ellipsoid::new(123., 1. / 456.).semimajor_axis()
         );
 
+        // Mismatching series format
         let invocation = String::from("cucumber bad_series=no, numbers, here");
         let raw = RawParameters::new(&invocation, &globals);
         assert!(matches!(
             ParsedParameters::new(&raw, &GAMUT),
             Err(Error::BadParam(_, _))
         ));
+
+        // Invalid indirection (i.e. missing macro argument)
+        let invocation = String::from("cucumber integer=$not_given");
+        let raw = RawParameters::new(&invocation, &globals);
+        assert!(matches!(
+            ParsedParameters::new(&raw, &GAMUT),
+            Err(Error::Syntax(_))
+        ));
+
+        // Valid indirection, because we combine the arg with a default
+        let invocation = String::from("cucumber integer=$not_given_but_defaults_to_42(42)");
+        let raw = RawParameters::new(&invocation, &globals);
+        assert_eq!(
+            *ParsedParameters::new(&raw, &GAMUT)
+                .unwrap()
+                .integer
+                .get("integer")
+                .unwrap(),
+            42
+        );
+
+        // Valid indirection, because we actually gave the arg at the call point
+        globals.insert("given_and_is_set_to_43".to_string(), "43".to_string());
+        let invocation = String::from("cucumber integer=$given_and_is_set_to_43(42)");
+        let raw = RawParameters::new(&invocation, &globals);
+        assert_eq!(
+            *ParsedParameters::new(&raw, &GAMUT)
+                .unwrap()
+                .integer
+                .get("integer")
+                .unwrap(),
+            43
+        );
 
         Ok(())
     }

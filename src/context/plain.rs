@@ -213,8 +213,8 @@ impl Context for Plain {
         // file or in a resource register, so we generate file names for
         // both cases.
         let resource = prefix.to_string() + "_" + suffix + ".resource";
-        let register = prefix.to_string() + ".register";
-        let tag = "<".to_string() + suffix + ">";
+        let register = prefix.to_string() + ".md";
+        let tag = "```geodesy:".to_string() + suffix + "\n";
 
         for path in &self.paths {
             // Is it in a separate file?
@@ -229,12 +229,13 @@ impl Context for Plain {
             let mut full_path = path.clone();
             full_path.push(section);
             full_path.push(&register);
-            if let Ok(result) = std::fs::read_to_string(full_path) {
+            if let Ok(mut result) = std::fs::read_to_string(full_path) {
+                result = result.replace('\r', "\n");
                 let Some(mut start) = result.find(&tag) else {
                     continue;
                 };
                 start += tag.len();
-                let Some(length) = result[start..].find('<') else {
+                let Some(length) = result[start..].find("```") else {
                     // Search for end-of-item reached end-of-file
                     let result = result[start..].trim().to_string();
                     return Ok(result);
@@ -345,6 +346,22 @@ mod tests {
         ctx.apply(op, Fwd, &mut data)?;
         assert_eq!(data[0][0], 57.);
         assert_eq!(data[1][0], 61.);
+
+        // 3 Console tests from stupid.md
+        let op = ctx.op("stupid:bad");
+        assert!(matches!(op, Err(Error::Syntax(_))));
+
+        let op = ctx.op("stupid:addthree")?;
+        let mut data = some_basic_coor2dinates();
+        ctx.apply(op, Fwd, &mut data)?;
+        assert_eq!(data[0][0], 58.);
+        assert_eq!(data[1][0], 62.);
+
+        let op = ctx.op("stupid:addthree_one_by_one")?;
+        let mut data = some_basic_coor2dinates();
+        ctx.apply(op, Fwd, &mut data)?;
+        assert_eq!(data[0][0], 58.);
+        assert_eq!(data[1][0], 62.);
 
         // Make sure we can access "sigil-less runtime defined resources"
         ctx.register_resource("foo", "bar");
