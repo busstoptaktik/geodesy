@@ -74,6 +74,7 @@ pub mod authoring {
 
     // External material
     pub use log::error;
+    pub use log::debug;
     pub use log::info;
     pub use log::trace;
     pub use log::warn;
