@@ -73,8 +73,8 @@ pub mod authoring {
     pub use crate::Tokenize;
 
     // External material
-    pub use log::error;
     pub use log::debug;
+    pub use log::error;
     pub use log::info;
     pub use log::trace;
     pub use log::warn;
