@@ -162,7 +162,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         // Another case of PROJ reality hardening
         let asin_argument = 0.5 * rho / rq;
         if asin_argument.abs() > 1.0 {
-            warn!("LAEA: ({x}, {y}) outside domain");
+            debug!("LAEA: ({x}, {y}) outside domain");
             coord[0] = f64::NAN;
             coord[1] = f64::NAN;
             operands.set_coord(i, &coord);
