@@ -25,14 +25,16 @@ mod molodensky;
 mod noop;
 mod omerc;
 pub(crate) mod pipeline; // Needed by Op for instantiation
+mod pushpop;
 mod somerc;
+mod stack;
 mod tmerc;
 mod unitconvert;
 mod units;
 mod webmerc;
 
 #[rustfmt::skip]
-const BUILTIN_OPERATORS: [(&str, OpConstructor); 33] = [
+const BUILTIN_OPERATORS: [(&str, OpConstructor); 34] = [
     ("adapt",        OpConstructor(adapt::new)),
     ("addone",       OpConstructor(addone::new)),
     ("axisswap",     OpConstructor(axisswap::new)),
@@ -61,8 +63,9 @@ const BUILTIN_OPERATORS: [(&str, OpConstructor); 33] = [
 
     // Pipeline handlers
     ("pipeline",     OpConstructor(pipeline::new)),
-    ("pop",          OpConstructor(pipeline::pop)),
-    ("push",         OpConstructor(pipeline::push)),
+    ("pop",          OpConstructor(pushpop::pop)),
+    ("push",         OpConstructor(pushpop::push)),
+    ("stack",        OpConstructor(stack::new)),
 
     // Some commonly used noop-aliases
     ("noop",         OpConstructor(noop::new)),
