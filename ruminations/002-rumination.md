@@ -43,6 +43,7 @@ $ echo 553036. -124509 | kp "dms:in | geo:out"
 - [`omerc`](#operator-omerc): The oblique Mercator projection
 - [`pop`](#operator-pop): Pop a dimension from the stack into the operands
 - [`push`](#operator-push): Push a dimension from the operands onto the stack
+- [`stack`](#operator-stack): Push/pop/swap dimensions from the operands onto the stack
 - [`tmerc`](#operator-tmerc): The transverse Mercator projection
 - [`utm`](#operator-utm): The UTM projection
 - [`unitconvert`](#operator-unitconvert): The unit converter
@@ -828,6 +829,8 @@ and RG does not support PROJ's "indirectly given azimuth" case.
 
 ### Operator `pop`
 
+**DEPRECATED!** Use [`stack`](#operator-stack)
+
 **Purpose:** Pop a coordinate dimension from the stack
 
 **Description:**
@@ -842,11 +845,13 @@ Pop the top(s)-of-stack into one or more operand coordinate dimensions. If more 
 
 (the argument names are selected for PROJ compatibility)
 
-**See also:** [`push`](#operator-push)
+**See also:** [`push`](#operator-push),  [`stack`](#operator-stack)
 
 ---
 
 ### Operator `push`
+
+**DEPRECATED!** Use [`stack`](#operator-stack)
 
 **Purpose:** Push a coordinate dimension onto the stack
 
@@ -890,7 +895,42 @@ somerc lat_0=46.9524055555556 lon_0=7.43958333333333 k_0=1 x_0=2600000 y_0=12000
 
 **See also:** [PROJ documentation](https://proj.org/operations/projections/somerc.html): *Swiss Oblique Mercator*.
 
-Note: Rust Geodesy does not support modifying the ellipsoid with and `R` parameter, as PROJ does.
+Note: Rust Geodesy does not support modifying the ellipsoid with an `R` parameter, as PROJ does.
+
+---
+
+### Operator `stack`
+
+**Purpose:** Push/pop/swap coordinate dimensions onto the stack
+
+**Description:**
+Take a copy of one or more coordinate dimensions and push, pop or swap them onto the stack.
+
+
+| Argument   | Description |
+|------------|--------------------------------------------|
+| `push=...` | push a comma separated list of coordinate dimensions onto the stack |
+| `pop=...`  | pop a comma separated list of coordinate dimensions off the stack, into an operand |
+| `swap`     | swap the top-of-stack and the next-to-top-of-stack |
+
+The arguments to `push` and `pop` are handled from left to right, i.e. in latin reading order,
+so the instruction `stack push=1,2` will take the first coordinate element of the operand,
+and push it onto the stack, then on top of that, push the second coordinate element.
+
+Hence, the second coordinate element will occupy the top-of-stack (TOS) position, while
+the first coordinate element will occupy the next-to-top-of-stack (2OS)
+
+If we extend the case to a pipeline:  `stack push=1,2 | stack pop=1,2`, the second part
+will pop material off the stack and into the coordinate elements of the operand in the
+same order as in the push case, i.e. reading its list from left to right.
+
+Hence, the first coordinate element of the operand will get the value of the TOS,
+while the second will get that of the 2OS.
+
+All in all, that amounts to a swapping of the first two coordinate elements of the operand.
+
+
+**See also:** [`pop`](#operator-pop) (deprecated), [`push`](#operator-push) (deprecated)
 
 --
 
