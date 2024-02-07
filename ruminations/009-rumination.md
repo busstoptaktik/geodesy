@@ -18,16 +18,22 @@ The title, however, refers to 600 seconds *of arc*, which corresponds to *10 min
 
 So to fit the 600 seconds of time to the 600 seconds of arc, you will have to navigate through this text at a speed of 60 knots. So better get going - see you at the finish line!
 
+### Prerequisites
+
+The intention with the following text is to give a quick introduction to the nuts and bolts of the software package **Geodesy**. Not to teach you the nuts and bolts of the *science* of geodesy.
+
+Hence, as a prerequisite, you are supposed to understand enough about geographic coordinates to grasp the "About the title..." section above. Also, you need to feel comfortable with the concepts *ellipsoids* and *UTM coordinates*.
+
 ## Overview
 
-At its most basic level, RG provides a number of elementary geodetic computational **operators**.
+At its most basic level, RG provides a number of elementary geodetic **operators**.
 
-**Operators** read a stream of *input coordinates*, modify them by applying some specific algorithm, and write an identically sized stream of *output coordinates*.
+An **operator** reads a stream of *input coordinates*, modifies them by applying its associated algorithm, and writes an identically sized stream of *output coordinates*.
 
 Most operators exist in *forward* and *inverse* incarnations. For example:
 
-- the **forward utm-operator** takes *geographical coordinates* as its input, and provides *utm coordinates* as its output, while
-- the **inverse utm-operator** does the opposite: takes *utm coordinates* as input, and provides the corresponding *geographical coordinates* as output.
+- the **forward UTM-operator** takes *geographical coordinates* as its input, and provides *UTM coordinates* as its output, while
+- the **inverse UTM-operator** does the opposite: takes *UTM coordinates* as input, and provides the corresponding *geographical coordinates* as output.
 
 The *elementary operators* can be combined into more *complex operations* using the RG **pipeline mechanism**, where the *output* of one operator provides the *input* of another.
 
@@ -35,13 +41,15 @@ Pipelines can be generalized in the form of **macros**, with or without *paramet
 
 ### Operators
 
-Most operators take **parameters,** which may be *mandatory* or *optional*. For example, the `utm` operator takes a mandatory parameter, `zone`, indicating which utm-zone it should operate in, e.g.
+Most operators take **parameters,** which may be *mandatory* or *optional*. For example, the `utm` operator takes a mandatory parameter, `zone`, indicating which UTM zone it should operate in, e.g.
 
 ```geodesy
 utm zone=32
 ```
 
-Since utm coordinates are ellipsoidal, the `utm`-operator also needs to be told *which* ellipsoid to refer to. But that parameter is optional, and defaults to GRS80. So this more elaborate version:
+Note that operators and parameters are conventionally given lower case names, so the operator implementing UTM projections, is called `utm`, rather than `UTM`.
+
+Since UTM coordinates are ellipsoidal, the `utm`-operator also needs to be told *which* ellipsoid to refer to. But that parameter is optional, and defaults to GRS80. So this more elaborate version:
 
 ```geodesy
 utm zone=32 ellps=GRS80
@@ -119,7 +127,9 @@ inv cart | utm zone=$foo(32)
 
 which will bring you zone 32 coordinates, unless the macro parameter `foo` is defined, in which case its value will be used for the zone parameter.
 
-For completeness' sake, let us look at a case where we want to convert geographical coordinates defined on one ellipsoid, to geographical coordinates defined on another (typically these kinds of work will also involve a datum shift step, which we for simplicity leave out here). In this case, we have two steps, each taking en `ellps` parameter, but where we need different *values* for the twor parameters:
+For completeness' sake, let's consider a case where we want to convert geographical coordinates defined on one ellipsoid, to geographical coordinates defined on another.
+
+Typically these kinds of work will also involve a datum shift step, which, for simplicity, we leave out here. In this case, we have two steps, each taking en `ellps` parameter, but where we need different *values* for the two parameters:
 
 ```geodesy
 cart ellps=$ellps_in(GRS80) | inv cart ellps=$ellps_out(GRS80)
@@ -129,7 +139,7 @@ Which can be invoked as `cart:utm ellps_in=intl ellps_out=GRS80`, to convert fro
 
 ### Registers
 
-Registers are collections of (preferably) related macros - e.g. macros implementing pipelines for transformation from a given coordinate system, to a number of other coordinate systems, or e.g. transformations originating from a given publisher of geodetic parameters (of which the [EPSG](https://epsg.org) is probably the most well known).
+Registers are collections of (preferably) related macros - e.g. macros implementing pipelines for transformation from a given coordinate system, to a number of other coordinate systems, or transformations originating from a given publisher of geodetic parameters (of which the [EPSG](https://epsg.org) is probably the most well known).
 
 For improved readability of long pipelines, using the
 'step-separators-at-column-1' formatting, we introduce
@@ -188,4 +198,10 @@ echo 55 12 | kp "utm zone=32"
 -7198047.1103082076 -11321644.2251116671
 ```
 
+## Using Geodesy in your own code
+
 ## Further reading
+
+- For [this](...)
+- For [that](...)
+- For [the other](...)
