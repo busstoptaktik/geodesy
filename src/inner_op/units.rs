@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 /// Units are taken from PROJ https://github.com/OSGeo/PROJ/blob/master/src/units.c,
 
 pub struct Unit(&'static str, &'static str, &'static str, f64);
@@ -54,19 +52,3 @@ pub const ANGULAR_UNITS: [Unit; 3] = [
     Unit("deg",     "0.017453292519943296", "Degree",   DEG_TO_RAD),
     Unit("grad",    "0.015707963267948967", "Grad",     GRAD_TO_RAD),
 ];
-
-/// Returns a map of linear units and their conversion to meters.
-pub fn linear_units_map() -> HashMap<&'static str, &'static Unit> {
-    LINEAR_UNITS
-        .iter()
-        .map(|unit| (unit.name(), unit))
-        .collect()
-}
-
-/// Returns a map of angular units and their conversion to radians.
-pub fn angular_units_map() -> HashMap<&'static str, &'static Unit> {
-    ANGULAR_UNITS
-        .iter()
-        .map(|unit| (unit.name(), unit))
-        .collect()
-}
