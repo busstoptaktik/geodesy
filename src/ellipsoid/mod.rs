@@ -1,6 +1,7 @@
 mod cartesians;
 mod constants;
 mod geodesics;
+mod gravity;
 mod latitudes;
 mod meridians;
 
