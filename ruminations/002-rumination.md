@@ -32,6 +32,7 @@ $ echo 553036. -124509 | kp "dms:in | geo:out"
 - [`dm`](#operator-dm): DDMM.mmm encoding.
 - [`dms`](#operator-dms): DDMMSS.sss encoding.
 - [`geodesic`](#operator-geodesic): Origin, Distance, Azimuth, Destination and v.v.
+- [`gravity`](#operator-gravity): Normal gravity for a given latitude and height
 - [`gridshift`](#operator-gridshift): NADCON style datum shifts in 1, 2, and 3 dimensions
 - [`helmert`](#operator-helmert): The Helmert (similarity) transformation
 - [`laea`](#operator-laea): The Lambert Authalic Equal Area projection
@@ -502,6 +503,39 @@ geodesic reversible ellps=GRS80
 ```
 
 **See also:** The [Earth radius](https://en.wikipedia.org/wiki/Earth_radius) article on Wikipedia
+
+---
+
+### Operator `gravity`
+
+**Purpose:**
+Look-up the normal gravity for a given ellipsoid, latitude and height
+
+**Description:**
+
+Note that, like `geodesic` and a few other operators, `gravity` is for human lookup, not for machine calulations.
+Hence, input is assumed to be in human readable units, and since only a latitude (in degrees) and a height (in meters) is expected.
+The third and fourth dimension is ignored
+
+| Argument     | Description |
+|--------------|-------------|
+| `ellps=name` | Use ellipsoid `name` for the computations. Defaults to GRS80|
+| `grs80` | Use the GRS80 normal gravity formula|
+| `grs67` | Use the GRS67 normal gravity formula|
+| `jeffries` | Use Harold Jeffries' 1948 normal gravity formula|
+| `cassinis` | Use G. Cassinis' 1930 normal gravity formula|
+| `welmec` | Use the WELMEC normal gravity formula|
+| `zero-height` | Do not apply any height correction|
+
+**Example**:
+
+```sh
+gravity ellps=GRS80 grs80
+```
+
+Note that for historical reasons, the GRS80 ellipsoid is spelled in capital letters, while the selector arguments to `gravity` are expected to be in lower case.
+
+**See also:** The [Normal gravity](https://handwiki.org/wiki/Earth:Normal_gravity_formula) article on HandWiki
 
 ---
 
