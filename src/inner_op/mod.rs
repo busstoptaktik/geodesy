@@ -14,6 +14,7 @@ mod curvature;
 mod deflection;
 mod deformation;
 mod geodesic;
+mod gravity;
 mod gridshift;
 mod helmert;
 mod iso6709;
@@ -34,7 +35,7 @@ mod units;
 mod webmerc;
 
 #[rustfmt::skip]
-const BUILTIN_OPERATORS: [(&str, OpConstructor); 34] = [
+const BUILTIN_OPERATORS: [(&str, OpConstructor); 35] = [
     ("adapt",        OpConstructor(adapt::new)),
     ("addone",       OpConstructor(addone::new)),
     ("axisswap",     OpConstructor(axisswap::new)),
@@ -47,6 +48,7 @@ const BUILTIN_OPERATORS: [(&str, OpConstructor); 34] = [
     ("dm",           OpConstructor(iso6709::dm)),
     ("dms",          OpConstructor(iso6709::dms)),
     ("geodesic",     OpConstructor(geodesic::new)),
+    ("gravity",      OpConstructor(gravity::new)),
     ("gridshift",    OpConstructor(gridshift::new)),
     ("helmert",      OpConstructor(helmert::new)),
     ("laea",         OpConstructor(laea::new)),
