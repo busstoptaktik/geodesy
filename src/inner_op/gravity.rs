@@ -6,7 +6,7 @@ fn welmec(operands: &mut dyn CoordinateSet, ellps: &Ellipsoid, zero_height: bool
     for i in 0..number_of_operands {
         let mut coord = operands.get_coord(i);
         let latitude = coord[0].to_radians();
-        let height = if zero_height {0.} else {coord[1]};
+        let height = if zero_height { 0. } else { coord[1] };
         coord[0] = ellps.welmec(latitude, height);
         operands.set_coord(i, &coord);
     }
@@ -69,12 +69,12 @@ fn cassinis(operands: &mut dyn CoordinateSet, ellps: &Ellipsoid, zero_height: bo
     number_of_operands
 }
 
-
 // ----- F O R W A R D -----------------------------------------------------------------
 
 fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let ellps = op.params.ellps(0);
-    let zero_height = op.params.boolean("zero-height"); dbg!(zero_height);
+    let zero_height = op.params.boolean("zero-height");
+    dbg!(zero_height);
     let Some(action) = op.params.text.get("action") else {
         return 0;
     };
@@ -109,18 +109,20 @@ pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
     // Check that at most one normal gravity formula is specified
     let mut number_of_flags = 0_usize;
     for flag in &op.params.boolean {
-        if ["cassinis", "grs67", "grs80", "welmec"].contains(&flag) {
+        if ["cassinis", "grs67", "grs80", "welmec"].contains(flag) {
             number_of_flags += 1;
         }
     }
     if number_of_flags > 1 {
-        return Err(Error::MissingParam("gravity: must specify at most one of flags cassinis/grs67/grs80/welmec".to_string()));
+        return Err(Error::MissingParam(
+            "gravity: must specify at most one of flags cassinis/grs67/grs80/welmec".to_string(),
+        ));
     }
 
     // The action defaults to grs80
     op.params.text.insert("action", "grs80".to_string());
     for flag in &op.params.boolean {
-        if ["cassinis", "grs67", "grs80", "welmec"].contains(&flag) {
+        if ["cassinis", "grs67", "grs80", "welmec"].contains(flag) {
             op.params.text.insert("action", flag.to_string());
             break;
         }
