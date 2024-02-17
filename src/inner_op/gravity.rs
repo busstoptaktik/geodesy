@@ -105,24 +105,26 @@ pub const GAMUT: [OpParameter; 7] = [
 
 pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
     let mut op = Op::plain(parameters, InnerOp(fwd), None, &GAMUT, ctx)?;
+    let valid = ["cassinis", "jeffreys", "grs67", "grs80", "welmec"];
 
     // Check that at most one normal gravity formula is specified
     let mut number_of_flags = 0_usize;
     for flag in &op.params.boolean {
-        if ["cassinis", "grs67", "grs80", "welmec"].contains(flag) {
+        if valid.contains(flag) {
             number_of_flags += 1;
         }
     }
     if number_of_flags > 1 {
         return Err(Error::MissingParam(
-            "gravity: must specify at most one of flags cassinis/grs67/grs80/welmec".to_string(),
+            "gravity: must specify at most one of flags cassinis/jeffreys/grs67/grs80/welmec"
+                .to_string(),
         ));
     }
 
     // The action defaults to grs80
     op.params.text.insert("action", "grs80".to_string());
     for flag in &op.params.boolean {
-        if ["cassinis", "grs67", "grs80", "welmec"].contains(flag) {
+        if valid.contains(flag) {
             op.params.text.insert("action", flag.to_string());
             break;
         }
@@ -138,56 +140,45 @@ mod tests {
     use super::*;
 
     #[test]
-    fn latitude() -> Result<(), Error> {
+    fn normal_gravity() -> Result<(), Error> {
+        let grs80: Ellipsoid = Ellipsoid::named("GRS80")?;
+        let grs67: Ellipsoid = Ellipsoid::named("GRS67")?;
+        let intl: Ellipsoid = Ellipsoid::named("intl")?;
+
         let mut ctx = Minimal::default();
+        let lat = 45_f64.to_radians();
 
-        // Geocentric
-        let op = ctx.op("latitude geocentric ellps=GRS80")?;
-        let mut operands = [Coor4D::geo(55., 12., 0., 0.)];
-        ctx.apply(op, Fwd, &mut operands)?;
-        assert!((operands[0][1].to_degrees() - 54.818_973_308_324_5).abs() < 1e-12);
-        ctx.apply(op, Inv, &mut operands)?;
-        assert!((operands[0][1].to_degrees() - 55.).abs() < 1e-12);
+        let op = ctx.op("gravity cassinis ellps=intl")?;
+        let mut poi = [Coor4D::raw(45., 100., 0., 0.)];
+        ctx.apply(op, Fwd, &mut poi)?;
+        assert_eq!(
+            intl.cassinis_gravity_1930(lat) - intl.cassinis_height_correction(100., 2800.),
+            poi[0][0]
+        );
 
-        // Reduced (alias parametric)
-        let op = ctx.op("latitude reduced ellps=GRS80")?;
-        let mut operands = [Coor4D::geo(55., 12., 0., 0.)];
-        ctx.apply(op, Fwd, &mut operands)?;
-        assert!((operands[0][1].to_degrees() - 54.909_538_187_092_245).abs() < 1e-12);
-        ctx.apply(op, Inv, &mut operands)?;
-        assert!((operands[0][1].to_degrees() - 55.).abs() < 1e-12);
+        let op = ctx.op("gravity jeffreys ellps=intl")?;
+        let mut poi = [Coor4D::raw(45., 100., 0., 0.)];
+        ctx.apply(op, Fwd, &mut poi)?;
+        assert_eq!(
+            intl.jeffreys_gravity_1948(lat) - intl.cassinis_height_correction(100., 2800.),
+            poi[0][0]
+        );
 
-        // And vice versa: Parametric (alias Reduced)
-        let op = ctx.op("latitude parametric ellps=GRS80")?;
-        let mut operands = [Coor4D::geo(55., 12., 0., 0.)];
-        ctx.apply(op, Fwd, &mut operands)?;
-        assert!((operands[0][1].to_degrees() - 54.909_538_187_092_245).abs() < 1e-12);
-        ctx.apply(op, Inv, &mut operands)?;
-        assert!((operands[0][1].to_degrees() - 55.).abs() < 1e-12);
+        let op = ctx.op("gravity grs67 ellps=GRS67")?;
+        let mut poi = [Coor4D::raw(45., 100., 0., 0.)];
+        ctx.apply(op, Fwd, &mut poi)?;
+        assert_eq!(
+            grs67.grs67_gravity(lat) - grs67.grs67_height_correction(lat, 100.),
+            poi[0][0]
+        );
 
-        // Conformal
-        let op = ctx.op("latitude conformal ellps=GRS80")?;
-        let mut operands = [Coor4D::geo(55., 12., 0., 0.)];
-        ctx.apply(op, Fwd, &mut operands)?;
-        assert!((operands[0][1].to_degrees() - 54.819_109_023_689_02).abs() < 1e-12);
-        ctx.apply(op, Inv, &mut operands)?;
-        assert!((operands[0][1].to_degrees() - 55.).abs() < 1e-12);
-
-        // Rectifying
-        let op = ctx.op("latitude rectifying ellps=GRS80")?;
-        let mut operands = [Coor4D::geo(55., 12., 0., 0.)];
-        ctx.apply(op, Fwd, &mut operands)?;
-        assert!((operands[0][1].to_degrees() - 54.772_351_809_646_84).abs() < 1e-12);
-        ctx.apply(op, Inv, &mut operands)?;
-        assert!((operands[0][1].to_degrees() - 55.).abs() < 1e-12);
-
-        // Authalic
-        let op = ctx.op("latitude authalic ellps=GRS80")?;
-        let mut operands = [Coor4D::geo(55., 12., 0., 0.)];
-        ctx.apply(op, Fwd, &mut operands)?;
-        assert!((operands[0][1].to_degrees() - 54.879_361_594_517_796).abs() < 1e-12);
-        ctx.apply(op, Inv, &mut operands)?;
-        assert!((operands[0][1].to_degrees() - 55.).abs() < 1e-12);
+        let op = ctx.op("gravity grs80 ellps=GRS80")?;
+        let mut poi = [Coor4D::raw(45., 100., 0., 0.)];
+        ctx.apply(op, Fwd, &mut poi)?;
+        assert_eq!(
+            grs80.grs80_gravity(lat) - grs80.grs67_height_correction(lat, 100.),
+            poi[0][0]
+        );
 
         Ok(())
     }
