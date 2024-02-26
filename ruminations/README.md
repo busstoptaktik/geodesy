@@ -20,3 +20,4 @@ If you have plenty of time, feel free to work your way through, and ruminate ove
 - [Rumination 007](https://github.com/busstoptaktik/geodesy/blob/main/ruminations/007-rumination.md): Operator parameter introspection
 - [Rumination 008](https://github.com/busstoptaktik/geodesy/blob/main/ruminations/008-rumination.md): Geodesy from a PROJ perspective
 - [Rumination 009](https://github.com/busstoptaktik/geodesy/blob/main/ruminations/009-rumination.md): Teach yourself Geodesy in less than 900 seconds (of arc)
+- [Rumination 010](https://github.com/busstoptaktik/geodesy/blob/main/ruminations/010-rumination.md): What's wrong with ISO 19111?
