@@ -1,3 +1,5 @@
+use geodesics::angular::normalize_symmetric;
+
 use super::*;
 
 // ----- Geodesics -------------------------------------------------------------
@@ -201,6 +203,81 @@ impl Ellipsoid {
     pub fn distance(&self, from: &Coor4D, to: &Coor4D) -> f64 {
         self.geodesic_inv(from, to)[2]
     }
+
+    /// Cross track distance from the point `point` to the geodesic
+    /// arc between the points `from` and `to`
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use geodesy::prelude::*;
+    ///
+    /// let ellps = Ellipsoid::default();
+    ///
+    /// // Paris (France)->Copenhagen (Denmark)
+    /// let cdg = Coor4D::geo(49., 2., 0., 0.);
+    /// let cph = Coor4D::geo(55., 12., 0., 0.);
+    ///
+    /// // But how far off the path is Prague?
+    /// let fra = Coor4D::geo(50.03, 8.57, 0., 0.);
+    /// let prg = Coor4D::geo(50., 14., 0., 0.);
+    /// let distance = ellps.cross_track_distance(&cdg, &cph, &prg);
+    /// assert_eq!(516155., distance.round());
+    ///
+    /// // The distance is signed. When we fly in the opposite
+    /// // direction, Prague is to the left of the track,
+    /// // and the distance becomes negative
+    /// let reverse = ellps.cross_track_distance(&cph, &cdg, &prg);
+    /// assert_eq!(-516155., reverse.round());
+    /// ```
+    pub fn cross_track_distance(&self, from: &Coor4D, to: &Coor4D, point: &Coor4D) -> f64 {
+        // First guess: Full interval
+        let mut left = *from;
+        let mut right = *to;
+
+        // ad: azimuth and distance
+        let mut lad = self.geodesic_inv(&left, point);
+        let mut rad = self.geodesic_inv(&right, point);
+        let mut mad = rad;
+
+        // Bisection search for the minimum distance
+        for _ in 0..111 {
+            // Have we narrowed down the interval sufficiently?
+            let geod = self.geodesic_inv(&left, &right);
+            let (azimuth, distance) = (geod[0], geod[2]);
+            if distance < 1e-5 {
+                let sign = normalize_symmetric(mad[0] - geod[1]).signum();
+                return mad[2].copysign(sign);
+            }
+
+            // Otherwise, locate the mid point of the interval,
+            // and compute the cross track distance here
+            let mid = self.geodesic_fwd(&left, azimuth, distance / 2.);
+            mad = self.geodesic_inv(&mid, point);
+            dbg!(normalize_symmetric(mad[0] - geod[1]).to_degrees());
+            let left_distance = lad[2];
+            let right_distance = rad[2];
+            let mid_distance = mad[2];
+
+            // Didn't improve? return best so far (or perhaps NAN?)
+            if mid_distance > left_distance && mid_distance > right_distance {
+                let sign = normalize_symmetric(mad[0] - geod[1]).signum();
+                return lad[2].min(rad[2]).copysign(sign);
+            }
+
+            // Bisection
+            if left_distance > right_distance {
+                lad = mad;
+                left = mid;
+            } else {
+                rad = mad;
+                right = mid;
+            }
+        }
+
+        // Didn't converge
+        f64::NAN
+    }
 }
 
 // ----- Tests ---------------------------------------------------------------------
@@ -242,6 +319,54 @@ mod tests {
         let b = ellps.geodesic_fwd(&p1, d[0], d[2]).to_degrees();
         assert!((b[0] - p2[0].to_degrees()).abs() < 1e-9);
         assert!((b[1] - p2[1].to_degrees()).abs() < 1e-9);
+        Ok(())
+    }
+
+    #[test]
+    fn cross_track() -> Result<(), Error> {
+        let ellps = Ellipsoid::named("GRS80")?;
+
+        // Copenhagen (Denmark)--Paris (France)
+        let cph = Coor4D::geo(55., 12., 0., 0.);
+        let cdg = Coor4D::geo(49., 2., 0., 0.);
+
+        // How far off the path is Frankfurt?
+        let fra = Coor4D::geo(50.03, 8.57, 0., 0.);
+        let distance = ellps.cross_track_distance(&cph, &cdg, &fra);
+        assert!((259254.5293646477 + distance).abs() < 1e-5);
+
+        // Negative distance (left side of the track) when we fly back
+        let distance = ellps.cross_track_distance(&cdg, &cph, &fra);
+        assert!((259254.5293646477 - distance).abs() < 1e-5);
+
+        // Another test, based on material from Nic Hill
+        // Miami -> Washington
+        let from = Coor4D::gis(-80.1918f64, 25.7617f64, 0., 0.);
+        let to = Coor4D::gis(-120.7401, 47.7511f64, 0., 0.);
+
+        // But how far off path is New York City?
+        let p = Coor4D::gis(-74.006f64, 40.7128f64, 0., 0.);
+
+        let distance = ellps.cross_track_distance(&from, &to, &p);
+        assert_eq!(1_546_717., distance.round());
+
+        // Construct a point 3 km off track one third down the cph->cdg line
+        let d = ellps.geodesic_inv(&cph, &cdg);
+        let third_down = ellps.geodesic_fwd(&cph, d[0], d[2] / 3.);
+        let d = ellps.geodesic_inv(&cph, &third_down);
+        let cross_track_azimuth = d[1] + std::f64::consts::FRAC_PI_2;
+        let three_km_off = ellps.geodesic_fwd(&third_down, cross_track_azimuth, 3000.);
+
+        // Do we find the correct distance?
+        let distance = ellps.cross_track_distance(&cph, &cdg, &three_km_off);
+        dbg!(distance);
+        assert!((distance - 3000.).abs() < 1e-5);
+
+        // And opposite sign, if we fly in the opposite direction?
+        let distance = ellps.cross_track_distance(&cdg, &cph, &three_km_off);
+        dbg!(distance);
+        assert!((distance + 3000.).abs() < 1e-5);
+
         Ok(())
     }
 }
