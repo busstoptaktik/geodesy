@@ -55,15 +55,15 @@ Now, what's wrong with that? Quite a bit, actually...
 
 **First:** The `coordinateTuple` element is, with a reference to 19107, defined as an ordered set [1..*] of `DirectPosition`s. In other words, *an empty set of coordinate tuples is not allowed*.
 
-For practial use cases, this is unfortunate, since one must start somewhere, and for observational time series (or for iteratively computed, derived data sets), you start without anything: The data structure, with pointers to metadata and backing memory is instantiated **prior to** the first observation!
+For practical use cases, this is unfortunate, since one must start somewhere, and for observational time series (or for iteratively computed, derived data sets), you start without anything: The data structure, with pointers to metadata and backing memory is instantiated **prior to** the first observation!
 
 Hence, `[1..*]` should be `[0..*]`.
 
-**Second:** Since the data item `coordinateTuple` is really an ordered set of coordinate tuples, the plural form `coordinateTuples` would be more enlightening.
+**Second:** Additionally, the data type should probably be a sequence, not an ordered set: The reasonable intention is to model an array-like item, i.e. something that can be read and handled in indexed order. An ordered set implies that the material is ordered with respect to some intrinsic property of the elements of the set - which is simple for numerical data in one dimension, but not in two or more (where lexical ordering by dimension may stop the gap, but not in any terribly useful way: For continuous data it is effectively identical to sorting along the first dimension)
 
 **Third:** the 19107 `DirectPosition` device, which (as seen from this observer's vantage point), is rather obscure, at least is clear enough to allow one to conclude, that it refers to something entirely and exclusively *spatial*.
 
-But anything derived one way or another from GNSS-observations, is inherently *spatio-temporal*. This should obviously be supported directly by the `CoordinateSet` interface.
+But anything derived one way or another from GNSS-observations, is inherently *spatio-temporal*. So this should obviously be supported directly by the `CoordinateSet` interface.
 
 **Fourth:** The `CoordinateSet` interface repairs on this missing property by pushing the chronoreference to the metadata-interface, where at most one epoch is allowed.
 
@@ -96,7 +96,7 @@ But since a CRS is not a system, could we find a reasonable alternative expansio
 
 **Proposal:** *Coordinate Reference **Specifier*** seems reasonable to me.
 
-## Item 4: The concept of a CRS leads to unnecessary complication
+## Item 4: The CRS concept leads to unnecessary complication
 
 According to 19111, a CRS has a "definition"
 The typical CRS today, consists of a reference frame plus some kind of coordinate operation
@@ -120,7 +120,7 @@ That level of detail and specificity is not appropriate for 19111. But it is pro
 
 Especially, it is not sufficiently clear that the discrimination between transformations and conversions are related to whether the parameters of the operation are *formally defined* (conversion) or *empirically derived* (transformation). In other words: Any operation may implement either a conversion or a transformation, depending on the lineage of their parameters.
 
-Additional value could be provided by describing the cases of reversible and irreversible operations
+Additional value could be provided by describing the cases of reversible and irreversible operations.
 
 ## Further reading
 
