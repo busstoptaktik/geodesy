@@ -53,10 +53,10 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
         if roll_args.len() != 2
             || roll_args[0].fract() != 0.
             || roll_args[1].fract() != 0.
-            || roll_args[0] < roll_args[1].abs()
+            || roll_args[0] <= roll_args[1].abs()
         {
             return Err(Error::MissingParam(
-                "roll takes exactly two integer parameters".to_string(),
+                "roll takes exactly two integer parameters, ´(m,n): |n|<m´".to_string(),
             ));
         }
         params.text.insert("action", "roll".to_string());
@@ -124,6 +124,16 @@ pub(super) fn stack_fwd(
             stack_pop(stack, operands, &args)
         }
 
+        "roll" => {
+            let args: Vec<i64> = params
+                .series("roll")
+                .unwrap()
+                .iter()
+                .map(|i| *i as i64)
+                .collect();
+            stack_roll(stack, operands, &args)
+        }
+
         "swap" => {
             let n = stack.len();
             if n > 1 {
@@ -179,6 +189,17 @@ pub(super) fn stack_inv(
             return stack_push(stack, operands, &args);
         }
 
+        "roll" => {
+            let mut args: Vec<i64> = params
+                .series("roll")
+                .unwrap()
+                .iter()
+                .map(|i| *i as i64)
+                .collect();
+            args[1] = -args[1];
+            stack_roll(stack, operands, &args)
+        }
+
         "swap" => {
             let n = stack.len();
             if n > 1 {
@@ -220,6 +241,43 @@ fn stack_push(
     // And push them onto the existing stack
     stack.extend(ext);
     number_of_operands
+}
+
+/// roll m,n: On the sub-stack consisting of the m upper elements,
+/// roll n elements from the top, to the bottom of the sub-stack.
+/// Hence, roll is a "large flip", essentially flipping the n upper
+/// elements with the m - n lower
+fn stack_roll(stack: &mut Vec<Vec<f64>>, operands: &mut dyn CoordinateSet, args: &[i64]) -> usize {
+    let m = args[0].abs();
+    let mut n = args[1];
+    let depth = stack.len();
+    //dbg!(&stack);
+    dbg!(&args);
+
+    // Negative n: count the number of rolled elements from the bottom,
+    // i.e. roll 3,-2 = roll 3,1
+    n = if n < 0 { m + n } else { n };
+
+    // The remaining becomes simpler if m, n and depth are all usize
+    let m = m as usize;
+    let n = n as usize;
+
+    if m > depth {
+        warn!("Roll too deep");
+        let nanny = Coor4D::nan();
+        for i in 0..operands.len() {
+            operands.set_coord(i, &nanny);
+        }
+        return 0;
+    }
+
+    for _ in 0..n {
+        let e = stack.pop().unwrap();
+        stack.insert(depth - m, e);
+    }
+    //dbg!(&stack);
+
+    operands.len()
 }
 
 /// Pop elements from the stack into elements of a CoordinateSet
@@ -290,7 +348,7 @@ mod tests {
         // use case, that would require code complication to disallow)
         assert!(ctx.op("stack push=2,2,1,1 | stack pop=1,1,2").is_ok());
 
-        // ----- Three tests of the actual functionality -----
+        // ----- Four tests of the actual functionality -----
 
         let mut data = master_data.clone();
 
@@ -341,6 +399,44 @@ mod tests {
         ctx.apply(op, Inv, &mut data)?;
         assert_eq!(data[0], master_data[0]);
         assert_eq!(data[1], master_data[1]);
+
+        // 4: Test the `roll` subcommand
+        let op = ctx.op("stack push=1,1,1,2,1,3,1,4 | stack roll=8,2 | stack pop=1,2")?;
+        ctx.apply(op, Fwd, &mut data)?;
+        assert_eq!(data[0][0], 13.);
+        assert_eq!(data[0][1], 11.);
+
+        // Then we do the inverse. We must, however, redo, since the push-pop asymmetry
+        // would otherwise wreak havoc:
+
+        // Just calling apply in the inverse direction leads to underflow:
+        assert_eq!(0, ctx.apply(op, Inv, &mut data)?);
+
+        // Instead, we must substitute (m,n) with (m,m-n)
+        let mut data = master_data.clone();
+        let op = ctx.op("stack push=1,2,3,4,1,2,3,4 | stack roll=8,6 | stack pop=1,2")?;
+        ctx.apply(op, Fwd, &mut data)?;
+        assert_eq!(data[0][0], 12.);
+        assert_eq!(data[0][1], 11.);
+
+        let mut data = master_data.clone();
+        let op = ctx.op("stack push=1,2,3,4,1,2,3,4 | stack roll=3,2 | stack pop=1,2")?;
+        ctx.apply(op, Fwd, &mut data)?;
+        assert_eq!(data[0][0], 12.);
+        assert_eq!(data[0][1], 14.);
+
+        let mut data = master_data.clone();
+        let op = ctx.op("stack push=1,2,3,4 | stack roll=3,-2 | stack pop=2,1")?;
+        ctx.apply(op, Fwd, &mut data)?;
+        assert_eq!(data[0][0], 12.);
+        assert_eq!(data[0][1], 13.);
+
+        // Roundrip roll
+        let mut data = master_data.clone();
+        let op = ctx.op("stack push=1,2,3,4 | stack roll=3,2 | stack roll=3,1 | stack pop=1,2")?;
+        ctx.apply(op, Fwd, &mut data)?;
+        assert_eq!(data[0][0], 14.);
+        assert_eq!(data[0][1], 13.);
 
         Ok(())
     }
