@@ -935,16 +935,17 @@ Note: Rust Geodesy does not support modifying the ellipsoid with an `R` paramete
 
 ### Operator `stack`
 
-**Purpose:** Push/pop/swap coordinate dimensions onto the stack
+**Purpose:** Push/pop/roll/swap coordinate dimensions onto the stack
 
 **Description:**
-Take a copy of one or more coordinate dimensions and push, pop or swap them onto the stack.
+Take a copy of one or more coordinate dimensions and/or push, pop, roll or swap them onto the stack.
 
 
 | Argument   | Description |
 |------------|--------------------------------------------|
 | `push=...` | push a comma separated list of coordinate dimensions onto the stack |
 | `pop=...`  | pop a comma separated list of coordinate dimensions off the stack, into an operand |
+| `roll=m,n` | On the sub-stack consisting of the m upper elements, roll n elements from the top, to the bottom of the sub-stack |
 | `swap`     | swap the top-of-stack and the next-to-top-of-stack |
 
 The arguments to `push` and `pop` are handled from left to right, i.e. in latin reading order,
@@ -963,6 +964,29 @@ while the second will get that of the 2OS.
 
 All in all, that amounts to a swapping of the first two coordinate elements of the operand.
 
+#### `stack roll`
+
+Essentially, `roll=m,n` is a [big swap](https://stackoverflow.com/a/15997537/618276), essentially
+flipping the `n` upper elements with the `m - n` lower, as seen from these examples:
+
+| Stack before   | Instruction | Stack after                  |
+|----------------|--------------------------------------------|
+| 1,2,3,4        | roll=3,2    | 1,3,4,2                      |
+| 1,2,3,4        | roll=3,-2   | 1,3,4,2                      |
+| 1,3,4,2        | roll=3,1    | 1,2,3,4                      |
+
+Note that the last example shows that `roll=m,m-n` is the opposite of `roll=m,n`
+
+#### Inverse operation
+
+`stack` does not support the `inv` modifier. Instead use these substitutions:
+
+| Forward | Inverse   |
+|---------|-----------|
+| push    | pop       |
+| pop     | push      |
+| swap    | swap      |
+| roll=m,n| roll=m,m-n|
 
 **See also:** [`pop`](#operator-pop) (deprecated), [`push`](#operator-push) (deprecated)
 
