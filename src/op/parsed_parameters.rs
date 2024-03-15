@@ -59,48 +59,76 @@ impl ParsedParameters {
     pub fn boolean(&self, key: &str) -> bool {
         self.boolean.contains(key)
     }
+
     pub fn natural(&self, key: &str) -> Result<usize, Error> {
         if let Some(value) = self.natural.get(key) {
             return Ok(*value);
         }
         Err(Error::MissingParam(key.to_string()))
     }
+
     pub fn integer(&self, key: &str) -> Result<i64, Error> {
         if let Some(value) = self.integer.get(key) {
             return Ok(*value);
         }
         Err(Error::MissingParam(key.to_string()))
     }
+
     pub fn real(&self, key: &str) -> Result<f64, Error> {
         if let Some(value) = self.real.get(key) {
             return Ok(*value);
         }
         Err(Error::MissingParam(key.to_string()))
     }
+
     pub fn series(&self, key: &str) -> Result<&[f64], Error> {
         if let Some(value) = self.series.get(key) {
             return Ok(value);
         }
         Err(Error::MissingParam(key.to_string()))
     }
+
+    pub fn series_as_i64(&self, key: &str) -> Result<Vec<i64>, Error> {
+        let args: Vec<i64> = self
+            .series(key)
+            .unwrap()
+            .iter()
+            .map(|i| *i as i64)
+            .collect();
+        Ok(args)
+    }
+
+    pub fn series_as_usize(&self, key: &str) -> Result<Vec<usize>, Error> {
+        let args: Vec<usize> = self
+            .series(key)
+            .unwrap()
+            .iter()
+            .map(|i| *i as usize)
+            .collect();
+        Ok(args)
+    }
+
     pub fn text(&self, key: &str) -> Result<String, Error> {
         if let Some(value) = self.text.get(key) {
             return Ok(value.to_string());
         }
         Err(Error::MissingParam(key.to_string()))
     }
+
     pub fn texts(&self, key: &str) -> Result<&Vec<String>, Error> {
         if let Some(value) = self.texts.get(key) {
             return Ok(value);
         }
         Err(Error::MissingParam(key.to_string()))
     }
+
     pub fn uuid(&self, key: &str) -> Result<uuid::Uuid, Error> {
         if let Some(value) = self.uuid.get(key) {
             return Ok(*value);
         }
         Err(Error::MissingParam(key.to_string()))
     }
+
     pub fn fourier_coefficients(&self, key: &str) -> Result<FourierCoefficients, Error> {
         if let Some(value) = self.fourier_coefficients.get(key) {
             return Ok(*value);
@@ -110,6 +138,7 @@ impl ParsedParameters {
     pub fn ignored(&self) -> Vec<String> {
         self.ignored.clone()
     }
+
     pub fn ellps(&self, index: usize) -> Ellipsoid {
         // if 'ellps' was explicitly given, it will override 'ellps_0'
         if index == 0 {
@@ -124,18 +153,23 @@ impl ParsedParameters {
         // If none of them existed, i.e. no defaults were given, we return the general default
         Ellipsoid::default()
     }
+
     pub fn k(&self, index: usize) -> f64 {
         *(self.real.get(&format!("k_{index}")[..]).unwrap_or(&1.))
     }
+
     pub fn x(&self, index: usize) -> f64 {
         *(self.real.get(&format!("x_{index}")[..]).unwrap_or(&0.))
     }
+
     pub fn y(&self, index: usize) -> f64 {
         *(self.real.get(&format!("y_{index}")[..]).unwrap_or(&0.))
     }
+
     pub fn lat(&self, index: usize) -> f64 {
         *self.real.get(&format!("lat_{index}")[..]).unwrap_or(&0.)
     }
+
     pub fn lon(&self, index: usize) -> f64 {
         *self.real.get(&format!("lon_{index}")[..]).unwrap_or(&0.)
     }

@@ -3,10 +3,11 @@ use crate::authoring::*;
 
 // NOTE: roll and drop are not implemented yet
 #[rustfmt::skip]
-pub const STACK_GAMUT: [OpParameter; 5] = [
+pub const STACK_GAMUT: [OpParameter; 6] = [
     OpParameter::Series  { key: "push", default: Some("") },
     OpParameter::Series  { key: "pop",  default: Some("") },
     OpParameter::Series  { key: "roll", default: Some("") },
+    OpParameter::Series  { key: "unroll", default: Some("") },
     OpParameter::Flag    { key: "swap" },
     OpParameter::Flag    { key: "drop" },
 ];
@@ -56,10 +57,24 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
             || roll_args[0] <= roll_args[1].abs()
         {
             return Err(Error::MissingParam(
-                "roll takes exactly two integer parameters, ´(m,n): |n|<m´".to_string(),
+                "roll takes exactly two integer parameters, ´(m,n): |n|<=m´".to_string(),
             ));
         }
         params.text.insert("action", "roll".to_string());
+    }
+
+    if let Ok(roll_args) = params.series("unroll") {
+        subcommands_given += 1;
+        if roll_args.len() != 2
+            || roll_args[0].fract() != 0.
+            || roll_args[1].fract() != 0.
+            || roll_args[0] <= roll_args[1].abs()
+        {
+            return Err(Error::MissingParam(
+                "unroll takes exactly two integer parameters, ´(m,n): |n|<=m´".to_string(),
+            ));
+        }
+        params.text.insert("action", "unroll".to_string());
     }
 
     if params.boolean("swap") {
@@ -74,7 +89,7 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
 
     if subcommands_given != 1 {
         return Err(Error::MissingParam(
-            "stack: must specify exactly one of push/pop/roll/swap/drop".to_string(),
+            "stack: must specify exactly one of push/pop/roll/swap/unroll/drop".to_string(),
         ));
     }
 
@@ -103,34 +118,24 @@ pub(super) fn stack_fwd(
 
     let successes = match action.as_str() {
         "push" => {
-            // Turn f64 dimensions 1-4 into usize indices 0-3
-            let args: Vec<usize> = params
-                .series("push")
-                .unwrap()
-                .iter()
-                .map(|i| *i as usize - 1)
-                .collect();
+            let args = params.series_as_usize("push").unwrap();
             stack_push(stack, operands, &args)
         }
 
         "pop" => {
-            // Turn f64 dimensions 1-4 into usize indices 0-3
-            let args: Vec<usize> = params
-                .series("pop")
-                .unwrap()
-                .iter()
-                .map(|i| *i as usize - 1)
-                .collect();
+            let args = params.series_as_usize("pop").unwrap();
             stack_pop(stack, operands, &args)
         }
 
         "roll" => {
-            let args: Vec<i64> = params
-                .series("roll")
-                .unwrap()
-                .iter()
-                .map(|i| *i as i64)
-                .collect();
+            let args = params.series_as_i64("roll").unwrap();
+            stack_roll(stack, operands, &args)
+        }
+
+        "unroll" => {
+            let mut args = params.series_as_i64("unroll").unwrap();
+            args[1] = args[0] - args[1];
+            dbg!(&args);
             stack_roll(stack, operands, &args)
         }
 
@@ -165,38 +170,28 @@ pub(super) fn stack_inv(
     };
 
     let successes = match action.as_str() {
+        // An inverse push is a pop with reversed args
         "push" => {
-            // Turn f64 dimensions 1-4 into **reversed** usize indices 0-3  ******
-            let args: Vec<usize> = params
-                .series("push")
-                .unwrap()
-                .iter()
-                .rev()
-                .map(|i| *i as usize - 1)
-                .collect();
+            let mut args = params.series_as_usize("push").unwrap();
+            args.reverse();
             stack_pop(stack, operands, &args)
         }
 
+        // And an inverse pop is a push with reversed args
         "pop" => {
-            // Turn f64 dimensions 1-4 into **reversed** usize indices 0-3
-            let args: Vec<usize> = params
-                .series("pop")
-                .unwrap()
-                .iter()
-                .rev()
-                .map(|i| *i as usize - 1)
-                .collect();
-            return stack_push(stack, operands, &args);
+            let mut args = params.series_as_usize("pop").unwrap();
+            args.reverse();
+            stack_push(stack, operands, &args)
         }
 
         "roll" => {
-            let mut args: Vec<i64> = params
-                .series("roll")
-                .unwrap()
-                .iter()
-                .map(|i| *i as i64)
-                .collect();
-            args[1] = -args[1];
+            let mut args = params.series_as_i64("roll").unwrap();
+            args[1] = args[0] - args[1];
+            stack_roll(stack, operands, &args)
+        }
+
+        "unroll" => {
+            let args = params.series_as_i64("roll").unwrap();
             stack_roll(stack, operands, &args)
         }
 
@@ -234,7 +229,8 @@ fn stack_push(
     for i in 0..number_of_operands {
         let coord = operands.get_coord(i);
         for j in 0..number_of_pushes {
-            ext[j][i] = coord[args[j]];
+            // args are 1 based so we adjust
+            ext[j][i] = coord[args[j] - 1];
         }
     }
 
@@ -245,8 +241,8 @@ fn stack_push(
 
 /// roll m,n: On the sub-stack consisting of the m upper elements,
 /// roll n elements from the top, to the bottom of the sub-stack.
-/// Hence, roll is a "large flip", essentially flipping the n upper
-/// elements with the m - n lower
+/// Hence, roll is a "big swap", essentially swapping the n upper
+/// elements with the m - n lower.
 fn stack_roll(stack: &mut Vec<Vec<f64>>, operands: &mut dyn CoordinateSet, args: &[i64]) -> usize {
     let m = args[0].abs();
     let mut n = args[1];
@@ -294,21 +290,18 @@ fn stack_pop(stack: &mut Vec<Vec<f64>>, operands: &mut dyn CoordinateSet, args: 
     }
 
     // Remove the correct number of elements and obtain a reversed version.
-    // Incidentally, this is both the easiest way to obtain the popped
-    // subset, and the easiest way to make the top-of-stack (i.e. the
-    // element first popped) have the index 0, which makes the 'for j...'
-    // loop below slightly more straightforward
     let mut ext = Vec::with_capacity(number_of_pops);
     for _ in args {
         ext.push(stack.pop().unwrap());
     }
 
-    // Extract the required stack elements into the proper
+    // Inject the required stack elements into the proper
     // positions of the coordinate elements
     for i in 0..number_of_operands {
         let mut coord = operands.get_coord(i);
         for j in 0..number_of_pops {
-            coord[args[j]] = ext[j][i];
+            // args are 1 based so we adjust
+            coord[args[j] - 1] = ext[j][i];
         }
         operands.set_coord(i, &coord);
     }
@@ -434,6 +427,64 @@ mod tests {
         ctx.apply(op, Fwd, &mut data)?;
         assert_eq!(data[0][0], 14.);
         assert_eq!(data[0][1], 13.);
+
+        // Roundrip roll using the unroll syntactic sugar
+        let mut data = master_data.clone();
+        let op =
+            ctx.op("stack push=1,2,3,4 | stack roll=3,2 | stack unroll=3,2 | stack pop=1,2")?;
+        ctx.apply(op, Fwd, &mut data)?;
+        assert_eq!(data[0][0], 14.);
+        assert_eq!(data[0][1], 13.);
+
+        Ok(())
+    }
+
+    #[test]
+    fn stack_examples_from_rumination_002() -> Result<(), Error> {
+        let mut ctx = Minimal::default();
+        let master_data = vec![Coor4D([1., 2., 3., 4.])];
+
+        // Roll
+        let op = ctx.op("stack push=1,2,3,4 | stack roll=3,2 | stack pop=4,3,2,1")?;
+        let mut data = master_data.clone();
+        ctx.apply(op, Fwd, &mut data)?;
+        assert_eq!(data[0].0, [1., 3., 4., 2.]);
+
+        let op = ctx.op("stack push=1,2,3,4 | stack roll=3,-2 | stack pop=4,3,2,1")?;
+        let mut data = master_data.clone();
+        ctx.apply(op, Fwd, &mut data)?;
+        assert_eq!(data[0].0, [1., 4., 2., 3.]);
+
+        let op = ctx.op("stack push=1,2,3,4 | stack roll=3,2 | stack pop=4,3,2,1")?;
+        let mut data = master_data.clone();
+        ctx.apply(op, Fwd, &mut data)?;
+        assert_eq!(data[0].0, [1., 3., 4., 2.]);
+        let op = ctx.op("stack push=1,2,3,4 | stack roll=3,1 | stack pop=4,3,2,1")?;
+        ctx.apply(op, Fwd, &mut data)?;
+        assert_eq!(data[0].0, [1., 2., 3., 4.]);
+
+        // Unroll
+        let op = ctx.op("stack push=1,2,3,4 | stack unroll=3,2 | stack pop=4,3,2,1")?;
+        let mut data = master_data.clone();
+        ctx.apply(op, Fwd, &mut data)?;
+        assert_eq!(data[0].0, [1., 4., 2., 3.]);
+
+        let op = ctx.op("stack push=1,2,3,4 | stack unroll=3,-2 | stack pop=4,3,2,1")?;
+        let mut data = master_data.clone();
+        ctx.apply(op, Fwd, &mut data)?;
+        assert_eq!(data[0].0, [1., 3., 4., 2.]);
+
+        let op = ctx.op("stack push=1,2,3,4 | stack unroll=3,2 | stack pop=4,3,2,1")?;
+        ctx.apply(op, Fwd, &mut data)?;
+        assert_eq!(data[0].0, [1., 2., 3., 4.]);
+
+        let op = ctx.op("stack push=1,2,3,4 | stack roll=3,2 | stack pop=4,3,2,1")?;
+        ctx.apply(op, Fwd, &mut data)?;
+        assert_eq!(data[0].0, [1., 3., 4., 2.]);
+
+        let op = ctx.op("stack push=1,2,3,4 | stack unroll=3,2 | stack pop=4,3,2,1")?;
+        ctx.apply(op, Fwd, &mut data)?;
+        assert_eq!(data[0].0, [1., 2., 3., 4.]);
 
         Ok(())
     }

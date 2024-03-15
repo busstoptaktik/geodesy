@@ -965,27 +965,57 @@ All in all, that amounts to a swapping of the first two coordinate elements of t
 
 #### `stack roll`
 
-Essentially, `roll=m,n` is a [big swap](https://stackoverflow.com/a/15997537/618276), essentially
-flipping the `n` upper elements with the `m - n` lower, as seen from these examples:
+Essentially, `roll=m,n` is a [big swap](https://stackoverflow.com/a/15997537/618276), hence
+swapping the `n` upper elements with the `m - n` lower.
 
-| Stack before   | Instruction | Stack after                  |
-|----------------|--------------------------------------------|
-| 1,2,3,4        | roll=3,2    | 1,3,4,2                      |
-| 1,2,3,4        | roll=3,-2   | 1,3,4,2                      |
-| 1,3,4,2        | roll=3,1    | 1,2,3,4                      |
+If `n < 0`, the split between the lower and upper blocks is counted from the bottom of the
+substack, by implicitly setting `n = m + n` before operating, as seen from these examples:
 
-Note that the last example shows that `roll=m,m-n` is the opposite of `roll=m,n`
+| Stack before   | Instruction | Stack after      |
+| -------------- | ----------- | ---------------- |
+| 1,2,3,4        | roll=3,-2   | 1,4,2,3          |
+| 1,2,3,4        | roll=3,1    | 1,4,2,3          |
+| 1,2,3,4        | roll=3,2    | 1,3,4,2          |
+| 1,3,4,2        | roll=3,1    | 1,2,3,4          |
+
+Note that the first two examples show that for negative `n`, `roll=m,n`
+is the same as `roll=m,m+n`, while the last two examples show that
+`roll=m,m-n` is the opposite of `roll=m,n`.
+
+#### `stack unroll`
+
+For easier construction of "the opposite case", above, `stack unroll`
+is the tool. Essentially, `unroll=m,n` is the same as `roll=m,m-n`,
+i.e. a [big swap](https://stackoverflow.com/a/15997537/618276),
+swapping the `n` *lower* elements with the `m - n` *upper*,
+as seen from these examples:
+
+| Stack before   | Instruction  | Stack after     |
+| -------------- | ------------ | --------------- |
+| 1,2,3,4        | unroll=3,2   | 1,4,2,3         |
+| 1,2,3,4        | unroll=3,-2  | 1,3,4,2         |
+| 1,3,4,2        | unroll=3,2   | 1,2,3,4         |
+| 1,2,3,4        | roll=3,2     | 1,3,4,2         |
+| 1,3,4,2        | unroll=3,2   | 1,2,3,4         |
+
+Note that the last example shows that `unroll=m,n` is the opposite of `roll=m,n`
 
 #### Inverse operation
 
 `stack` does not support the `inv` modifier. Instead use these substitutions:
 
 | Forward | Inverse   |
-|---------|-----------|
+| ------- | --------- |
 | push    | pop       |
 | pop     | push      |
 | swap    | swap      |
 | roll=m,n| roll=m,m-n|
+| roll=m,n| unroll=m,n|
+
+#### Swapping two 2D coordinates packed in a 4D
+
+- `stack push=1,2,3,4 | stack roll=4,2 | stack pop=2,1,4,3` or
+- `stack push=1,2,3,4 | stack pop=4,3,2,1`
 
 **See also:** [`pop`](#operator-pop) (deprecated), [`push`](#operator-push) (deprecated)
 
