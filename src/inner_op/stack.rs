@@ -251,8 +251,6 @@ fn stack_roll(stack: &mut Vec<Vec<f64>>, operands: &mut dyn CoordinateSet, args:
     let m = args[0].abs();
     let mut n = args[1];
     let depth = stack.len();
-    //dbg!(&stack);
-    dbg!(&args);
 
     // Negative n: count the number of rolled elements from the bottom,
     // i.e. roll 3,-2 = roll 3,1
@@ -275,7 +273,6 @@ fn stack_roll(stack: &mut Vec<Vec<f64>>, operands: &mut dyn CoordinateSet, args:
         let e = stack.pop().unwrap();
         stack.insert(depth - m, e);
     }
-    //dbg!(&stack);
 
     operands.len()
 }

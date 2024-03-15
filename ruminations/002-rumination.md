@@ -940,12 +940,11 @@ Note: Rust Geodesy does not support modifying the ellipsoid with an `R` paramete
 **Description:**
 Take a copy of one or more coordinate dimensions and/or push, pop, roll or swap them onto the stack.
 
-
 | Argument   | Description |
 |------------|--------------------------------------------|
 | `push=...` | push a comma separated list of coordinate dimensions onto the stack |
 | `pop=...`  | pop a comma separated list of coordinate dimensions off the stack, into an operand |
-| `roll=m,n` | On the sub-stack consisting of the m upper elements, roll n elements from the top, to the bottom of the sub-stack |
+| `roll=m,n` | On the sub-stack consisting of the m topmost elements, roll n elements from the top, to the bottom of the sub-stack |
 | `swap`     | swap the top-of-stack and the next-to-top-of-stack |
 
 The arguments to `push` and `pop` are handled from left to right, i.e. in latin reading order,
