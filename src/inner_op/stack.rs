@@ -3,11 +3,12 @@ use crate::authoring::*;
 
 // NOTE: roll and drop are not implemented yet
 #[rustfmt::skip]
-pub const STACK_GAMUT: [OpParameter; 6] = [
+pub const STACK_GAMUT: [OpParameter; 7] = [
     OpParameter::Series  { key: "push", default: Some("") },
     OpParameter::Series  { key: "pop",  default: Some("") },
     OpParameter::Series  { key: "roll", default: Some("") },
     OpParameter::Series  { key: "unroll", default: Some("") },
+    OpParameter::Series  { key: "flip", default: Some("") },
     OpParameter::Flag    { key: "swap" },
     OpParameter::Flag    { key: "drop" },
 ];
@@ -37,6 +38,16 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
             }
         }
         params.text.insert("action", "push".to_string());
+    }
+
+    if let Ok(flip_args) = params.series("flip") {
+        subcommands_given += 1;
+        for i in flip_args.iter() {
+            if !valid_indices.contains(i) {
+                return Err(Error::BadParam("flip".to_string(), i.to_string()));
+            }
+        }
+        params.text.insert("action", "flip".to_string());
     }
 
     if let Ok(pop_args) = params.series("pop") {
@@ -135,8 +146,12 @@ pub(super) fn stack_fwd(
         "unroll" => {
             let mut args = params.series_as_i64("unroll").unwrap();
             args[1] = args[0] - args[1];
-            dbg!(&args);
             stack_roll(stack, operands, &args)
+        }
+
+        "flip" => {
+            let args = params.series_as_usize("flip").unwrap();
+            stack_flip(stack, operands, &args)
         }
 
         "swap" => {
@@ -195,6 +210,12 @@ pub(super) fn stack_inv(
             stack_roll(stack, operands, &args)
         }
 
+        "flip" => {
+            let args = params.series_as_usize("flip").unwrap();
+            stack_flip(stack, operands, &args)
+        }
+
+        // Swap TOS and 2OS
         "swap" => {
             let n = stack.len();
             if n > 1 {
@@ -236,6 +257,38 @@ fn stack_push(
 
     // And push them onto the existing stack
     stack.extend(ext);
+    number_of_operands
+}
+
+/// Flip the operator and the TOS
+fn stack_flip(stack: &mut [Vec<f64>], operands: &mut dyn CoordinateSet, args: &[usize]) -> usize {
+    let number_of_flips = args.len();
+    let number_of_operands = operands.len();
+    let stack_depth = stack.len();
+
+    // In case of underflow, we stomp on all input coordinates
+    if stack_depth < number_of_flips {
+        warn!("Stack flip underflow in pipeline");
+        let nanny = Coor4D::nan();
+        for i in 0..number_of_operands {
+            operands.set_coord(i, &nanny);
+        }
+        return 0;
+    }
+
+    // Swap the stack elements and their corresponding coordinate elements
+    for i in 0..number_of_operands {
+        let mut coord = operands.get_coord(i);
+        for j in 0..number_of_flips {
+            // args are 1 based so we adjust
+            let flip = coord[args[j] - 1];
+            let depth = stack_depth - 1 - j;
+            coord[args[j] - 1] = stack[depth][i];
+            stack[depth][i] = flip;
+        }
+        operands.set_coord(i, &coord);
+    }
+
     number_of_operands
 }
 
@@ -485,6 +538,17 @@ mod tests {
         let op = ctx.op("stack push=1,2,3,4 | stack unroll=3,2 | stack pop=4,3,2,1")?;
         ctx.apply(op, Fwd, &mut data)?;
         assert_eq!(data[0].0, [1., 2., 3., 4.]);
+
+        let op = ctx.op("stack push=1,2,3,4 | helmert x=4 y=4 z=4 | stack flip=1,2")?;
+        ctx.apply(op, Fwd, &mut data)?;
+        assert_eq!(data[0].0, [4., 3., 7., 4.]);
+
+        let mut data = master_data.clone();
+        let op = ctx.op(
+            "stack push=1,2,3,4 | helmert translation=4,4,4 | stack flip=1,2 | stack flip=1,2",
+        )?;
+        ctx.apply(op, Fwd, &mut data)?;
+        assert_eq!(data[0].0, [5., 6., 7., 4.]);
 
         Ok(())
     }

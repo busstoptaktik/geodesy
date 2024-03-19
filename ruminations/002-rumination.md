@@ -2,11 +2,11 @@
 
 ## Rumination 002: The missing manual
 
-Thomas Knudsen <knudsen.thomas@gmail.com>
+Thomas Knudsen <thokn@sdfi.dk>
 
 Sean Rennie <rnnsea001@gmail.com>
 
-2021-08-20. Last [revision](#document-history) 2023-11-20
+2021-08-20. Last [revision](#document-history) 2024-03-19
 
 ### Abstract
 
@@ -935,24 +935,26 @@ Note: Rust Geodesy does not support modifying the ellipsoid with an `R` paramete
 
 ### Operator `stack`
 
-**Purpose:** Push/pop/roll/swap coordinate dimensions onto the stack
+**Purpose:** Push/pop/roll/flip/swap coordinate dimensions onto the stack
 
 **Description:**
 Take a copy of one or more coordinate dimensions and/or push, pop, roll or swap them onto the stack.
 
-| Argument   | Description |
-|------------|--------------------------------------------|
-| `push=...` | push a comma separated list of coordinate dimensions onto the stack |
-| `pop=...`  | pop a comma separated list of coordinate dimensions off the stack, into an operand |
-| `roll=m,n` | On the sub-stack consisting of the m topmost elements, roll n elements from the top, to the bottom of the sub-stack |
-| `swap`     | swap the top-of-stack and the next-to-top-of-stack |
+| Argument    | Description |
+|------------ | ------------------------------------------ |
+| `push=...`  | push a comma separated list of coordinate dimensions onto the stack |
+| `pop=...`   | pop a comma separated list of coordinate dimensions off the stack, into an operand |
+| `roll=m,n`  | On the sub-stack consisting of the m topmost elements, roll n elements from the top, to the bottom of the sub-stack |
+| `unroll=m,n`| As `roll`, but rolls `n` elements from the bottom to the top of the substack |
+| `swap`      | swap the top-of-stack and the second-of-stack |
+| `flip=...`  | flip elements from the operator with elements on the stack |
 
 The arguments to `push` and `pop` are handled from left to right, i.e. in latin reading order,
 so the instruction `stack push=1,2` will take the first coordinate element of the operand,
 and push it onto the stack, then on top of that, push the second coordinate element.
 
 Hence, the second coordinate element will occupy the top-of-stack (TOS) position, while
-the first coordinate element will occupy the next-to-top-of-stack (2OS)
+the first coordinate element will occupy the second-of-stack (2OS)
 
 If we extend the case to a pipeline:  `stack push=1,2 | stack pop=1,2`, the second part
 will pop material off the stack and into the coordinate elements of the operand in the
@@ -1000,17 +1002,35 @@ as seen from these examples:
 
 Note that the last example shows that `unroll=m,n` is the opposite of `roll=m,n`
 
+#### `stack swap`
+
+Swaps the top-of-stack and the second-of-stack
+
+#### `stack flip`
+
+Works like `stack pop`, in the sense that it moves data from the stack to the operand.
+But instead of reducing the stack depth, replaces the stack element with the operand value it is overwriting.
+
+| Stack before | Operand before | Instruction    | Stack after | Operand after |
+| ------------ | -------------- | -------------- | ----------- | ------------- |
+| 1,2,3,4      | 5,6,7,8        | flip=1,2       | 1,2,6,5     | 4,3,7,8       |
+| 1,2,6,5      | 4,3,7,8        | flip=1,2       | 1,2,3,4     | 5,6,7,8       |
+
+Hence flip, like swap, is involutory: Apply it twice to do nothing
+
 #### Inverse operation
 
 `stack` does not support the `inv` modifier. Instead use these substitutions:
 
-| Forward | Inverse   |
-| ------- | --------- |
-| push    | pop       |
-| pop     | push      |
-| swap    | swap      |
-| roll=m,n| roll=m,m-n|
-| roll=m,n| unroll=m,n|
+| Forward   | Inverse   |
+| --------- | --------- |
+| push      | pop       |
+| pop       | push      |
+| swap      | swap      |
+| roll=m,n  | roll=m,m-n|
+| roll=m,n  | unroll=m,n|
+| unroll=m,n| roll=m,n  |
+| flip      | flip      |
 
 #### Swapping two 2D coordinates packed in a 4D
 
@@ -1137,3 +1157,4 @@ Major revisions and additions:
 - 2023-11-02: Update `gridshift` operator description with multi, optional and null grid support
 - 2023-11-20: Add documentation for the `deformation` operator
 - 2023-11-21: Add documentation for the `unitconvert` operator
+- 2024-03-19: Add documentation for the `stack` operator
