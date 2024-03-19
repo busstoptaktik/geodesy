@@ -269,10 +269,7 @@ fn stack_flip(stack: &mut [Vec<f64>], operands: &mut dyn CoordinateSet, args: &[
     // In case of underflow, we stomp on all input coordinates
     if stack_depth < number_of_flips {
         warn!("Stack flip underflow in pipeline");
-        let nanny = Coor4D::nan();
-        for i in 0..number_of_operands {
-            operands.set_coord(i, &nanny);
-        }
+        operands.stomp();
         return 0;
     }
 
@@ -311,10 +308,7 @@ fn stack_roll(stack: &mut Vec<Vec<f64>>, operands: &mut dyn CoordinateSet, args:
 
     if m > depth {
         warn!("Roll too deep");
-        let nanny = Coor4D::nan();
-        for i in 0..operands.len() {
-            operands.set_coord(i, &nanny);
-        }
+        operands.stomp();
         return 0;
     }
 
@@ -335,10 +329,7 @@ fn stack_pop(stack: &mut Vec<Vec<f64>>, operands: &mut dyn CoordinateSet, args: 
     // In case of underflow, we stomp on all input coordinates
     if stack_depth < number_of_pops {
         warn!("Stack underflow in pipeline");
-        let nanny = Coor4D::nan();
-        for i in 0..number_of_operands {
-            operands.set_coord(i, &nanny);
-        }
+        operands.stomp();
         return 0;
     }
 

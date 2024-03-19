@@ -87,10 +87,20 @@ impl<T> CoordinateMetadata for T where T: ?Sized {}
 /// access any user provided data model by iterating over its elements,
 /// represented as a `Coor4D`
 pub trait CoordinateSet: CoordinateMetadata {
+    /// Number of coordinate tuples in the set
     fn len(&self) -> usize;
+    /// Access the `index`th coordinate tuple
     fn get_coord(&self, index: usize) -> Coor4D;
+    /// Overwrite the `index`th coordinate tuple
     fn set_coord(&mut self, index: usize, value: &Coor4D);
     fn is_empty(&self) -> bool {
         self.len() == 0
+    }
+    /// Set all coordinate tuples in the set to NaN
+    fn stomp(&mut self) {
+        let nanny = Coor4D::nan();
+        for i in 0..self.len() {
+            self.set_coord(i, &nanny);
+        }
     }
 }
