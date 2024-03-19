@@ -1,3 +1,7 @@
+use crate::coordinate::CoordTrait;
+
+// Now using an extended version of Kyle Barron's CoordTrait, cf. src/coordinate/mod.rs
+
 use super::*;
 
 // ----- Geodesics -------------------------------------------------------------
@@ -14,10 +18,12 @@ impl Ellipsoid {
     /// Federico Dolce and Michael Kirk, provides a Rust implementation of Karney's algorithm.
     #[must_use]
     #[allow(non_snake_case)]
-    pub fn geodesic_fwd(&self, from: &Coor4D, azimuth: f64, distance: f64) -> Coor4D {
+    pub fn geodesic_fwd<T>(&self, from: &T, azimuth: f64, distance: f64) -> Coor4D
+    where
+        T: CoordTrait,
+    {
         // Coordinates of the point of origin, P1
-        let B1 = from[1];
-        let L1 = from[0];
+        let (L1, B1) = from.xy_as_f64();
 
         // The latitude of P1 projected onto the auxiliary sphere
         let U1 = self.latitude_geographic_to_reduced(B1);
@@ -93,13 +99,13 @@ impl Ellipsoid {
     /// See [`geodesic_fwd`](crate::Ellipsoid::geodesic_fwd)
     #[must_use]
     #[allow(non_snake_case)] // So we can use the mathematical notation from the original text
-    pub fn geodesic_inv(&self, from: &Coor4D, to: &Coor4D) -> Coor4D {
-        let B1 = from[1];
-        let B2 = to[1];
+    pub fn geodesic_inv<T>(&self, from: &T, to: &T) -> Coor4D
+    where
+        T: CoordTrait,
+    {
+        let (L1, B1) = from.xy_as_f64();
+        let (L2, B2) = to.xy_as_f64();
         let B = B2 - B1;
-
-        let L1 = from[0];
-        let L2 = to[0];
         let L = L2 - L1;
 
         // Below the micrometer level, we don't care about directions
@@ -191,14 +197,17 @@ impl Ellipsoid {
     /// // Compute the distance between Copenhagen and Paris
     /// use geodesy::prelude::*;
     /// if let Ok(ellps) = Ellipsoid::named("GRS80") {
-    ///     let p0 = Coor4D::geo(55., 12., 0., 0.);
-    ///     let p1 = Coor4D::geo(49., 2., 0., 0.);
+    ///     let p0 = Coor2D::geo(55., 12.);
+    ///     let p1 = Coor2D::geo(49., 2.);
     ///     let d = ellps.distance(&p0, &p1);
     ///     assert!((d - 956_066.231_959).abs() < 1e-5);
     /// }
     /// ```
     #[must_use]
-    pub fn distance(&self, from: &Coor4D, to: &Coor4D) -> f64 {
+    pub fn distance<T>(&self, from: &T, to: &T) -> f64
+    where
+        T: CoordTrait,
+    {
         self.geodesic_inv(from, to)[2]
     }
 }
@@ -216,8 +225,8 @@ mod tests {
 
         // Copenhagen (Denmark)--Paris (France)
         // Expect distance good to 0.01 mm, azimuths to a nanodegree
-        let p1 = Coor4D::gis(12., 55., 0., 0.);
-        let p2 = Coor4D::gis(2., 49., 0., 0.);
+        let p1 = Coor2D::gis(12., 55.);
+        let p2 = Coor2D::gis(2., 49.);
 
         let d = ellps.geodesic_inv(&p1, &p2);
         assert!((d[0].to_degrees() - (-130.15406042072)).abs() < 1e-9);
@@ -231,7 +240,7 @@ mod tests {
 
         // Copenhagen (Denmark)--Rabat (Morocco)
         // Expect distance good to 0.1 mm, azimuths to a nanodegree
-        let p2 = Coor4D::gis(7., 34., 0., 0.);
+        let p2 = Coor2D::gis(7., 34.);
 
         let d = ellps.geodesic_inv(&p1, &p2);
         assert!((d[0].to_degrees() - (-168.48914418666)).abs() < 1e-9);

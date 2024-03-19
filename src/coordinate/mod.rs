@@ -104,3 +104,240 @@ pub trait CoordinateSet: CoordinateMetadata {
         }
     }
 }
+
+// An experiment with an extended version of Kyle Barron's CoordTrait PR
+// over at https://github.com/georust/geo/pull/1157
+
+pub trait CoordNum {}
+impl CoordNum for f32 {}
+impl CoordNum for f64 {}
+
+/// A trait for accessing data from a generic Coord.
+pub trait CoordTrait {
+    type T: CoordNum;
+
+    /// Accessors for the coordinate tuple components
+    fn first(&self) -> Self::T;
+    fn second(&self) -> Self::T;
+    fn third(&self) -> Self::T;
+    fn fourth(&self) -> Self::T;
+    fn measure(&self) -> Self::T;
+
+    /// Accessors for the coordinate tuple components
+    fn first_as_f64(&self) -> f64;
+    fn second_as_f64(&self) -> f64;
+    fn third_as_f64(&self) -> f64;
+    fn fourth_as_f64(&self) -> f64;
+    fn measure_as_f64(&self) -> f64;
+
+    /// x component of this coord
+    fn x(&self) -> Self::T {
+        self.first()
+    }
+
+    /// y component of this coord
+    fn y(&self) -> Self::T {
+        self.second()
+    }
+
+    /// z component of this coord
+    fn z(&self) -> Self::T {
+        self.third()
+    }
+
+    /// t component of this coord
+    fn t(&self) -> Self::T {
+        self.fourth()
+    }
+
+    /// Returns a tuple that contains the two first components of the coord.
+    fn xy(&self) -> (Self::T, Self::T) {
+        (self.first(), self.second())
+    }
+
+    /// Returns a tuple that contains the three first components of the coord.
+    fn xyz(&self) -> (Self::T, Self::T, Self::T) {
+        (self.first(), self.second(), self.third())
+    }
+
+    /// Returns a tuple that contains the three first components of the coord.
+    fn xyzt(&self) -> (Self::T, Self::T, Self::T, Self::T) {
+        (self.first(), self.second(), self.third(), self.fourth())
+    }
+
+    /// Returns a tuple that contains the two first components of the coord converted to f64.
+    fn xy_as_f64(&self) -> (f64, f64) {
+        (self.first_as_f64(), self.second_as_f64())
+    }
+
+    /// Returns a tuple that contains the three first components of the coord converted to f64.
+    fn xyz_as_f64(&self) -> (f64, f64, f64) {
+        (
+            self.first_as_f64(),
+            self.second_as_f64(),
+            self.third_as_f64(),
+        )
+    }
+
+    /// Returns a tuple that contains the three first components of the coord converted to f64.
+    fn xyzt_as_f64(&self) -> (f64, f64, f64, f64) {
+        (
+            self.first_as_f64(),
+            self.second_as_f64(),
+            self.third_as_f64(),
+            self.fourth_as_f64(),
+        )
+    }
+}
+
+impl CoordTrait for Coor2D {
+    type T = f64;
+
+    /// Accessors for the coordinate tuple components
+    fn first(&self) -> Self::T {
+        self.0[0]
+    }
+    fn second(&self) -> Self::T {
+        self.0[1]
+    }
+    fn third(&self) -> Self::T {
+        f64::NAN
+    }
+    fn fourth(&self) -> Self::T {
+        f64::NAN
+    }
+    fn measure(&self) -> Self::T {
+        f64::NAN
+    }
+
+    /// Accessors for the coordinate tuple components
+    fn first_as_f64(&self) -> f64 {
+        self.0[0]
+    }
+    fn second_as_f64(&self) -> f64 {
+        self.0[1]
+    }
+    fn third_as_f64(&self) -> f64 {
+        f64::NAN
+    }
+    fn fourth_as_f64(&self) -> f64 {
+        f64::NAN
+    }
+    fn measure_as_f64(&self) -> f64 {
+        f64::NAN
+    }
+}
+
+impl CoordTrait for Coor32 {
+    type T = f32;
+
+    /// Accessors for the coordinate tuple components
+    fn first(&self) -> Self::T {
+        self.0[0]
+    }
+    fn second(&self) -> Self::T {
+        self.0[1]
+    }
+    fn third(&self) -> Self::T {
+        f32::NAN
+    }
+    fn fourth(&self) -> Self::T {
+        f32::NAN
+    }
+    fn measure(&self) -> Self::T {
+        f32::NAN
+    }
+
+    /// Accessors for the coordinate tuple components
+    fn first_as_f64(&self) -> f64 {
+        self.0[0] as f64
+    }
+    fn second_as_f64(&self) -> f64 {
+        self.0[1] as f64
+    }
+    fn third_as_f64(&self) -> f64 {
+        f64::NAN
+    }
+    fn fourth_as_f64(&self) -> f64 {
+        f64::NAN
+    }
+    fn measure_as_f64(&self) -> f64 {
+        f64::NAN
+    }
+}
+
+impl CoordTrait for Coor3D {
+    type T = f64;
+
+    /// Accessors for the coordinate tuple components
+    fn first(&self) -> Self::T {
+        self.0[0]
+    }
+    fn second(&self) -> Self::T {
+        self.0[1]
+    }
+    fn third(&self) -> Self::T {
+        self.0[2]
+    }
+    fn fourth(&self) -> Self::T {
+        f64::NAN
+    }
+    fn measure(&self) -> Self::T {
+        f64::NAN
+    }
+
+    /// Accessors for the coordinate tuple components
+    fn first_as_f64(&self) -> f64 {
+        self.0[0]
+    }
+    fn second_as_f64(&self) -> f64 {
+        self.0[1]
+    }
+    fn third_as_f64(&self) -> f64 {
+        self.0[2]
+    }
+    fn fourth_as_f64(&self) -> f64 {
+        f64::NAN
+    }
+    fn measure_as_f64(&self) -> f64 {
+        f64::NAN
+    }
+}
+
+impl CoordTrait for Coor4D {
+    type T = f64;
+
+    /// Accessors for the coordinate tuple components
+    fn first(&self) -> Self::T {
+        self.0[0]
+    }
+    fn second(&self) -> Self::T {
+        self.0[1]
+    }
+    fn third(&self) -> Self::T {
+        self.0[2]
+    }
+    fn fourth(&self) -> Self::T {
+        self.0[3]
+    }
+    fn measure(&self) -> Self::T {
+        f64::NAN
+    }
+
+    /// Accessors for the coordinate tuple components
+    fn first_as_f64(&self) -> f64 {
+        self.0[0]
+    }
+    fn second_as_f64(&self) -> f64 {
+        self.0[1]
+    }
+    fn third_as_f64(&self) -> f64 {
+        self.0[2]
+    }
+    fn fourth_as_f64(&self) -> f64 {
+        self.0[3]
+    }
+    fn measure_as_f64(&self) -> f64 {
+        f64::NAN
+    }
+}
