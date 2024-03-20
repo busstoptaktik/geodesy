@@ -163,7 +163,12 @@ pub trait CoordTrait {
 
     /// Returns a tuple that contains the three first components of the coord converted to f64.
     fn xyzt_as_f64(&self) -> (f64, f64, f64, f64) {
-        (self.x_as_f64(), self.y_as_f64(), self.z_as_f64(), self.t_as_f64())
+        (
+            self.x_as_f64(),
+            self.y_as_f64(),
+            self.z_as_f64(),
+            self.t_as_f64(),
+        )
     }
 }
 
@@ -206,8 +211,6 @@ impl CoordTrait for Coor2D {
         f64::NAN
     }
 }
-
-
 
 impl CoordTrait for Coor32 {
     type T = f32;

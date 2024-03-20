@@ -209,7 +209,6 @@ mod tests {
     use super::*;
     use crate::math::angular;
 
-
     #[test]
     fn molodensky() -> Result<(), Error> {
         let mut ctx = Minimal::default();

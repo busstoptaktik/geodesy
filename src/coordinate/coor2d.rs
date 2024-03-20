@@ -163,9 +163,7 @@ impl Coor2D {
     pub fn hypot2(&self, other: &Self) -> f64 {
         (self[0] - other[0]).hypot(self[1] - other[1])
     }
-
 }
-
 
 impl From<Coor2D> for Coor4D {
     fn from(c: Coor2D) -> Self {
