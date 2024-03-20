@@ -164,15 +164,8 @@ impl Coor2D {
         (self[0] - other[0]).hypot(self[1] - other[1])
     }
 
-    /// The Geodesic distance on the default ellipsoid. Mostly a shortcut
-    /// for test authoring
-    pub fn default_ellps_dist(&self, other: &Self) -> f64 {
-        Ellipsoid::default().distance(
-            &Coor4D([self[0], self[1], 0., 0.]),
-            &Coor4D([other[0], other[1], 0., 0.]),
-        )
-    }
 }
+
 
 impl From<Coor2D> for Coor4D {
     fn from(c: Coor2D) -> Self {
@@ -193,11 +186,12 @@ mod tests {
     use super::*;
     #[test]
     fn distances() {
+        let e = Ellipsoid::default();
         let lat = angular::dms_to_dd(55, 30, 36.);
         let lon = angular::dms_to_dd(12, 45, 36.);
         let dms = Coor2D::geo(lat, lon);
         let geo = Coor2D::geo(55.51, 12.76);
-        assert!(geo.default_ellps_dist(&dms) < 1e-10);
+        assert!(e.distance(&geo, &dms) < 1e-10);
     }
 
     #[test]

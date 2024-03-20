@@ -206,9 +206,9 @@ impl Ellipsoid {
     #[must_use]
     pub fn distance<T>(&self, from: &T, to: &T) -> f64
     where
-        T: CoordTrait,
+        T: CoordTrait
     {
-        self.geodesic_inv(from, to)[2]
+        self.geodesic_inv::<T>(&from, &to)[2]
     }
 }
 
@@ -217,6 +217,7 @@ impl Ellipsoid {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::Coor2D;
     #[test]
     fn geodesics() -> Result<(), Error> {
         let ellps = Ellipsoid::named("GRS80")?;

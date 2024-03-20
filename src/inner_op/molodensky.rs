@@ -209,9 +209,12 @@ mod tests {
     use super::*;
     use crate::math::angular;
 
+
     #[test]
     fn molodensky() -> Result<(), Error> {
         let mut ctx = Minimal::default();
+        let e = Ellipsoid::default();
+
         // ---------------------------------------------------------------------------
         // Test case from OGP Publication 373-7-2: Geomatics Guidance Note number 7,
         // part 2: Transformation from WGS84 to ED50.
@@ -244,14 +247,14 @@ mod tests {
         // within 5 mm in the plane and the elevation.
         let mut operands = [WGS84];
         ctx.apply(op, Fwd, &mut operands)?;
-        assert!(ED50.default_ellps_dist(&operands[0]) < 0.005);
+        assert!(e.distance(&ED50, &operands[0]) < 0.005);
         assert!((ED50[2] - operands[0][2]).abs() < 0.005);
 
         // The same holds in the reverse unabridged case, where
         // additionally the elevation is even better
         let mut operands = [ED50];
         ctx.apply(op, Inv, &mut operands)?;
-        assert!(WGS84.default_ellps_3d_dist(&operands[0]) < 0.005);
+        assert!(e.distance(&WGS84, &operands[0]) < 0.005);
         assert!((WGS84[2] - operands[0][2]).abs() < 0.001);
 
         // The abridged case. Same test point. Both plane coordinates and
@@ -264,13 +267,13 @@ mod tests {
 
         let mut operands = [WGS84];
         ctx.apply(op, Fwd, &mut operands)?;
-        assert!(ED50.default_ellps_dist(&operands[0]) < 0.1);
+        assert!(e.distance(&ED50, &operands[0]) < 0.1);
         // Heights are worse in the abridged case
         assert!((ED50[2] - operands[0][2]).abs() < 0.075);
 
         let mut operands = [ED50];
         ctx.apply(op, Inv, &mut operands)?;
-        assert!(WGS84.default_ellps_dist(&operands[0]) < 0.1);
+        assert!(e.distance(&WGS84, &operands[0]) < 0.1);
         // Heights are worse in the abridged case
         assert!((WGS84[2] - operands[0][2]).abs() < 0.075);
         Ok(())
