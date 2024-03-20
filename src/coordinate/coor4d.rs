@@ -269,19 +269,6 @@ impl Coor4D {
             .hypot(self[1] - other[1])
             .hypot(self[2] - other[2])
     }
-
-    /// The 3D distance between two points given as internal angular
-    /// coordinates. Mostly a shortcut for test authoring
-    pub fn default_ellps_3d_dist(&self, other: &Self) -> f64 {
-        let e = Ellipsoid::default();
-        e.cartesian(self).hypot3(&e.cartesian(other))
-    }
-
-    /// The Geodesic distance on the default ellipsoid. Mostly a shortcut
-    /// for test authoring
-    pub fn default_ellps_dist(&self, other: &Self) -> f64 {
-        Ellipsoid::default().distance(self, other)
-    }
 }
 
 // ----- T E S T S ---------------------------------------------------
@@ -289,13 +276,15 @@ impl Coor4D {
 #[cfg(test)]
 mod tests {
     use super::*;
+
     #[test]
     fn distances() {
         let lat = angular::dms_to_dd(55, 30, 36.);
         let lon = angular::dms_to_dd(12, 45, 36.);
         let dms = Coor4D::geo(lat, lon, 0., 2020.);
         let geo = Coor4D::geo(55.51, 12.76, 0., 2020.);
-        assert!(geo.default_ellps_dist(&dms) < 1e-10);
+        let e = Ellipsoid::default();
+        assert!(e.distance(&geo, &dms) < 1e-10);
     }
 
     #[test]

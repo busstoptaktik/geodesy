@@ -12,7 +12,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let mut successes = 0_usize;
     for i in sliced {
         let args = operands.get_coord(i);
-        let origin = Coor4D::geo(args[0], args[1], 0.0, 0.0);
+        let origin = Coor2D::geo(args[0], args[1]);
         let azimuth = args[2].to_radians();
         let distance = args[3];
 
@@ -43,8 +43,8 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
 
     let mut successes = 0_usize;
     for i in sliced {
-        let mut from = Coor4D::origin();
-        let mut to = Coor4D::origin();
+        let mut from = Coor2D::origin();
+        let mut to = Coor2D::origin();
 
         let coord = operands.get_coord(i);
         from[0] = coord[1].to_radians();

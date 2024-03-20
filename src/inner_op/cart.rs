@@ -169,6 +169,7 @@ mod tests {
             ),
         ];
 
+        let e = Ellipsoid::default();
         // Forward
         let mut operands = geo;
         ctx.apply(op, Fwd, &mut operands)?;
@@ -179,7 +180,7 @@ mod tests {
         // Inverse
         ctx.apply(op, Inv, &mut operands)?;
         for i in 0..5 {
-            assert!(operands[i].default_ellps_3d_dist(&geo[i]) < 10e-9);
+            assert!(e.distance(&operands[i], &geo[i]) < 1e-8);
         }
 
         Ok(())

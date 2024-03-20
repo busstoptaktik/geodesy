@@ -144,11 +144,12 @@ mod tests {
         let mut ctx = Minimal::default();
         let op = ctx.op("dms")?;
 
-        let mut operands = [Coor4D::raw(553036., -124509., 0., 0.)];
-        let geo = Coor4D::geo(55.51, -12.7525, 0., 0.);
+        let mut operands = [Coor2D::raw(553036., -124509.)];
+        let geo = Coor2D::geo(55.51, -12.7525);
 
         ctx.apply(op, Fwd, &mut operands)?;
-        assert!(operands[0].default_ellps_dist(&geo) < 1e-10);
+        let e = Ellipsoid::default();
+        assert!(e.distance(&operands[0], &geo) < 1e-10);
 
         ctx.apply(op, Inv, &mut operands)?;
         assert!((operands[0][0] - 553036.).abs() < 1e-10);
