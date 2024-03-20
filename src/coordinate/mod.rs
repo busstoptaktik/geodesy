@@ -105,20 +105,28 @@ pub trait CoordinateSet: CoordinateMetadata {
     }
 }
 
-// An experiment with an extended version of Kyle Barron's CoordTrait<DIMENSION, MEASURE> PR
+//-----------------------------------------------------------------------
+// An experiment with an extended version of Kyle Barron's CoordTrait PR
 // over at https://github.com/georust/geo/pull/1157
+//-----------------------------------------------------------------------
 
-pub trait CoordNum {}
-impl CoordNum for f32 {}
-impl CoordNum for f64 {}
+// The next 8 lines are mostly copied from georust/geo/geo-types/src/lib.rs
+// Although I added ToPrimitive in the first line
+use core::fmt::Debug;
+use num_traits::{Float, Num, NumCast, ToPrimitive};
+pub trait CoordinateType: Num + Copy + NumCast + PartialOrd + Debug {}
+impl<T: Num + Copy + NumCast + PartialOrd + Debug> CoordinateType for T {}
+pub trait CoordNum: CoordinateType + Debug {}
+impl<T: CoordinateType + Debug> CoordNum for T {}
+pub trait CoordFloat: CoordNum + Float {}
+impl<T: CoordNum + Float> CoordFloat for T {}
 
-/// A trait for accessing data from a generic Coord.
+// And here is Kyle Barron's CoordTrait from https://github.com/georust/geo/pull/1157
+// extended with z(), t(), m(), and associated consts DIMENSION and MEASURE
 pub trait CoordTrait {
     type T: CoordNum;
     const DIMENSION: usize;
     const MEASURE: bool;
-
-    // Required implementations
 
     /// Accessors for the coordinate tuple components
     fn x(&self) -> Self::T;
@@ -127,207 +135,100 @@ pub trait CoordTrait {
     fn t(&self) -> Self::T;
     fn m(&self) -> Self::T;
 
-    /// Accessors for the coordinate tuple components converted to f64
-    fn x_as_f64(&self) -> f64;
-    fn y_as_f64(&self) -> f64;
-    fn z_as_f64(&self) -> f64;
-    fn t_as_f64(&self) -> f64;
-    fn m_as_f64(&self) -> f64;
-
-    // Provided implementations
-
     /// Returns a tuple that contains the two first components of the coord.
-    fn xy(&self) -> (Self::T, Self::T) {
+    fn x_y(&self) -> (Self::T, Self::T) {
         (self.x(), self.y())
     }
+}
 
-    /// Returns a tuple that contains the three first components of the coord.
-    fn xyz(&self) -> (Self::T, Self::T, Self::T) {
-        (self.x(), self.y(), self.z())
-    }
+// The CoordTuples trait is blanket-implemented for anything that
+// CoordTrait is implemented for
+impl<C: CoordTrait> CoordTuples for C {}
 
-    /// Returns a tuple that contains the three first components of the coord.
-    fn xyzt(&self) -> (Self::T, Self::T, Self::T, Self::T) {
-        (self.x(), self.y(), self.z(), self.t())
-    }
+// And here the actual implementation, which takes any CoordTrait implementing
+// data type, and lets us access the contents as geodesy-compatible f64 tuples
+#[rustfmt::skip]
+pub trait CoordTuples: CoordTrait {
+    /// Accessors for the coordinate tuple components converted to f64
+    fn x_as_f64(&self) -> f64 { self.x().to_f64().unwrap_or(f64::NAN) }
+    fn y_as_f64(&self) -> f64 { self.y().to_f64().unwrap_or(f64::NAN) }
+    fn z_as_f64(&self) -> f64 { self.z().to_f64().unwrap_or(f64::NAN) }
+    fn t_as_f64(&self) -> f64 { self.t().to_f64().unwrap_or(f64::NAN) }
+    fn m_as_f64(&self) -> f64 { self.m().to_f64().unwrap_or(f64::NAN) }
 
-    /// Returns a tuple that contains the two first components of the coord converted to f64.
     fn xy_as_f64(&self) -> (f64, f64) {
         (self.x_as_f64(), self.y_as_f64())
     }
 
-    /// Returns a tuple that contains the three first components of the coord converted to f64.
     fn xyz_as_f64(&self) -> (f64, f64, f64) {
         (self.x_as_f64(), self.y_as_f64(), self.z_as_f64())
     }
 
-    /// Returns a tuple that contains the three first components of the coord converted to f64.
     fn xyzt_as_f64(&self) -> (f64, f64, f64, f64) {
-        (
-            self.x_as_f64(),
-            self.y_as_f64(),
-            self.z_as_f64(),
-            self.t_as_f64(),
-        )
+        (self.x_as_f64(), self.y_as_f64(), self.z_as_f64(), self.t_as_f64())
     }
 }
 
+// We must still implement the foundational CoordTrait trait for
+// the Geodesy data types Coor2D, Coor32, Coor3D, Coor4D
+
+#[rustfmt::skip]
 impl CoordTrait for Coor2D {
     type T = f64;
     const DIMENSION: usize = 2;
     const MEASURE: bool = false;
-
-    /// Accessors for the coordinate tuple components
-    fn x(&self) -> Self::T {
-        self.0[0]
-    }
-    fn y(&self) -> Self::T {
-        self.0[1]
-    }
-    fn z(&self) -> Self::T {
-        f64::NAN
-    }
-    fn t(&self) -> Self::T {
-        f64::NAN
-    }
-    fn m(&self) -> Self::T {
-        f64::NAN
-    }
-
-    /// Accessors for the coordinate tuple components converted to f64
-    fn x_as_f64(&self) -> f64 {
-        self.0[0]
-    }
-    fn y_as_f64(&self) -> f64 {
-        self.0[1]
-    }
-    fn z_as_f64(&self) -> f64 {
-        f64::NAN
-    }
-    fn t_as_f64(&self) -> f64 {
-        f64::NAN
-    }
-    fn m_as_f64(&self) -> f64 {
-        f64::NAN
-    }
+    fn x(&self) -> Self::T { self.0[0] }
+    fn y(&self) -> Self::T { self.0[1] }
+    fn z(&self) -> Self::T { f64::NAN  }
+    fn t(&self) -> Self::T { f64::NAN  }
+    fn m(&self) -> Self::T { f64::NAN  }
 }
 
+#[rustfmt::skip]
 impl CoordTrait for Coor32 {
     type T = f32;
     const DIMENSION: usize = 2;
     const MEASURE: bool = false;
-
-    /// Accessors for the coordinate tuple components
-    fn x(&self) -> Self::T {
-        self.0[0]
-    }
-    fn y(&self) -> Self::T {
-        self.0[1]
-    }
-    fn z(&self) -> Self::T {
-        f32::NAN
-    }
-    fn t(&self) -> Self::T {
-        f32::NAN
-    }
-    fn m(&self) -> Self::T {
-        f32::NAN
-    }
-
-    /// Accessors for the coordinate tuple components converted to f64
-    fn x_as_f64(&self) -> f64 {
-        self.0[0] as f64
-    }
-    fn y_as_f64(&self) -> f64 {
-        self.0[1] as f64
-    }
-    fn z_as_f64(&self) -> f64 {
-        f64::NAN
-    }
-    fn t_as_f64(&self) -> f64 {
-        f64::NAN
-    }
-    fn m_as_f64(&self) -> f64 {
-        f64::NAN
-    }
+    fn x(&self) -> Self::T { self.0[0] }
+    fn y(&self) -> Self::T { self.0[1] }
+    fn z(&self) -> Self::T { f32::NAN  }
+    fn t(&self) -> Self::T { f32::NAN  }
+    fn m(&self) -> Self::T { f32::NAN  }
 }
 
+#[rustfmt::skip]
 impl CoordTrait for Coor3D {
     type T = f64;
     const DIMENSION: usize = 3;
     const MEASURE: bool = false;
-
-    /// Accessors for the coordinate tuple components
-    fn x(&self) -> Self::T {
-        self.0[0]
-    }
-    fn y(&self) -> Self::T {
-        self.0[1]
-    }
-    fn z(&self) -> Self::T {
-        self.0[2]
-    }
-    fn t(&self) -> Self::T {
-        f64::NAN
-    }
-    fn m(&self) -> Self::T {
-        f64::NAN
-    }
-
-    /// Accessors for the coordinate tuple components converted to f64
-    fn x_as_f64(&self) -> f64 {
-        self.0[0]
-    }
-    fn y_as_f64(&self) -> f64 {
-        self.0[1]
-    }
-    fn z_as_f64(&self) -> f64 {
-        self.0[2]
-    }
-    fn t_as_f64(&self) -> f64 {
-        f64::NAN
-    }
-    fn m_as_f64(&self) -> f64 {
-        f64::NAN
-    }
+    fn x(&self) -> Self::T { self.0[0] }
+    fn y(&self) -> Self::T { self.0[1] }
+    fn z(&self) -> Self::T { self.0[2] }
+    fn t(&self) -> Self::T { f64::NAN  }
+    fn m(&self) -> Self::T { f64::NAN  }
 }
 
+#[rustfmt::skip]
 impl CoordTrait for Coor4D {
     type T = f64;
     const DIMENSION: usize = 4;
     const MEASURE: bool = false;
+    fn x(&self) -> Self::T { self.0[0] }
+    fn y(&self) -> Self::T { self.0[1] }
+    fn z(&self) -> Self::T { self.0[2] }
+    fn t(&self) -> Self::T { self.0[3] }
+    fn m(&self) -> Self::T { f64::NAN  }
+}
 
-    /// Accessors for the coordinate tuple components
-    fn x(&self) -> Self::T {
-        self.0[0]
-    }
-    fn y(&self) -> Self::T {
-        self.0[1]
-    }
-    fn z(&self) -> Self::T {
-        self.0[2]
-    }
-    fn t(&self) -> Self::T {
-        self.0[3]
-    }
-    fn m(&self) -> Self::T {
-        f64::NAN
-    }
-
-    /// Accessors for the coordinate tuple components converted to f64
-    fn x_as_f64(&self) -> f64 {
-        self.0[0]
-    }
-    fn y_as_f64(&self) -> f64 {
-        self.0[1]
-    }
-    fn z_as_f64(&self) -> f64 {
-        self.0[2]
-    }
-    fn t_as_f64(&self) -> f64 {
-        self.0[3]
-    }
-    fn m_as_f64(&self) -> f64 {
-        f64::NAN
-    }
+// And let's also implement it for a plain 2D f64 tuple
+#[rustfmt::skip]
+impl CoordTrait for (f64, f64) {
+    type T = f64;
+    const DIMENSION: usize = 2;
+    const MEASURE: bool = false;
+    fn x(&self) -> Self::T { self.0    }
+    fn y(&self) -> Self::T { self.1    }
+    fn z(&self) -> Self::T { f64::NAN  }
+    fn t(&self) -> Self::T { f64::NAN  }
+    fn m(&self) -> Self::T { f64::NAN  }
 }

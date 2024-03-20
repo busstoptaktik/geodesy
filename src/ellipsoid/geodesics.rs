@@ -1,4 +1,6 @@
-use crate::coordinate::CoordTrait;
+use num_traits::AsPrimitive;
+
+use crate::coordinate::{CoordTrait, CoordTuples};
 
 // Now using an extended version of Kyle Barron's CoordTrait, cf. src/coordinate/mod.rs
 
@@ -18,10 +20,7 @@ impl Ellipsoid {
     /// Federico Dolce and Michael Kirk, provides a Rust implementation of Karney's algorithm.
     #[must_use]
     #[allow(non_snake_case)]
-    pub fn geodesic_fwd<T>(&self, from: &T, azimuth: f64, distance: f64) -> Coor4D
-    where
-        T: CoordTrait,
-    {
+    pub fn geodesic_fwd<G: CoordTuples>(&self, from: &G, azimuth: f64, distance: f64) -> Coor4D {
         // Coordinates of the point of origin, P1
         let (L1, B1) = from.xy_as_f64();
 
@@ -99,10 +98,7 @@ impl Ellipsoid {
     /// See [`geodesic_fwd`](crate::Ellipsoid::geodesic_fwd)
     #[must_use]
     #[allow(non_snake_case)] // So we can use the mathematical notation from the original text
-    pub fn geodesic_inv<T>(&self, from: &T, to: &T) -> Coor4D
-    where
-        T: CoordTrait,
-    {
+    pub fn geodesic_inv<G: CoordTrait>(&self, from: &G, to: &G) -> Coor4D {
         let (L1, B1) = from.xy_as_f64();
         let (L2, B2) = to.xy_as_f64();
         let B = B2 - B1;
@@ -204,11 +200,11 @@ impl Ellipsoid {
     /// }
     /// ```
     #[must_use]
-    pub fn distance<T>(&self, from: &T, to: &T) -> f64
+    pub fn distance<G: CoordTrait>(&self, from: &G, to: &G) -> f64
     where
-        T: CoordTrait,
+        G::T: AsPrimitive<f64>,
     {
-        self.geodesic_inv::<T>(from, to)[2]
+        self.geodesic_inv::<G>(from, to)[2]
     }
 }
 
