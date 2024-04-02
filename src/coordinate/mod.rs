@@ -82,6 +82,8 @@ pub trait CoordinateMetadata {
 impl<T> CoordinateMetadata for T where T: ?Sized {}
 
 /// CoordinateSet is the fundamental coordinate access interface in ISO-19111.
+/// Strictly speaking, it is not a set, but (in abstract terms) rather an
+/// indexed list, or (in more concrete terms): An array.
 ///
 /// Here it is implemented simply as an accessor trait, that allows us to
 /// access any user provided data model by iterating over its elements,
@@ -89,13 +91,18 @@ impl<T> CoordinateMetadata for T where T: ?Sized {}
 pub trait CoordinateSet: CoordinateMetadata {
     /// Number of coordinate tuples in the set
     fn len(&self) -> usize;
+
     /// Access the `index`th coordinate tuple
     fn get_coord(&self, index: usize) -> Coor4D;
+
     /// Overwrite the `index`th coordinate tuple
     fn set_coord(&mut self, index: usize, value: &Coor4D);
+
+    /// Companion to `len()`
     fn is_empty(&self) -> bool {
         self.len() == 0
     }
+
     /// Set all coordinate tuples in the set to NaN
     fn stomp(&mut self) {
         let nanny = Coor4D::nan();
@@ -105,130 +112,130 @@ pub trait CoordinateSet: CoordinateMetadata {
     }
 }
 
-//-----------------------------------------------------------------------
-// An experiment with an extended version of Kyle Barron's CoordTrait PR
-// over at https://github.com/georust/geo/pull/1157
-//-----------------------------------------------------------------------
-
-// The next 8 lines are mostly copied from georust/geo/geo-types/src/lib.rs
-// Although I added ToPrimitive in the first line
-use core::fmt::Debug;
-use num_traits::{Float, Num, NumCast, ToPrimitive};
-pub trait CoordinateType: Num + Copy + NumCast + PartialOrd + Debug {}
-impl<T: Num + Copy + NumCast + PartialOrd + Debug> CoordinateType for T {}
-pub trait CoordNum: CoordinateType + Debug {}
-impl<T: CoordinateType + Debug> CoordNum for T {}
-pub trait CoordFloat: CoordNum + Float {}
-impl<T: CoordNum + Float> CoordFloat for T {}
-
-// And here is Kyle Barron's CoordTrait from https://github.com/georust/geo/pull/1157
-// extended with z(), t(), m(), and associated consts DIMENSION and MEASURE
-pub trait CoordTrait {
-    type T: CoordNum;
+/// The CoordinateTuple is the ISO-19111 atomic spatial/spatiotemporal
+/// referencing element. Loosely speaking, a CoordinateSet consists of
+/// CoordinateTuples.
+/// 
+/// Note that (despite the formal name) the underlying data structure
+/// need not be a tuple: It can be any item, for which it makes sense
+/// to implement the CoordinateTuple trait.
+/// 
+/// The CoordinateTuple trait provides a number of convenience accessors
+/// for accessing single coordinate elements or tuples of subsets.
+/// These accessors are pragmatically named (x, y, xy, etc.). While these
+/// names may be geodetically naive, they are suggestive and practical, and
+/// aligns well with the internal coordinate order convention of most
+/// Geodesy operators.
+/// 
+/// All accessors have default implementations, except the
+/// [`unchecked_nth()`](crate::coordinate::CoordinateTuple::unchecked_nth) function,
+/// which must be provided by the implementer.
+/// 
+/// When accessing dimensions outside of the domain of the CoordinateTuple,
+/// [NaN](f64::NAN) will be returned.
+#[rustfmt::skip]
+pub trait CoordinateTuple {
     const DIMENSION: usize;
-    const MEASURE: bool;
 
-    /// Accessors for the coordinate tuple components
-    fn x(&self) -> Self::T;
-    fn y(&self) -> Self::T;
-    fn z(&self) -> Self::T;
-    fn t(&self) -> Self::T;
-    fn m(&self) -> Self::T;
+    /// Access the n'th (0-based) element of the CoordinateTuple.
+    /// May panic if n >= DIMENSION.
+    /// See also [`nth()`](crate::coordinate::CoordinateTuple::nth).
+    fn unchecked_nth(&self, n: usize) -> f64;
 
-    /// Returns a tuple that contains the two first components of the coord.
-    fn x_y(&self) -> (Self::T, Self::T) {
+    /// Access the n'th (0-based) element of the CoordinateTuple.
+    /// Returns NaN if `n >= DIMENSION`.
+    /// See also [`unchecked_nth()`](crate::coordinate::CoordinateTuple::unchecked_nth).
+    fn nth(&self, n: usize) -> f64 {
+        if Self::DIMENSION < n { self.nth(n) } else {f64::NAN}
+    }
+
+    /// Alternative to the DIMENSION associated const. May take over in order to
+    /// make the trait object safe.
+    fn dim(&self) -> usize {
+        Self::DIMENSION
+    }
+
+    // Note: We use unchecked_nth and explicitly check for dimension in
+    // y(), z() and t(), rather than leaving the check to nth(...).
+    // This is because the checks in these cases are constant expressions,
+    // and hence can be eliminated by the compiler in the concrete cases
+    // of implementation.
+
+    /// Pragmatically named accessor for the first element of the CoordinateTuple.
+    fn x(&self) -> f64 {
+        self.unchecked_nth(0)
+    }
+
+    /// Pragmatically named accessor for the second element of the CoordinateTuple.
+    fn y(&self) -> f64 {
+        if Self::DIMENSION > 1 { self.unchecked_nth(1) } else {f64::NAN}
+    }
+    
+    /// Pragmatically named accessor for the third element of the CoordinateTuple.
+    fn z(&self) -> f64 {
+        if Self::DIMENSION > 2 { self.unchecked_nth(2) } else {f64::NAN}
+    }
+    
+    /// Pragmatically named accessor for the fourth element of the CoordinateTuple.
+    fn t(&self) -> f64 {
+        if Self::DIMENSION > 3 { self.unchecked_nth(3) } else {f64::NAN}
+    }
+
+    /// A tuple containing the first two components of the CoordinateTuple.
+    fn xy(&self) -> (f64, f64) {
         (self.x(), self.y())
     }
-}
 
-// The CoordTuples trait is blanket-implemented for anything that
-// CoordTrait is implemented for
-impl<C: CoordTrait> CoordTuples for C {}
-
-// And here the actual implementation, which takes any CoordTrait implementing
-// data type, and lets us access the contents as geodesy-compatible f64 tuples
-#[rustfmt::skip]
-pub trait CoordTuples: CoordTrait {
-    /// Accessors for the coordinate tuple components converted to f64
-    fn x_as_f64(&self) -> f64 { self.x().to_f64().unwrap_or(f64::NAN) }
-    fn y_as_f64(&self) -> f64 { self.y().to_f64().unwrap_or(f64::NAN) }
-    fn z_as_f64(&self) -> f64 { self.z().to_f64().unwrap_or(f64::NAN) }
-    fn t_as_f64(&self) -> f64 { self.t().to_f64().unwrap_or(f64::NAN) }
-    fn m_as_f64(&self) -> f64 { self.m().to_f64().unwrap_or(f64::NAN) }
-
-    fn xy_as_f64(&self) -> (f64, f64) {
-        (self.x_as_f64(), self.y_as_f64())
+    /// A tuple containing the first three components of the CoordinateTuple.
+    fn xyz(&self) -> (f64, f64, f64) {
+        (self.x(), self.y(), self.z())
     }
 
-    fn xyz_as_f64(&self) -> (f64, f64, f64) {
-        (self.x_as_f64(), self.y_as_f64(), self.z_as_f64())
-    }
-
-    fn xyzt_as_f64(&self) -> (f64, f64, f64, f64) {
-        (self.x_as_f64(), self.y_as_f64(), self.z_as_f64(), self.t_as_f64())
+    /// A tuple containing the first four components of the CoordinateTuple.
+    fn xyzt(&self) -> (f64, f64, f64, f64) {
+        (self.x(), self.y(), self.z(), self.t())
     }
 }
 
-// We must still implement the foundational CoordTrait trait for
+// We must still implement the CoordinateTuple trait for
 // the Geodesy data types Coor2D, Coor32, Coor3D, Coor4D
-
-#[rustfmt::skip]
-impl CoordTrait for Coor2D {
-    type T = f64;
+impl CoordinateTuple for Coor2D {
     const DIMENSION: usize = 2;
-    const MEASURE: bool = false;
-    fn x(&self) -> Self::T { self.0[0] }
-    fn y(&self) -> Self::T { self.0[1] }
-    fn z(&self) -> Self::T { f64::NAN  }
-    fn t(&self) -> Self::T { f64::NAN  }
-    fn m(&self) -> Self::T { f64::NAN  }
+    fn unchecked_nth(&self, n: usize) -> f64 {
+        self.0[n]
+    }
 }
 
-#[rustfmt::skip]
-impl CoordTrait for Coor32 {
-    type T = f32;
-    const DIMENSION: usize = 2;
-    const MEASURE: bool = false;
-    fn x(&self) -> Self::T { self.0[0] }
-    fn y(&self) -> Self::T { self.0[1] }
-    fn z(&self) -> Self::T { f32::NAN  }
-    fn t(&self) -> Self::T { f32::NAN  }
-    fn m(&self) -> Self::T { f32::NAN  }
-}
-
-#[rustfmt::skip]
-impl CoordTrait for Coor3D {
-    type T = f64;
+impl CoordinateTuple for Coor3D {
     const DIMENSION: usize = 3;
-    const MEASURE: bool = false;
-    fn x(&self) -> Self::T { self.0[0] }
-    fn y(&self) -> Self::T { self.0[1] }
-    fn z(&self) -> Self::T { self.0[2] }
-    fn t(&self) -> Self::T { f64::NAN  }
-    fn m(&self) -> Self::T { f64::NAN  }
+    fn unchecked_nth(&self, n: usize) -> f64 {
+        self.0[n]
+    }
 }
 
-#[rustfmt::skip]
-impl CoordTrait for Coor4D {
-    type T = f64;
+impl CoordinateTuple for Coor4D {
     const DIMENSION: usize = 4;
-    const MEASURE: bool = false;
-    fn x(&self) -> Self::T { self.0[0] }
-    fn y(&self) -> Self::T { self.0[1] }
-    fn z(&self) -> Self::T { self.0[2] }
-    fn t(&self) -> Self::T { self.0[3] }
-    fn m(&self) -> Self::T { f64::NAN  }
+    fn unchecked_nth(&self, n: usize) -> f64 {
+        self.0[n]
+    }
+}
+
+impl CoordinateTuple for Coor32 {
+    const DIMENSION: usize = 2;
+    fn unchecked_nth(&self, n: usize) -> f64 {
+        self.0[n] as f64
+    }
 }
 
 // And let's also implement it for a plain 2D f64 tuple
 #[rustfmt::skip]
-impl CoordTrait for (f64, f64) {
-    type T = f64;
+impl CoordinateTuple for (f64, f64) {
     const DIMENSION: usize = 2;
-    const MEASURE: bool = false;
-    fn x(&self) -> Self::T { self.0    }
-    fn y(&self) -> Self::T { self.1    }
-    fn z(&self) -> Self::T { f64::NAN  }
-    fn t(&self) -> Self::T { f64::NAN  }
-    fn m(&self) -> Self::T { f64::NAN  }
+    fn unchecked_nth(&self, n: usize) -> f64 {
+        match n {
+            0 => self.0,
+            1 => self.1,
+            _ => panic!()
+        }
+    }
 }

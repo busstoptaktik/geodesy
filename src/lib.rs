@@ -21,6 +21,7 @@ pub mod prelude {
     pub use crate::Coor4D;
     pub use crate::CoordinateMetadata;
     pub use crate::CoordinateSet;
+    pub use crate::CoordinateTuple;
 
     // Et cetera
     pub use crate::Ellipsoid;
@@ -180,6 +181,7 @@ pub use crate::coordinate::coor4d::Coor4D;
 pub use crate::coordinate::AngularUnits;
 pub use crate::coordinate::CoordinateMetadata;
 pub use crate::coordinate::CoordinateSet;
+pub use crate::coordinate::CoordinateTuple;
 
 // ---- Et cetera ----
 
