@@ -115,22 +115,22 @@ pub trait CoordinateSet: CoordinateMetadata {
 /// The CoordinateTuple is the ISO-19111 atomic spatial/spatiotemporal
 /// referencing element. Loosely speaking, a CoordinateSet consists of
 /// CoordinateTuples.
-/// 
+///
 /// Note that (despite the formal name) the underlying data structure
 /// need not be a tuple: It can be any item, for which it makes sense
 /// to implement the CoordinateTuple trait.
-/// 
+///
 /// The CoordinateTuple trait provides a number of convenience accessors
 /// for accessing single coordinate elements or tuples of subsets.
 /// These accessors are pragmatically named (x, y, xy, etc.). While these
 /// names may be geodetically naive, they are suggestive and practical, and
 /// aligns well with the internal coordinate order convention of most
 /// Geodesy operators.
-/// 
+///
 /// All accessors have default implementations, except the
 /// [`unchecked_nth()`](crate::coordinate::CoordinateTuple::unchecked_nth) function,
 /// which must be provided by the implementer.
-/// 
+///
 /// When accessing dimensions outside of the domain of the CoordinateTuple,
 /// [NaN](f64::NAN) will be returned.
 #[rustfmt::skip]
@@ -170,12 +170,12 @@ pub trait CoordinateTuple {
     fn y(&self) -> f64 {
         if Self::DIMENSION > 1 { self.unchecked_nth(1) } else {f64::NAN}
     }
-    
+
     /// Pragmatically named accessor for the third element of the CoordinateTuple.
     fn z(&self) -> f64 {
         if Self::DIMENSION > 2 { self.unchecked_nth(2) } else {f64::NAN}
     }
-    
+
     /// Pragmatically named accessor for the fourth element of the CoordinateTuple.
     fn t(&self) -> f64 {
         if Self::DIMENSION > 3 { self.unchecked_nth(3) } else {f64::NAN}
@@ -195,7 +195,83 @@ pub trait CoordinateTuple {
     fn xyzt(&self) -> (f64, f64, f64, f64) {
         (self.x(), self.y(), self.z(), self.t())
     }
+
+
+    /// A tuple containing the first two components of the CoordinateTuple
+    /// converted from radians to degrees
+    fn xy_in_degrees(&self) -> (f64, f64) {
+        (self.x().to_degrees(), self.y().to_degrees())
+    }
+
+    /// A tuple containing the first three components of the CoordinateTuple,
+    /// with the first two converted from radians to degrees.
+    fn xyz_in_degrees(&self) -> (f64, f64, f64) {
+        (self.x().to_degrees(), self.y().to_degrees(), self.z())
+    }
+
+    /// A tuple containing the first four components of the CoordinateTuple,
+    /// with the first two converted from radians to degrees.
+    fn xyzt_in_degrees(&self) -> (f64, f64, f64, f64) {
+        (self.x().to_degrees(), self.y().to_degrees(), self.z(), self.t())
+    }
+
+
+    /// A tuple containing the first two components of the CoordinateTuple,
+    /// converted from radians to seconds-of-arc
+    fn xy_in_arcsec(&self) -> (f64, f64) {
+        (self.x().to_degrees()*3600., self.y().to_degrees()*3600.)
+    }
+
+    /// A tuple containing the first three components of the CoordinateTuple,
+    /// with the first two converted to seconds-of-arc
+    fn xyz_in_arcsec(&self) -> (f64, f64, f64) {
+        (self.x().to_degrees()*3600., self.y().to_degrees()*3600., self.z())
+    }
+
+    /// A tuple containing the first four components of the CoordinateTuple,
+    /// with the first two converted to seconds-of-arc
+    fn xyzt_in_arcsec(&self) -> (f64, f64, f64, f64) {
+        (self.x().to_degrees()*3600., self.y().to_degrees()*3600., self.z(), self.t())
+    }
+
+    /// A tuple containing the first two components of the CoordinateTuple,
+    /// converted from degrees to radians
+    fn xy_in_radians(&self) -> (f64, f64) {
+        (self.x().to_radians(), self.y().to_radians())
+    }
+
+    /// A tuple containing the first three components of the CoordinateTuple,
+    /// with the first two converted from degrees to radians
+    fn xyz_in_radians(&self) -> (f64, f64, f64) {
+        (self.x().to_radians(), self.y().to_radians(), self.z())
+    }
+
+    /// A tuple containing the first four components of the CoordinateTuple,
+    /// with the first two converted from degrees to radians
+    fn xyzt_in_radians(&self) -> (f64, f64, f64, f64) {
+        (self.x().to_radians(), self.y().to_radians(), self.z(), self.t())
+    }
+
+    /// Replace the n'th (0-based) element of the `CoordinateTuple` with `value`.
+    /// May panic if n >= [DIMENSION].
+    /// See also [`set_nth()`](crate::coordinate::CoordinateTuple::nth).
+    fn unchecked_set_nth(&mut self, n: usize, value: f64);
+
+    /// Replace the `N` first (up to [DIMENSION]) elements of `self` with the
+    /// elements of `value`
+    fn set<const N: usize>(&mut self, value: [f64; N]) {
+        for i in 0..N.min(Self::DIMENSION) {
+            self.unchecked_set_nth(i, value[i])
+        }
+    }
 }
+
+
+
+
+// We must still implement the CoordinateTuple trait for
+// the Geodesy data types Coor2D, Coor32, Coor3D, Coor4D
+
 
 // We must still implement the CoordinateTuple trait for
 // the Geodesy data types Coor2D, Coor32, Coor3D, Coor4D
@@ -204,12 +280,20 @@ impl CoordinateTuple for Coor2D {
     fn unchecked_nth(&self, n: usize) -> f64 {
         self.0[n]
     }
+
+    fn unchecked_set_nth(&mut self, n: usize, value: f64) {
+        self.0[n] = value;
+    }
 }
 
 impl CoordinateTuple for Coor3D {
     const DIMENSION: usize = 3;
     fn unchecked_nth(&self, n: usize) -> f64 {
         self.0[n]
+    }
+
+    fn unchecked_set_nth(&mut self, n: usize, value: f64) {
+        self.0[n] = value;
     }
 }
 
@@ -218,12 +302,20 @@ impl CoordinateTuple for Coor4D {
     fn unchecked_nth(&self, n: usize) -> f64 {
         self.0[n]
     }
+
+    fn unchecked_set_nth(&mut self, n: usize, value: f64) {
+        self.0[n] = value;
+    }
 }
 
 impl CoordinateTuple for Coor32 {
     const DIMENSION: usize = 2;
     fn unchecked_nth(&self, n: usize) -> f64 {
         self.0[n] as f64
+    }
+
+    fn unchecked_set_nth(&mut self, n: usize, value: f64) {
+        self.0[n] = value as f32;
     }
 }
 
@@ -236,6 +328,14 @@ impl CoordinateTuple for (f64, f64) {
             0 => self.0,
             1 => self.1,
             _ => panic!()
+        }
+    }
+
+    fn unchecked_set_nth(&mut self, n: usize, value: f64) {
+        match n {
+            0 => self.0 = value,
+            1 => self.1 = value,
+            _ => ()
         }
     }
 }

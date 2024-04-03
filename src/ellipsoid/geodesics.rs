@@ -16,12 +16,7 @@ impl Ellipsoid {
     /// Federico Dolce and Michael Kirk, provides a Rust implementation of Karney's algorithm.
     #[must_use]
     #[allow(non_snake_case)]
-    pub fn geodesic_fwd<G: CoordinateTuple>(
-        &self,
-        from: &G,
-        azimuth: f64,
-        distance: f64,
-    ) -> Coor4D {
+    pub fn geodesic_fwd<C: CoordinateTuple>(&self, from: &C, azimuth: f64, distance: f64) -> Coor4D {
         // Coordinates of the point of origin, P1
         let (L1, B1) = from.xy();
 
@@ -99,7 +94,7 @@ impl Ellipsoid {
     /// See [`geodesic_fwd`](crate::Ellipsoid::geodesic_fwd)
     #[must_use]
     #[allow(non_snake_case)] // So we can use the mathematical notation from the original text
-    pub fn geodesic_inv<G: CoordinateTuple>(&self, from: &G, to: &G) -> Coor4D {
+    pub fn geodesic_inv<C: CoordinateTuple>(&self, from: &C, to: &C) -> Coor4D {
         let (L1, B1) = from.xy();
         let (L2, B2) = to.xy();
         let B = B2 - B1;
