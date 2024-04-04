@@ -1,12 +1,11 @@
 use super::*;
 use crate::math::angular;
-use std::ops::{Index, IndexMut};
 
 /// Generic 2D Coordinate tuple, with no fixed interpretation of the elements
 #[derive(Debug, Default, PartialEq, Copy, Clone)]
 pub struct Coor2D(pub [f64; 2]);
 
-// ----- O P E R A T O R   T R A I T S -------------------------------------------------
+use std::ops::{Index, IndexMut};
 
 impl Index<usize> for Coor2D {
     type Output = f64;
@@ -18,34 +17,6 @@ impl Index<usize> for Coor2D {
 impl IndexMut<usize> for Coor2D {
     fn index_mut(&mut self, i: usize) -> &mut Self::Output {
         &mut self.0[i]
-    }
-}
-
-// ----- A N G U L A R   U N I T S -------------------------------------------
-
-impl AngularUnits for Coor2D {
-    /// Transform the elements of a `Coor2D` from degrees to radians
-    #[must_use]
-    fn to_radians(self) -> Self {
-        Coor2D([self[0].to_radians(), self[1].to_radians()])
-    }
-
-    /// Transform the elements of a `Coor2D` from radians to degrees
-    #[must_use]
-    fn to_degrees(self) -> Self {
-        Coor2D([self[0].to_degrees(), self[1].to_degrees()])
-    }
-
-    /// Transform the elements of a `Coor2D` from radians to seconds of arc.
-    #[must_use]
-    fn to_arcsec(self) -> Self {
-        Coor2D([self[0].to_degrees() * 3600., self[1].to_degrees() * 3600.])
-    }
-
-    /// Transform the internal lon/lat-in-radians to lat/lon-in-degrees
-    #[must_use]
-    fn to_geo(self) -> Self {
-        Coor2D([self[1].to_degrees(), self[0].to_degrees()])
     }
 }
 
@@ -127,53 +98,13 @@ impl Coor2D {
     /// Multiply by a scalar
     #[must_use]
     pub fn scale(&self, factor: f64) -> Coor2D {
-        Coor2D([self[0] * factor, self[1] * factor])
+        Coor2D([self.x() * factor, self.y() * factor])
     }
 
     /// Scalar product
     #[must_use]
     pub fn dot(&self, other: Coor2D) -> f64 {
-        self[0] * other[0] + self[1] * other[1]
-    }
-}
-
-// ----- D I S T A N C E S ---------------------------------------------------
-
-impl Coor2D {
-    /// Euclidean distance between two points in the 2D plane.
-    ///
-    /// Primarily used to compute the distance between two projected points
-    /// in their projected plane. Typically, this distance will differ from
-    /// the actual distance in the real world.
-    ///
-    /// # See also:
-    ///
-    /// [`distance`](crate::ellipsoid::Ellipsoid::distance)
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use geodesy::prelude::*;
-    /// let t = 1000 as f64;
-    /// let p0 = Coor2D::origin();
-    /// let p1 = Coor2D::raw(t, t);
-    /// assert_eq!(p0.hypot2(&p1), t.hypot(t));
-    /// ```
-    #[must_use]
-    pub fn hypot2(&self, other: &Self) -> f64 {
-        (self[0] - other[0]).hypot(self[1] - other[1])
-    }
-}
-
-impl From<Coor2D> for Coor4D {
-    fn from(c: Coor2D) -> Self {
-        Coor4D([c[0], c[1], 0.0, 0.0])
-    }
-}
-
-impl From<Coor4D> for Coor2D {
-    fn from(xyzt: Coor4D) -> Self {
-        Coor2D([xyzt[0], xyzt[1]])
+        self.x() * other.x() + self.y() * other.y()
     }
 }
 
@@ -197,16 +128,15 @@ mod tests {
         let c = Coor2D::raw(12., 55.).to_radians();
         let d = Coor2D::gis(12., 55.);
         assert_eq!(c, d);
-        assert_eq!(d[0], 12f64.to_radians());
-        let e = d.to_degrees();
-        assert_eq!(e[0], c.to_degrees()[0]);
+        assert_eq!(d.x(), 12f64.to_radians());
+        assert_eq!(d.x().to_degrees(), c.x().to_degrees());
     }
 
     #[test]
     fn array() {
         let b = Coor2D::raw(7., 8.);
-        let c = [b[0], b[1], f64::NAN, f64::NAN];
-        assert_eq!(b[0], c[0]);
+        let c = [b.x(), b.y(), f64::NAN, f64::NAN];
+        assert_eq!(b.x(), c[0]);
     }
 
     #[test]

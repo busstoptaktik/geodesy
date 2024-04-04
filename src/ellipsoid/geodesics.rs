@@ -16,7 +16,12 @@ impl Ellipsoid {
     /// Federico Dolce and Michael Kirk, provides a Rust implementation of Karney's algorithm.
     #[must_use]
     #[allow(non_snake_case)]
-    pub fn geodesic_fwd<C: CoordinateTuple>(&self, from: &C, azimuth: f64, distance: f64) -> Coor4D {
+    pub fn geodesic_fwd<C: CoordinateTuple>(
+        &self,
+        from: &C,
+        azimuth: f64,
+        distance: f64,
+    ) -> Coor4D {
         // Coordinates of the point of origin, P1
         let (L1, B1) = from.xy();
 
@@ -238,9 +243,9 @@ mod tests {
         assert!((d[2] - 2365723.367715).abs() < 1e-4);
 
         // And the other way round...
-        let b = ellps.geodesic_fwd(&p1, d[0], d[2]).to_degrees();
-        assert!((b[0] - p2[0].to_degrees()).abs() < 1e-9);
-        assert!((b[1] - p2[1].to_degrees()).abs() < 1e-9);
+        let b = ellps.geodesic_fwd(&p1, d[0], d[2]);
+        assert!((b[0].to_degrees() - p2[0].to_degrees()).abs() < 1e-9);
+        assert!((b[1].to_degrees() - p2[1].to_degrees()).abs() < 1e-9);
         Ok(())
     }
 }

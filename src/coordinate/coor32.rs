@@ -1,6 +1,5 @@
 /// Tiny coordinate type: 2D, 32 bits, only one fourth the weight of a Coord.
 /// Probably only useful for small scale world maps, without too much zoom.
-use super::*;
 use crate::math::angular;
 use std::ops::{Index, IndexMut};
 
@@ -20,34 +19,6 @@ impl Index<usize> for Coor32 {
 impl IndexMut<usize> for Coor32 {
     fn index_mut(&mut self, i: usize) -> &mut Self::Output {
         &mut self.0[i]
-    }
-}
-
-// ----- A N G U L A R   U N I T S -------------------------------------------
-
-impl AngularUnits for Coor32 {
-    /// Transform the first two elements of a `Coor32` from degrees to radians
-    #[must_use]
-    fn to_radians(self) -> Self {
-        Coor32([self[0].to_radians(), self[1].to_radians()])
-    }
-
-    /// Transform the elements of a `Coor32` from radians to degrees
-    #[must_use]
-    fn to_degrees(self) -> Self {
-        Coor32([self[0].to_degrees(), self[1].to_degrees()])
-    }
-
-    /// Transform the elements of a `Coor32` from radians to seconds of arc.
-    #[must_use]
-    fn to_arcsec(self) -> Self {
-        Coor32([self[0].to_degrees() * 3600., self[1].to_degrees() * 3600.])
-    }
-
-    /// Transform the internal lon/lat-in-radians to lat/lon-in-degrees
-    #[must_use]
-    fn to_geo(self) -> Self {
-        Coor32([self[1].to_degrees(), self[0].to_degrees()])
     }
 }
 
@@ -139,51 +110,12 @@ impl Coor32 {
     }
 }
 
-impl From<Coor32> for Coor4D {
-    fn from(c: Coor32) -> Self {
-        Coor4D([c[0] as f64, c[1] as f64, 0.0, f64::NAN])
-    }
-}
-
-impl From<Coor4D> for Coor32 {
-    fn from(xyzt: Coor4D) -> Self {
-        Coor32::raw(xyzt[0], xyzt[1])
-    }
-}
-
-// ----- D I S T A N C E S ---------------------------------------------------
-
-impl Coor32 {
-    /// Euclidean distance between two points in the 2D plane.
-    ///
-    /// Primarily used to compute the distance between two projected points
-    /// in their projected plane. Typically, this distance will differ from
-    /// the actual distance in the real world.
-    ///
-    /// # See also:
-    ///
-    /// [`distance`](crate::ellipsoid::Ellipsoid::distance)
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use geodesy::prelude::*;
-    /// let t = 1000.;
-    /// let p0 = Coor32::origin();
-    /// let p1 = Coor32::raw(t, t);
-    /// assert_eq!(p0.hypot2(&p1), t.hypot(t));
-    /// ```
-    #[must_use]
-    pub fn hypot2(&self, other: &Self) -> f64 {
-        (self[0] as f64 - other[0] as f64).hypot(self[1] as f64 - other[1] as f64)
-    }
-}
-
 // ----- T E S T S ---------------------------------------------------
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use crate::prelude::*;
+
     #[test]
     fn distances() {
         let lat = angular::dms_to_dd(55, 30, 36.);

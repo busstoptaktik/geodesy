@@ -148,6 +148,7 @@ pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::coordinate::AngularUnits;
 
     #[test]
     fn gridshift() -> Result<(), Error> {

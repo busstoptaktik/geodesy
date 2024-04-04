@@ -381,11 +381,11 @@ mod tests {
         // Now instantiating the macro with ham = 2
         let op = ctx.op("helmert:ham ham=2")?;
         ctx.apply(op, Fwd, &mut data)?;
-        assert_eq!(data[0][0], 57.);
-        assert_eq!(data[1][0], 61.);
+        assert_eq!(data[0].x(), 57.);
+        assert_eq!(data[1].x(), 61.);
         ctx.apply(op, Inv, &mut data)?;
-        assert_eq!(data[0][0], 55.);
-        assert_eq!(data[1][0], 59.);
+        assert_eq!(data[0].x(), 55.);
+        assert_eq!(data[1].x(), 59.);
 
         Ok(())
     }

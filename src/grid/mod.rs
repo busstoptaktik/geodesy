@@ -340,6 +340,7 @@ pub fn grids_at(grids: &[Arc<dyn Grid>], coord: &Coor4D, use_null_grid: bool) ->
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::coordinate::AngularUnits;
 
     // lat_n, lat_s, lon_w, lon_e, dlat, dlon
     const HEADER: [f64; 6] = [58., 54., 8., 16., -1., 1.];

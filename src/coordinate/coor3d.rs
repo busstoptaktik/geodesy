@@ -1,4 +1,3 @@
-use super::*;
 use crate::math::angular;
 use std::ops::{Add, Div, Index, IndexMut, Mul, Sub};
 
@@ -73,39 +72,6 @@ impl Div for Coor3D {
             self.0[1] / other.0[1],
             self.0[2] / other.0[2],
         ])
-    }
-}
-
-// ----- A N G U L A R   U N I T S -------------------------------------------
-
-impl AngularUnits for Coor3D {
-    /// Transform the first two elements of a `Coor3D` from degrees to radians
-    #[must_use]
-    fn to_radians(self) -> Self {
-        Coor3D::raw(self[0].to_radians(), self[1].to_radians(), self[2])
-    }
-
-    /// Transform the first two elements of a `Coor3D` from radians to degrees
-    #[must_use]
-    fn to_degrees(self) -> Self {
-        Coor3D::raw(self[0].to_degrees(), self[1].to_degrees(), self[2])
-    }
-
-    /// Transform the first two elements of a `Coor3D` from radians to seconds
-    /// of arc.
-    #[must_use]
-    fn to_arcsec(self) -> Self {
-        Coor3D::raw(
-            self[0].to_degrees() * 3600.,
-            self[1].to_degrees() * 3600.,
-            self[2],
-        )
-    }
-
-    /// Transform the internal lon/lat/h/t-in-radians to lat/lon/h/t-in-degrees
-    #[must_use]
-    fn to_geo(self) -> Self {
-        Coor3D::raw(self[1].to_degrees(), self[0].to_degrees(), self[2])
     }
 }
 
@@ -201,74 +167,12 @@ impl Coor3D {
     }
 }
 
-// ----- D I S T A N C E S ---------------------------------------------------
-
-impl Coor3D {
-    /// Euclidean distance between two points in the 2D plane.
-    ///
-    /// Primarily used to compute the distance between two projected points
-    /// in their projected plane. Typically, this distance will differ from
-    /// the actual distance in the real world.
-    ///
-    /// The distance is computed in the subspace spanned by the first and
-    /// second coordinate of the `Coor3D`s
-    ///
-    /// # See also:
-    ///
-    /// [`hypot3`](Coor3D::hypot3),
-    /// [`distance`](crate::ellipsoid::Ellipsoid::distance)
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use geodesy::prelude::*;
-    /// let t = 1000 as f64;
-    /// let p0 = Coor3D::origin();
-    /// let p1 = Coor3D::raw(t, t, 0.);
-    /// assert_eq!(p0.hypot2(&p1), t.hypot(t));
-    /// ```
-    #[must_use]
-    pub fn hypot2(&self, other: &Self) -> f64 {
-        (self[0] - other[0]).hypot(self[1] - other[1])
-    }
-
-    /// Euclidean distance between two points in the 3D space.
-    ///
-    /// Primarily used to compute the distance between two points in the
-    /// 3D cartesian space. The typical case is GNSS-observations, in which
-    /// case, the distance computed will reflect the actual distance
-    /// in the real world.
-    ///
-    /// The distance is computed in the subspace spanned by the first,
-    /// second and third coordinate of the `Coor3D`s
-    ///
-    /// # See also:
-    ///
-    /// [`hypot2`](Coor3D::hypot2),
-    /// [`distance`](crate::ellipsoid::Ellipsoid::distance)
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use geodesy::prelude::*;
-    /// let t = 1000 as f64;
-    /// let p0 = Coor3D::origin();
-    /// let p1 = Coor3D::raw(t, t, t);
-    /// assert_eq!(p0.hypot3(&p1), t.hypot(t).hypot(t));
-    /// ```
-    #[must_use]
-    pub fn hypot3(&self, other: &Self) -> f64 {
-        (self[0] - other[0])
-            .hypot(self[1] - other[1])
-            .hypot(self[2] - other[2])
-    }
-}
-
 // ----- T E S T S ---------------------------------------------------
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::prelude::*;
 
     #[test]
     fn distances() {
