@@ -95,7 +95,7 @@ impl Coor4D {
     /// A `Coor4D` from longitude/latitude/height/time, with the angular input in seconds
     /// of arc. Mostly for handling grid shift elements.
     #[must_use]
-    pub fn parcsec(longitude: f64, latitude: f64, height: f64, time: f64) -> Coor4D {
+    pub fn arcsec(longitude: f64, latitude: f64, height: f64, time: f64) -> Coor4D {
         Coor4D([
             longitude.to_radians() / 3600.,
             latitude.to_radians() / 3600.,
