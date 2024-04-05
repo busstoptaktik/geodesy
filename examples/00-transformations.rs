@@ -37,8 +37,7 @@ fn main() -> anyhow::Result<()> {
     // But since a coordinate tuple is really just an array of double
     // precision numbers, you may also generate it directly using plain
     // Rust syntax. Note that Coor2D, like f64, provides the to_radians
-    // method. So compared to cph_raw above, we can use a slightly more
-    // compact notation.
+    // method, but it operates in place, so we need two steps in this case.
     let cph_direct = Coor2D([12., 55.]).to_radians();
     // The three versions of Copenhagen coordinates should be identical.
     assert_eq!(cph, cph_raw);
@@ -79,8 +78,8 @@ fn main() -> anyhow::Result<()> {
     // Note the use of `to_geo`, which transforms lon/lat in radians
     // to lat/lon in degrees. It is defined for Coor2D as well as for
     // arrays, vectors and slices of Coor2D
-    for coord in data.to_geo() {
-        println!("    {:?}", coord);
+    for coord in data {
+        println!("    {:?}", coord.to_geo());
     }
 
     // To geo again, but using slices - in two different ways

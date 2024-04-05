@@ -1,70 +1,46 @@
 use super::*;
 
-impl<T> AngularUnits for &mut T
-where
-    T: CoordinateSet,
-{
-    /// Transform the first two elements of all elements in a
-    /// coordinate set from degrees to radians
-    fn to_radians(self) -> Self {
-        for i in 0..self.len() {
-            self.set_coord(i, &self.get_coord(i).to_radians());
-        }
-        self
-    }
-
-    /// Transform the first two elements of a all elements in a
-    /// coordinate set from radians to degrees
-    #[must_use]
-    fn to_degrees(self) -> Self {
-        for i in 0..self.len() {
-            self.set_coord(i, &self.get_coord(i).to_degrees());
-        }
-        self
-    }
-
-    /// Transform the first two elements of a all elements in a
-    /// coordinate set from radians to seconds of arc.
-    #[must_use]
-    fn to_arcsec(self) -> Self {
-        for i in 0..self.len() {
-            self.set_coord(i, &self.get_coord(i).to_arcsec());
-        }
-        self
-    }
-
-    /// Transform all elements in a coordinate set from the internal
-    /// lon/lat/h/t-in-radians to lat/lon/h/t-in-degrees
-    fn to_geo(self) -> Self {
-        for i in 0..self.len() {
-            self.set_coord(i, &self.get_coord(i).to_geo());
-        }
-        self
-    }
-}
-
 // ----- CoordinateSet implementations for some Coor4D containers ------------
-impl<const N: usize> CoordinateSet for [Coor4D; N] {
-    fn len(&self) -> usize {
-        N
-    }
-    fn get_coord(&self, index: usize) -> Coor4D {
-        self[index]
-    }
-    fn set_coord(&mut self, index: usize, value: &Coor4D) {
-        self[index] = *value;
-    }
-}
 
 impl CoordinateSet for &mut [Coor4D] {
     fn len(&self) -> usize {
         (**self).len()
     }
+    fn dim(&self) -> usize {
+        4
+    }
     fn get_coord(&self, index: usize) -> Coor4D {
         self[index]
     }
     fn set_coord(&mut self, index: usize, value: &Coor4D) {
         self[index] = *value;
+    }
+    fn xy(&self, index: usize) -> (f64, f64) {
+        self[index].xy()
+    }
+    fn set_xy(&mut self, index: usize, x: f64, y: f64) {
+        self[index].set_xy(x, y);
+    }
+}
+
+impl<const N: usize> CoordinateSet for [Coor4D; N] {
+    fn len(&self) -> usize {
+        N
+    }
+    fn dim(&self) -> usize {
+        4
+    }
+    fn get_coord(&self, index: usize) -> Coor4D {
+        self[index]
+    }
+    fn set_coord(&mut self, index: usize, value: &Coor4D) {
+        self[index] = *value;
+    }
+    fn xy(&self, index: usize) -> (f64, f64) {
+        self[index].xy()
+    }
+    fn set_xy(&mut self, index: usize, x: f64, y: f64) {
+        self[index].set_xy(x, y);
     }
 }
 
@@ -72,24 +48,43 @@ impl CoordinateSet for Vec<Coor4D> {
     fn len(&self) -> usize {
         self.len()
     }
+    fn dim(&self) -> usize {
+        4
+    }
     fn get_coord(&self, index: usize) -> Coor4D {
         self[index]
     }
     fn set_coord(&mut self, index: usize, value: &Coor4D) {
         self[index] = *value;
     }
+    fn xy(&self, index: usize) -> (f64, f64) {
+        self[index].xy()
+    }
+    fn set_xy(&mut self, index: usize, x: f64, y: f64) {
+        self[index].set_xy(x, y);
+    }
 }
 
 // ----- CoordinateSet implementations for some Coor3D containers ------------
+
 impl<const N: usize> CoordinateSet for [Coor3D; N] {
     fn len(&self) -> usize {
         N
+    }
+    fn dim(&self) -> usize {
+        3
     }
     fn get_coord(&self, index: usize) -> Coor4D {
         Coor4D([self[index][0], self[index][1], self[index][2], f64::NAN])
     }
     fn set_coord(&mut self, index: usize, value: &Coor4D) {
         self[index] = Coor3D([value[0], value[1], value[2]]);
+    }
+    fn xy(&self, index: usize) -> (f64, f64) {
+        self[index].xy()
+    }
+    fn set_xy(&mut self, index: usize, x: f64, y: f64) {
+        self[index].set_xy(x, y);
     }
 }
 
@@ -97,11 +92,20 @@ impl CoordinateSet for &mut [Coor3D] {
     fn len(&self) -> usize {
         (**self).len()
     }
+    fn dim(&self) -> usize {
+        3
+    }
     fn get_coord(&self, index: usize) -> Coor4D {
         Coor4D([self[index][0], self[index][1], self[index][2], f64::NAN])
     }
     fn set_coord(&mut self, index: usize, value: &Coor4D) {
         self[index] = Coor3D([value[0], value[1], value[2]]);
+    }
+    fn xy(&self, index: usize) -> (f64, f64) {
+        self[index].xy()
+    }
+    fn set_xy(&mut self, index: usize, x: f64, y: f64) {
+        self[index].set_xy(x, y);
     }
 }
 
@@ -109,11 +113,20 @@ impl CoordinateSet for Vec<Coor3D> {
     fn len(&self) -> usize {
         self.len()
     }
+    fn dim(&self) -> usize {
+        3
+    }
     fn get_coord(&self, index: usize) -> Coor4D {
         Coor4D([self[index][0], self[index][1], self[index][2], f64::NAN])
     }
     fn set_coord(&mut self, index: usize, value: &Coor4D) {
         self[index] = Coor3D([value[0], value[1], value[2]]);
+    }
+    fn xy(&self, index: usize) -> (f64, f64) {
+        self[index].xy()
+    }
+    fn set_xy(&mut self, index: usize, x: f64, y: f64) {
+        self[index].set_xy(x, y);
     }
 }
 
@@ -141,11 +154,20 @@ impl<const N: usize> CoordinateSet for [Coor2D; N] {
     fn len(&self) -> usize {
         N
     }
+    fn dim(&self) -> usize {
+        2
+    }
     fn get_coord(&self, index: usize) -> Coor4D {
         Coor4D([self[index][0], self[index][1], 0., f64::NAN])
     }
     fn set_coord(&mut self, index: usize, value: &Coor4D) {
         self[index] = Coor2D([value[0], value[1]]);
+    }
+    fn xy(&self, index: usize) -> (f64, f64) {
+        self[index].xy()
+    }
+    fn set_xy(&mut self, index: usize, x: f64, y: f64) {
+        self[index].set_xy(x, y);
     }
 }
 
@@ -153,11 +175,20 @@ impl CoordinateSet for &mut [Coor2D] {
     fn len(&self) -> usize {
         (**self).len()
     }
+    fn dim(&self) -> usize {
+        2
+    }
     fn get_coord(&self, index: usize) -> Coor4D {
         Coor4D([self[index][0], self[index][1], 0.0, f64::NAN])
     }
     fn set_coord(&mut self, index: usize, value: &Coor4D) {
         self[index] = Coor2D([value[0], value[1]]);
+    }
+    fn xy(&self, index: usize) -> (f64, f64) {
+        self[index].xy()
+    }
+    fn set_xy(&mut self, index: usize, x: f64, y: f64) {
+        self[index].set_xy(x, y);
     }
 }
 
@@ -165,11 +196,20 @@ impl CoordinateSet for Vec<Coor2D> {
     fn len(&self) -> usize {
         self.len()
     }
+    fn dim(&self) -> usize {
+        2
+    }
     fn get_coord(&self, index: usize) -> Coor4D {
         Coor4D([self[index][0], self[index][1], 0., f64::NAN])
     }
     fn set_coord(&mut self, index: usize, value: &Coor4D) {
         self[index] = Coor2D([value[0], value[1]]);
+    }
+    fn xy(&self, index: usize) -> (f64, f64) {
+        self[index].xy()
+    }
+    fn set_xy(&mut self, index: usize, x: f64, y: f64) {
+        self[index].set_xy(x, y);
     }
 }
 
@@ -182,6 +222,9 @@ where
 {
     fn len(&self) -> usize {
         self.0.len()
+    }
+    fn dim(&self) -> usize {
+        4
     }
     fn get_coord(&self, index: usize) -> Coor4D {
         let c = self.0.get_coord(index);
@@ -202,6 +245,9 @@ where
     fn len(&self) -> usize {
         self.0.len()
     }
+    fn dim(&self) -> usize {
+        4
+    }
     fn get_coord(&self, index: usize) -> Coor4D {
         let c = self.0.get_coord(index);
         Coor4D([c[0], c[1], c[2], self.1])
@@ -213,21 +259,12 @@ where
 
 // ----- CoordinateSet implementations for some Coor32 containers ------------
 
-impl<const N: usize> CoordinateSet for [Coor32; N] {
-    fn len(&self) -> usize {
-        N
-    }
-    fn get_coord(&self, index: usize) -> Coor4D {
-        Coor4D([self[index][0] as f64, self[index][1] as f64, 0., f64::NAN])
-    }
-    fn set_coord(&mut self, index: usize, value: &Coor4D) {
-        self[index] = Coor32::raw(value[0], value[1]);
-    }
-}
-
 impl CoordinateSet for &mut [Coor32] {
     fn len(&self) -> usize {
         (**self).len()
+    }
+    fn dim(&self) -> usize {
+        2
     }
     fn get_coord(&self, index: usize) -> Coor4D {
         Coor4D([self[index][0] as f64, self[index][1] as f64, 0.0, f64::NAN])
@@ -235,17 +272,11 @@ impl CoordinateSet for &mut [Coor32] {
     fn set_coord(&mut self, index: usize, value: &Coor4D) {
         self[index] = Coor32::raw(value[0], value[1]);
     }
-}
-
-impl CoordinateSet for Vec<Coor32> {
-    fn len(&self) -> usize {
-        self.len()
+    fn xy(&self, index: usize) -> (f64, f64) {
+        self[index].xy()
     }
-    fn get_coord(&self, index: usize) -> Coor4D {
-        Coor4D([self[index][0] as f64, self[index][1] as f64, 0., f64::NAN])
-    }
-    fn set_coord(&mut self, index: usize, value: &Coor4D) {
-        self[index] = Coor32::raw(value[0], value[1]);
+    fn set_xy(&mut self, index: usize, x: f64, y: f64) {
+        self[index].set_xy(x, y);
     }
 }
 
@@ -321,20 +352,24 @@ mod tests {
     // Test the "AngularUnits" conversion trait
     #[test]
     fn angular() {
-        let mut operands = some_basic_coor2dinates();
+        let operands = some_basic_coor2dinates();
         let cph = operands.get_coord(0);
 
         // Note the different usage patterns when using the AngularUnits trait with
         // a Coor4D and a CoordinateSet: For the latter, the blanket implementation
         // is for an `&mut T where T: CoordinateSet`, and we just mutate the contents
         // in situ. For the former, we return a newly computed `Coor4D`.
-        operands.to_radians();
         let cph = cph.to_radians();
-        assert_eq!(cph[0], operands.get_coord(0)[0]);
-        assert_eq!(cph[1], operands.get_coord(0)[1]);
+        assert_eq!(cph[0], operands.get_coord(0).to_radians()[0]);
+        assert_eq!(cph[1], operands.get_coord(0).to_radians()[1]);
 
-        operands.to_arcsec();
-        assert_eq!(cph[0].to_degrees() * 3600., operands.get_coord(0)[0]);
-        assert_eq!(cph[1].to_degrees() * 3600., operands.get_coord(0)[1]);
+        assert_eq!(
+            cph[0].to_degrees() * 3600.,
+            operands.get_coord(0).to_radians().to_arcsec()[0]
+        );
+        assert_eq!(
+            cph[1].to_degrees() * 3600.,
+            operands.get_coord(0).to_radians().to_arcsec()[1]
+        );
     }
 }

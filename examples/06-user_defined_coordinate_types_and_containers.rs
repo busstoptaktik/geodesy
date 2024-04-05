@@ -75,6 +75,9 @@ impl CoordinateSet for AbscissaCollection {
     fn len(&self) -> usize {
         4
     }
+    fn dim(&self) -> usize {
+        1
+    }
 }
 
 fn main() -> Result<(), anyhow::Error> {

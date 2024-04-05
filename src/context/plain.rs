@@ -312,16 +312,16 @@ mod tests {
 
         // ...and it works as expected?
         let mut data = some_basic_coor2dinates();
-        assert_eq!(data[0][0], 55.);
-        assert_eq!(data[1][0], 59.);
+        assert_eq!(data[0].x(), 55.);
+        assert_eq!(data[1].x(), 59.);
 
         ctx.apply(op, Fwd, &mut data)?;
-        assert_eq!(data[0][0], 56.);
-        assert_eq!(data[1][0], 60.);
+        assert_eq!(data[0].x(), 56.);
+        assert_eq!(data[1].x(), 60.);
 
         ctx.apply(op, Inv, &mut data)?;
-        assert_eq!(data[0][0], 55.);
-        assert_eq!(data[1][0], 59.);
+        assert_eq!(data[0].x(), 55.);
+        assert_eq!(data[1].x(), 59.);
 
         // Now test that the look-up functionality works in general
 
@@ -344,8 +344,8 @@ mod tests {
         let mut data = some_basic_coor2dinates();
 
         ctx.apply(op, Fwd, &mut data)?;
-        assert_eq!(data[0][0], 57.);
-        assert_eq!(data[1][0], 61.);
+        assert_eq!(data[0].x(), 57.);
+        assert_eq!(data[1].x(), 61.);
 
         // 3 Console tests from stupid.md
         let op = ctx.op("stupid:bad");
@@ -354,14 +354,14 @@ mod tests {
         let op = ctx.op("stupid:addthree")?;
         let mut data = some_basic_coor2dinates();
         ctx.apply(op, Fwd, &mut data)?;
-        assert_eq!(data[0][0], 58.);
-        assert_eq!(data[1][0], 62.);
+        assert_eq!(data[0].x(), 58.);
+        assert_eq!(data[1].x(), 62.);
 
         let op = ctx.op("stupid:addthree_one_by_one")?;
         let mut data = some_basic_coor2dinates();
         ctx.apply(op, Fwd, &mut data)?;
-        assert_eq!(data[0][0], 58.);
-        assert_eq!(data[1][0], 62.);
+        assert_eq!(data[0].x(), 58.);
+        assert_eq!(data[1].x(), 62.);
 
         // Make sure we can access "sigil-less runtime defined resources"
         ctx.register_resource("foo", "bar");

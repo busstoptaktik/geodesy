@@ -46,10 +46,9 @@ fn main() -> anyhow::Result<()> {
 
     // data.to_geo() transforms all elements in data from the internal GIS
     // format (lon/lat in radians) to lat/lon in degrees.
-    data.to_geo();
     println!("Back to ed50:");
     for coord in data {
-        println!("    {:?}", coord);
+        println!("    {:?}", coord.to_geo());
     }
 
     Ok(())

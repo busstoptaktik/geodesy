@@ -29,14 +29,15 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let range = 0..operands.len();
     let mut successes = 0_usize;
     for i in range {
-        let mut coord = operands.get_coord(i);
+        //let mut coord = operands.get_coord(i);
+        let (lon, lat) = operands.xy(i);
 
         // --- 1. Geographical -> Conformal latitude, rotated longitude
 
         // The conformal latitude
-        let lat = ellps.latitude_geographic_to_conformal(coord[1], conformal);
+        let lat = ellps.latitude_geographic_to_conformal(lat, conformal);
         // The longitude as reckoned from the central meridian
-        let lon = coord[0] - lon_0;
+        let lon = lon - lon_0;
 
         // --- 2. Conformal LAT, LNG -> complex spherical LAT
 
@@ -48,7 +49,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         // --- 3. Complex spherical N, E -> ellipsoidal normalized N, E
 
         // Some numerical optimizations from PROJ modifications by Even Rouault,
-        let inv_denom_tan_lon = 1. / sin_lat.hypot(cos_lat_lon);
+        let inv_denom_tan_lon = sin_lat.hypot(cos_lat_lon).recip();
         let tan_lon = sin_lon * cos_lat * inv_denom_tan_lon;
         // Inverse Gudermannian, using the precomputed tan(lon)
         let mut lon = tan_lon.asinh();
@@ -74,17 +75,18 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
 
         // Don't wanna play if we're too far from the center meridian
         if lon.abs() > 2.623395162778 {
-            coord[0] = f64::NAN;
-            coord[1] = f64::NAN;
+            operands.set_xy(i, f64::NAN, f64::NAN);
             continue;
         }
 
         // --- 4. ellipsoidal normalized N, E -> metric N, E
 
-        coord[0] = qs * lon + x_0; // Easting
-        coord[1] = qs * lat + zb; // Northing
+        let easting = qs * lon + x_0; // Easting
+        let northing = qs * lat + zb; // Northing
+
+        // Done!
+        operands.set_xy(i, easting, northing);
         successes += 1;
-        operands.set_coord(i, &coord);
     }
 
     successes
@@ -118,17 +120,16 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let range = 0..operands.len();
     let mut successes = 0_usize;
     for i in range {
-        let mut coord = operands.get_coord(i);
+        let (x, y) = operands.xy(i);
 
         // --- 1. Normalize N, E
 
-        let mut lon = (coord[0] - x_0) / qs;
-        let mut lat = (coord[1] - zb) / qs;
+        let mut lon = (x - x_0) / qs;
+        let mut lat = (y - zb) / qs;
 
         // Don't wanna play if we're too far from the center meridian
         if lon.abs() > 2.623395162778 {
-            coord[0] = f64::NAN;
-            coord[1] = f64::NAN;
+            operands.set_xy(i, f64::NAN, f64::NAN);
             continue;
         }
 
@@ -151,10 +152,10 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
 
         let lon = angular::normalize_symmetric(lon + lon_0);
         let lat = ellps.latitude_conformal_to_geographic(lat, conformal);
-        (coord[0], coord[1]) = (lon, lat);
 
+        // Done!
+        operands.set_xy(i, lon, lat);
         successes += 1;
-        operands.set_coord(i, &coord);
     }
 
     successes
@@ -374,8 +375,8 @@ mod tests {
         let geo = [
             Coor2D::geo( 55.,  12.),
             Coor2D::geo(-55.,  12.),
-            Coor2D::geo( 55., -6.),
-            Coor2D::geo(-55., -6.)
+            Coor2D::geo( 55.,  -6.),
+            Coor2D::geo(-55.,  -6.)
         ];
 
         #[rustfmt::skip]
@@ -407,18 +408,18 @@ mod tests {
 
         #[rustfmt::skip]
         let geo = [
-            Coor4D::geo( 55.,  12., 0., 0.),
-            Coor4D::geo(-55.,  12., 0., 0.),
-            Coor4D::geo( 55., -6., 0., 0.),
-            Coor4D::geo(-55., -6., 0., 0.)
+            Coor2D::geo( 55.,  12.),
+            Coor2D::geo(-55.,  12.),
+            Coor2D::geo( 55.,  -6.,),
+            Coor2D::geo(-55.,  -6.,)
         ];
 
         #[rustfmt::skip]
         let projected = [
-            Coor4D::raw( 691_875.632_139_661, 1e7+6_098_907.825_005_012, 0., 0.),
-            Coor4D::raw( 691_875.632_139_661, 1e7-6_098_907.825_005_012, 0., 0.),
-            Coor4D::raw(-455_673.814_189_040, 1e7+6_198_246.671_090_279, 0., 0.),
-            Coor4D::raw(-455_673.814_189_040, 1e7-6_198_246.671_090_279, 0., 0.)
+            Coor2D::raw( 691_875.632_139_661, 1e7+6_098_907.825_005_012),
+            Coor2D::raw( 691_875.632_139_661, 1e7-6_098_907.825_005_012),
+            Coor2D::raw(-455_673.814_189_040, 1e7+6_198_246.671_090_279),
+            Coor2D::raw(-455_673.814_189_040, 1e7-6_198_246.671_090_279)
         ];
 
         let mut operands = geo;

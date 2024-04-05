@@ -173,6 +173,7 @@ pub fn proj_constructor(parameters: &RawParameters, _ctx: &dyn Context) -> Resul
 fn main() -> anyhow::Result<()> {
     let mut prv = geodesy::Minimal::new();
     prv.register_op("proj", OpConstructor(proj_constructor));
+    let e = Ellipsoid::default();
 
     // Check that we can access the `proj` binary - if not, just ignore
     if Command::new("proj").stderr(Stdio::piped()).spawn().is_err() {
@@ -195,7 +196,7 @@ fn main() -> anyhow::Result<()> {
     println!("projected: {:?}", geo[0]);
 
     ctx.apply(op, Inv, &mut geo)?;
-    assert!(rtp[0].default_ellps_dist(&geo[0]) < 1e-5);
+    assert!(e.distance(&rtp[0], &geo[0]) < 1e-5);
     println!("roundtrip: {:?}", geo[0].to_degrees());
 
     // Inverted invocation - note "proj inv ..."
@@ -208,7 +209,7 @@ fn main() -> anyhow::Result<()> {
 
     // Now, we get the inverse utm projection when calling the operator in the Fwd direction
     ctx.apply(op, Fwd, &mut utm)?;
-    assert!(geo[0].default_ellps_dist(&utm[0]) < 1e-5);
+    assert!(e.distance(&utm[0], &geo[0]) < 1e-5);
     // ...and roundtrip back to utm
     ctx.apply(op, Inv, &mut utm)?;
     assert!(rtp[0].hypot2(&utm[0]) < 1e-5);

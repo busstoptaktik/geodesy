@@ -61,9 +61,8 @@ fn rumination_000() -> Result<(), anyhow::Error> {
 
     // [6] And go back, i.e. utm -> geo
     ctx.apply(utm32, Inv, &mut data)?;
-    data.to_geo();
     for coord in data {
-        println!("{:?}", coord);
+        println!("{:?}", coord.to_geo());
     }
 
     Ok(())

@@ -143,16 +143,16 @@ mod tests {
         assert_eq!(steps[2], "addone inv");
 
         let mut data = some_basic_coor2dinates();
-        assert_eq!(data[0][0], 55.);
-        assert_eq!(data[1][0], 59.);
+        assert_eq!(data[0].x(), 55.);
+        assert_eq!(data[1].x(), 59.);
 
         assert_eq!(2, ctx.apply(op, Fwd, &mut data)?);
-        assert_eq!(data[0][0], 56.);
-        assert_eq!(data[1][0], 60.);
+        assert_eq!(data[0].x(), 56.);
+        assert_eq!(data[1].x(), 60.);
 
         ctx.apply(op, Inv, &mut data)?;
-        assert_eq!(data[0][0], 55.);
-        assert_eq!(data[1][0], 59.);
+        assert_eq!(data[0].x(), 55.);
+        assert_eq!(data[1].x(), 59.);
 
         let params = ctx.params(op, 1)?;
         let ellps = params.ellps(0);
@@ -168,8 +168,8 @@ mod tests {
         let op = ctx.op("geo:in | utm zone=32 | neu:out")?;
 
         let mut data = some_basic_coor2dinates();
-        assert_eq!(data[0][0], 55.);
-        assert_eq!(data[1][0], 59.);
+        assert_eq!(data[0].x(), 55.);
+        assert_eq!(data[1].x(), 59.);
 
         ctx.apply(op, Fwd, &mut data)?;
         let expected = [6098907.825005002, 691875.6321396609];
