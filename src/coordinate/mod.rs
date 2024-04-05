@@ -189,8 +189,8 @@ pub trait CoordinateSet: CoordinateMetadata {
 /// Geodesy operators.
 ///
 /// All accessors have default implementations, except the 3 methods
-/// [`unchecked_nth()`](Self::unchecked_nth()),
-/// [`unchecked_set_nth()`](Self::unchecked_set_nth) and
+/// [`nth_unchecked()`](Self::nth_unchecked()),
+/// [`set_nth_unchecked()`](Self::set_nth_unchecked) and
 /// [`dim()`](Self::dim()),
 /// which must be provided by the implementer.
 ///
@@ -201,46 +201,46 @@ pub trait CoordinateTuple {
     /// Access the n'th (0-based) element of the CoordinateTuple.
     /// May panic if n >= DIMENSION.
     /// See also [`nth()`](Self::nth).
-    fn unchecked_nth(&self, n: usize) -> f64;
+    fn nth_unchecked(&self, n: usize) -> f64;
 
     /// Replace the n'th (0-based) element of the `CoordinateTuple` with `value`.
     /// May panic if `n >=` [`dim()`](Self::dim()).
     /// See also [`set_nth()`](Self::set_nth).
-    fn unchecked_set_nth(&mut self, n: usize, value: f64);
+    fn set_nth_unchecked(&mut self, n: usize, value: f64);
 
     /// Native dimension of the coordinate tuple
     fn dim(&self) -> usize;
 
     /// Access the n'th (0-based) element of the CoordinateTuple.
     /// Returns NaN if `n >= DIMENSION`.
-    /// See also [`unchecked_nth()`](Self::unchecked_nth).
+    /// See also [`nth()`](Self::nth_unchecked).
     fn nth(&self, n: usize) -> f64 {
-        if n < self.dim() { self.unchecked_nth(n) } else {f64::NAN}
+        if n < self.dim() { self.nth_unchecked(n) } else {f64::NAN}
     }
 
-    // Note: We use unchecked_nth and explicitly check for dimension in
+    // Note: We use nth_unchecked and explicitly check for dimension in
     // y(), z() and t(), rather than leaving the check to nth(...).
     // This is because the checks in these cases are constant expressions, and
     // hence can be eliminated by the compiler in the concrete implementations.
 
     /// Pragmatically named accessor for the first element of the CoordinateTuple.
     fn x(&self) -> f64 {
-        self.unchecked_nth(0)
+        self.nth_unchecked(0)
     }
 
     /// Pragmatically named accessor for the second element of the CoordinateTuple.
     fn y(&self) -> f64 {
-        if self.dim() > 1 { self.unchecked_nth(1) } else {f64::NAN}
+        if self.dim() > 1 { self.nth_unchecked(1) } else {f64::NAN}
     }
 
     /// Pragmatically named accessor for the third element of the CoordinateTuple.
     fn z(&self) -> f64 {
-        if self.dim() > 2 { self.unchecked_nth(2) } else {f64::NAN}
+        if self.dim() > 2 { self.nth_unchecked(2) } else {f64::NAN}
     }
 
     /// Pragmatically named accessor for the fourth element of the CoordinateTuple.
     fn t(&self) -> f64 {
-        if self.dim() > 3 { self.unchecked_nth(3) } else {f64::NAN}
+        if self.dim() > 3 { self.nth_unchecked(3) } else {f64::NAN}
     }
 
     /// A tuple containing the first two components of the CoordinateTuple.
@@ -315,16 +315,16 @@ pub trait CoordinateTuple {
     /// Fill all elements of `self` with `value`
     fn fill(&mut self, value: f64) {
         for n in 0..self.dim() {
-            self.unchecked_set_nth(n, value);
+            self.set_nth_unchecked(n, value);
         }
     }
 
     /// Replace the n'th (0-based) element of the `CoordinateTuple` with `value`.
     /// If `n >=` [`dim()`](Self::dim()) fill the coordinate with `f64::NAN`.
-    /// See also [`unchecked_set_nth()`](Self::unchecked_set_nth).
+    /// See also [`set_nth_unchecked()`](Self::set_nth_unchecked).
     fn set_nth(&mut self, n: usize, value: f64) {
         if n < self.dim() {
-            self.unchecked_set_nth(n, value)
+            self.set_nth_unchecked(n, value)
         } else {
             self.fill(f64::NAN);
         }
@@ -332,11 +332,11 @@ pub trait CoordinateTuple {
 
     /// Replace the two first elements of the `CoordinateTuple` with `x` and `y`.
     /// If the dimension in less than 2, fill the coordinate with `f64::NAN`.
-    /// See also [`unchecked_set_nth()`](Self::unchecked_set_nth).
+    /// See also [`set_nth_unchecked()`](Self::set_nth_unchecked).
     fn set_xy(&mut self, x: f64, y: f64) {
         if self.dim() > 1 {
-            self.unchecked_set_nth(0, x);
-            self.unchecked_set_nth(1, y);
+            self.set_nth_unchecked(0, x);
+            self.set_nth_unchecked(1, y);
         } else {
             self.fill(f64::NAN);
         }
@@ -346,9 +346,9 @@ pub trait CoordinateTuple {
     /// If the dimension is less than 3, fill the coordinate with `f64::NAN`.
     fn set_xyz(&mut self, x: f64, y: f64, z: f64) {
         if self.dim() > 2 {
-            self.unchecked_set_nth(0, x);
-            self.unchecked_set_nth(1, y);
-            self.unchecked_set_nth(2, z);
+            self.set_nth_unchecked(0, x);
+            self.set_nth_unchecked(1, y);
+            self.set_nth_unchecked(2, z);
         } else {
             self.fill(f64::NAN);
         }
@@ -358,10 +358,10 @@ pub trait CoordinateTuple {
     /// If the dimension in less than 4, fill the coordinate with `f64::NAN`.
     fn set_xyzt(&mut self, x: f64, y: f64, z: f64, t: f64) {
         if self.dim() > 3 {
-            self.unchecked_set_nth(0, x);
-            self.unchecked_set_nth(1, y);
-            self.unchecked_set_nth(2, z);
-            self.unchecked_set_nth(3, t);
+            self.set_nth_unchecked(0, x);
+            self.set_nth_unchecked(1, y);
+            self.set_nth_unchecked(2, z);
+            self.set_nth_unchecked(3, t);
         } else {
             self.fill(f64::NAN);
         }
@@ -373,7 +373,7 @@ pub trait CoordinateTuple {
     fn update(&mut self, value: &[f64]) {
         let n = value.len().min(self.dim());
         for i in 0..n {
-            self.unchecked_set_nth(i, value[i])
+            self.set_nth_unchecked(i, value[i])
         }
     }
 
@@ -449,11 +449,11 @@ impl CoordinateTuple for Coor2D {
         2
     }
 
-    fn unchecked_nth(&self, n: usize) -> f64 {
+    fn nth_unchecked(&self, n: usize) -> f64 {
         self.0[n]
     }
 
-    fn unchecked_set_nth(&mut self, n: usize, value: f64) {
+    fn set_nth_unchecked(&mut self, n: usize, value: f64) {
         self.0[n] = value;
     }
 }
@@ -463,11 +463,11 @@ impl CoordinateTuple for Coor3D {
         3
     }
 
-    fn unchecked_nth(&self, n: usize) -> f64 {
+    fn nth_unchecked(&self, n: usize) -> f64 {
         self.0[n]
     }
 
-    fn unchecked_set_nth(&mut self, n: usize, value: f64) {
+    fn set_nth_unchecked(&mut self, n: usize, value: f64) {
         self.0[n] = value;
     }
 }
@@ -477,11 +477,11 @@ impl CoordinateTuple for Coor4D {
         4
     }
 
-    fn unchecked_nth(&self, n: usize) -> f64 {
+    fn nth_unchecked(&self, n: usize) -> f64 {
         self.0[n]
     }
 
-    fn unchecked_set_nth(&mut self, n: usize, value: f64) {
+    fn set_nth_unchecked(&mut self, n: usize, value: f64) {
         self.0[n] = value;
     }
 }
@@ -491,11 +491,11 @@ impl CoordinateTuple for Coor32 {
         2
     }
 
-    fn unchecked_nth(&self, n: usize) -> f64 {
+    fn nth_unchecked(&self, n: usize) -> f64 {
         self.0[n] as f64
     }
 
-    fn unchecked_set_nth(&mut self, n: usize, value: f64) {
+    fn set_nth_unchecked(&mut self, n: usize, value: f64) {
         self.0[n] = value as f32;
     }
 }
@@ -505,7 +505,7 @@ impl CoordinateTuple for Coor32 {
 impl CoordinateTuple for (f64, f64) {
     fn dim(&self) -> usize { 2 }
 
-    fn unchecked_nth(&self, n: usize) -> f64 {
+    fn nth_unchecked(&self, n: usize) -> f64 {
         match n {
             0 => self.0,
             1 => self.1,
@@ -513,7 +513,7 @@ impl CoordinateTuple for (f64, f64) {
         }
     }
 
-    fn unchecked_set_nth(&mut self, n: usize, value: f64) {
+    fn set_nth_unchecked(&mut self, n: usize, value: f64) {
         match n {
             0 => self.0 = value,
             1 => self.1 = value,
