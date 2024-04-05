@@ -15,15 +15,13 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let mut successes = 0_usize;
     let length = operands.len();
     for i in 0..length {
-        let mut coord = operands.get_coord(i);
-        // Easting
-        coord[0] = (coord[0] - lon_0) * k_0 * a - x_0;
+        let (lon, lat) = operands.xy(i);
 
-        // Northing
-        let lat = coord[1] + lat_0;
-        coord[1] = a * k_0 * ellps.latitude_geographic_to_isometric(lat) - y_0;
+        let easting = (lon - lon_0) * k_0 * a - x_0;
+        let isometric = ellps.latitude_geographic_to_isometric(lat + lat_0);
+        let northing = a * k_0 * isometric - y_0;
 
-        operands.set_coord(i, &coord);
+        operands.set_xy(i, easting, northing);
         successes += 1;
     }
 
@@ -44,17 +42,17 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let mut successes = 0_usize;
     let length = operands.len();
     for i in 0..length {
-        let mut coord = operands.get_coord(i);
+        let (mut x, mut y) = operands.xy(i);
 
         // Easting -> Longitude
-        let x = coord[0] + x_0;
-        coord[0] = x / (a * k_0) - lon_0;
+        x += x_0;
+        let lon = x / (a * k_0) - lon_0;
 
         // Northing -> Latitude
-        let y = coord[1] + y_0;
+        y += y_0;
         let psi = y / (a * k_0);
-        coord[1] = ellps.latitude_isometric_to_geographic(psi) - lat_0;
-        operands.set_coord(i, &coord);
+        let lat = ellps.latitude_isometric_to_geographic(psi) - lat_0;
+        operands.set_xy(i, lon, lat);
         successes += 1;
     }
 
@@ -160,9 +158,9 @@ mod tests {
         let definition = "merc lat_ts=56";
         let op = ctx.op(definition)?;
 
-        // Validation value from PROJ: echo 12 55 0 0 | cct -d18 +proj=merc +lat_ts=56
         let geo = [Coor4D::geo(55., 12., 0., 0.)];
 
+        // Validation value from PROJ: echo 12 55 0 0 | cct -d18 +proj=merc +lat_ts=56
         let projected = [Coor4D::raw(
             748_713.257_925_886_8,
             4_106_573.862_841_270_4,

@@ -164,6 +164,27 @@ pub trait CoordinateSet: CoordinateMetadata {
         self.len() == 0
     }
 
+    /// Replace the two first elements of the `index`th `CoordinateTuple` with `x` and `y`.
+    /// If the dimension in less than 2, fill the coordinate with `f64::NAN`.
+    /// For efficiency, consider implemented a specific implementation, when implementing
+    /// the CoordinateSet trait for a concrete data type: The provided version is not
+    /// very efficient.
+    fn set_xy(&mut self, index: usize, x: f64, y: f64) {
+        let mut coord = self.get_coord(index);
+        coord.set_nth_unchecked(0, x);
+        coord.set_nth_unchecked(1, y);
+        self.set_coord(index, &coord);
+    }
+
+    /// Replace the two first elements of the `index`th `CoordinateTuple` with `x` and `y`.
+    /// If the dimension in less than 2, fill the coordinate with `f64::NAN`.
+    /// For efficiency, consider implemented a specific implementation, when implementing
+    /// the CoordinateSet trait for a concrete data type: The provided version is not
+    /// very efficient.
+    fn xy(&self, index: usize) -> (f64, f64) {
+        self.get_coord(index).xy()
+    }
+
     /// Set all coordinate tuples in the set to NaN
     fn stomp(&mut self) {
         let nanny = Coor4D::nan();

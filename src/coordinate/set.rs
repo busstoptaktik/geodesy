@@ -15,6 +15,12 @@ impl CoordinateSet for &mut [Coor4D] {
     fn set_coord(&mut self, index: usize, value: &Coor4D) {
         self[index] = *value;
     }
+    fn xy(&self, index: usize) -> (f64, f64) {
+        self[index].xy()
+    }
+    fn set_xy(&mut self, index: usize, x: f64, y: f64) {
+        self[index].set_xy(x, y);
+    }
 }
 
 impl<const N: usize> CoordinateSet for [Coor4D; N] {
@@ -30,6 +36,12 @@ impl<const N: usize> CoordinateSet for [Coor4D; N] {
     fn set_coord(&mut self, index: usize, value: &Coor4D) {
         self[index] = *value;
     }
+    fn xy(&self, index: usize) -> (f64, f64) {
+        self[index].xy()
+    }
+    fn set_xy(&mut self, index: usize, x: f64, y: f64) {
+        self[index].set_xy(x, y);
+    }
 }
 
 impl CoordinateSet for Vec<Coor4D> {
@@ -44,6 +56,12 @@ impl CoordinateSet for Vec<Coor4D> {
     }
     fn set_coord(&mut self, index: usize, value: &Coor4D) {
         self[index] = *value;
+    }
+    fn xy(&self, index: usize) -> (f64, f64) {
+        self[index].xy()
+    }
+    fn set_xy(&mut self, index: usize, x: f64, y: f64) {
+        self[index].set_xy(x, y);
     }
 }
 
@@ -62,6 +80,12 @@ impl<const N: usize> CoordinateSet for [Coor3D; N] {
     fn set_coord(&mut self, index: usize, value: &Coor4D) {
         self[index] = Coor3D([value[0], value[1], value[2]]);
     }
+    fn xy(&self, index: usize) -> (f64, f64) {
+        self[index].xy()
+    }
+    fn set_xy(&mut self, index: usize, x: f64, y: f64) {
+        self[index].set_xy(x, y);
+    }
 }
 
 impl CoordinateSet for &mut [Coor3D] {
@@ -77,6 +101,12 @@ impl CoordinateSet for &mut [Coor3D] {
     fn set_coord(&mut self, index: usize, value: &Coor4D) {
         self[index] = Coor3D([value[0], value[1], value[2]]);
     }
+    fn xy(&self, index: usize) -> (f64, f64) {
+        self[index].xy()
+    }
+    fn set_xy(&mut self, index: usize, x: f64, y: f64) {
+        self[index].set_xy(x, y);
+    }
 }
 
 impl CoordinateSet for Vec<Coor3D> {
@@ -91,6 +121,12 @@ impl CoordinateSet for Vec<Coor3D> {
     }
     fn set_coord(&mut self, index: usize, value: &Coor4D) {
         self[index] = Coor3D([value[0], value[1], value[2]]);
+    }
+    fn xy(&self, index: usize) -> (f64, f64) {
+        self[index].xy()
+    }
+    fn set_xy(&mut self, index: usize, x: f64, y: f64) {
+        self[index].set_xy(x, y);
     }
 }
 
@@ -127,6 +163,12 @@ impl<const N: usize> CoordinateSet for [Coor2D; N] {
     fn set_coord(&mut self, index: usize, value: &Coor4D) {
         self[index] = Coor2D([value[0], value[1]]);
     }
+    fn xy(&self, index: usize) -> (f64, f64) {
+        self[index].xy()
+    }
+    fn set_xy(&mut self, index: usize, x: f64, y: f64) {
+        self[index].set_xy(x, y);
+    }
 }
 
 impl CoordinateSet for &mut [Coor2D] {
@@ -142,6 +184,12 @@ impl CoordinateSet for &mut [Coor2D] {
     fn set_coord(&mut self, index: usize, value: &Coor4D) {
         self[index] = Coor2D([value[0], value[1]]);
     }
+    fn xy(&self, index: usize) -> (f64, f64) {
+        self[index].xy()
+    }
+    fn set_xy(&mut self, index: usize, x: f64, y: f64) {
+        self[index].set_xy(x, y);
+    }
 }
 
 impl CoordinateSet for Vec<Coor2D> {
@@ -156,6 +204,12 @@ impl CoordinateSet for Vec<Coor2D> {
     }
     fn set_coord(&mut self, index: usize, value: &Coor4D) {
         self[index] = Coor2D([value[0], value[1]]);
+    }
+    fn xy(&self, index: usize) -> (f64, f64) {
+        self[index].xy()
+    }
+    fn set_xy(&mut self, index: usize, x: f64, y: f64) {
+        self[index].set_xy(x, y);
     }
 }
 
@@ -217,6 +271,12 @@ impl CoordinateSet for &mut [Coor32] {
     }
     fn set_coord(&mut self, index: usize, value: &Coor4D) {
         self[index] = Coor32::raw(value[0], value[1]);
+    }
+    fn xy(&self, index: usize) -> (f64, f64) {
+        self[index].xy()
+    }
+    fn set_xy(&mut self, index: usize, x: f64, y: f64) {
+        self[index].set_xy(x, y);
     }
 }
 
