@@ -19,10 +19,10 @@
 - `git push --set-upstream origin 0.14`
 - `git switch main`
 - `cargo publish`
-- update `HOWTO-RELEASE.md` to say 0.14
-- `git commit -a -m "Start of work towards 0.14.0"`
+- update `HOWTO-RELEASE.md` to say 0.15
+- `git commit -a -m "Start of work towards 0.15.0"`
 - `git push ...`
 
-Twitter/Mastodon:
+Twitter/Mastodon/DiscordGeo:
 
-Rust Geodesy version 0.13.0 just released. 3 months and 36 commits in the making. Get it while it's hot! https://lib.rs/geodesy | https://crates.io/crates/geodesy | https://docs.rs/geodesy/latest/geodesy/
+Rust Geodesy version 0.14.0 just released. 3 months and 36 commits in the making. Get it while it's hot! https://lib.rs/geodesy | https://crates.io/crates/geodesy | https://docs.rs/geodesy/latest/geodesy/
