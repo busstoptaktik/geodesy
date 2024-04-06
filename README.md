@@ -21,18 +21,22 @@ If any of this resonates with you, read on after this minimal usage example...
 
 ## Usage
 
-Add Geodesy to your `Cargo.toml` file
+Initialize a new project, using Geodesy:
 
-```toml
-[dependencies]
-geodesy = "0.12.0"
+```console
+$ cargo new foo
+     Created binary (application) `foo` package
+
+$ cd foo
+$ cargo add geodesy
 ```
 
-Then try this minimal example, computing the UTM coordinates of some Scandinavian capitals
+Then copy this to the `foo/src/main.rs` file: A minimal example, computing the UTM coordinates of some Scandinavian capitals
 
 ```rust
 use geodesy::prelude::*;
-fn main() -> anyhow::Result<()> {
+
+fn main() -> Result<(), Box<Error>> {
     let mut context = Minimal::new();
     let utm33 = context.op("utm zone=33")?;
 
@@ -44,6 +48,16 @@ fn main() -> anyhow::Result<()> {
     println!("{:?}", data);
     Ok(())
 }
+```
+
+and try it out:
+
+```console
+$ cargo r
+    Finished dev [unoptimized + debuginfo] target(s) in 0.11s
+     Running `C:\FLOW\AD\RG\foo\target\debug\foo.exe`
+
+[Coor2D([308124.36786033923, 6098907.825005002]), Coor2D([672319.9640879404, 6543920.334127973])]
 ```
 
 ## Concrete

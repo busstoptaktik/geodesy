@@ -1,9 +1,9 @@
-/// Tiny coordinate type: 2D, 32 bits, only one fourth the weight of a Coord.
-/// Probably only useful for small scale world maps, without too much zoom.
 use crate::math::angular;
 use std::ops::{Index, IndexMut};
 
-/// Generic 2D Coordinate tuple, with no fixed interpretation of the elements
+/// Generic 2D Coordinate tuple, with no fixed interpretation of the elements.
+/// A tiny coordinate type: Just one fourth the weight of a [`Coor4D`](crate::Coor4D).
+/// Probably only useful for small scale world maps, without too much zoom.
 #[derive(Debug, Default, PartialEq, Copy, Clone)]
 pub struct Coor32(pub [f32; 2]);
 

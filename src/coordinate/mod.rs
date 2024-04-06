@@ -21,9 +21,6 @@ pub trait AngularUnits {
 
     /// Transform the internal lon/lat(/h/t)-in-radians to lat/lon(/h/t)-in-degrees
     fn to_geo(&self) -> Self;
-
-    fn scale(&self, factor: f64) -> Self;
-    fn dot(&self, other: Self) -> f64;
 }
 
 impl<T> AngularUnits for T
@@ -41,8 +38,6 @@ where
     /// Convert the first two elements of `self` from radians to degrees
     fn to_arcsec(&self) -> Self {
         let (x, y) = self.xy();
-        dbg!((x, y));
-        dbg!(x.to_degrees());
         let mut res = *self;
         res.update(&[x.to_degrees() * 3600., y.to_degrees() * 3600.]);
         res
@@ -61,22 +56,6 @@ where
         let (x, y) = self.xy();
         let mut res = *self;
         res.update(&[y.to_degrees(), x.to_degrees()]);
-        res
-    }
-
-    fn scale(&self, factor: f64) -> Self {
-        let mut res = *self;
-        for i in 0..self.dim() {
-            res.set_nth(i, self.nth(i) * factor);
-        }
-        res
-    }
-
-    fn dot(&self, other: Self) -> f64 {
-        let mut res = 0.;
-        for i in 0..self.dim() {
-            res += self.nth(i) * other.nth(i);
-        }
         res
     }
 }
@@ -164,11 +143,11 @@ pub trait CoordinateSet: CoordinateMetadata {
         self.len() == 0
     }
 
-    /// Replace the two first elements of the `index`th `CoordinateTuple` with `x` and `y`.
-    /// If the dimension in less than 2, fill the coordinate with `f64::NAN`.
-    /// For efficiency, consider implemented a specific implementation, when implementing
-    /// the CoordinateSet trait for a concrete data type: The provided version is not
-    /// very efficient.
+    /// Replace the two first elements of the `index`th `CoordinateTuple`
+    /// with `x` and `y`.
+    /// Consider providing a type specific version, when implementing
+    /// the CoordinateSet trait for a concrete data type: The default
+    ///  version is straightforward, but not very efficient.
     fn set_xy(&mut self, index: usize, x: f64, y: f64) {
         let mut coord = self.get_coord(index);
         coord.set_nth_unchecked(0, x);
@@ -176,11 +155,10 @@ pub trait CoordinateSet: CoordinateMetadata {
         self.set_coord(index, &coord);
     }
 
-    /// Replace the two first elements of the `index`th `CoordinateTuple` with `x` and `y`.
-    /// If the dimension in less than 2, fill the coordinate with `f64::NAN`.
-    /// For efficiency, consider implemented a specific implementation, when implementing
-    /// the CoordinateSet trait for a concrete data type: The provided version is not
-    /// very efficient.
+    /// Access the two first elements of the `index`th `CoordinateTuple`.
+    /// Consider providing a type specific version, when implementing
+    /// the CoordinateSet trait for a concrete data type: The default
+    /// version is straightforward, but not very efficient.
     fn xy(&self, index: usize) -> (f64, f64) {
         self.get_coord(index).xy()
     }
@@ -194,9 +172,9 @@ pub trait CoordinateSet: CoordinateMetadata {
     }
 }
 
-/// The CoordinateTuple is the ISO-19111 atomic spatial/spatiotemporal
-/// referencing element. Loosely speaking, a CoordinateSet is a collection
-/// of CoordinateTuples.
+/// CoordinateTuple is the ISO-19111 atomic spatial/spatiotemporal
+/// referencing element. So loosely speaking, a CoordinateSet is a
+///  collection of CoordinateTuples.
 ///
 /// Note that (despite the formal name) the underlying data structure
 /// need not be a tuple: It can be any item, for which it makes sense
@@ -205,7 +183,7 @@ pub trait CoordinateSet: CoordinateMetadata {
 /// The CoordinateTuple trait provides a number of convenience accessors
 /// for accessing single coordinate elements or tuples of subsets.
 /// These accessors are pragmatically named (x, y, xy, etc.). While these
-/// names may be geodetically naive, they are suggestive and practical, and
+/// names may be geodetically naïve, they are suggestive, practical, and
 /// aligns well with the internal coordinate order convention of most
 /// Geodesy operators.
 ///
@@ -352,7 +330,7 @@ pub trait CoordinateTuple {
     }
 
     /// Replace the two first elements of the `CoordinateTuple` with `x` and `y`.
-    /// If the dimension in less than 2, fill the coordinate with `f64::NAN`.
+    /// If the dimension is less than 2, fill the coordinate with `f64::NAN`.
     /// See also [`set_nth_unchecked()`](Self::set_nth_unchecked).
     fn set_xy(&mut self, x: f64, y: f64) {
         if self.dim() > 1 {
@@ -376,7 +354,7 @@ pub trait CoordinateTuple {
     }
 
     /// Replace the four first elements of the `CoordinateTuple` with `x`, `y` `z` and `t`.
-    /// If the dimension in less than 4, fill the coordinate with `f64::NAN`.
+    /// If the dimension is less than 4, fill the coordinate with `f64::NAN`.
     fn set_xyzt(&mut self, x: f64, y: f64, z: f64, t: f64) {
         if self.dim() > 3 {
             self.set_nth_unchecked(0, x);
@@ -386,7 +364,7 @@ pub trait CoordinateTuple {
         } else {
             self.fill(f64::NAN);
         }
-}
+    }
 
     /// Replace the `N` first (up to [`dim()`](Self::dim())) elements of `self` with the
     /// elements of `value`
@@ -461,10 +439,30 @@ pub trait CoordinateTuple {
         (u - x).hypot(v - y).hypot(w - z)
     }
 
+
+    fn scale(&self, factor: f64) -> Self
+    where Self: Sized+Copy {
+        let mut res = *self;
+        for i in 0..self.dim() {
+            res.set_nth(i, self.nth(i) * factor);
+        }
+        res
+    }
+
+    fn dot(&self, other: Self) -> f64
+    where Self: Sized {
+        let mut res = 0.;
+        for i in 0..self.dim() {
+            res += self.nth(i) * other.nth(i);
+        }
+        res
+    }
+
 }
 
-// We must still implement the CoordinateTuple trait for
-// the Geodesy data types Coor2D, Coor32, Coor3D, Coor4D
+// CoordinateTuple implementations for the Geodesy data types,
+// Coor2D, Coor32, Coor3D, Coor4D
+
 impl CoordinateTuple for Coor2D {
     fn dim(&self) -> usize {
         2
@@ -522,6 +520,7 @@ impl CoordinateTuple for Coor32 {
 }
 
 // And let's also implement it for a plain 2D f64 tuple
+
 #[rustfmt::skip]
 impl CoordinateTuple for (f64, f64) {
     fn dim(&self) -> usize { 2 }

@@ -74,7 +74,6 @@ fn cassinis(operands: &mut dyn CoordinateSet, ellps: &Ellipsoid, zero_height: bo
 fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let ellps = op.params.ellps(0);
     let zero_height = op.params.boolean("zero-height");
-    dbg!(zero_height);
     let Some(action) = op.params.text.get("action") else {
         return 0;
     };
