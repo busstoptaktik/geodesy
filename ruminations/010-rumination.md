@@ -27,10 +27,10 @@ In my humble opinion, it is, however, still possible to take further steps in th
 
 Also, as will hopefully beome clear in the following, such steps may lead towards great conceptual simplification, by not having to paper over differences between the conceptual world view and the geodetic realities. Perhaps, we may deprecate, and even (in a later revision) entirely eliminate these aspects.
 
-axiomatic empirical
+**TODO!** axiomatic empirical
 opinion
 
-Not trying to provide solutions - only pointing out aspects that could use improvement.
+**TODO!** Not trying to provide solutions - only pointing out aspects that could use improvement.
 
 ## Item 1: The concept of "coordinate transformations" is *way* too underexposed
 
@@ -55,7 +55,7 @@ Now, what's wrong with that? Quite a bit, actually...
 
 **First:** The `coordinateTuple` element is, with a reference to 19107, defined as an ordered set [1..*] of `DirectPosition`s. In other words, *an empty set of coordinate tuples is not allowed*.
 
-For practical use cases, this is unfortunate, since one must start somewhere, and for observational time series (or for iteratively computed, derived data sets), you start without anything: The data structure, with pointers to metadata and backing memory is instantiated **prior to** the first observation!
+For practical use cases, this is unfortunate, since one must start somewhere, and for observational time series (or for iteratively computed, derived data sets), you start without anything: The data structure, with pointers to metadata and backing memory is instantiated **prior to** the registration of the first observation!
 
 Hence, `[1..*]` should be `[0..*]`.
 
@@ -65,7 +65,7 @@ Hence, `[1..*]` should be `[0..*]`.
 
 But anything derived one way or another from GNSS-observations, is inherently *spatio-temporal*. So this should obviously be supported directly by the `CoordinateSet` interface.
 
-**Fourth:** The `CoordinateSet` interface repairs on this missing property by pushing the chronoreference to the metadata-interface, where at most one epoch is allowed.
+**Fourth:** The `CoordinateSet` interface repairs on this missing property by pushing the chronoreference to the metadata-interface, *where at most one epoch is allowed!*
 
 I have a very hard time trying to construct a practical use case for this. GNSS-time series consist of observations at epoch `(t_0, t_1,.., t_n)`, and each observation is referred to the dynamic reference frame *at the observation epoch*.
 
@@ -73,16 +73,15 @@ I have a very hard time trying to construct a practical use case for this. GNSS-
 
 *Nevertheless, this is the use case `CoordinateSet` is built for!*
 
-**Proposal:** Could we cut the ties to 19107, and let it drift its unmoored way out over the horizon? In my opinion, 19111 is the anchor, that ties the entire 19100 series to the physical reality - it is *not* "turtles all the way down", so we do not need to build `CoordinateTuples` on top of 19107-`DirectPosition`s.
+**Proposal:** Could we cut the ties to 19107, and let it drift its unmoored way out over the horizon? In my opinion, 19111 is the anchor, that ties the entire 19100 series to the physical reality - it is *not* "turtles all the way down", so we do not need to build `CoordinateTuples` on top of 19107-`DirectPosition`s: Geodesy (and hence 19111) is the foudation that ties the abstract coordinates to the physical reality.
 
-If anyone cares about 19107, they could revise it to make it the other way round: `CoordinateTuples` can perfectly well be of any dimension, including temporal, so 19107-ish `DirectPosition`s could be their restriction to the spatial domain.
+So if anyone actually cares about 19107, let them revise it to make it the other way round: `CoordinateTuples` can perfectly well be of any dimension, including temporal, so 19107-ish `DirectPosition`s could be their restriction to the spatial domain.
 
 **In continuation: Do we actually have a way of expressing CRS `foo` to the observation epoch?**
 
 To me, it doesn't look like. Please convince me that it can be done.
 
-The entire case looks a bit like say, ETRS89, which by definition coincides with ITRS (or rather, the corresponding frames) at the 1989.0 epoch, but in that case, we're talking of two different reference systems, and the epoch is an implementation detail.
-
+The entire case looks a bit like say, ETRS89, which by definition coincides with ITRS (or rather, their corresponding frames do) at the 1989.0 epoch, but in that case, we're talking of two different reference systems, and the epoch is an implementation detail.
 
 ## Item 3: The 'S' in CRS is misleading
 
@@ -92,15 +91,24 @@ All geodesists know this, but most geodesy users do not. So the 'S is for System
 
 The concept of a CRS (as a brief way of referring to a potentially huge hodge-podge of conventional as well as empirical parameters and operations) is, however, quite useful: EPSG ids are way more *communicable* than the full story.
 
-But since a CRS is not a system, could we find a reasonable alternative expansion of the CRS acronym, replacing "Coordinate Reference System"?
+But since a CRS *is not a system,* could we find a reasonable alternative expansion of the CRS acronym, replacing "Coordinate Reference System"?
 
 **Proposal:** *Coordinate Reference **Specifier*** seems reasonable to me.
 
 ## Item 4: The CRS concept leads to unnecessary complication
 
-According to 19111, a CRS has a "definition"
+According to 19111, a CRS has a "definition".
 The typical CRS today, consists of a reference frame plus some kind of coordinate operation
 
+**TODO!** [Figure 3](https://docs.ogc.org/as/18-005r4/18-005r4.html#figure_3) illustrerer problemet
+
+Referer til metadata, men geodæsi handler om at referere til virkeligheden. Det er 19111's mission - i modsætning til 19107. Og georeferencen er til en referenceramme, ikke til et sæt metadata.
+
+En transformation er empirisk, og flytter ikke georeferencen til en anden ramme. Den implementerer en prædiktion ("hvilken koordinat X2 ville vi have opnået i system B, givet at vi har X1 i system A)
+
+Derfor er figur 3 misvisende: Det sammensatte datasæt er ikke refereret til CM3 - men CS1 og CS2 er blevet gjort "noget interoperable" ved hjælp af dels en empirisk prædiktion (CS1), dels en aksiomatisk konvertering (CS2)
+
+It is important that 19111 reflects how geodesy *actually* works. And "geodetic coordinate systems are not coordinate systems"
 
 ## Item 5: `DatumEnsemble` is too narrowly defined
 
@@ -112,15 +120,27 @@ But systems come before realizations, and the first realization of  a (planned) 
 
 ## Item 6: Support pipelines of operations
 
+**TODO!**
+
 ## Item 7: Operations are underspecified, and the definitions given are potentially misleading
 
 Coordinate operations (and their parameters) are more thoroughly described in 19157 (WKT) and in EPSG Guidance Note 7-2. Especially the latter is a wonderfully accessible resource, for understanding and implementing coordinate operators.
 
-That level of detail and specificity is not appropriate for 19111. But it is probably possible to give more precise, and better articulated definitions of the three interrelated concepts of "coordinate transformation", "coordinate conversion" and "coordinate operation".
+That level of detail and specificity is not appropriate for 19111. But it is likely possible to give more precise, and better articulated definitions of the three interrelated concepts of "coordinate transformation", "coordinate conversion" and "coordinate operation".
 
 Especially, it is not sufficiently clear that the discrimination between transformations and conversions are related to whether the parameters of the operation are *formally defined* (conversion) or *empirically derived* (transformation). In other words: Any operation may implement either a conversion or a transformation, depending on the lineage of their parameters.
 
-Additional value could be provided by describing the cases of reversible and irreversible operations.
+As an example, the Transverse Mercator operation, is usually considered a conversion, while the 7 parameter Helmert operation, is usually considered a transformation, implementing rotation, translation, and scaling, through empirically derived parameters.
+
+The rotation, translation, and scaling can however, also be implemented by empirical manipulation of the center meridian, false origin, and scale parameters of the Transverse Mercator operator.
+
+Hence, the difference between conversions and transformations is not in their algorithmic definition, but in the *lineage of their associated parameters.*
+
+As mentioned in [Item 1](#item-1-the-concept-of-coordinate-transformations-is-way-too-underexposed), this *is actually* hinted at in 19111, but in a note to item 3.1.12 "coordinate transformation" in the *Terms and definitions* chapter.
+
+Rather than being relegated to a footnote in a sub-section, this distinction should be elaborated on at chapter or at least section level.
+
+Additional value could be provided by more clearly describing the relation between reversible operations and their inverses. In the current state of affairs, the transformation from A to B that from B to A are just two unrelated transformations.
 
 ## Further reading
 
