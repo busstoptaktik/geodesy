@@ -130,7 +130,7 @@ pub trait CoordinateSet: CoordinateMetadata {
     fn len(&self) -> usize;
 
     /// Native dimension of the underlying coordinates (they will always be
-    /// returned by [`get_coord`] as converted to [`Coor4D`](super::Coor4D))
+    /// returned by [`Self::get_coord()`] as converted to [`Coor4D`](super::Coor4D))
     fn dim(&self) -> usize;
 
     /// Access the `index`th coordinate tuple
@@ -186,13 +186,13 @@ pub trait CoordinateSet: CoordinateMetadata {
     }
 
     /// Replace the four elements of the `index`th `CoordinateTuple`
-    /// with `x`, `y`, `z` and `t`. Syntactic sugar for [`set_coord`]
+    /// with `x`, `y`, `z` and `t`. Syntactic sugar for [`Self::set_coord`]
     fn set_xyzt(&mut self, index: usize, x: f64, y: f64, z: f64, t: f64) {
         self.set_coord(index, &Coor4D([x, y, z, t]));
     }
 
     /// Access the four elements of the `index`th `CoordinateTuple`.
-    /// Syntactic sugar for [`get_coord`]
+    /// Syntactic sugar for [`Self::get_coord`]
     fn xyzt(&self, index: usize) -> (f64, f64, f64, f64) {
         self.get_coord(index).xyzt()
     }
