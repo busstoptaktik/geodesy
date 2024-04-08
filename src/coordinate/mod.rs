@@ -129,7 +129,8 @@ pub trait CoordinateSet: CoordinateMetadata {
     /// Number of coordinate tuples in the set
     fn len(&self) -> usize;
 
-    /// Native dimension of the underlying coordinates (they will always be returned as converted to [`Coor4D`](super::Coor4D))
+    /// Native dimension of the underlying coordinates (they will always be
+    /// returned by [`Self::get_coord()`] as converted to [`Coor4D`](super::Coor4D))
     fn dim(&self) -> usize;
 
     /// Access the `index`th coordinate tuple
@@ -147,20 +148,53 @@ pub trait CoordinateSet: CoordinateMetadata {
     /// with `x` and `y`.
     /// Consider providing a type specific version, when implementing
     /// the CoordinateSet trait for a concrete data type: The default
-    ///  version is straightforward, but not very efficient.
+    ///  version is straightforward, but not necessarily efficient
     fn set_xy(&mut self, index: usize, x: f64, y: f64) {
         let mut coord = self.get_coord(index);
-        coord.set_nth_unchecked(0, x);
-        coord.set_nth_unchecked(1, y);
+        coord[0] = x;
+        coord[1] = y;
         self.set_coord(index, &coord);
     }
 
     /// Access the two first elements of the `index`th `CoordinateTuple`.
     /// Consider providing a type specific version, when implementing
     /// the CoordinateSet trait for a concrete data type: The default
-    /// version is straightforward, but not very efficient.
+    /// version is straightforward, but not necessarily efficient
     fn xy(&self, index: usize) -> (f64, f64) {
         self.get_coord(index).xy()
+    }
+
+    /// Replace the three first elements of the `index`th `CoordinateTuple`
+    /// with `x`, `y` and `z`.
+    /// Consider providing a type specific version, when implementing
+    /// the CoordinateSet trait for a concrete data type: The default
+    ///  version is straightforward, but not necessarily efficient
+    fn set_xyz(&mut self, index: usize, x: f64, y: f64, z: f64) {
+        let mut coord = self.get_coord(index);
+        coord[0] = x;
+        coord[1] = y;
+        coord[2] = z;
+        self.set_coord(index, &coord);
+    }
+
+    /// Access the three first elements of the `index`th `CoordinateTuple`.
+    /// Consider providing a type specific version, when implementing
+    /// the CoordinateSet trait for a concrete data type: The default
+    /// version is straightforward, but not necessarily efficient
+    fn xyz(&self, index: usize) -> (f64, f64, f64) {
+        self.get_coord(index).xyz()
+    }
+
+    /// Replace the four elements of the `index`th `CoordinateTuple`
+    /// with `x`, `y`, `z` and `t`. Syntactic sugar for [`Self::set_coord`]
+    fn set_xyzt(&mut self, index: usize, x: f64, y: f64, z: f64, t: f64) {
+        self.set_coord(index, &Coor4D([x, y, z, t]));
+    }
+
+    /// Access the four elements of the `index`th `CoordinateTuple`.
+    /// Syntactic sugar for [`Self::get_coord`]
+    fn xyzt(&self, index: usize) -> (f64, f64, f64, f64) {
+        self.get_coord(index).xyzt()
     }
 
     /// Set all coordinate tuples in the set to NaN

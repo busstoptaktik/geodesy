@@ -1,133 +1,34 @@
 use super::*;
 
-// ----- CoordinateSet implementations for some Coor4D containers ------------
+// Some helper macros, simplifying the macros for the actual data types
 
-impl CoordinateSet for &mut [Coor4D] {
-    fn len(&self) -> usize {
-        (**self).len()
-    }
-    fn dim(&self) -> usize {
-        4
-    }
-    fn get_coord(&self, index: usize) -> Coor4D {
-        self[index]
-    }
-    fn set_coord(&mut self, index: usize, value: &Coor4D) {
-        self[index] = *value;
-    }
-    fn xy(&self, index: usize) -> (f64, f64) {
-        self[index].xy()
-    }
-    fn set_xy(&mut self, index: usize, x: f64, y: f64) {
-        self[index].set_xy(x, y);
-    }
+macro_rules! coordinate_set_impl_2d_subset {
+    ($dim:expr) => {
+        fn dim(&self) -> usize {
+            $dim
+        }
+
+        fn xy(&self, index: usize) -> (f64, f64) {
+            self[index].xy()
+        }
+
+        fn set_xy(&mut self, index: usize, x: f64, y: f64) {
+            self[index].set_xy(x, y);
+        }
+    };
 }
 
-impl<const N: usize> CoordinateSet for [Coor4D; N] {
-    fn len(&self) -> usize {
-        N
-    }
-    fn dim(&self) -> usize {
-        4
-    }
-    fn get_coord(&self, index: usize) -> Coor4D {
-        self[index]
-    }
-    fn set_coord(&mut self, index: usize, value: &Coor4D) {
-        self[index] = *value;
-    }
-    fn xy(&self, index: usize) -> (f64, f64) {
-        self[index].xy()
-    }
-    fn set_xy(&mut self, index: usize, x: f64, y: f64) {
-        self[index].set_xy(x, y);
-    }
-}
+macro_rules! coordinate_set_impl_3d_subset {
+    ($dim:expr) => {
+        coordinate_set_impl_2d_subset!($dim);
 
-impl CoordinateSet for Vec<Coor4D> {
-    fn len(&self) -> usize {
-        self.len()
-    }
-    fn dim(&self) -> usize {
-        4
-    }
-    fn get_coord(&self, index: usize) -> Coor4D {
-        self[index]
-    }
-    fn set_coord(&mut self, index: usize, value: &Coor4D) {
-        self[index] = *value;
-    }
-    fn xy(&self, index: usize) -> (f64, f64) {
-        self[index].xy()
-    }
-    fn set_xy(&mut self, index: usize, x: f64, y: f64) {
-        self[index].set_xy(x, y);
-    }
-}
-
-// ----- CoordinateSet implementations for some Coor3D containers ------------
-
-impl<const N: usize> CoordinateSet for [Coor3D; N] {
-    fn len(&self) -> usize {
-        N
-    }
-    fn dim(&self) -> usize {
-        3
-    }
-    fn get_coord(&self, index: usize) -> Coor4D {
-        Coor4D([self[index][0], self[index][1], self[index][2], f64::NAN])
-    }
-    fn set_coord(&mut self, index: usize, value: &Coor4D) {
-        self[index] = Coor3D([value[0], value[1], value[2]]);
-    }
-    fn xy(&self, index: usize) -> (f64, f64) {
-        self[index].xy()
-    }
-    fn set_xy(&mut self, index: usize, x: f64, y: f64) {
-        self[index].set_xy(x, y);
-    }
-}
-
-impl CoordinateSet for &mut [Coor3D] {
-    fn len(&self) -> usize {
-        (**self).len()
-    }
-    fn dim(&self) -> usize {
-        3
-    }
-    fn get_coord(&self, index: usize) -> Coor4D {
-        Coor4D([self[index][0], self[index][1], self[index][2], f64::NAN])
-    }
-    fn set_coord(&mut self, index: usize, value: &Coor4D) {
-        self[index] = Coor3D([value[0], value[1], value[2]]);
-    }
-    fn xy(&self, index: usize) -> (f64, f64) {
-        self[index].xy()
-    }
-    fn set_xy(&mut self, index: usize, x: f64, y: f64) {
-        self[index].set_xy(x, y);
-    }
-}
-
-impl CoordinateSet for Vec<Coor3D> {
-    fn len(&self) -> usize {
-        self.len()
-    }
-    fn dim(&self) -> usize {
-        3
-    }
-    fn get_coord(&self, index: usize) -> Coor4D {
-        Coor4D([self[index][0], self[index][1], self[index][2], f64::NAN])
-    }
-    fn set_coord(&mut self, index: usize, value: &Coor4D) {
-        self[index] = Coor3D([value[0], value[1], value[2]]);
-    }
-    fn xy(&self, index: usize) -> (f64, f64) {
-        self[index].xy()
-    }
-    fn set_xy(&mut self, index: usize, x: f64, y: f64) {
-        self[index].set_xy(x, y);
-    }
+        fn xyz(&self, index: usize) -> (f64, f64, f64) {
+            self[index].xyz()
+        }
+        fn set_xyz(&mut self, index: usize, x: f64, y: f64, z: f64) {
+            self[index].set_xyz(x, y, z);
+        }
+    };
 }
 
 // ----- CoordinateSet implementations for some Coor2D containers ------------
@@ -150,67 +51,158 @@ impl CoordinateSet for Vec<Coor3D> {
 /// `CoordinateSet` trait can be combined with two fixed values for third and fourth
 /// coordinate dimension.
 
+macro_rules! coordinate_set_impl_for_coor2d {
+    () => {
+        coordinate_set_impl_2d_subset!(2);
+
+        fn get_coord(&self, index: usize) -> Coor4D {
+            Coor4D([self[index][0], self[index][1], 0., f64::NAN])
+        }
+
+        fn set_coord(&mut self, index: usize, value: &Coor4D) {
+            self[index] = Coor2D([value[0], value[1]]);
+        }
+    };
+}
+
 impl<const N: usize> CoordinateSet for [Coor2D; N] {
     fn len(&self) -> usize {
         N
     }
-    fn dim(&self) -> usize {
-        2
-    }
-    fn get_coord(&self, index: usize) -> Coor4D {
-        Coor4D([self[index][0], self[index][1], 0., f64::NAN])
-    }
-    fn set_coord(&mut self, index: usize, value: &Coor4D) {
-        self[index] = Coor2D([value[0], value[1]]);
-    }
-    fn xy(&self, index: usize) -> (f64, f64) {
-        self[index].xy()
-    }
-    fn set_xy(&mut self, index: usize, x: f64, y: f64) {
-        self[index].set_xy(x, y);
-    }
+    coordinate_set_impl_for_coor2d!();
 }
 
 impl CoordinateSet for &mut [Coor2D] {
     fn len(&self) -> usize {
         (**self).len()
     }
-    fn dim(&self) -> usize {
-        2
-    }
-    fn get_coord(&self, index: usize) -> Coor4D {
-        Coor4D([self[index][0], self[index][1], 0.0, f64::NAN])
-    }
-    fn set_coord(&mut self, index: usize, value: &Coor4D) {
-        self[index] = Coor2D([value[0], value[1]]);
-    }
-    fn xy(&self, index: usize) -> (f64, f64) {
-        self[index].xy()
-    }
-    fn set_xy(&mut self, index: usize, x: f64, y: f64) {
-        self[index].set_xy(x, y);
-    }
+    coordinate_set_impl_for_coor2d!();
 }
 
 impl CoordinateSet for Vec<Coor2D> {
     fn len(&self) -> usize {
         self.len()
     }
-    fn dim(&self) -> usize {
-        2
+    coordinate_set_impl_for_coor2d!();
+}
+
+// ----- CoordinateSet implementations for some Coor32 containers ------------
+
+macro_rules! coordinate_set_impl_for_coor32 {
+    () => {
+        coordinate_set_impl_2d_subset!(2);
+
+        fn get_coord(&self, index: usize) -> Coor4D {
+            Coor4D([self[index][0] as f64, self[index][1] as f64, 0., f64::NAN])
+        }
+
+        fn set_coord(&mut self, index: usize, value: &Coor4D) {
+            self[index] = Coor32([value[0] as f32, value[1] as f32]);
+        }
+    };
+}
+
+impl<const N: usize> CoordinateSet for [Coor32; N] {
+    fn len(&self) -> usize {
+        N
     }
-    fn get_coord(&self, index: usize) -> Coor4D {
-        Coor4D([self[index][0], self[index][1], 0., f64::NAN])
+    coordinate_set_impl_for_coor32!();
+}
+
+impl CoordinateSet for &mut [Coor32] {
+    fn len(&self) -> usize {
+        (**self).len()
     }
-    fn set_coord(&mut self, index: usize, value: &Coor4D) {
-        self[index] = Coor2D([value[0], value[1]]);
+    coordinate_set_impl_for_coor32!();
+}
+
+impl CoordinateSet for Vec<Coor32> {
+    fn len(&self) -> usize {
+        self.len()
     }
-    fn xy(&self, index: usize) -> (f64, f64) {
-        self[index].xy()
+    coordinate_set_impl_for_coor32!();
+}
+
+// ----- CoordinateSet implementations for some Coor3D containers ------------
+
+macro_rules! coordinate_set_impl_for_coor3d {
+    () => {
+        coordinate_set_impl_3d_subset!(3);
+
+        fn get_coord(&self, index: usize) -> Coor4D {
+            Coor4D([self[index][0], self[index][1], self[index][2], f64::NAN])
+        }
+
+        fn set_coord(&mut self, index: usize, value: &Coor4D) {
+            self[index] = Coor3D([value[0], value[1], value[2]]);
+        }
+    };
+}
+
+impl<const N: usize> CoordinateSet for [Coor3D; N] {
+    fn len(&self) -> usize {
+        N
     }
-    fn set_xy(&mut self, index: usize, x: f64, y: f64) {
-        self[index].set_xy(x, y);
+    coordinate_set_impl_for_coor3d!();
+}
+
+impl CoordinateSet for &mut [Coor3D] {
+    fn len(&self) -> usize {
+        (**self).len()
     }
+    coordinate_set_impl_for_coor3d!();
+}
+
+impl CoordinateSet for Vec<Coor3D> {
+    fn len(&self) -> usize {
+        self.len()
+    }
+    coordinate_set_impl_for_coor3d!();
+}
+
+// ----- CoordinateSet implementations for some Coor4D containers ------------
+
+macro_rules! coordinate_set_impl_for_coor4d {
+    () => {
+        coordinate_set_impl_3d_subset!(4);
+
+        fn get_coord(&self, index: usize) -> Coor4D {
+            self[index]
+        }
+
+        fn set_coord(&mut self, index: usize, value: &Coor4D) {
+            self[index] = *value;
+        }
+
+        fn xyzt(&self, index: usize) -> (f64, f64, f64, f64) {
+            self[index].xyzt()
+        }
+
+        fn set_xyzt(&mut self, index: usize, x: f64, y: f64, z: f64, t: f64) {
+            self[index].set_xyzt(x, y, z, t);
+        }
+    };
+}
+
+impl CoordinateSet for &mut [Coor4D] {
+    fn len(&self) -> usize {
+        (**self).len()
+    }
+    coordinate_set_impl_for_coor4d!();
+}
+
+impl<const N: usize> CoordinateSet for [Coor4D; N] {
+    fn len(&self) -> usize {
+        N
+    }
+    coordinate_set_impl_for_coor4d!();
+}
+
+impl CoordinateSet for Vec<Coor4D> {
+    fn len(&self) -> usize {
+        self.len()
+    }
+    coordinate_set_impl_for_coor4d!();
 }
 
 /// User defined values for third and fourth coordinate dimension.
@@ -254,29 +246,6 @@ where
     }
     fn set_coord(&mut self, index: usize, value: &Coor4D) {
         self.0.set_coord(index, value);
-    }
-}
-
-// ----- CoordinateSet implementations for some Coor32 containers ------------
-
-impl CoordinateSet for &mut [Coor32] {
-    fn len(&self) -> usize {
-        (**self).len()
-    }
-    fn dim(&self) -> usize {
-        2
-    }
-    fn get_coord(&self, index: usize) -> Coor4D {
-        Coor4D([self[index][0] as f64, self[index][1] as f64, 0.0, f64::NAN])
-    }
-    fn set_coord(&mut self, index: usize, value: &Coor4D) {
-        self[index] = Coor32::raw(value[0], value[1]);
-    }
-    fn xy(&self, index: usize) -> (f64, f64) {
-        self[index].xy()
-    }
-    fn set_xy(&mut self, index: usize, x: f64, y: f64) {
-        self[index].set_xy(x, y);
     }
 }
 
@@ -371,5 +340,37 @@ mod tests {
             cph[1].to_degrees() * 3600.,
             operands.get_coord(0).to_radians().to_arcsec()[1]
         );
+    }
+
+    #[test]
+    fn setting_and_getting_as_f64() {
+        let first = Coor4D([11., 12., 13., 14.]);
+        let second = Coor4D([21., 22., 23., 24.]);
+        let mut operands = Vec::from([first, second]);
+        let (x, y) = operands.xy(0);
+        assert_eq!((x, y), (11., 12.));
+        let (x, y) = operands.xy(1);
+        assert_eq!((x, y), (21., 22.));
+        operands.set_xy(0, x, y);
+        let (x, y) = operands.xy(0);
+        assert_eq!((x, y), (21., 22.));
+
+        let mut operands = Vec::from([first, second]);
+        let (x, y, z) = operands.xyz(0);
+        assert_eq!((x, y, z), (11., 12., 13.));
+        let (x, y, z) = operands.xyz(1);
+        assert_eq!((x, y, z), (21., 22., 23.));
+        operands.set_xyz(0, x, y, z);
+        let (x, y, z) = operands.xyz(0);
+        assert_eq!((x, y, z), (21., 22., 23.));
+
+        let mut operands = Vec::from([first, second]);
+        let (x, y, z, t) = operands.xyzt(0);
+        assert_eq!((x, y, z, t), (11., 12., 13., 14.));
+        let (x, y, z, t) = operands.xyzt(1);
+        assert_eq!((x, y, z, t), (21., 22., 23., 24.));
+        operands.set_xyzt(0, x, y, z, t);
+        let (x, y, z, t) = operands.xyzt(0);
+        assert_eq!((x, y, z, t), (21., 22., 23., 24.));
     }
 }
