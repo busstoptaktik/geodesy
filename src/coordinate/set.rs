@@ -2,8 +2,31 @@ use super::*;
 
 // Some helper macros, simplifying the macros for the actual data types
 
+// Produce the correct len() method for arrays, slices, and vecs
+macro_rules! length {
+    (array) => {
+        fn len(&self) -> usize {
+            N
+        }
+    };
+
+    (slice) => {
+        fn len(&self) -> usize {
+            (**self).len()
+        }
+    };
+
+    (vec) => {
+        fn len(&self) -> usize {
+            self.len()
+        }
+    }
+}
+
 macro_rules! coordinate_set_impl_2d_subset {
-    ($dim:expr) => {
+    ($dim:expr, $len:ident) => {
+        length!($len);
+
         fn dim(&self) -> usize {
             $dim
         }
@@ -19,8 +42,8 @@ macro_rules! coordinate_set_impl_2d_subset {
 }
 
 macro_rules! coordinate_set_impl_3d_subset {
-    ($dim:expr) => {
-        coordinate_set_impl_2d_subset!($dim);
+    ($dim:expr, $len:ident) => {
+        coordinate_set_impl_2d_subset!($dim, $len);
 
         fn xyz(&self, index: usize) -> (f64, f64, f64) {
             self[index].xyz()
@@ -30,6 +53,7 @@ macro_rules! coordinate_set_impl_3d_subset {
         }
     };
 }
+
 
 // ----- CoordinateSet implementations for some Coor2D containers ------------
 
@@ -52,8 +76,8 @@ macro_rules! coordinate_set_impl_3d_subset {
 /// coordinate dimension.
 
 macro_rules! coordinate_set_impl_for_coor2d {
-    () => {
-        coordinate_set_impl_2d_subset!(2);
+    ($kind:ident) => {
+        coordinate_set_impl_2d_subset!(2, $kind);
 
         fn get_coord(&self, index: usize) -> Coor4D {
             Coor4D([self[index][0], self[index][1], 0., f64::NAN])
@@ -66,31 +90,22 @@ macro_rules! coordinate_set_impl_for_coor2d {
 }
 
 impl<const N: usize> CoordinateSet for [Coor2D; N] {
-    fn len(&self) -> usize {
-        N
-    }
-    coordinate_set_impl_for_coor2d!();
+    coordinate_set_impl_for_coor2d!(array);
 }
 
 impl CoordinateSet for &mut [Coor2D] {
-    fn len(&self) -> usize {
-        (**self).len()
-    }
-    coordinate_set_impl_for_coor2d!();
+    coordinate_set_impl_for_coor2d!(slice);
 }
 
 impl CoordinateSet for Vec<Coor2D> {
-    fn len(&self) -> usize {
-        self.len()
-    }
-    coordinate_set_impl_for_coor2d!();
+    coordinate_set_impl_for_coor2d!(vec);
 }
 
 // ----- CoordinateSet implementations for some Coor32 containers ------------
 
 macro_rules! coordinate_set_impl_for_coor32 {
-    () => {
-        coordinate_set_impl_2d_subset!(2);
+    ($kind:ident) => {
+        coordinate_set_impl_2d_subset!(2, $kind);
 
         fn get_coord(&self, index: usize) -> Coor4D {
             Coor4D([self[index][0] as f64, self[index][1] as f64, 0., f64::NAN])
@@ -103,31 +118,22 @@ macro_rules! coordinate_set_impl_for_coor32 {
 }
 
 impl<const N: usize> CoordinateSet for [Coor32; N] {
-    fn len(&self) -> usize {
-        N
-    }
-    coordinate_set_impl_for_coor32!();
+    coordinate_set_impl_for_coor32!(array);
 }
 
 impl CoordinateSet for &mut [Coor32] {
-    fn len(&self) -> usize {
-        (**self).len()
-    }
-    coordinate_set_impl_for_coor32!();
+    coordinate_set_impl_for_coor32!(slice);
 }
 
 impl CoordinateSet for Vec<Coor32> {
-    fn len(&self) -> usize {
-        self.len()
-    }
-    coordinate_set_impl_for_coor32!();
+    coordinate_set_impl_for_coor32!(vec);
 }
 
 // ----- CoordinateSet implementations for some Coor3D containers ------------
 
 macro_rules! coordinate_set_impl_for_coor3d {
-    () => {
-        coordinate_set_impl_3d_subset!(3);
+    ($kind:ident) => {
+        coordinate_set_impl_3d_subset!(3, $kind);
 
         fn get_coord(&self, index: usize) -> Coor4D {
             Coor4D([self[index][0], self[index][1], self[index][2], f64::NAN])
@@ -140,31 +146,22 @@ macro_rules! coordinate_set_impl_for_coor3d {
 }
 
 impl<const N: usize> CoordinateSet for [Coor3D; N] {
-    fn len(&self) -> usize {
-        N
-    }
-    coordinate_set_impl_for_coor3d!();
+    coordinate_set_impl_for_coor3d!(array);
 }
 
 impl CoordinateSet for &mut [Coor3D] {
-    fn len(&self) -> usize {
-        (**self).len()
-    }
-    coordinate_set_impl_for_coor3d!();
+    coordinate_set_impl_for_coor3d!(slice);
 }
 
 impl CoordinateSet for Vec<Coor3D> {
-    fn len(&self) -> usize {
-        self.len()
-    }
-    coordinate_set_impl_for_coor3d!();
+    coordinate_set_impl_for_coor3d!(vec);
 }
 
 // ----- CoordinateSet implementations for some Coor4D containers ------------
 
 macro_rules! coordinate_set_impl_for_coor4d {
-    () => {
-        coordinate_set_impl_3d_subset!(4);
+    ($kind:ident) => {
+        coordinate_set_impl_3d_subset!(4, $kind);
 
         fn get_coord(&self, index: usize) -> Coor4D {
             self[index]
@@ -184,25 +181,16 @@ macro_rules! coordinate_set_impl_for_coor4d {
     };
 }
 
-impl CoordinateSet for &mut [Coor4D] {
-    fn len(&self) -> usize {
-        (**self).len()
-    }
-    coordinate_set_impl_for_coor4d!();
+impl<const N: usize> CoordinateSet for [Coor4D; N] {
+    coordinate_set_impl_for_coor4d!(array);
 }
 
-impl<const N: usize> CoordinateSet for [Coor4D; N] {
-    fn len(&self) -> usize {
-        N
-    }
-    coordinate_set_impl_for_coor4d!();
+impl CoordinateSet for &mut [Coor4D] {
+    coordinate_set_impl_for_coor4d!(slice);
 }
 
 impl CoordinateSet for Vec<Coor4D> {
-    fn len(&self) -> usize {
-        self.len()
-    }
-    coordinate_set_impl_for_coor4d!();
+    coordinate_set_impl_for_coor4d!(vec);
 }
 
 /// User defined values for third and fourth coordinate dimension.
