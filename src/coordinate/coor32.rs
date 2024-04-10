@@ -1,5 +1,4 @@
-use crate::math::angular;
-use std::ops::{Index, IndexMut};
+use super::*;
 
 /// Generic 2D Coordinate tuple, with no fixed interpretation of the elements.
 /// A tiny coordinate type: Just one fourth the weight of a [`Coor4D`](crate::Coor4D).
@@ -7,18 +6,21 @@ use std::ops::{Index, IndexMut};
 #[derive(Debug, Default, PartialEq, Copy, Clone)]
 pub struct Coor32(pub [f32; 2]);
 
-// ----- O P E R A T O R   T R A I T S -------------------------------------------------
-
-impl Index<usize> for Coor32 {
-    type Output = f32;
-    fn index(&self, i: usize) -> &Self::Output {
-        &self.0[i]
+impl CoordinateTuple for Coor32 {
+    fn new(fill: f64) -> Self {
+        Coor32([fill as f32; 2])
     }
-}
 
-impl IndexMut<usize> for Coor32 {
-    fn index_mut(&mut self, i: usize) -> &mut Self::Output {
-        &mut self.0[i]
+    fn dim(&self) -> usize {
+        2
+    }
+
+    fn nth_unchecked(&self, n: usize) -> f64 {
+        self.0[n] as f64
+    }
+
+    fn set_nth_unchecked(&mut self, n: usize, value: f64) {
+        self.0[n] = value as f32;
     }
 }
 

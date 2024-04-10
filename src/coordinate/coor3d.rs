@@ -1,24 +1,29 @@
-use crate::math::angular;
-use std::ops::{Add, Div, Index, IndexMut, Mul, Sub};
+use super::*;
+use std::ops::{Add, Div, Mul, Sub};
 
 /// Generic 3D coordinate tuple, with no fixed interpretation of the elements
 #[derive(Debug, Default, PartialEq, Copy, Clone)]
 pub struct Coor3D(pub [f64; 3]);
 
+impl CoordinateTuple for Coor3D {
+    fn new(fill: f64) -> Self {
+        Coor3D([fill; 3])
+    }
+
+    fn dim(&self) -> usize {
+        3
+    }
+
+    fn nth_unchecked(&self, n: usize) -> f64 {
+        self.0[n]
+    }
+
+    fn set_nth_unchecked(&mut self, n: usize, value: f64) {
+        self.0[n] = value;
+    }
+}
+
 // ----- O P E R A T O R   T R A I T S -------------------------------------------------
-
-impl Index<usize> for Coor3D {
-    type Output = f64;
-    fn index(&self, i: usize) -> &Self::Output {
-        &self.0[i]
-    }
-}
-
-impl IndexMut<usize> for Coor3D {
-    fn index_mut(&mut self, i: usize) -> &mut Self::Output {
-        &mut self.0[i]
-    }
-}
 
 impl Add for Coor3D {
     type Output = Self;
@@ -79,13 +84,13 @@ impl Div for Coor3D {
 
 /// Constructors
 impl Coor3D {
-    /// A `Coor3D` from latitude/longitude/height/time, with the angular input in degrees
+    /// A `Coor3D` from latitude/longitude/height, with the angular input in degrees
     #[must_use]
     pub fn geo(latitude: f64, longitude: f64, height: f64) -> Coor3D {
         Coor3D([longitude.to_radians(), latitude.to_radians(), height])
     }
 
-    /// A `Coor3D` from longitude/latitude/height/time, with the angular input in seconds
+    /// A `Coor3D` from longitude/latitude/height, with the angular input in seconds
     /// of arc. Mostly for handling grid shift elements.
     #[must_use]
     pub fn arcsec(longitude: f64, latitude: f64, height: f64) -> Coor3D {
@@ -96,7 +101,7 @@ impl Coor3D {
         ])
     }
 
-    /// A `Coor3D` from longitude/latitude/height/time, with the angular input in degrees
+    /// A `Coor3D` from longitude/latitude/height, with the angular input in degrees
     #[must_use]
     pub fn gis(longitude: f64, latitude: f64, height: f64) -> Coor3D {
         Coor3D([longitude.to_radians(), latitude.to_radians(), height])
@@ -108,7 +113,7 @@ impl Coor3D {
         Coor3D([first, second, third])
     }
 
-    /// A `Coor3D` from latitude/longitude/height/time,
+    /// A `Coor3D` from latitude/longitude/height,
     /// with the angular input in the ISO-6709 DDDMM.mmmmm format
     #[must_use]
     pub fn iso_dm(latitude: f64, longitude: f64, height: f64) -> Coor3D {
@@ -117,7 +122,7 @@ impl Coor3D {
         Coor3D([longitude.to_radians(), latitude.to_radians(), height])
     }
 
-    /// A `Coor3D` from latitude/longitude/height/time, with
+    /// A `Coor3D` from latitude/longitude/height, with
     /// the angular input in the ISO-6709 DDDMMSS.sssss format
     #[must_use]
     pub fn iso_dms(latitude: f64, longitude: f64, height: f64) -> Coor3D {
@@ -129,7 +134,7 @@ impl Coor3D {
     /// A `Coor3D` consisting of 3 `NaN`s
     #[must_use]
     pub fn nan() -> Coor3D {
-        Coor3D([f64::NAN, f64::NAN, f64::NAN])
+        Coor3D::new(f64::NAN) //([f64::NAN, f64::NAN, f64::NAN])
     }
 
     /// A `Coor3D` consisting of 3 `0`s
@@ -172,7 +177,6 @@ impl Coor3D {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::prelude::*;
 
     #[test]
     fn distances() {

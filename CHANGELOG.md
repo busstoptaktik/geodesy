@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `CoordinateTuple` trait now requires implementation of the constructor
+  method `new(fill: f64)`, returning an object of `dim()` copies of `fill`.
+
 ### Removed
 
 - CHANGES.md

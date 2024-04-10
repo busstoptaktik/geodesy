@@ -1,26 +1,29 @@
-use crate::math::angular;
+use crate::coordinate::*;
 use std::ops::{Add, Div, Mul, Sub};
 
 /// Generic 4D coordinate tuple, with no fixed interpretation of the elements
 #[derive(Debug, Default, PartialEq, Copy, Clone)]
 pub struct Coor4D(pub [f64; 4]);
 
+impl CoordinateTuple for Coor4D {
+    fn new(fill: f64) -> Self {
+        Coor4D([fill; 4])
+    }
+
+    fn dim(&self) -> usize {
+        4
+    }
+
+    fn nth_unchecked(&self, n: usize) -> f64 {
+        self.0[n]
+    }
+
+    fn set_nth_unchecked(&mut self, n: usize, value: f64) {
+        self.0[n] = value;
+    }
+}
+
 // ----- O P E R A T O R   T R A I T S -------------------------------------------------
-
-use std::ops::{Index, IndexMut};
-
-impl Index<usize> for Coor4D {
-    type Output = f64;
-    fn index(&self, i: usize) -> &Self::Output {
-        &self.0[i]
-    }
-}
-
-impl IndexMut<usize> for Coor4D {
-    fn index_mut(&mut self, i: usize) -> &mut Self::Output {
-        &mut self.0[i]
-    }
-}
 
 impl Add for Coor4D {
     type Output = Self;
@@ -158,7 +161,6 @@ impl Coor4D {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::prelude::*;
 
     #[test]
     fn distances() {
