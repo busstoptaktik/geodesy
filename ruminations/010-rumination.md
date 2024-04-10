@@ -15,33 +15,44 @@ The text is long, and the subject both sprawling and convoluted. But the gist of
 - The original conceptual model behind 19111 was mostly in disagreement with the common geodetic world view. But it was simple and sufficient as long as nothing but metre-level absolute accuracy was required
 - As accuracy requirements grew, this non-geodetic conceptual model was not feasible anymore, and the 19111 model had to get into closer agreement with modern geodesy
 - The 2019 edition comprises an enormous leap in this direction, but there is still more work worth doing
-- Also, a number of concepts are too imprecise or too narrowly defined, and hence should be reconsidered
+- Also, a number of concepts are too imprecise or too narrowly defined in 19111(2019), and hence should be reconsidered
 
 ## Introduction
 
-As seen from the perspective of someone who narrowly escaped becoming part of the CEN TC-287 standardisation group at its inception back in the 1990s, and first started participating in ISO TC-211 during the work towards the 2019 version, ISO 19111 appears **to come from** a conceptual world view that had very little to do with geodesy, but made much sense for 1995-era coordinate users.
+As seen from the perspective of someone who narrowly escaped becoming part of the CEN TC-287 standardisation group at its inception back in the 1990s, and first started participating in ISO TC-211 during the work towards the 2019 version, ISO 19111 **appears to come from** a conceptual world view that had very little to do with geodesy, but nevertheless made much sense for 1995-era coordinate users: A world view, which with only a mild dose of exaggeration, can be described as:
 
-With steadily increasing accuracy requirements, and with the ubiquity of GNSS, the conceptual world view of that era has long ago stopped being generally feasible. And with 19111(2019), the standard took a huge leap towards a more geodetically realistic, while still end user applicable, conceptual world view.
+> Geodetic coordinate systems, like their mathematical namesakes, are built on an axiomatic foundation, an eternal, immutable ether called WGS84. And **ANY** coordinate system can be strictly defined as a 7 parameter Helmert transformation from WGS84.
+>
+Hence, when the apparent center of mass, related to the ED50 datum differs by approximately 200 m from that of WGS84, then it's because the Wise Fathers of ED50 had figured "wouldn't it be nice with a coordinate system somewhat offset from the earth's centre-of-mass?".
+
+Then they went to locate the centre-of-mass, surveyed an exactly defined differential distance from there, drove a stake into the earth's inner core at exactly that position, and declared with celebration: "From here, we will survey our continent"
+
+With steadily increasing accuracy requirements, and with the ubiquity of GNSS, the conceptual world view of that era has long ago ceased being generally feasible. And with 19111(2019), the standard took a huge leap towards a more geodetically realistic, while still end user applicable, conceptual world view.
 
 In my humble opinion, it is, however, still possible to take further steps in this direction, so it is my hope that an upcoming revision of 19111 will take some of these steps, in addition to the obvious task of repairing bugs, limitations and/or inaccuracies.
 
 Also, as will hopefully beome clear in the following, such steps may lead towards great conceptual simplification, by not having to paper over differences between the conceptual world view and the geodetic realities. Perhaps, we may deprecate, and even (in a later revision) entirely eliminate these aspects.
 
-**TODO!** axiomatic empirical
-opinion
+Below, I try to identify some of these actionable items. Except for a few cases, I will not present ready-baked solutions, rather try to open up for discussion. Not only discussion of the specific matters, but also the overall problem that ISO 19111 is way too careful in its language.
 
-**TODO!** Not trying to provide solutions - only pointing out aspects that could use improvement.
+As 19111 (along with 19161) describes the relation between coordinates as numbers, and locations in the physical world, it should speak in geodetic (and hence empirical) terms.
+
+It is still entirely underexposed that geodetic reference frames are empirical contraptions, while geometric coordinate systems are axiomatic idealizations. And you can never ever establish a connection to the physical world without basing it on a reference frame squarely embedded in that physical world.
+
+So to remedy this, 19111 should stop talking about coordinates referred to metadata: Coordinates are surveyed *according* to rules given in reference **system** definitions, but *related* to reference **frames**, given as coordinate- and velocity lists (or ephemerides, in the satellite navigation case). 19111 ties coordinates to the physical reality, and should not be ashamed of that.
 
 ## Item 1: The concept of "coordinate transformations" is *way* too underexposed
 
 In section 3.1 "Terms and definitions", the two notes to item 3.1.12 "coordinate transformation" comprises the entire geodetic justification for 19111
 
-**3.1.12 coordinate transformation:**
-coordinate operation that changes coordinates in a source coordinate reference system to coordinates in a target coordinate reference system in which the source and target coordinate reference systems are based on different datums
+> **3.1.12 coordinate transformation:**
+> coordinate operation that changes coordinates in a source coordinate reference system to coordinates in a target coordinate reference system in which the source and target coordinate reference systems are based on different datums
+>
+> - Note 1 to entry: A coordinate transformation uses parameters which are derived empirically. Any error in those coordinates will be embedded in the coordinate transformation and when the coordinate transformation is applied the embedded errors are transmitted to output coordinates.
+>
+> - Note 2 to entry: A coordinate transformation is colloquially sometimes referred to as a 'datum transformation'. This is erroneous. A coordinate transformation changes coordinate values. It does not change the definition of the datum. In this document coordinates are referenced to a coordinate reference system. A coordinate transformation operates between two coordinate reference systems, not between two datums.
 
-- Note 1 to entry: A coordinate transformation uses parameters which are derived empirically. Any error in those coordinates will be embedded in the coordinate transformation and when the coordinate transformation is applied the embedded errors are transmitted to output coordinates.
-
-- Note 2 to entry: A coordinate transformation is colloquially sometimes referred to as a 'datum transformation'. This is erroneous. A coordinate transformation changes coordinate values. It does not change the definition of the datum. In this document coordinates are referenced to a coordinate reference system. A coordinate transformation operates between two coordinate reference systems, not between two datums.
+Let's dig deeper into this under item 7 below, but first, let's look at a few easier-to-handle insufficiencies of 19111(2019):
 
 ## Item 2: `CoordinateSet` is not sufficiently useful
 
