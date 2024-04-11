@@ -5,18 +5,21 @@ use crate::math::angular;
 #[derive(Debug, Default, PartialEq, Copy, Clone)]
 pub struct Coor2D(pub [f64; 2]);
 
-use std::ops::{Index, IndexMut};
-
-impl Index<usize> for Coor2D {
-    type Output = f64;
-    fn index(&self, i: usize) -> &Self::Output {
-        &self.0[i]
+impl CoordinateTuple for Coor2D {
+    fn new(fill: f64) -> Self {
+        Coor2D([fill; 2])
     }
-}
 
-impl IndexMut<usize> for Coor2D {
-    fn index_mut(&mut self, i: usize) -> &mut Self::Output {
-        &mut self.0[i]
+    fn dim(&self) -> usize {
+        2
+    }
+
+    fn nth_unchecked(&self, n: usize) -> f64 {
+        self.0[n]
+    }
+
+    fn set_nth_unchecked(&mut self, n: usize, value: f64) {
+        self.0[n] = value;
     }
 }
 
@@ -24,15 +27,14 @@ impl IndexMut<usize> for Coor2D {
 
 /// Constructors
 impl Coor2D {
-    /// A `Coor2D` from latitude/longitude/height/time, with the angular input in degrees,
-    /// and height and time ignored.
+    /// A `Coor2D` from latitude/longitude in degrees
     #[must_use]
     pub fn geo(latitude: f64, longitude: f64) -> Coor2D {
         Coor2D([longitude.to_radians(), latitude.to_radians()])
     }
 
-    /// A `Coor2D` from longitude/latitude/height/time, with the angular input in seconds
-    /// of arc. Mostly for handling grid shift elements.
+    /// A `Coor2D` from longitude/latitude in seconds of arc.
+    /// Mostly for handling grid shift elements.
     #[must_use]
     pub fn arcsec(longitude: f64, latitude: f64) -> Coor2D {
         Coor2D([
@@ -41,23 +43,19 @@ impl Coor2D {
         ])
     }
 
-    /// A `Coor2D` from longitude/latitude/height/time, with the angular input in degrees.
-    /// and height and time ignored.
+    /// A `Coor2D` from longitude/latitude in degrees.
     #[must_use]
     pub fn gis(longitude: f64, latitude: f64) -> Coor2D {
         Coor2D([longitude.to_radians(), latitude.to_radians()])
     }
 
-    /// A `Coor2D` from longitude/latitude/height/time, with the angular input in radians,
-    /// and third and fourth arguments ignored.
+    /// A `Coor2D` from e.g. longitude/latitude in radians,
     #[must_use]
     pub fn raw(first: f64, second: f64) -> Coor2D {
         Coor2D([first, second])
     }
 
-    /// A `Coor2D` from latitude/longitude/height/time, with
-    /// the angular input in the ISO-6709 DDDMM.mmmmm format,
-    /// and height and time ignored.
+    /// A `Coor2D` from latitude/longitude in the ISO-6709 DDDMM.mmmmm format.
     #[must_use]
     pub fn iso_dm(latitude: f64, longitude: f64) -> Coor2D {
         let longitude = angular::iso_dm_to_dd(longitude);
@@ -65,9 +63,7 @@ impl Coor2D {
         Coor2D([longitude.to_radians(), latitude.to_radians()])
     }
 
-    /// A `Coor2D` from latitude/longitude/height/time, with the
-    /// angular input in the ISO-6709 DDDMMSS.sssss format,
-    /// and height and time ignored.
+    /// A `Coor2D` from latitude/longitude in the ISO-6709 DDDMMSS.sssss format.
     #[must_use]
     pub fn iso_dms(latitude: f64, longitude: f64) -> Coor2D {
         let longitude = angular::iso_dms_to_dd(longitude);

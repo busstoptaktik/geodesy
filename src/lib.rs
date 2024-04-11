@@ -178,10 +178,10 @@ pub use crate::coordinate::coor32::Coor32;
 pub use crate::coordinate::coor3d::Coor3D;
 pub use crate::coordinate::coor4d::Coor4D;
 // Coordinate traits
+pub use crate::coordinate::set::CoordinateSet;
+pub use crate::coordinate::tuple::CoordinateTuple;
 pub use crate::coordinate::AngularUnits;
 pub use crate::coordinate::CoordinateMetadata;
-pub use crate::coordinate::CoordinateSet;
-pub use crate::coordinate::CoordinateTuple;
 
 // ---- Et cetera ----
 

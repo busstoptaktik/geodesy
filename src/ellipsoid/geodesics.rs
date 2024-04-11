@@ -1,4 +1,4 @@
-use crate::coordinate::CoordinateTuple;
+use crate::coordinate::tuple::CoordinateTuple;
 
 use super::*;
 
