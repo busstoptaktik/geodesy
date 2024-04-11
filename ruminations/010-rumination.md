@@ -27,15 +27,11 @@ With only a slight dose of exaggeration, that world view can be described in bri
 
 > Geodetic coordinate systems, like their mathematical namesakes, are built on an axiomatic foundation, an eternal, immutable ether called WGS84. And **ANY** coordinate system can be strictly defined as a 7 parameter Helmert transformation from WGS84.
 
-**In the light of that world view,** when the apparent center of mass, related to the ED50 datum differs by approximately 200 m from that of WGS84, then it's because the Wise Fathers of ED50 had figured *"wouldn't it be nice with a coordinate system somewhat offset from the earth's centre-of-mass?".*
-
-So they equipped an expedition, and went underground to locate the earth's centre-of-mass. Once found, they surveyed an exactly defined differential distance from there, drove a stake into the earth's inner core at exactly that position, and declared with celebration: **"From here, we will survey our continent".**
-
-While surficially nonsensical, this world view is actually quite reasonable for the 1990's era, where the expectable georeference accuracy was at the metre level: It is simple to implement and sufficiently accurate.
+While surficially nonsensical, this world view is actually quite reasonable: It is simple to implement and sufficiently accurate if the expected georererence accuracy, as in the 1990's, is at the metre level.
 
 But with steadily increasing accuracy requirements, and with the ubiquity of GNSS, the conceptual world view of that era has long ago ceased being generally feasible. And with 19111(2019), the standard took huge leaps toward a more geodetically realistic, while still end user applicable, conceptual world view.
 
-In my humble opinion, it is, however, still possible to take further steps in this direction, so it is my hope that an upcoming revision of 19111 will take some of these steps, in addition to the obvious task of repairing bugs, relaxing constraints, and clarify ambiguities.
+In my humble opinion, it is, however, still possible to take further steps in this direction, so it is my hope that an upcoming revision of 19111 will take some of these steps, in addition to the obvious tasks of repairing bugs, relaxing constraints, and clarifying ambiguities.
 
 Also, as will hopefully become clear in the following, such steps may lead toward great conceptual simplification, by not having to paper over differences between the conceptual world view and the geodetic realities. Perhaps, we may deprecate, and even (in a later revision) entirely eliminate these aspects.
 
@@ -43,7 +39,7 @@ Below, I try to identify some immediately actionable items. Except for a few cas
 
 As 19111 (along with 19161) describes the relation between coordinates as numbers, and locations in the physical world, it should speak in geodetic (and hence empirical) terms.
 
-It is still entirely underexposed that geodetic reference frames are empirical contraptions, while geometric coordinate systems are axiomatic idealizations. And you can never ever establish a connection to the physical world without basing it on a reference frame squarely embedded in that physical world.
+It is still entirely underexposed in 19111, that geodetic reference frames are **empirical contraptions**, while geometric coordinate systems are **axiomatic idealizations**. and that the only way to establish a connection between the abstract coordinate tuples, and the concrete physical world, is by basing it on a reference frame squarely embedded in that physical world.
 
 So to remedy this, 19111 should stop talking about coordinates referred to metadata: Coordinates are surveyed *according* to rules given in reference **system** definitions, but *related* to reference **frames**, given as coordinate- and velocity lists (or ephemerides, in the satellite navigation case). 19111 ties coordinates to the physical reality, and should not be ashamed of that.
 
@@ -60,7 +56,7 @@ In section 3.1 "Terms and definitions", the two notes to item 3.1.12 "coordinate
 
 Let's dig deeper into this under item 7 below, but first, let's look at a few easier-to-handle insufficiencies of 19111(2019):
 
-## Item 2: `CoordinateSet` is not sufficiently useful
+## Item 2: `CoordinateSet` is vaguely defined, and not sufficiently useful
 
 In 19111, `CoordinateSet` is the fundamental interface to actual data (cf. fig 5, sect. 7.4).
 
@@ -158,6 +154,13 @@ As mentioned in [Item 1](#item-1-the-concept-of-coordinate-transformations-is-wa
 Rather than being relegated to a footnote in a sub-section, this distinction should be elaborated on at chapter or at least section level.
 
 Additional value could be provided by more clearly describing the relation between reversible operations and their inverses. In the current state of affairs, the transformation from A to B that from B to A are just two unrelated transformations.
+
+## Notes
+
+**In the light of that world view,** when the apparent center of mass, related to the ED50 datum differs by approximately 200 m from that of WGS84, then it's because the Wise Fathers of ED50 had figured *"wouldn't it be nice with a coordinate system somewhat offset from the earth's centre-of-mass?".*
+
+So they equipped an expedition, and went underground to locate the earth's centre-of-mass. Once found, they surveyed an exactly defined differential distance from there, drove a stake into the earth's inner core at exactly that position, and declared with celebration: **"From here, we will survey our continent".**
+
 
 ## Further reading
 
