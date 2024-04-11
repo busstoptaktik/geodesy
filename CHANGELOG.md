@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - CoordinateSet: xyz(), set_xyz(), xyzt(), set_xyzt() methods
+- Vector space operators (Add, Sub, Mul, Div) for all built
+  in coordinate tuple types (Coor4D, Coor3D, Coor2D, Coor32)
 
 ### Changed
 

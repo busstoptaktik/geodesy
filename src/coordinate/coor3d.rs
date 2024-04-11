@@ -1,5 +1,4 @@
 use super::*;
-use std::ops::{Add, Div, Mul, Sub};
 
 /// Generic 3D coordinate tuple, with no fixed interpretation of the elements
 #[derive(Debug, Default, PartialEq, Copy, Clone)]
@@ -20,63 +19,6 @@ impl CoordinateTuple for Coor3D {
 
     fn set_nth_unchecked(&mut self, n: usize, value: f64) {
         self.0[n] = value;
-    }
-}
-
-// ----- O P E R A T O R   T R A I T S -------------------------------------------------
-
-impl Add for Coor3D {
-    type Output = Self;
-    fn add(self, other: Self) -> Self {
-        Coor3D([
-            self.0[0] + other.0[0],
-            self.0[1] + other.0[1],
-            self.0[2] + other.0[2],
-        ])
-    }
-}
-
-impl Add<&Coor3D> for Coor3D {
-    type Output = Self;
-    fn add(self, other: &Self) -> Self {
-        Coor3D([
-            self.0[0] + other.0[0],
-            self.0[1] + other.0[1],
-            self.0[2] + other.0[2],
-        ])
-    }
-}
-
-impl Sub for Coor3D {
-    type Output = Self;
-    fn sub(self, other: Self) -> Self {
-        Coor3D([
-            self.0[0] - other.0[0],
-            self.0[1] - other.0[1],
-            self.0[2] - other.0[2],
-        ])
-    }
-}
-
-impl Mul for Coor3D {
-    type Output = Self;
-    fn mul(self, other: Self) -> Self {
-        Coor3D([
-            self.0[0] * other.0[0],
-            self.0[1] * other.0[1],
-            self.0[2] * other.0[2],
-        ])
-    }
-}
-
-impl Div for Coor3D {
-    type Output = Self;
-    fn div(self, other: Self) -> Self {
-        Coor3D([
-            self.0[0] / other.0[0],
-            self.0[1] / other.0[1],
-            self.0[2] / other.0[2],
-        ])
     }
 }
 
@@ -177,6 +119,7 @@ impl Coor3D {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::ops::{Add, Div, Mul};
 
     #[test]
     fn distances() {
