@@ -2,20 +2,18 @@
 
 **Thomas Knudsen,** <thokn@sdfi.dk>, 2024-02-26
 
-## Why?
+## Motivation
 
-The most recent edition of ISO-19111 "Referencing by coordinates" was published in 2019. Hence, according to ISO's 5 year life cycle of standards, 19111 is up for consideration-of-revision in 2024.
+The most recent edition of ISO-19111 "Referencing by coordinates" was published in 2019. Hence, according to ISO's 5 year life cycle of standards, 19111 is up for consideration-of-revision in 2024. The following is my input for these considerations to DS/S-276, the Danish national committee of [ISO Technical Committee 211](https://www.isotc211.org/).
 
-The following is my input to DS/S-276 (the Danish national committee of [ISO Technical Committee 211](https://www.isotc211.org/) "Geographic information/Geomatics"),  for discussion of that subject,
-
-It is initially published here, as a part of the Rust Geodesy [Ruminations](https://github.com/busstoptaktik/geodesy/blob/main/ruminations/README.md), as it is by and large a result of my work with [Rust Geodesy](https://github.com/busstoptaktik/geodesy) as a demonstration platform, outlining a road towards a simpler, leaner ISO-19111.
+The material is initially published here, as a part of the Rust Geodesy [Ruminations](https://github.com/busstoptaktik/geodesy/blob/main/ruminations/README.md), as it is by and large a result of my work with [Rust Geodesy](https://github.com/busstoptaktik/geodesy) as a demonstration platform, outlining a road towards a simpler, leaner ISO-19111.
 
 The text is long, and the subject both sprawling and convoluted. But the gist of it is, that:
 
 - The original conceptual model behind 19111 was mostly in disagreement with the common geodetic world view. But it was simple and sufficient as long as nothing but metre-level absolute accuracy was required
 - As accuracy requirements grew, this non-geodetic conceptual model was not feasible anymore, and the 19111 model had to get into closer agreement with modern geodesy
 - The 2019 edition comprises an enormous leap in this direction, but there is still more work worth doing
-- Also, a number of concepts are too imprecise or too narrowly defined in 19111(2019), and hence should be reconsidered
+- Also, a number of concepts are either too vaguely or too restrictively defined in 19111(2019), and hence should be reconsidered
 
 ## Introduction
 
@@ -39,9 +37,19 @@ Below, I try to identify some immediately actionable items. Except for a few cas
 
 As 19111 (along with 19161) describes the relation between coordinates as numbers, and locations in the physical world, it should speak in geodetic (and hence empirical) terms.
 
-It is still entirely underexposed in 19111, that geodetic reference frames are **empirical contraptions**, while geometric coordinate systems are **axiomatic idealizations**. and that the only way to establish a connection between the abstract coordinate tuples, and the concrete physical world, is by basing it on a reference frame squarely embedded in that physical world.
+## Item 0: Empirical contraptions vs. axiomatic idealizations
 
-So to remedy this, 19111 should stop talking about coordinates referred to metadata: Coordinates are surveyed *according* to rules given in reference **system** definitions, but *related* to reference **frames**, given as coordinate- and velocity lists (or ephemerides, in the satellite navigation case). 19111 ties coordinates to the physical reality, and should not be ashamed of that.
+It is still entirely underexposed in 19111, that geodetic reference frames are **empirical contraptions**, while geometric coordinate systems are **axiomatic idealizations**. and that the only way to establish a connection between the abstract coordinate tuples, and the concrete physical world, is by basing that connection on a reference frame squarely embedded in that physical world.
+
+So to remedy this, 19111 should stop talking about coordinates referred to metadata (as in [Figure 3](https://docs.ogc.org/as/18-005r4/18-005r4.html#figure_3)): Coordinates are surveyed *according* to rules given in reference **system** definitions, but *referred* to reference **frames**.
+
+The georeference does not change when a transformation is applied. But through the transformation, the data referred to reference frame **A** may be made somewhat more interoperable ("aligned") with those referred to frame **B**.
+
+Transformations are *empirical predictions*, not magic wands conjuring up new georeferences without having to do the surveys.
+
+Geodetic reference frames are given as coordinate- and velocity lists (or, equivalently in the satellite navigation case: as ephemerides), not as orthogonal unit vectors in an idealized vector space.
+
+19111 ties coordinates to the physical reality, and should not be ashamed of that.
 
 ## Item 1: The concept of "coordinate transformations" is *way* too underexposed
 
@@ -72,7 +80,7 @@ For practical use cases, this is unfortunate, since one must start somewhere, an
 
 Hence, `[1..*]` should be `[0..*]`.
 
-**Second:** Additionally, the data type should probably be a sequence, not an ordered set: The reasonable intention is to model an array-like item, i.e. something that can be read and handled in indexed order. An ordered set implies that the material is ordered with respect to some intrinsic property of the elements of the set - which is simple for numerical data in one dimension, but not in two or more (where lexical ordering by dimension may stop the gap, but not in any terribly useful way: For continuous data it is effectively identical to sorting along the first dimension)
+**Second:** Additionally, the data type should probably be a sequence, not an ordered set: The reasonable intention is to model an *array*-like item, i.e. something that can be read and handled in indexed order. An ordered *set* implies that the material is ordered with respect to some intrinsic property of the elements of the set - which is simple for numerical data in one dimension, but not in two or more (where lexical ordering by dimension may stop the gap, but not in any terribly useful way: For continuous data it is effectively identical to sorting along the first dimension)
 
 **Third:** the 19107 `DirectPosition` device, which (as seen from this observer's vantage point), is rather obscure, at least is clear enough to allow one to conclude, that it refers to something entirely and exclusively *spatial*.
 
@@ -86,7 +94,7 @@ I have a very hard time trying to construct a practical use case for this. GNSS-
 
 *Nevertheless, this is the use case `CoordinateSet` is built for!*
 
-**Proposal:** Could we cut the ties to 19107, and let it drift its unmoored way out over the horizon? In my opinion, 19111 is the anchor, that ties the entire 19100 series to the physical reality - it is *not* "turtles all the way down", so we do not need to build `CoordinateTuples` on top of 19107-`DirectPosition`s: Geodesy (and hence 19111) is the foudation that ties the abstract coordinates to the physical reality.
+**Proposal:** Could we cut the ties to 19107, and let it drift its unmoored way out over the horizon? In my opinion, 19111 is the anchor, that ties the entire 19100 series to the physical reality - it is *not* "turtles all the way down", so we do not need to build `CoordinateTuples` on top of 19107-`DirectPosition`s: Geodesy (and hence 19111) is the foundation that ties the abstract coordinates to the physical reality.
 
 So if anyone actually cares about 19107, let them revise it to make it the other way round: `CoordinateTuples` can perfectly well be of any dimension, including temporal, so 19107-ish `DirectPosition`s could be their restriction to the spatial domain.
 
@@ -160,7 +168,6 @@ Additional value could be provided by more clearly describing the relation betwe
 **In the light of that world view,** when the apparent center of mass, related to the ED50 datum differs by approximately 200 m from that of WGS84, then it's because the Wise Fathers of ED50 had figured *"wouldn't it be nice with a coordinate system somewhat offset from the earth's centre-of-mass?".*
 
 So they equipped an expedition, and went underground to locate the earth's centre-of-mass. Once found, they surveyed an exactly defined differential distance from there, drove a stake into the earth's inner core at exactly that position, and declared with celebration: **"From here, we will survey our continent".**
-
 
 ## Further reading
 
