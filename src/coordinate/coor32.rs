@@ -66,7 +66,7 @@ impl Coor32 {
     pub fn iso_dm(latitude: f64, longitude: f64) -> Coor32 {
         let longitude = angular::iso_dm_to_dd(longitude);
         let latitude = angular::iso_dm_to_dd(latitude);
-        Coor32([longitude.to_radians() as f32, latitude.to_radians() as f32])
+        Coor32::geo(latitude, longitude)
     }
 
     /// A `Coor32` from latitude/longitude/height/time, with the
