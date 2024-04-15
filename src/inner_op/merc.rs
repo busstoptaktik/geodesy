@@ -13,8 +13,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let lon_0 = op.params.lon(0);
 
     let mut successes = 0_usize;
-    let length = operands.len();
-    for i in 0..length {
+    for i in 0..operands.len() {
         let (lon, lat) = operands.xy(i);
 
         let easting = (lon - lon_0) * k_0 * a - x_0;
@@ -40,8 +39,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let lon_0 = op.params.lon(0);
 
     let mut successes = 0_usize;
-    let length = operands.len();
-    for i in 0..length {
+    for i in 0..operands.len() {
         let (mut x, mut y) = operands.xy(i);
 
         // Easting -> Longitude

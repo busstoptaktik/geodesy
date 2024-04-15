@@ -69,12 +69,9 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let (sc, cc) = gamma_c.sin_cos();
 
     let mut successes = 0_usize;
-    let length = operands.len();
 
-    for i in 0..length {
-        let mut coord = operands.get_coord(i);
-        let lon = coord[0];
-        let lat = coord[1];
+    for i in 0..operands.len() {
+        let (lon, lat) = operands.xy(i);
         let slat = lat.sin();
 
         let t = (FRAC_PI_4 - lat / 2.0).tan() / ((1.0 - e * slat) / (1.0 + e * slat)).powf(e / 2.0);
@@ -90,8 +87,9 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         // Variant A
         if !variant {
             let u = A * (S * c0 + V * s0).atan2(cblon) / B;
-            coord[0] = v * cc + u * sc + FE;
-            coord[1] = u * cc - v * sc + FN;
+            let x = v * cc + u * sc + FE;
+            let y = u * cc - v * sc + FN;
+            operands.set_xy(i, x, y);
             successes += 1;
             continue;
         }
@@ -105,18 +103,18 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
             } else {
                 A * (S * c0 + V * s0).atan2(cblon) / B - uc.copysign(latc) * (lonc - lon).signum()
             };
-            coord[0] = v * cc + u * sc + Ec;
-            coord[1] = u * cc - v * sc + Nc;
+            let x = v * cc + u * sc + Ec;
+            let y = u * cc - v * sc + Nc;
+            operands.set_xy(i, x, y);
             successes += 1;
             continue;
         }
 
         // The general case
         let u = A * (S * c0 + V * s0).atan2(cblon) / B - uc.copysign(latc);
-        coord[0] = v * cc + u * sc + Ec;
-        coord[1] = u * cc - v * sc + Nc;
-
-        operands.set_coord(i, &coord);
+        let x = v * cc + u * sc + Ec;
+        let y = u * cc - v * sc + Nc;
+        operands.set_xy(i, x, y);
         successes += 1;
     }
 
@@ -179,11 +177,8 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let offset = if variant { uc.copysign(latc) } else { 0.0 };
 
     let mut successes = 0_usize;
-    let length = operands.len();
-    for i in 0..length {
-        let mut coord = operands.get_coord(i);
-        let E = coord[0];
-        let N = coord[1];
+    for i in 0..operands.len() {
+        let (E, N) = operands.xy(i);
 
         let v = (E - FE) * cc - (N - FN) * sc;
         let u = (N - FN) * cc + (E - FE) * sc + offset;
@@ -215,10 +210,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
 
         let lat = chi + es * (f[0] * s[0] + f[1] * s[1] + f[2] * s[2] + f[3] * s[3]);
         let lon = lambda_0 - (S * c0 - V * s0).atan2((B * u / A).cos()) / B;
-
-        coord[0] = lon;
-        coord[1] = lat;
-        operands.set_coord(i, &coord);
+        operands.set_xy(i, lon, lat);
         successes += 1;
     }
 

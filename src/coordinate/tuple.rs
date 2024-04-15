@@ -85,55 +85,27 @@ macro_rules! coord_operator {
     };
 }
 
-coord_operator!(Coor4D, Coor4D, coor4d, Add, +, add);
-coord_operator!(Coor4D, Coor4D, coor4d, Sub, -, sub);
-coord_operator!(Coor4D, Coor4D, coor4d, Mul, *, mul);
-coord_operator!(Coor4D, Coor4D, coor4d, Div, /, div);
+// Generate the vector space operators Add, Sub, Mul, Div for $type
+macro_rules! all_coord_operators {
+    ($type:ty, $othertype:ty, $typemacro:ident) => {
+        coord_operator!($type, $othertype, $typemacro, Add, +, add);
+        coord_operator!($type, $othertype, $typemacro, Sub, -, sub);
+        coord_operator!($type, $othertype, $typemacro, Mul, *, mul);
+        coord_operator!($type, $othertype, $typemacro, Div, /, div);
+    };
+}
 
-coord_operator!(Coor4D, &Coor4D, coor4d, Add, +, add);
-coord_operator!(Coor4D, &Coor4D, coor4d, Sub, -, sub);
-coord_operator!(Coor4D, &Coor4D, coor4d, Mul, *, mul);
-coord_operator!(Coor4D, &Coor4D, coor4d, Div, /, div);
+all_coord_operators!(Coor4D, &Coor4D, coor4d);
+all_coord_operators!(Coor3D, &Coor3D, coor3d);
+all_coord_operators!(Coor2D, &Coor2D, coor2d);
+all_coord_operators!(Coor2D, &Coor32, coor2d);
+all_coord_operators!(Coor32, &Coor32, coor32);
 
-coord_operator!(Coor3D, Coor3D, coor3d, Add, +, add);
-coord_operator!(Coor3D, Coor3D, coor3d, Sub, -, sub);
-coord_operator!(Coor3D, Coor3D, coor3d, Mul, *, mul);
-coord_operator!(Coor3D, Coor3D, coor3d, Div, /, div);
-
-coord_operator!(Coor3D, &Coor3D, coor3d, Add, +, add);
-coord_operator!(Coor3D, &Coor3D, coor3d, Sub, -, sub);
-coord_operator!(Coor3D, &Coor3D, coor3d, Mul, *, mul);
-coord_operator!(Coor3D, &Coor3D, coor3d, Div, /, div);
-
-coord_operator!(Coor2D, Coor2D, coor2d, Add, +, add);
-coord_operator!(Coor2D, Coor2D, coor2d, Sub, -, sub);
-coord_operator!(Coor2D, Coor2D, coor2d, Mul, *, mul);
-coord_operator!(Coor2D, Coor2D, coor2d, Div, /, div);
-
-coord_operator!(Coor2D, &Coor2D, coor2d, Add, +, add);
-coord_operator!(Coor2D, &Coor2D, coor2d, Sub, -, sub);
-coord_operator!(Coor2D, &Coor2D, coor2d, Mul, *, mul);
-coord_operator!(Coor2D, &Coor2D, coor2d, Div, /, div);
-
-coord_operator!(Coor2D, Coor32, coor2d, Add, +, add);
-coord_operator!(Coor2D, Coor32, coor2d, Sub, -, sub);
-coord_operator!(Coor2D, Coor32, coor2d, Mul, *, mul);
-coord_operator!(Coor2D, Coor32, coor2d, Div, /, div);
-
-coord_operator!(Coor2D, &Coor32, coor2d, Add, +, add);
-coord_operator!(Coor2D, &Coor32, coor2d, Sub, -, sub);
-coord_operator!(Coor2D, &Coor32, coor2d, Mul, *, mul);
-coord_operator!(Coor2D, &Coor32, coor2d, Div, /, div);
-
-coord_operator!(Coor32, Coor32, coor32, Add, +, add);
-coord_operator!(Coor32, Coor32, coor32, Sub, -, sub);
-coord_operator!(Coor32, Coor32, coor32, Mul, *, mul);
-coord_operator!(Coor32, Coor32, coor32, Div, /, div);
-
-coord_operator!(Coor32, &Coor32, coor32, Add, +, add);
-coord_operator!(Coor32, &Coor32, coor32, Sub, -, sub);
-coord_operator!(Coor32, &Coor32, coor32, Mul, *, mul);
-coord_operator!(Coor32, &Coor32, coor32, Div, /, div);
+all_coord_operators!(Coor4D, Coor4D, coor4d);
+all_coord_operators!(Coor3D, Coor3D, coor3d);
+all_coord_operators!(Coor2D, Coor2D, coor2d);
+all_coord_operators!(Coor2D, Coor32, coor2d);
+all_coord_operators!(Coor32, Coor32, coor32);
 
 /// CoordinateTuple is the ISO-19111 atomic spatial/spatiotemporal
 /// referencing element. So loosely speaking, a CoordinateSet is a

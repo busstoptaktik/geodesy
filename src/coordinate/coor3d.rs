@@ -61,7 +61,7 @@ impl Coor3D {
     pub fn iso_dm(latitude: f64, longitude: f64, height: f64) -> Coor3D {
         let longitude = angular::iso_dm_to_dd(longitude);
         let latitude = angular::iso_dm_to_dd(latitude);
-        Coor3D([longitude.to_radians(), latitude.to_radians(), height])
+        Coor3D::geo(latitude, longitude, height)
     }
 
     /// A `Coor3D` from latitude/longitude/height, with

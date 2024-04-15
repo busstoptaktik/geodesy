@@ -62,7 +62,7 @@ impl Coor4D {
     pub fn iso_dm(latitude: f64, longitude: f64, height: f64, time: f64) -> Coor4D {
         let longitude = angular::iso_dm_to_dd(longitude);
         let latitude = angular::iso_dm_to_dd(latitude);
-        Coor4D([longitude.to_radians(), latitude.to_radians(), height, time])
+        Coor4D::geo(latitude, longitude, height, time)
     }
 
     /// A `Coor4D` from latitude/longitude/height/time, with the

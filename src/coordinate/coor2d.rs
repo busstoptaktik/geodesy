@@ -60,7 +60,7 @@ impl Coor2D {
     pub fn iso_dm(latitude: f64, longitude: f64) -> Coor2D {
         let longitude = angular::iso_dm_to_dd(longitude);
         let latitude = angular::iso_dm_to_dd(latitude);
-        Coor2D([longitude.to_radians(), latitude.to_radians()])
+        Coor2D::geo(latitude, longitude)
     }
 
     /// A `Coor2D` from latitude/longitude in the ISO-6709 DDDMMSS.sssss format.

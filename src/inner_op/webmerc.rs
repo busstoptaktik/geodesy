@@ -10,17 +10,13 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let a = ellps.semimajor_axis();
 
     let mut successes = 0_usize;
-    let length = operands.len();
-    for i in 0..length {
-        let mut coord = operands.get_coord(i);
-        // Easting
-        coord[0] *= a;
+    for i in 0..operands.len() {
+        let (lon, lat) = operands.xy(i);
 
-        // Northing
-        let lat = coord[1];
-        coord[1] = a * (FRAC_PI_4 + lat / 2.0).tan().ln();
+        let easting = lon * a;
+        let northing = a * (FRAC_PI_4 + lat / 2.0).tan().ln();
 
-        operands.set_coord(i, &coord);
+        operands.set_xy(i, easting, northing);
         successes += 1;
     }
 
@@ -34,17 +30,16 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let a = ellps.semimajor_axis();
 
     let mut successes = 0_usize;
-    let length = operands.len();
-    for i in 0..length {
-        let mut coord = operands.get_coord(i);
+    for i in 0..operands.len() {
+        let (easting, northing) = operands.xy(i);
 
         // Easting -> Longitude
-        coord[0] /= a;
+        let longitude = easting / a;
 
         // Northing -> Latitude
-        coord[1] = FRAC_PI_2 - 2.0 * (-coord[1] / a).exp().atan();
+        let latitude = FRAC_PI_2 - 2.0 * (-northing / a).exp().atan();
 
-        operands.set_coord(i, &coord);
+        operands.set_xy(i, longitude, latitude);
         successes += 1;
     }
 
