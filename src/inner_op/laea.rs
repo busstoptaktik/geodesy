@@ -5,8 +5,6 @@ use crate::authoring::*;
 use std::f64::consts::FRAC_PI_2;
 const EPS10: f64 = 1e-10;
 
-// ----- C O M M O N -------------------------------------------------------------------
-
 // ----- F O R W A R D -----------------------------------------------------------------
 
 fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
@@ -40,35 +38,31 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
 
     // The polar aspects are fairly simple
     if north_polar || south_polar {
+        let sign = if north_polar { -1.0 } else { 1.0 };
         for i in 0..n {
-            let mut coord = operands.get_coord(i);
-            let sign = if north_polar { -1.0 } else { 1.0 };
-
-            let lat = coord[1];
-            let lon = coord[0];
+            let (lon, lat) = operands.xy(i);
             let (sin_lon, cos_lon) = (lon - lon_0).sin_cos();
 
             let q = ancillary::qs(lat.sin(), e);
             let rho = a * (qp + sign * q).sqrt();
 
-            coord[0] = x_0 + rho * sin_lon;
-            coord[1] = y_0 + sign * rho * cos_lon;
-            operands.set_coord(i, &coord);
+            let easting = x_0 + rho * sin_lon;
+            let northing = y_0 + sign * rho * cos_lon;
+            operands.set_xy(i, easting, northing);
             successes += 1;
         }
         return successes;
     }
 
+    // Either equatorial or oblique aspects
     for i in 0..n {
-        let mut coord = operands.get_coord(i);
-        let lon = coord[0];
-        let lat = coord[1];
+        let (lon, lat) = operands.xy(i);
         let (sin_lon, cos_lon) = (lon - lon_0).sin_cos();
 
         // Authalic latitude, 𝜉
         let xi = (ancillary::qs(lat.sin(), e) / qp).asin();
-
         let (sin_xi, cos_xi) = xi.sin_cos();
+
         let b = if oblique {
             let factor = 1.0 + sin_xi_0 * sin_xi + (cos_xi_0 * cos_xi * cos_lon);
             rq * (2.0 / factor).sqrt()
@@ -76,13 +70,9 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
             1.0
         };
 
-        // Easting
-        coord[0] = x_0 + (b * d) * (cos_xi * sin_lon);
-
-        // Northing
-        coord[1] = y_0 + (b / d) * (cos_xi_0 * sin_xi - sin_xi_0 * cos_xi * cos_lon);
-        operands.set_coord(i, &coord);
-
+        let easting = x_0 + (b * d) * (cos_xi * sin_lon);
+        let northing = y_0 + (b / d) * (cos_xi_0 * sin_xi - sin_xi_0 * cos_xi * cos_lon);
+        operands.set_xy(i, easting, northing);
         successes += 1;
     }
 
@@ -122,39 +112,33 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let mut successes = 0_usize;
     let n = operands.len();
 
-    // The polar aspects are not as simple as in the forward case
+    // The polar aspects are not quite as simple as in the forward case
     if north_polar || south_polar {
+        let sign = if north_polar { -1.0 } else { 1.0 };
         for i in 0..n {
-            let mut coord = operands.get_coord(i);
-            let sign = if north_polar { -1.0 } else { 1.0 };
-
-            let x = coord[0];
-            let y = coord[1];
+            let (x, y) = operands.xy(i);
             let rho = (x - x_0).hypot(y - y_0);
 
             // The authalic latitude is a bit convoluted
             let denom = a * a * (1.0 - ((1.0 - es) / (2.0 * e)) * ((1.0 - e) / (1.0 + e)).ln());
             let xi = (-sign) * (1.0 - rho * rho / denom);
 
-            coord[0] = lon_0 + (x - x_0).atan2(sign * (y - y_0));
-            coord[1] = ellps.latitude_authalic_to_geographic(xi, &authalic);
-            operands.set_coord(i, &coord);
+            let lon = lon_0 + (x - x_0).atan2(sign * (y - y_0));
+            let lat = ellps.latitude_authalic_to_geographic(xi, &authalic);
+            operands.set_xy(i, lon, lat);
             successes += 1;
         }
         return successes;
     }
 
+    // Either equatorial or oblique aspects
     for i in 0..n {
-        let mut coord = operands.get_coord(i);
-        let x = coord[0];
-        let y = coord[1];
+        let (x, y) = operands.xy(i);
         let rho = ((x - x_0) / d).hypot(d * (y - y_0));
 
         // A bit of reality hardening ported from the PROJ implementation
         if rho < EPS10 {
-            coord[0] = lon_0;
-            coord[1] = lat_0;
-            operands.set_coord(i, &coord);
+            operands.set_xy(i, lon_0, lat_0);
             successes += 1;
             continue;
         }
@@ -163,23 +147,22 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         let asin_argument = 0.5 * rho / rq;
         if asin_argument.abs() > 1.0 {
             debug!("LAEA: ({x}, {y}) outside domain");
-            coord[0] = f64::NAN;
-            coord[1] = f64::NAN;
-            operands.set_coord(i, &coord);
+            operands.set_xy(i, f64::NAN, f64::NAN);
             continue;
         }
 
         let c = 2.0 * asin_argument.asin();
         let (sin_c, cos_c) = c.sin_cos();
+
         // The authalic latitude, 𝜉
         let xi = (cos_c * sin_xi_0 + (d * (y - y_0) * sin_c * cos_xi_0) / rho).asin();
-        coord[1] = ellps.latitude_authalic_to_geographic(xi, &authalic);
+
+        let lat = ellps.latitude_authalic_to_geographic(xi, &authalic);
 
         let num = (x - x_0) * sin_c;
         let denom = d * rho * cos_xi_0 * cos_c - d * d * (y - y_0) * sin_xi_0 * sin_c;
-        coord[0] = num.atan2(denom) + lon_0;
-        operands.set_coord(i, &coord);
-
+        let lon = num.atan2(denom) + lon_0;
+        operands.set_xy(i, lon, lat);
         successes += 1;
     }
 
@@ -219,12 +202,12 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
 
     let polar = (t - FRAC_PI_2).abs() < EPS10;
     let north = polar && (t > 0.0);
-    let equatoreal = !polar && t < EPS10;
-    let oblique = !polar && !equatoreal;
-    match (polar, equatoreal, north) {
+    let equatorial = !polar && t < EPS10;
+    let oblique = !polar && !equatorial;
+    match (polar, equatorial, north) {
         (true, _, true) => params.boolean.insert("north_polar"),
         (true, _, false) => params.boolean.insert("south_polar"),
-        (_, true, _) => params.boolean.insert("equatoreal"),
+        (_, true, _) => params.boolean.insert("equatorial"),
         _ => params.boolean.insert("oblique"),
     };
 
@@ -247,7 +230,7 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     // D in the IOGP text
     let d = if oblique {
         a * (cos_phi_0 / (1.0 - es * sin_phi_0 * sin_phi_0).sqrt()) / (rq * xi_0.cos())
-    } else if equatoreal {
+    } else if equatorial {
         rq.recip()
     } else {
         a
