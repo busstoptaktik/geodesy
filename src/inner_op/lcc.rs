@@ -25,25 +25,23 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let length = operands.len();
 
     for i in 0..length {
-        let mut coord = operands.get_coord(i);
-        let lam = coord[0] - lon_0;
-        let phi = coord[1];
+        let (mut lam, phi) = operands.xy(i);
+        lam -= lon_0;
         let mut rho = 0.;
 
         // Close to one of the poles?
         if (phi.abs() - FRAC_PI_2).abs() < EPS10 {
             if phi * n <= 0. {
-                coord = Coor4D::nan();
-                operands.set_coord(i, &coord);
+                operands.set_coord(i, &Coor4D::nan());
                 continue;
             }
         } else {
             rho = c * crate::math::ancillary::ts(phi.sin_cos(), e).powf(n);
         }
         let sc = (lam * n).sin_cos();
-        coord[0] = a * k_0 * rho * sc.0 + x_0;
-        coord[1] = a * k_0 * (rho0 - rho * sc.1) + y_0;
-        operands.set_coord(i, &coord);
+        let x = a * k_0 * rho * sc.0 + x_0;
+        let y = a * k_0 * (rho0 - rho * sc.1) + y_0;
+        operands.set_xy(i, x, y);
         successes += 1;
     }
     successes
@@ -64,20 +62,19 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         return 0;
     };
     let mut successes = 0_usize;
-    let length = operands.len();
 
-    for i in 0..length {
-        let mut coord = operands.get_coord(i);
-        let mut x = (coord[0] - x_0) / (a * k_0);
-        let mut y = rho0 - (coord[1] - y_0) / (a * k_0);
+    for i in 0..operands.len() {
+        let (mut x, mut y) = operands.xy(i);
+        x = (x - x_0) / (a * k_0);
+        y = rho0 - (y - y_0) / (a * k_0);
 
         let mut rho = x.hypot(y);
 
-        // On one of the poles
+        // On one of the poles?
         if rho == 0. {
-            coord[0] = 0.;
-            coord[1] = FRAC_PI_2.copysign(n);
-            operands.set_coord(i, &coord);
+            let lon = 0.;
+            let lat = FRAC_PI_2.copysign(n);
+            operands.set_xy(i, lon, lat);
             successes += 1;
             continue;
         }
@@ -90,15 +87,13 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         }
 
         let ts0 = (rho / c).powf(1. / n);
-        let phi = crate::math::ancillary::pj_phi2(ts0, e);
-        if phi.is_infinite() || phi.is_nan() {
-            coord = Coor4D::nan();
-            operands.set_coord(i, &coord);
+        let lat = crate::math::ancillary::pj_phi2(ts0, e);
+        if lat.is_infinite() || lat.is_nan() {
+            operands.set_coord(i, &Coor4D::nan());
             continue;
         }
-        coord[0] = x.atan2(y) / n + lon_0;
-        coord[1] = phi;
-        operands.set_coord(i, &coord);
+        let lon = x.atan2(y) / n + lon_0;
+        operands.set_xy(i, lon, lat);
         successes += 1;
     }
     successes
