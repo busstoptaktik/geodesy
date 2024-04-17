@@ -6,14 +6,16 @@
 
 The most recent edition of ISO-19111 "Referencing by coordinates" was published in 2019. Hence, according to ISO's 5 year life cycle of standards, 19111 is up for consideration-of-revision in 2024. The following is my input for these considerations to DS/S-276, the Danish national committee of [ISO Technical Committee 211](https://www.isotc211.org/).
 
-The material is initially published here, as a part of the Rust Geodesy [Ruminations](https://github.com/busstoptaktik/geodesy/blob/main/ruminations/README.md), as it is by and large a result of my work with [Rust Geodesy](https://github.com/busstoptaktik/geodesy) as a demonstration platform, outlining a road towards a simpler, leaner ISO-19111.
+The material is initially published here, as a part of the Rust Geodesy [Ruminations](https://github.com/busstoptaktik/geodesy/blob/main/ruminations/README.md), since it is by and large a result of my work with [Rust Geodesy](https://github.com/busstoptaktik/geodesy) as a demonstration platform, outlining a road towards a simpler, leaner ISO-19111.
 
 The text is long, and the subject both sprawling and convoluted. But the gist of it is, that:
 
-- The original conceptual model behind 19111 was mostly in disagreement with the common geodetic world view. But it was simple and sufficient as long as nothing but metre-level absolute accuracy was required
+- The original conceptual model behind 19111 was mostly in disagreement with the common geodetic world view. But it was simple and sufficient as long as metre-level absolute accuracy was acceptable
 - As accuracy requirements grew, this non-geodetic conceptual model was not feasible anymore, and the 19111 model had to get into closer agreement with modern geodesy
 - The 2019 edition comprises an enormous leap in this direction, but there is still more work worth doing
-- Also, a number of concepts are either too vaguely or too restrictively defined in 19111(2019), and hence should be reconsidered
+- Also, a number of concepts are either too vaguely or too restrictively defined in 19111(2019), and hence should be revised
+
+**Also note that** while some of the changes proposed may seem extensive at first glance, they are actually rather clarifications than substantial changes. The aim is to support communication with end users and developers, through better alignment between geomatics and geodesy. The changes should require minor-to-no changes to software implementations of the standard.
 
 ## Introduction
 
@@ -25,7 +27,7 @@ With only a slight dose of exaggeration, that world view can be described in bri
 
 > Geodetic coordinate systems, like their mathematical namesakes, are built on an axiomatic foundation, an eternal, immutable ether called WGS84. And **ANY** coordinate system can be strictly defined as a 7 parameter Helmert transformation from WGS84.
 
-While surficially nonsensical, this world view is actually quite reasonable: It is simple to implement and sufficiently accurate if the expected georererence accuracy, as in the 1990's, is at the metre level.
+While surficially nonsensical, this world view is actually quite reasonable: It is simple to implement and sufficiently accurate if the expected georeference accuracy is at the metre level, as it was in the 1990's.
 
 But with steadily increasing accuracy requirements, and with the ubiquity of GNSS, the conceptual world view of that era has long ago ceased being generally feasible. And with 19111(2019), the standard took huge leaps toward a more geodetically realistic, while still end user applicable, conceptual world view.
 
@@ -39,15 +41,14 @@ As 19111 (along with 19161) describes the relation between coordinates as number
 
 ## Item 0: Empirical contraptions vs. axiomatic idealizations
 
-It is still entirely underexposed in 19111, that geodetic reference frames are **empirical contraptions**, while geometric coordinate systems are **axiomatic idealizations**. and that the only way to establish a connection between the abstract coordinate tuples, and the concrete physical world, is by basing that connection on a reference frame squarely embedded in that physical world.
+It is still overly underexposed in 19111, that geodetic reference frames are **empirical contraptions**, while geometric coordinate systems are **axiomatic idealizations**. and that the only way to establish a connection between the abstract coordinate tuples, and the concrete physical world, is by basing that connection on a reference frame squarely embedded in that physical world.
 
-So to remedy this, 19111 should stop talking about coordinates referred to metadata (as in [Figure 3](https://docs.ogc.org/as/18-005r4/18-005r4.html#figure_3)): Coordinates are surveyed *according* to rules given in reference **system** definitions, but *referred* to reference **frames**.
+So to remedy this, 19111 should stop talking about coordinates referenced to metadata (as in [Figure 3](https://docs.ogc.org/as/18-005r4/18-005r4.html#figure_3)), but rather try to make clear that e.g:
 
-The georeference does not change when a transformation is applied. But through the transformation, the data referred to reference frame **A** may be made somewhat more interoperable ("aligned") with those referred to frame **B**.
-
-Transformations are *empirical predictions*, not magic wands conjuring up new georeferences without having to do the surveys.
-
-Geodetic reference frames are given as coordinate- and velocity lists (or, equivalently in the satellite navigation case: as ephemerides), not as orthogonal unit vectors in an idealized vector space.
+- Coordinates are surveyed and adjusted *according* to rules given in reference **system** definitions, but *referenced* to reference **frames**.
+- The georeference does not change when a transformation is applied. But through the transformation, the data referenced to reference frame **A** may be made somewhat more interoperable ("aligned") with those referenced to frame **B**.
+- Transformations are *empirical predictions*, not magic wands conjuring up new georeferences without having to do the surveys.
+- Geodetic reference frames are given as coordinate- and velocity lists (or, equivalently in the satellite navigation case: as ephemerides), not as orthogonal unit vectors in an idealized vector space.
 
 19111 ties coordinates to the physical reality, and should not be ashamed of that.
 
@@ -62,13 +63,13 @@ In section 3.1 "Terms and definitions", the two notes to item 3.1.12 "coordinate
 >
 > - Note 2 to entry: A coordinate transformation is colloquially sometimes referred to as a 'datum transformation'. This is erroneous. A coordinate transformation changes coordinate values. It does not change the definition of the datum. In this document coordinates are referenced to a coordinate reference system. A coordinate transformation operates between two coordinate reference systems, not between two datums.
 
-Let's dig deeper into this under item 7 below, but first, let's look at a few easier-to-handle insufficiencies of 19111(2019):
+Let's dig deeper into this under item 7 below, but in the meantime, let's look at a few easier-to-handle insufficiencies of 19111(2019):
 
 ## Item 2: `CoordinateSet` is vaguely defined, and not sufficiently useful
 
 In 19111, `CoordinateSet` is the fundamental interface to actual data (cf. fig 5, sect. 7.4).
 
-The `CoordinateSet` interface models something that, in practical implementations would be e.g. *a stack* or *an array* of `CoordinateTuple`s combined with a link to the relevant `CoordinateMetadata`.
+The `CoordinateSet` interface models something that, in practical implementations would be e.g. *a stack, list, or array* of `CoordinateTuple`s combined with a link to the relevant `CoordinateMetadata`.
 
 The `CoordinateMetadata` consists of either a `CRSid` or a `CRS`, and (if the CRS is dynamic) a `coordinateEpoch`.
 
@@ -88,7 +89,7 @@ But anything derived one way or another from GNSS-observations, is inherently *s
 
 **Fourth:** The `CoordinateSet` interface repairs on this missing property by pushing the chronoreference to the metadata-interface, *where at most one epoch is allowed!*
 
-I have a very hard time trying to construct a practical use case for this. GNSS-time series consist of observations at epoch `(t_0, t_1,.., t_n)`, and each observation is referred to the dynamic reference frame *at the observation epoch*.
+I have a very hard time trying to construct a practical use case for this. GNSS-time series consist of observations at epoch `(t_0, t_1,.., t_n)`, and each observation is referenced to the dynamic reference frame *at the observation epoch*.
 
 **Hence:** No one in their right mind would ever transform their observations to a common epoch, and throw away the time component (making it impossible to transform back to the actual observation).
 
@@ -114,14 +115,14 @@ The concept of a CRS (as a brief way of referring to a potentially huge hodge-po
 
 But since a CRS *is not a system,* could we find a reasonable alternative expansion of the CRS acronym, replacing "Coordinate Reference System"?
 
-**Proposal:** *Coordinate Reference **Specifier*** seems reasonable to me.
+**Proposal:** *Coordinate Reference **Specifier*** or *Coordinate Reference **Selector*** both seem reasonable to me, but I'm sure native English speakers can come up with better alternatives.
 
 ## Item 4: The CRS concept leads to unnecessary complication
 
 According to 19111, a CRS has a "definition".
 The typical CRS today, consists of a reference frame plus some kind of coordinate operation
 
-**TODO!** [Figure 3](https://docs.ogc.org/as/18-005r4/18-005r4.html#figure_3) illustrerer problemet
+[Figure 3](https://docs.ogc.org/as/18-005r4/18-005r4.html#figure_3) illustrates some of this.
 
 Referer til metadata, men geodæsi handler om at referere til virkeligheden. Det er 19111's mission - i modsætning til 19107. Og georeferencen er til en referenceramme, ikke til et sæt metadata.
 
@@ -141,7 +142,9 @@ But systems come before realizations, and the first realization of  a (planned) 
 
 ## Item 6: Support pipelines of operations
 
-**TODO!**
+Coordinate operations can be used to align datasets from different referece frames. But often a series of commonly-implemented operations (e.g. operations from the gamut of EPSG Guidance Note 7-2), is needed to implement the alignment between two CRS. While ISO-19111 allows concatenation, it does so only in cases where intermediate CRS exist for every step.
+
+This is quite impractical, and we should try to support a way of more directly supporting operation-pipelines
 
 ## Item 7: Operations are underspecified, and the definitions given are potentially misleading
 
@@ -161,15 +164,13 @@ As mentioned in [Item 1](#item-1-the-concept-of-coordinate-transformations-is-wa
 
 Rather than being relegated to a footnote in a sub-section, this distinction should be elaborated on at chapter or at least section level.
 
-Additional value could be provided by more clearly describing the relation between reversible operations and their inverses. In the current state of affairs, the transformation from A to B that from B to A are just two unrelated transformations.
+**Additional value** could be provided by more clearly describing the relation between reversible operations and their inverses. In the current state of affairs, the transformation from A to B that from B to A are just two unrelated transformations.
 
-## Notes
+## Conclusion?
 
-**In the light of that world view,** when the apparent center of mass, related to the ED50 datum differs by approximately 200 m from that of WGS84, then it's because the Wise Fathers of ED50 had figured *"wouldn't it be nice with a coordinate system somewhat offset from the earth's centre-of-mass?".*
+No - but perhaps we should vote for revision!
 
-So they equipped an expedition, and went underground to locate the earth's centre-of-mass. Once found, they surveyed an exactly defined differential distance from there, drove a stake into the earth's inner core at exactly that position, and declared with celebration: **"From here, we will survey our continent".**
-
-## Further reading
+## Further reading (on Rust Geodesy)
 
 ### Geodesy ruminations
 
@@ -185,3 +186,13 @@ So they equipped an expedition, and went underground to locate the earth's centr
 - [Rumination 007](https://github.com/busstoptaktik/geodesy/blob/main/ruminations/007-rumination.md): Operator parameter introspection
 - [Rumination 008](https://github.com/busstoptaktik/geodesy/blob/main/ruminations/008-rumination.md): Geodesy from a PROJ perspective
 - [Rumination 009](https://github.com/busstoptaktik/geodesy/blob/main/ruminations/009-rumination.md): Teach yourself Geodesy in less than 900 seconds (of arc)
+
+## Endnotes
+
+**In the light of that world view,** when the apparent center of mass, related to the ED50 datum differs by approximately 200 m from that of WGS84, then it's because the Wise Fathers of ED50 had figured *"wouldn't it be nice with a coordinate system somewhat offset from the earth's centre-of-mass?".*
+
+So they equipped an expedition, and went underground to locate the earth's centre-of-mass. Once found, they surveyed an exactly defined differential distance from there, drove a stake into the earth's inner core at exactly that position, and declared with celebration: **"From here, we will survey our continent".**
+
+problemet med kommunikation når standarden ikke svarer til geodæsien, og kommunikationen bliver stedse vigtigere når nøjagtighedskravene bliver større
+
+De praktiske ændringer i implementeringer vil være minimale, men kommunikationen med slutbrugere vil være simplere
