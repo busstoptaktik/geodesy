@@ -2,9 +2,8 @@ use super::*;
 
 use std::f64::consts::FRAC_PI_2;
 
-impl Ellipsoid {
-    // ----- Cartesian <--> Geographic conversion ----------------------------------
-
+/// Geographic <--> Cartesian conversion
+pub trait GeoCart: EllipsoidBase {
     /// Geographic to cartesian conversion.
     ///
     /// Follows the the derivation given by
@@ -13,11 +12,8 @@ impl Ellipsoid {
     #[must_use]
     #[allow(non_snake_case)] // make it possible to mimic math notation from original paper
     #[allow(clippy::many_single_char_names)] // ditto
-    pub fn cartesian(&self, geographic: &Coor4D) -> Coor4D {
-        let lam = geographic[0];
-        let phi = geographic[1];
-        let h = geographic[2];
-        let t = geographic[3];
+    fn cartesian<C: CoordinateTuple>(&self, geographic: &C) -> Coor4D {
+        let (lam, phi, h, t) = geographic.xyzt();
 
         let N = self.prime_vertical_radius_of_curvature(phi);
         let cosphi = phi.cos();
@@ -32,7 +28,7 @@ impl Ellipsoid {
         Coor4D::raw(X, Y, Z, t)
     }
 
-    /// Cartesian to geogaphic conversion.
+    /// Cartesian to geographic conversion.
     ///
     /// Follows the the derivation given by
     /// Bowring ([1976](crate::Bibliography::Bow76) and
@@ -40,18 +36,15 @@ impl Ellipsoid {
     #[must_use]
     #[allow(non_snake_case)] // make it possible to mimic math notation from original paper
     #[allow(clippy::many_single_char_names)] // ditto
-    pub fn geographic(&self, cartesian: &Coor4D) -> Coor4D {
-        let X = cartesian[0];
-        let Y = cartesian[1];
-        let Z = cartesian[2];
-        let t = cartesian[3];
+    fn geographic<C: CoordinateTuple>(&self, cartesian: &C) -> Coor4D {
+        let (X, Y, Z, t) = cartesian.xyzt();
 
         // We need a few additional ellipsoidal parameters
         let b = self.semiminor_axis();
         let eps = self.second_eccentricity_squared();
         let es = self.eccentricity_squared();
 
-        // The longitude is straightforward
+        // The longitude is straightforward: Plain geometry in the equatoreal plane
         let lam = Y.atan2(X);
 
         // The perpendicular distance from the point coordinate to the Z-axis
@@ -79,26 +72,29 @@ impl Ellipsoid {
         // Fukushima (1999), Appendix B: Equivalent to Even Rouault's, implementation,
         // but not as clear - although a bit faster due to the substitution of sqrt
         // for hypot.
-        let T = (Z * self.a) / (p * b);
+        let a = self.semimajor_axis();
+        let T = (Z * a) / (p * b);
         let c = 1.0 / (1.0 + T * T).sqrt();
         let s = c * T;
 
         let phi_num = Z + eps * b * s.powi(3);
-        let phi_denom = p - es * self.a * c.powi(3);
+        let phi_denom = p - es * a * c.powi(3);
         let phi = phi_num.atan2(phi_denom);
 
         let lenphi = phi_num.hypot(phi_denom);
         let sinphi = phi_num / lenphi;
         let cosphi = phi_denom / lenphi;
 
+        let a = self.semimajor_axis();
+
         // We already have sinphi and es, so we can compute the radius
         // of curvature faster by inlining, rather than calling the
         // prime_vertical_radius_of_curvature() method.
-        let N = self.a / (1.0 - sinphi.powi(2) * es).sqrt();
+        let N = a / (1.0 - sinphi.powi(2) * es).sqrt();
 
         // Bowring (1985), as quoted by Burtch (2006), suggests this expression
         // as more accurate than the commonly used h = p / cosphi - N;
-        let h = p * cosphi + Z * sinphi - self.a * self.a / N;
+        let h = p * cosphi + Z * sinphi - a * a / N;
 
         Coor4D::raw(lam, phi, h, t)
     }

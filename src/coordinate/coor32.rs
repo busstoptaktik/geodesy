@@ -1,7 +1,7 @@
 use super::*;
 
 /// Generic 2D Coordinate tuple, with no fixed interpretation of the elements.
-/// A tiny coordinate type: Just one fourth the weight of a [`Coor4D`](crate::Coor4D).
+/// A tiny coordinate type: Just one fourth the weight of a [`Coor4D`](super::Coor4D).
 /// Probably only useful for small scale world maps, without too much zoom.
 #[derive(Debug, Default, PartialEq, Copy, Clone)]
 pub struct Coor32(pub [f32; 2]);

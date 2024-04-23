@@ -197,7 +197,7 @@ pub mod fourier {
 #[cfg(test)]
 mod tests {
     use super::taylor::*;
-    use crate::{Ellipsoid, Error};
+    use crate::authoring::*;
 
     #[test]
     fn test_horner() -> Result<(), Error> {

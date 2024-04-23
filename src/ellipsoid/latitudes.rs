@@ -1,52 +1,53 @@
 use super::*;
 use crate::authoring::*;
 
-// ----- Latitudes -------------------------------------------------------------
-impl Ellipsoid {
+/// The many different latitudes
+pub trait Latitudes: EllipsoidBase {
     // --- Classic latitudes: geographic, geocentric & reduced ---
 
     /// Geographic latitude, 𝜙 to geocentric latitude, 𝜃.
-    /// See also [latitude_geocentric_to_geographic](Ellipsoid::latitude_geocentric_to_geographic)
+    /// See also [latitude_geocentric_to_geographic](Latitudes::latitude_geocentric_to_geographic)
     #[must_use]
-    pub fn latitude_geographic_to_geocentric(&self, geographic: f64) -> f64 {
-        ((1.0 - self.f * (2.0 - self.f)) * geographic.tan()).atan()
+    fn latitude_geographic_to_geocentric(&self, geographic: f64) -> f64 {
+        let f = self.flattening();
+        ((1.0 - f * (2.0 - f)) * geographic.tan()).atan()
     }
 
     /// Geocentric latitude, 𝜃 to geographic latitude, 𝜙.
-    /// See also [latitude_geographic_to_geocentric](Ellipsoid::latitude_geographic_to_geocentric)
+    /// See also [latitude_geographic_to_geocentric](Latitudes::latitude_geographic_to_geocentric)
     #[must_use]
-    pub fn latitude_geocentric_to_geographic(&self, geocentric: f64) -> f64 {
+    fn latitude_geocentric_to_geographic(&self, geocentric: f64) -> f64 {
         (geocentric.tan() / (1.0 - self.eccentricity_squared())).atan()
     }
 
     /// Geographic latitude, 𝜙 to reduced latitude, 𝛽.
-    /// See also [latitude_reduced_to_geographic](Ellipsoid::latitude_reduced_to_geographic)
+    /// See also [latitude_reduced_to_geographic](Latitudes::latitude_reduced_to_geographic)
     #[must_use]
-    pub fn latitude_geographic_to_reduced(&self, geographic: f64) -> f64 {
-        geographic.tan().atan2(1. / (1. - self.f))
+    fn latitude_geographic_to_reduced(&self, geographic: f64) -> f64 {
+        geographic.tan().atan2(1. / (1. - self.flattening()))
     }
 
     /// Reduced latitude, 𝛽 to geographic latitude, 𝜙
-    /// See also [latitude_geographic_to_reduced](Ellipsoid::latitude_geographic_to_reduced)
+    /// See also [latitude_geographic_to_reduced](Latitudes::latitude_geographic_to_reduced)
     #[must_use]
-    pub fn latitude_reduced_to_geographic(&self, reduced: f64) -> f64 {
-        reduced.tan().atan2(1. - self.f)
+    fn latitude_reduced_to_geographic(&self, reduced: f64) -> f64 {
+        reduced.tan().atan2(1. - self.flattening())
     }
 
     // --- Isometric latitude: The dimensionless odd man out ---
 
     /// Geographic latitude, 𝜙 to Isometric latitude, 𝜓.
-    /// See also [latitude_isometric_to_geographic](Ellipsoid::latitude_isometric_to_geographic)
+    /// See also [latitude_isometric_to_geographic](Latitudes::latitude_isometric_to_geographic)
     #[must_use]
-    pub fn latitude_geographic_to_isometric(&self, geographic: f64) -> f64 {
+    fn latitude_geographic_to_isometric(&self, geographic: f64) -> f64 {
         let e = self.eccentricity();
         gudermannian::inv(geographic) - (e * geographic.sin()).atanh() * e
     }
 
     /// Isometric latitude, 𝜓 to geographic latitude, 𝜙.
-    /// See also [latitude_geographic_to_isometric](Ellipsoid::latitude_geographic_to_isometric)
+    /// See also [latitude_geographic_to_isometric](Latitudes::latitude_geographic_to_isometric)
     #[must_use]
-    pub fn latitude_isometric_to_geographic(&self, isometric: f64) -> f64 {
+    fn latitude_isometric_to_geographic(&self, isometric: f64) -> f64 {
         let e = self.eccentricity();
         ancillary::sinhpsi_to_tanphi(isometric.sinh(), e).atan()
     }
@@ -56,12 +57,12 @@ impl Ellipsoid {
     // --- Rectifying latitude ---
 
     /// Obtain the coefficients needed for working with rectifying latitudes
-    pub fn coefficients_for_rectifying_latitude_computations(&self) -> FourierCoefficients {
+    fn coefficients_for_rectifying_latitude_computations(&self) -> FourierCoefficients {
         self.latitude_fourier_coefficients(&constants::RECTIFYING)
     }
 
     /// Geographic latitude, 𝜙, to rectifying, 𝜇
-    pub fn latitude_geographic_to_rectifying(
+    fn latitude_geographic_to_rectifying(
         &self,
         geographic_latitude: f64,
         coefficients: &FourierCoefficients,
@@ -71,7 +72,7 @@ impl Ellipsoid {
     }
 
     /// Rectifying latitude, 𝜇, to geographic, 𝜙
-    pub fn latitude_rectifying_to_geographic(
+    fn latitude_rectifying_to_geographic(
         &self,
         rectifying_latitude: f64,
         coefficients: &FourierCoefficients,
@@ -83,12 +84,12 @@ impl Ellipsoid {
     // --- Conformal latitude ---
 
     /// Obtain the coefficients needed for working with conformal latitudes
-    pub fn coefficients_for_conformal_latitude_computations(&self) -> FourierCoefficients {
+    fn coefficients_for_conformal_latitude_computations(&self) -> FourierCoefficients {
         self.latitude_fourier_coefficients(&constants::CONFORMAL)
     }
 
     /// Geographic latitude, 𝜙, to conformal, 𝜒
-    pub fn latitude_geographic_to_conformal(
+    fn latitude_geographic_to_conformal(
         &self,
         geographic_latitude: f64,
         coefficients: &FourierCoefficients,
@@ -97,7 +98,7 @@ impl Ellipsoid {
     }
 
     /// Conformal latitude, 𝜒, to geographic, 𝜙
-    pub fn latitude_conformal_to_geographic(
+    fn latitude_conformal_to_geographic(
         &self,
         conformal_latitude: f64,
         coefficients: &FourierCoefficients,
@@ -108,12 +109,12 @@ impl Ellipsoid {
     // --- Authalic latitude ---
 
     /// Obtain the coefficients needed for working with authalic latitudes
-    pub fn coefficients_for_authalic_latitude_computations(&self) -> FourierCoefficients {
+    fn coefficients_for_authalic_latitude_computations(&self) -> FourierCoefficients {
         self.latitude_fourier_coefficients(&constants::AUTHALIC)
     }
 
     /// Geographic latitude, 𝜙, to authalic, 𝜉
-    pub fn latitude_geographic_to_authalic(
+    fn latitude_geographic_to_authalic(
         &self,
         geographic_latitude: f64,
         coefficients: &FourierCoefficients,
@@ -122,7 +123,7 @@ impl Ellipsoid {
     }
 
     /// Authalic latitude, 𝜉, to geographic, 𝜙
-    pub fn latitude_authalic_to_geographic(
+    fn latitude_authalic_to_geographic(
         &self,
         authalic_latitude: f64,
         coefficients: &FourierCoefficients,

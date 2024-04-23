@@ -171,7 +171,7 @@ pub fn proj_constructor(parameters: &RawParameters, _ctx: &dyn Context) -> Resul
 }
 
 fn main() -> anyhow::Result<()> {
-    let mut prv = geodesy::Minimal::new();
+    let mut prv = geodesy::prelude::Minimal::new();
     prv.register_op("proj", OpConstructor(proj_constructor));
     let e = Ellipsoid::default();
 

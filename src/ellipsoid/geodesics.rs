@@ -2,8 +2,8 @@ use crate::coordinate::tuple::CoordinateTuple;
 
 use super::*;
 
-// ----- Geodesics -------------------------------------------------------------
-impl Ellipsoid {
+/// Geodesics
+pub trait Geodesics: EllipsoidBase {
     /// For general geodesics, we use the algorithm by Vincenty
     /// ([1975](crate::Bibliography::Vin75)), with updates by the same author
     /// ([1976](crate::Bibliography::Vin76)).
@@ -16,12 +16,7 @@ impl Ellipsoid {
     /// Federico Dolce and Michael Kirk, provides a Rust implementation of Karney's algorithm.
     #[must_use]
     #[allow(non_snake_case)]
-    pub fn geodesic_fwd<C: CoordinateTuple>(
-        &self,
-        from: &C,
-        azimuth: f64,
-        distance: f64,
-    ) -> Coor4D {
+    fn geodesic_fwd<C: CoordinateTuple>(&self, from: &C, azimuth: f64, distance: f64) -> Coor4D {
         // Coordinates of the point of origin, P1
         let (L1, B1) = from.xy();
 
@@ -31,7 +26,7 @@ impl Ellipsoid {
 
         // σ_1, here ss1, is the angular distance on the aux sphere from P1 to equator
         let azicos = azimuth.cos();
-        let ss1 = ((1. - self.f) * B1.tan()).atan2(azicos);
+        let ss1 = ((1. - self.flattening()) * B1.tan()).atan2(azicos);
 
         // α, the forward azimuth of the geodesic at equator
         let aasin = U1cos * azimuth.sin();
@@ -79,15 +74,16 @@ impl Ellipsoid {
 
         // B2: Latitude of destination
         let (sssin, sscos) = ss.sin_cos();
+        let f = self.flattening();
         let t4 = U1cos * azicos * sssin;
         let t5 = U1cos * azicos * sscos;
-        let B2 = (U1sin * sscos + t4).atan2((1. - self.f) * aasin.hypot(U1sin * sssin - t5));
+        let B2 = (U1sin * sscos + t4).atan2((1. - f) * aasin.hypot(U1sin * sssin - t5));
 
         // L2: Longitude of destination
         let azisin = azimuth.sin();
         let ll = (sssin * azisin).atan2(U1cos * sscos - U1sin * sssin * azicos);
-        let C = (4. + self.f * (4. - 3. * aacos2)) * self.f * aacos2 / 16.;
-        let L = ll - (1. - C) * self.f * aasin * (ss + C * sssin * (ssmx2cos + C * sscos * t1));
+        let C = (4. + f * (4. - 3. * aacos2)) * f * aacos2 / 16.;
+        let L = ll - (1. - C) * f * aasin * (ss + C * sssin * (ssmx2cos + C * sscos * t1));
         let L2 = L1 + L;
 
         // Return azimuth
@@ -96,10 +92,10 @@ impl Ellipsoid {
         Coor4D::raw(L2, B2, aa2, f64::from(i))
     }
 
-    /// See [`geodesic_fwd`](crate::Ellipsoid::geodesic_fwd)
+    /// See [`geodesic_fwd`](Self::geodesic_fwd)
     #[must_use]
     #[allow(non_snake_case)] // So we can use the mathematical notation from the original text
-    pub fn geodesic_inv<C: CoordinateTuple>(&self, from: &C, to: &C) -> Coor4D {
+    fn geodesic_inv<C: CoordinateTuple>(&self, from: &C, to: &C) -> Coor4D {
         let (L1, B1) = from.xy();
         let (L2, B2) = to.xy();
         let B = B2 - B1;
@@ -116,6 +112,7 @@ impl Ellipsoid {
         let (U1sin, U1cos) = U1.sin_cos();
         let (U2sin, U2cos) = U2.sin_cos();
         let eps = self.second_eccentricity_squared();
+        let f = self.flattening();
 
         // Initial estimate for λ, the longitude on the auxiliary sphere
         let mut ll = L;
@@ -147,10 +144,10 @@ impl Ellipsoid {
 
             // cosine of 2 times σ_m, the angular separation from the midpoint to the equator
             ssmx2cos = sscos - 2. * U1sin * U2sin / aacos2;
-            let C = (4. + self.f * (4. - 3. * aacos2)) * self.f * aacos2 / 16.;
+            let C = (4. + f * (4. - 3. * aacos2)) * f * aacos2 / 16.;
             let ll_next = L
                 + (1. - C)
-                    * self.f
+                    * f
                     * aasin
                     * (ss + C * sssin * (ssmx2cos + C * sscos * (-1. + 2. * ssmx2cos * ssmx2cos)));
             let dl = (ll - ll_next).abs();
@@ -185,8 +182,8 @@ impl Ellipsoid {
     ///
     /// # See also:
     ///
-    /// [`hypot2`](crate::Coor4D::hypot2),
-    /// [`hypot3`](crate::Coor4D::hypot3)
+    /// [`hypot2`](crate::coordinate::tuple::CoordinateTuple::hypot2),
+    /// [`hypot3`](crate::coordinate::tuple::CoordinateTuple::hypot3),
     ///
     /// # Examples
     ///
@@ -201,7 +198,7 @@ impl Ellipsoid {
     /// }
     /// ```
     #[must_use]
-    pub fn distance<G: CoordinateTuple>(&self, from: &G, to: &G) -> f64 {
+    fn distance<G: CoordinateTuple>(&self, from: &G, to: &G) -> f64 {
         self.geodesic_inv(from, to)[2]
     }
 }
@@ -211,7 +208,7 @@ impl Ellipsoid {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Coor2D;
+    use crate::coord::Coor2D;
     #[test]
     fn geodesics() -> Result<(), Error> {
         let ellps = Ellipsoid::named("GRS80")?;

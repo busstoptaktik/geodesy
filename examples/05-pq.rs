@@ -66,7 +66,7 @@ fn main() -> Result<(), anyhow::Error> {
 
     // We use ::new() instead of ::default() in order to gain access to the
     // BUILTIN_ADAPTORS
-    let mut ctx = geodesy::Minimal::new();
+    let mut ctx = geodesy::prelude::Minimal::new();
     trace!("trace message 2");
     debug!("debug message 2");
 

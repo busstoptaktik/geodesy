@@ -9,14 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- CoordinateSet: xyz(), set_xyz(), xyzt(), set_xyzt() methods
+- `CoordinateSet`: xyz(), set_xyz(), xyzt(), set_xyzt() methods
 - Vector space operators (Add, Sub, Mul, Div) for all built
   in coordinate tuple types (Coor4D, Coor3D, Coor2D, Coor32)
+- `TriaxialEllpisoid`, mostly as a placeholder
 
 ### Changed
 
 - `CoordinateTuple` trait now requires implementation of the constructor
   method `new(fill: f64)`, returning an object of `dim()` copies of `fill`.
+- The huge `Ellipsoid`-implementation switched to a new trait `EllipsoidBase`,
+  and a number of associated traits requiring `EllipsoidBase`.
+- Meaning of `EllipsoidBase::aspect_ratio()` switched from *b / a* to the
+  apparently more common *a / b*
+- Major restructuring and clean up of `lib.rs`. Only marignally visible externally,
+  if using `use geodesy::prelude::*`
 
 ### Removed
 
