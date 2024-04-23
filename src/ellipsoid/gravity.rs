@@ -8,17 +8,12 @@ use super::*;
 /// Currently they remain untested in the absolute sense of the word:
 /// The test suite checks for regressions, but the values used for comparison
 /// are entirely internally sourced.
-impl Ellipsoid {
+pub trait Gravity: EllipsoidBase {
     /// The Somigliana normal gravity formula. If the equatorial
     /// normal gravity, gamma_a, and/or the polar normal gravity,
     /// gamma_b, is given as `None`, the values for GRS80 is used.
     #[must_use]
-    pub fn somigliana_gravity(
-        &self,
-        latitude: f64,
-        gamma_a: Option<f64>,
-        gamma_b: Option<f64>,
-    ) -> f64 {
+    fn somigliana_gravity(&self, latitude: f64, gamma_a: Option<f64>, gamma_b: Option<f64>) -> f64 {
         let ga = gamma_a.unwrap_or(9.780_326_771_5);
         let gb = gamma_b.unwrap_or(9.832_186_368_5);
 
@@ -36,7 +31,7 @@ impl Ellipsoid {
     /// international (Hayford) ellipsoid (or for mis-use with
     /// any other ellipsoid)
     #[must_use]
-    pub fn cassinis_gravity_1930(&self, latitude: f64) -> f64 {
+    fn cassinis_gravity_1930(&self, latitude: f64) -> f64 {
         const GAMMA_A: f64 = 9.780_49;
         const BETA_1: f64 = 5.2884e-3;
         const BETA_2: f64 = 5.9e-6;
@@ -49,7 +44,7 @@ impl Ellipsoid {
     /// Harold Jeffreys' 1948 improvement to the international
     /// gravity formula 1930
     #[must_use]
-    pub fn jeffreys_gravity_1948(&self, latitude: f64) -> f64 {
+    fn jeffreys_gravity_1948(&self, latitude: f64) -> f64 {
         const GAMMA_A: f64 = 9.780_373;
         const BETA_1: f64 = 5.2884e-3;
         const BETA_2: f64 = 5.9e-6;
@@ -61,7 +56,7 @@ impl Ellipsoid {
 
     /// The GRS67 gravity formula. Differs from GRS80 at the mgal level
     #[must_use]
-    pub fn grs67_gravity(&self, latitude: f64) -> f64 {
+    fn grs67_gravity(&self, latitude: f64) -> f64 {
         const GAMMA_A: f64 = 9.780_318;
         const BETA_1: f64 = 5.3024e-3;
         const BETA_2: f64 = 5.9e-6;
@@ -74,7 +69,7 @@ impl Ellipsoid {
     /// The international gravity formula 1980, for use with
     /// systems based on GRS80
     #[must_use]
-    pub fn grs80_gravity(&self, latitude: f64) -> f64 {
+    fn grs80_gravity(&self, latitude: f64) -> f64 {
         // Equatorial normal gravity [m/s²]
         const GAMMA_A: f64 = 9.780_326_771_5;
         const C1: f64 = 5.279_041_4e-3;
@@ -90,7 +85,7 @@ impl Ellipsoid {
     /// density (in kg/m³). The value is to be **subtracted** from the
     /// normal gravity on the ellipsoid.
     #[must_use]
-    pub fn cassinis_height_correction(&self, height: f64, density: f64) -> f64 {
+    fn cassinis_height_correction(&self, height: f64, density: f64) -> f64 {
         (3.08e-6 - 4.19e-10 * density) * height
     }
 
@@ -98,7 +93,7 @@ impl Ellipsoid {
     /// The value is to be **subtracted** from the normal gravity on the
     /// ellipsoid.
     #[must_use]
-    pub fn grs67_height_correction(&self, latitude: f64, height: f64) -> f64 {
+    fn grs67_height_correction(&self, latitude: f64, height: f64) -> f64 {
         ((3.0877e-6 - 4.3e-9 * latitude.sin().powi(2)) + 7.2e-13 * height) * height
     }
 
@@ -117,7 +112,7 @@ impl Ellipsoid {
     /// individual observations? - or perhaps the HandWiki text is just slightly
     /// wrong here.
     #[must_use]
-    pub fn welmec(&self, latitude: f64, height: f64) -> f64 {
+    fn welmec(&self, latitude: f64, height: f64) -> f64 {
         let s1 = latitude.sin().powi(2);
         let s2 = (latitude * 2.).sin().powi(2);
         (1.0 + 0.0053024 * s1 - 0.0000058 * s2) * 9.780318 - 0.000003085 * height

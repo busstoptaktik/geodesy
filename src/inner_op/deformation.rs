@@ -360,7 +360,7 @@ mod tests {
         // works identically to the hand held incantations above
         let op = ctx.op("deformation dt=1000 grids=test.deformation")?;
         // Create a test data point in the cartesian space
-        let ellps = crate::Ellipsoid::default();
+        let ellps = Ellipsoid::default();
         let cph = ellps.cartesian(&cph);
 
         // Check the length of the correction after a forward step

@@ -51,7 +51,7 @@ pub fn add42_constructor(parameters: &RawParameters, ctx: &dyn Context) -> Resul
 }
 
 fn main() -> anyhow::Result<()> {
-    let mut prv = geodesy::Minimal::new();
+    let mut prv = geodesy::prelude::Minimal::new();
     prv.register_op("add42", OpConstructor(add42_constructor));
     let add42 = prv.op("add42")?;
 

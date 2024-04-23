@@ -63,7 +63,7 @@ where
 }
 
 /// For Rust Geodesy, the ISO-19111 concept of `DirectPosition` is represented
-/// as a `geodesy::Coo4D`.
+/// as a `geodesy::Coor4D`.
 ///
 /// The strict connection between the ISO19107 "DirectPosition" datatype
 /// and the ISO19111/OGC Topic 2 "CoordinateSet" interface (i.e. trait)

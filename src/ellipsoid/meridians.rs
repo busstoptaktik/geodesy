@@ -1,8 +1,8 @@
 use super::*;
 use std::f64::consts::FRAC_PI_2;
 
-// ----- Meridian geometry -----------------------------------------------------
-impl Ellipsoid {
+/// Meridian geometry
+pub trait Meridians: EllipsoidBase {
     /// The Normalized Meridian Arc Unit, *Qn*, is the mean length of one radian
     ///  of the meridian. "Normalized", because we measure it in units of the
     /// semimajor axis, *a*.
@@ -10,7 +10,7 @@ impl Ellipsoid {
     /// König und Weise p.50 (96), p.19 (38b), p.5 (2), here using the extended
     /// version from [Karney 2010](crate::Bibliography::Kar10) eq. (29)
     #[must_use]
-    pub fn normalized_meridian_arc_unit(&self) -> f64 {
+    fn normalized_meridian_arc_unit(&self) -> f64 {
         let n = self.third_flattening();
         crate::math::taylor::horner(n * n, &constants::MERIDIAN_ARC_COEFFICIENTS) / (1. + n)
     }
@@ -18,12 +18,12 @@ impl Ellipsoid {
     /// The rectifying radius, *A*, is the radius of a sphere of the same circumference
     /// as the length of a full meridian on the ellipsoid.
     ///
-    /// Closely related to the [normalized meridian arc unit](Ellipsoid::normalized_meridian_arc_unit).
+    /// Closely related to the [normalized meridian arc unit](Meridians::normalized_meridian_arc_unit).
     ///
     /// [Karney (2010)](crate::Bibliography::Kar10) eq. (29), elaborated in
     /// [Deakin et al (2012)](crate::Bibliography::Dea12) eq. (41)
     #[must_use]
-    pub fn rectifying_radius(&self) -> f64 {
+    fn rectifying_radius(&self) -> f64 {
         let n = self.third_flattening();
         self.semimajor_axis() / (1. + n)
             * crate::math::taylor::horner(n * n, &constants::MERIDIAN_ARC_COEFFICIENTS)
@@ -32,11 +32,11 @@ impl Ellipsoid {
     /// The rectifying radius, *A*, following [Bowring (1983)](crate::Bibliography::Bow83):
     /// An utterly elegant way of writing out the series truncated after the *n⁴* term.
     /// In general, however, prefer using the *n⁸* version implemented as
-    /// [rectifying_radius](Ellipsoid::rectifying_radius), based on
+    /// [rectifying_radius](Meridians::rectifying_radius), based on
     /// [Karney (2010)](crate::Bibliography::Kar10) eq. (29), as elaborated in
     /// [Deakin et al (2012)](crate::Bibliography::Dea12) eq. (41)
     #[must_use]
-    pub fn rectifying_radius_bowring(&self) -> f64 {
+    fn rectifying_radius_bowring(&self) -> f64 {
         // A is the rectifying radius - truncated after the n⁴ term
         let n = self.third_flattening();
         let m = 1. + n * n / 8.;
@@ -45,10 +45,10 @@ impl Ellipsoid {
 
     /// The Meridian Quadrant, *Qm*, is the distance from the equator to one of the poles.
     /// i.e. *π/2 · Qn · a*, where *Qn* is the
-    /// [normalized meridian arc unit](Ellipsoid::normalized_meridian_arc_unit)
+    /// [normalized meridian arc unit](Meridians::normalized_meridian_arc_unit)
     #[must_use]
-    pub fn meridian_quadrant(&self) -> f64 {
-        self.a * FRAC_PI_2 * self.normalized_meridian_arc_unit()
+    fn meridian_quadrant(&self) -> f64 {
+        self.semimajor_axis() * FRAC_PI_2 * self.normalized_meridian_arc_unit()
     }
 
     /// The distance, *M*, along a meridian from the equator to the given
@@ -64,7 +64,7 @@ impl Ellipsoid {
     #[must_use]
     #[allow(non_snake_case)] // So we can use the mathematical notation from the original text
     #[allow(clippy::many_single_char_names)] // ditto
-    pub fn meridian_latitude_to_distance(&self, latitude: f64) -> f64 {
+    fn meridian_latitude_to_distance(&self, latitude: f64) -> f64 {
         let n = self.third_flattening();
 
         // The rectifying radius - using a slightly more accurate series than in Bowring (1983)
@@ -87,11 +87,11 @@ impl Ellipsoid {
     /// by [Bowring (1983)](crate::Bibliography::Bow83).
     ///
     /// See also
-    /// [meridian_latitude_to_distance](Ellipsoid::meridian_latitude_to_distance)
+    /// [meridian_latitude_to_distance](Meridians::meridian_latitude_to_distance)
     #[must_use]
     #[allow(non_snake_case)] // So we can use the mathematical notation from the original text
     #[allow(clippy::many_single_char_names)] // ditto
-    pub fn meridian_distance_to_latitude(&self, distance_from_equator: f64) -> f64 {
+    fn meridian_distance_to_latitude(&self, distance_from_equator: f64) -> f64 {
         let n = self.third_flattening();
 
         // Rectifying radius - using a slightly more accurate series than in Bowring (1983)

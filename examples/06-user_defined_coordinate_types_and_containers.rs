@@ -87,7 +87,7 @@ fn main() -> Result<(), anyhow::Error> {
 
     // We use ::new() instead of ::default() in order to gain access to the
     // BUILTIN_ADAPTORS (geo:in, geo:out etc.)
-    let mut ctx = geodesy::Minimal::new();
+    let mut ctx = geodesy::prelude::Minimal::new();
     trace!("have context");
 
     let copenhagen = Coor4D([55., 12., 0., 0.]);

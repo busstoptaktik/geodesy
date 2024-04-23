@@ -3,7 +3,7 @@ mod subgrid;
 
 use self::subgrid::NODE_SIZE;
 use super::BaseGrid;
-use crate::{Coor4D, Error, Grid};
+use crate::{coord::Coor4D, grid::Grid, Error};
 use parser::{NTv2Parser, HEADER_SIZE};
 use std::collections::BTreeMap;
 

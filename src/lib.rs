@@ -1,67 +1,22 @@
 #![doc = include_str!("../README.md")]
 
-/// The bread-and-butter, shrink-wrapped for external use
+/// The bread-and-butter, shrink-wrapped and ready to use
 pub mod prelude {
-    // Context related
-    pub use crate::Context;
-    pub use crate::Direction;
-    pub use crate::Direction::Fwd;
-    pub use crate::Direction::Inv;
-    pub use crate::Minimal;
-    pub use crate::OpHandle;
-    #[cfg(feature = "with_plain")]
-    pub use crate::Plain;
-
-    // Coordinate related
-    pub use crate::math::angular;
-    pub use crate::AngularUnits;
-    pub use crate::Coor2D;
-    pub use crate::Coor32;
-    pub use crate::Coor3D;
-    pub use crate::Coor4D;
-    pub use crate::CoordinateMetadata;
-    pub use crate::CoordinateSet;
-    pub use crate::CoordinateTuple;
-
-    // Et cetera
-    pub use crate::Ellipsoid;
+    pub use crate::coord::*;
+    pub use crate::ctx::*;
+    pub use crate::ellps::*;
+    #[allow(unused_imports)]
+    pub use crate::test_coords::*;
     pub use crate::Error;
-
-    #[cfg(test)]
-    pub fn some_basic_coor4dinates() -> [Coor4D; 2] {
-        let copenhagen = Coor4D::raw(55., 12., 0., 0.);
-        let stockholm = Coor4D::raw(59., 18., 0., 0.);
-        [copenhagen, stockholm]
-    }
-    #[cfg(test)]
-    pub fn some_basic_coor3dinates() -> [Coor3D; 2] {
-        let copenhagen = Coor3D::raw(55., 12., 0.);
-        let stockholm = Coor3D::raw(59., 18., 0.);
-        [copenhagen, stockholm]
-    }
-    #[cfg(test)]
-    pub fn some_basic_coor2dinates() -> [Coor2D; 2] {
-        let copenhagen = Coor2D::raw(55., 12.);
-        let stockholm = Coor2D::raw(59., 18.);
-        [copenhagen, stockholm]
-    }
 }
 
-/// Extended prelude for authoring Contexts and InnerOp modules (built-in or user defined)
+/// Extended prelude for authoring Contexts and InnerOp modules
 pub mod authoring {
-    pub use crate::prelude::*;
-
-    pub use crate::grid::grids_at;
-    pub use crate::grid::BaseGrid;
-    pub use crate::grid::Grid;
+    pub use crate::grd::*;
     pub use crate::math::*;
-    pub use crate::InnerOp;
-    pub use crate::Op;
-    pub use crate::OpConstructor;
-    pub use crate::OpDescriptor;
-    pub use crate::OpParameter;
-    pub use crate::ParsedParameters;
-    pub use crate::RawParameters;
+    pub use crate::ops::*;
+    pub use crate::parse::*;
+    pub use crate::prelude::*;
 
     // All new contexts are supposed to support these
     pub use crate::context::BUILTIN_ADAPTORS;
@@ -70,9 +25,6 @@ pub mod authoring {
     pub use crate::math::jacobian::Factors;
     pub use crate::math::jacobian::Jacobian;
 
-    pub use crate::parse_proj;
-    pub use crate::Tokenize;
-
     // External material
     pub use log::debug;
     pub use log::error;
@@ -80,6 +32,96 @@ pub mod authoring {
     pub use log::trace;
     pub use log::warn;
     pub use std::collections::BTreeMap;
+}
+
+/// Context related elements
+pub mod ctx {
+    pub use crate::context::minimal::Minimal;
+    #[cfg(feature = "with_plain")]
+    pub use crate::context::plain::Plain;
+    pub use crate::context::Context;
+    pub use crate::op::OpHandle;
+    pub use crate::Direction;
+    pub use crate::Direction::Fwd;
+    pub use crate::Direction::Inv;
+}
+
+/// Ellipsoid related elements
+pub mod ellps {
+    pub use crate::ellipsoid::biaxial::Ellipsoid;
+    pub use crate::ellipsoid::geocart::GeoCart;
+    pub use crate::ellipsoid::geodesics::Geodesics;
+    pub use crate::ellipsoid::gravity::Gravity;
+    pub use crate::ellipsoid::latitudes::Latitudes;
+    pub use crate::ellipsoid::meridians::Meridians;
+    pub use crate::ellipsoid::triaxial::TriaxialEllipsoid;
+    pub use crate::ellipsoid::EllipsoidBase;
+}
+
+/// Coordinate related elements
+pub mod coord {
+    // Coordinate types
+    pub use crate::coordinate::coor2d::Coor2D;
+    pub use crate::coordinate::coor32::Coor32;
+    pub use crate::coordinate::coor3d::Coor3D;
+    pub use crate::coordinate::coor4d::Coor4D;
+    // Coordinate traits
+    pub use crate::coordinate::set::CoordinateSet;
+    pub use crate::coordinate::tuple::CoordinateTuple;
+    pub use crate::coordinate::AngularUnits;
+    pub use crate::coordinate::CoordinateMetadata;
+    pub use crate::math::angular;
+}
+
+/// Some generic coordintes for test composition
+mod test_coords {
+    #[cfg(test)]
+    pub fn some_basic_coor4dinates() -> [crate::coord::Coor4D; 2] {
+        let copenhagen = crate::coord::Coor4D::raw(55., 12., 0., 0.);
+        let stockholm = crate::coord::Coor4D::raw(59., 18., 0., 0.);
+        [copenhagen, stockholm]
+    }
+
+    #[cfg(test)]
+    pub fn some_basic_coor3dinates() -> [crate::coord::Coor3D; 2] {
+        let copenhagen = crate::coord::Coor3D::raw(55., 12., 0.);
+        let stockholm = crate::coord::Coor3D::raw(59., 18., 0.);
+        [copenhagen, stockholm]
+    }
+
+    #[cfg(test)]
+    pub fn some_basic_coor2dinates() -> [crate::coord::Coor2D; 2] {
+        let copenhagen = crate::coord::Coor2D::raw(55., 12.);
+        let stockholm = crate::coord::Coor2D::raw(59., 18.);
+        [copenhagen, stockholm]
+    }
+}
+
+/// Elements for building operators
+mod ops {
+    pub use crate::inner_op::InnerOp;
+    pub use crate::inner_op::OpConstructor;
+    pub use crate::op::Op;
+    pub use crate::op::OpDescriptor;
+    pub use crate::op::OpParameter;
+    pub use crate::op::ParsedParameters;
+    pub use crate::op::RawParameters;
+}
+
+/// Elements for handling grids
+mod grd {
+    pub use crate::grid::grids_at;
+    pub use crate::grid::ntv2::Ntv2Grid;
+    pub use crate::grid::BaseGrid;
+    pub use crate::grid::Grid;
+}
+
+/// Elements for parsing both Geodesy and PROJ syntax
+mod parse {
+    // Tokenizing Rust Geodesy operations
+    pub use crate::token::Tokenize;
+    // PROJ interoperability
+    pub use crate::token::parse_proj;
 }
 
 use thiserror::Error;
@@ -151,57 +193,10 @@ mod coordinate;
 mod ellipsoid;
 mod grid;
 mod inner_op;
-pub mod math;
+mod math;
 mod op;
 mod token;
 
-// ---- Context providers ----
-
-// The Context trait and the two implementing built-in types
-pub use crate::context::Context;
-
-pub use crate::context::minimal::Minimal;
-#[cfg(feature = "with_plain")]
-pub use crate::context::plain::Plain;
-
-// Specify which operator to apply in `Context::apply(...)`
-pub use crate::op::OpHandle;
-
-// ---- Coordinates and ellipsoids ----
-
-// Ellipsoidal operations
-pub use crate::ellipsoid::Ellipsoid;
-
-// Coordinate types
-pub use crate::coordinate::coor2d::Coor2D;
-pub use crate::coordinate::coor32::Coor32;
-pub use crate::coordinate::coor3d::Coor3D;
-pub use crate::coordinate::coor4d::Coor4D;
-// Coordinate traits
-pub use crate::coordinate::set::CoordinateSet;
-pub use crate::coordinate::tuple::CoordinateTuple;
-pub use crate::coordinate::AngularUnits;
-pub use crate::coordinate::CoordinateMetadata;
-
-// ---- Et cetera ----
-
-// Tokenizing Rust Geodesy operations
-pub use crate::token::Tokenize;
-
-// PROJ interoperability
-pub use crate::token::parse_proj;
-
-// The lower level data types, mostly use in the extended prelude 'authoring'
-pub use crate::grid::Grid;
-pub use crate::inner_op::InnerOp;
-pub use crate::inner_op::OpConstructor;
-pub use crate::op::Op;
-pub use crate::op::OpDescriptor;
-pub use crate::op::OpParameter;
-pub use crate::op::ParsedParameters;
-pub use crate::op::RawParameters;
-
-pub use crate::grid::ntv2::Ntv2Grid;
-
+// ---- Documentation: Bibliography ----
 #[cfg(doc)]
 pub use crate::bibliography::Bibliography;

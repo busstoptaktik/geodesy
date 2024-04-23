@@ -19,7 +19,7 @@ pub trait Grid: Debug + Sync + Send {
 /// Grid characteristics and interpolation.
 ///
 /// The actual grid may be part of the `BaseGrid` struct, or
-/// provided externally (presumably by a [Context](crate::Context)).
+/// provided externally (presumably by a [Context](crate::context::Context)).
 ///
 /// In principle grid format agnostic, but includes a parser for
 /// geodetic grids in the Gravsoft format.

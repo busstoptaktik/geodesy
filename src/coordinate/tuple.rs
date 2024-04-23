@@ -109,7 +109,7 @@ all_coord_operators!(Coor32, Coor32, coor32);
 
 /// CoordinateTuple is the ISO-19111 atomic spatial/spatiotemporal
 /// referencing element. So loosely speaking, a CoordinateSet is a
-///  collection of CoordinateTuples.
+/// collection of CoordinateTuples.
 ///
 /// Note that (despite the formal name) the underlying data structure
 /// need not be a tuple: It can be any item, for which it makes sense
@@ -357,7 +357,7 @@ pub trait CoordinateTuple {
     /// # See also:
     ///
     /// [`hypot3`](Self::hypot3),
-    /// [`distance`](crate::ellipsoid::Ellipsoid::distance)
+    /// [`distance`](crate::ellps::Geodesics::distance)
     ///
     /// # Examples
     ///
@@ -391,7 +391,7 @@ pub trait CoordinateTuple {
     /// # See also:
     ///
     /// [`hypot2()`](Self::hypot2),
-    /// [`distance`](crate::ellipsoid::Ellipsoid::distance)
+    /// [`distance`](crate::ellps::Geodesics::distance)
     ///
     /// # Examples
     ///
