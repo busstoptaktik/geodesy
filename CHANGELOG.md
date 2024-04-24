@@ -2,8 +2,8 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
+this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
@@ -69,7 +69,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Improved syntax for register resources (See *Rumination #009*)
 
-- Change the name of `CHANGES.md` to `CHANGELOG.md`, and try to follow guidelines from [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
+- Change the name of `CHANGES.md` to `CHANGELOG.md`, and try to follow guidelines from
+  [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ### Removed
 
@@ -81,11 +82,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Improvements
 
-- Alternative parameter names for the `helmert` operator (`translations`, `rotations` etc.) (Nic Hill)
+- Alternative parameter names for the `helmert` operator
+  (`translations`, `rotations` etc.) (Nic Hill)
 - Improved syntax and parameter handling (#92) (Thomas Knudsen)
-  - `>` and `<` can be used to indicate pipeline steps that are `omit_inv` and `omit_fwd` respectively (syntactic sugar for `| omit_inv`, etc.)
-  - True utf-8 subscripts supported in parameter names (e.g. `x₀`), as alternatives to the existing `x_0`-style
-  - More free form syntax: Modifiers `inv`, `omit_inv` and `omit_fwd` may now prefix the operator name, i.e. `inv utm zone=32` is functionally identical to `utm inv zone=32`
+  - `>` and `<` can be used to indicate pipeline steps that are `omit_inv` and
+    `omit_fwd` respectively (syntactic sugar for `| omit_inv`, etc.)
+  - True utf-8 subscripts supported in parameter names (e.g. `x₀`), as alternatives
+    to the existing `x_0`-style
+  - More free form syntax: Modifiers `inv`, `omit_inv` and `omit_fwd` may now prefix
+    the operator name, i.e. `inv utm zone=32` is functionally identical to `utm inv zone=32`
 - Implement the `axisswap` operator (#84) (Thomas Knudsen)
 - Replace `once_cell` with `std::sync::OneLock`. (Corey Farwell)
 - KP: Guess output dimensionality (#82) (Thomas Knudsen)
@@ -131,7 +136,8 @@ Geodesy v0.12.0 materialized through contributions from
 
   which does nothing, in a very convoluted way
 - Partial operator introspection
-- General support for 2D, 3D, 4D, and 32 bit 2D coordinates (`Coor2D`, `Coor3D`, `Coor4D`, `Coor32`)
+- General support for 2D, 3D, 4D, and 32 bit 2D coordinates
+  (`Coor2D`, `Coor3D`, `Coor4D`, `Coor32`)
 - Hence `Coord` is gone
 
 ### Bug fixes
@@ -140,4 +146,7 @@ Geodesy v0.12.0 materialized through contributions from
 
 ### Acknowledgements
 
-A huge thank you goes to [Sean Rennie](https://github.com/Rennzie) who a.o. did most of the work on the improved grid support in 0.11.0, and to [Kyle Barron](https://github.com/kylebarron) for pushing Geodesy over the WASM barrier in 0.10.0
+A huge thank you goes to [Sean Rennie](https://github.com/Rennzie) who a.o. did most
+of the work on the improved grid support in 0.11.0,
+and to [Kyle Barron](https://github.com/kylebarron) for pushing Geodesy over the
+WASM barrier in 0.10.0
