@@ -103,7 +103,7 @@ The documentation is currently limited, but take a look at:
 
 ## License
 
-*Rust Geodesy*: Copyright 2020, 2021, 2022, 2023 by Thomas Knudsen <knudsen.thomas@gmail.com>.
+*Rust Geodesy*: Copyright 2020, 2021, 2022, 2023, 2024 by Thomas Knudsen <knudsen.thomas@gmail.com> and contributors.
 
 Licensed under either of
 
