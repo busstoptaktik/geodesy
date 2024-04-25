@@ -5,7 +5,7 @@ pub mod prelude {
     pub use crate::coord::*;
     pub use crate::ctx::*;
     pub use crate::ellps::*;
-    #[allow(unused_imports)]
+    #[cfg(test)]
     pub use crate::test_coords::*;
     pub use crate::Error;
 }
@@ -71,30 +71,6 @@ pub mod coord {
     pub use crate::coordinate::AngularUnits;
     pub use crate::coordinate::CoordinateMetadata;
     pub use crate::math::angular;
-}
-
-/// Some generic coordintes for test composition
-mod test_coords {
-    #[cfg(test)]
-    pub fn some_basic_coor4dinates() -> [crate::coord::Coor4D; 2] {
-        let copenhagen = crate::coord::Coor4D::raw(55., 12., 0., 0.);
-        let stockholm = crate::coord::Coor4D::raw(59., 18., 0., 0.);
-        [copenhagen, stockholm]
-    }
-
-    #[cfg(test)]
-    pub fn some_basic_coor3dinates() -> [crate::coord::Coor3D; 2] {
-        let copenhagen = crate::coord::Coor3D::raw(55., 12., 0.);
-        let stockholm = crate::coord::Coor3D::raw(59., 18., 0.);
-        [copenhagen, stockholm]
-    }
-
-    #[cfg(test)]
-    pub fn some_basic_coor2dinates() -> [crate::coord::Coor2D; 2] {
-        let copenhagen = crate::coord::Coor2D::raw(55., 12.);
-        let stockholm = crate::coord::Coor2D::raw(59., 18.);
-        [copenhagen, stockholm]
-    }
 }
 
 /// Elements for building operators
@@ -196,6 +172,28 @@ mod inner_op;
 mod math;
 mod op;
 mod token;
+
+/// Some generic coordinates for test composition
+#[cfg(test)]
+mod test_coords {
+    pub fn some_basic_coor4dinates() -> [crate::coord::Coor4D; 2] {
+        let copenhagen = crate::coord::Coor4D::raw(55., 12., 0., 0.);
+        let stockholm = crate::coord::Coor4D::raw(59., 18., 0., 0.);
+        [copenhagen, stockholm]
+    }
+
+    pub fn some_basic_coor3dinates() -> [crate::coord::Coor3D; 2] {
+        let copenhagen = crate::coord::Coor3D::raw(55., 12., 0.);
+        let stockholm = crate::coord::Coor3D::raw(59., 18., 0.);
+        [copenhagen, stockholm]
+    }
+
+    pub fn some_basic_coor2dinates() -> [crate::coord::Coor2D; 2] {
+        let copenhagen = crate::coord::Coor2D::raw(55., 12.);
+        let stockholm = crate::coord::Coor2D::raw(59., 18.);
+        [copenhagen, stockholm]
+    }
+}
 
 // ---- Documentation: Bibliography ----
 #[cfg(doc)]
