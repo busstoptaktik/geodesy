@@ -151,4 +151,10 @@ mod tests {
         let b = Coor32([4., 3.]);
         assert_eq!(a.dot(b), 10.)
     }
+
+    #[test]
+    fn crate_test_data() {
+        let a = crate::test_data::coor32();
+        assert_eq!(a[0][0], 55.);
+    }
 }

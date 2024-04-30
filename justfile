@@ -69,10 +69,6 @@ run-all:
 changes:
     git log --pretty=format:"%as: %s (%an)"
 
-# Update CHANGELOG file
-changelog:
-    git log --pretty=format:"%as: %s (%an)" > CHANGELOG
-
 # Some invisible oddities for general amusement
 
 _sysinfo:

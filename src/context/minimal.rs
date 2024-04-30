@@ -131,7 +131,7 @@ mod tests {
     fn basic() -> Result<(), Error> {
         let mut ctx = Minimal::new();
 
-        // The "stupid way of adding 1" macro from geodesy/macro/stupid_way.macro
+        // The "stupid way of adding 1" macro from geodesy/resources/stupid.md
         ctx.register_resource("stupid:way", "addone | addone | addone inv");
         let op = ctx.op("stupid:way")?;
 
@@ -141,7 +141,7 @@ mod tests {
         assert_eq!(steps[1], "addone");
         assert_eq!(steps[2], "addone inv");
 
-        let mut data = some_basic_coor2dinates();
+        let mut data = crate::test_data::coor2d();
         assert_eq!(data[0].x(), 55.);
         assert_eq!(data[1].x(), 59.);
 
@@ -166,7 +166,7 @@ mod tests {
 
         let op = ctx.op("geo:in | utm zone=32 | neu:out")?;
 
-        let mut data = some_basic_coor2dinates();
+        let mut data = crate::test_data::coor2d();
         assert_eq!(data[0].x(), 55.);
         assert_eq!(data[1].x(), 59.);
 

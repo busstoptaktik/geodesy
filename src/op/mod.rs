@@ -178,7 +178,7 @@ mod tests {
 
         // Check forward and inverse operation
         let op = ctx.op("addone")?;
-        let mut data = some_basic_coor2dinates();
+        let mut data = crate::test_data::coor2d();
         ctx.apply(op, Fwd, &mut data)?;
         assert_eq!(data[0][0], 56.);
         assert_eq!(data[1][0], 60.);
@@ -188,7 +188,7 @@ mod tests {
 
         // Also for an inverted operator: check forward and inverse operation
         let op = ctx.op("addone inv ")?;
-        let mut data = some_basic_coor2dinates();
+        let mut data = crate::test_data::coor2d();
         ctx.apply(op, Fwd, &mut data)?;
         assert_eq!(data[0][0], 54.);
         assert_eq!(data[1][0], 58.);
@@ -219,7 +219,7 @@ mod tests {
 
     #[test]
     fn pipeline() -> Result<(), Error> {
-        let mut data = some_basic_coor2dinates();
+        let mut data = crate::test_data::coor2d();
         let mut ctx = Minimal::default();
         let op = ctx.op("addone|addone|addone")?;
 
@@ -236,7 +236,7 @@ mod tests {
 
     #[test]
     fn macro_expansion() -> Result<(), Error> {
-        let mut data = some_basic_coor2dinates();
+        let mut data = crate::test_data::coor2d();
         let mut ctx = Minimal::default();
         ctx.register_resource("sub:one", "addone inv");
         let op = ctx.op("addone|sub:one|addone")?;
@@ -254,7 +254,7 @@ mod tests {
 
     #[test]
     fn macro_expansion_inverted() -> Result<(), Error> {
-        let mut data = some_basic_coor2dinates();
+        let mut data = crate::test_data::coor2d();
         let mut ctx = Minimal::default();
         ctx.register_resource("sub:one", "addone inv");
         let op = ctx.op("addone|sub:one inv|addone")?;
@@ -272,7 +272,7 @@ mod tests {
 
     #[test]
     fn macro_expansion_with_embedded_pipeline() -> Result<(), Error> {
-        let mut data = some_basic_coor2dinates();
+        let mut data = crate::test_data::coor2d();
         let mut ctx = Minimal::default();
         ctx.register_resource("sub:three", "addone inv|addone inv|addone inv");
         let op = ctx.op("addone|sub:three")?;
@@ -299,7 +299,7 @@ mod tests {
 
     #[test]
     fn macro_expansion_with_defaults() -> Result<(), Error> {
-        let mut data = some_basic_coor2dinates();
+        let mut data = crate::test_data::coor2d();
         let mut ctx = Minimal::default();
 
         // A macro providing a default value of 1 for the x parameter
@@ -392,12 +392,11 @@ mod tests {
 
     #[test]
     fn steps() -> Result<(), Error> {
-        let (steps, _) =
-            "  |\n#\n | |foo bar = baz |   bonk : bonk  $ bonk ||| ".split_into_steps();
+        let steps = "  |\n#\n | |foo bar = baz |   bonk : bonk  $ bonk ||| ".split_into_steps();
         assert_eq!(steps.len(), 2);
         assert_eq!(steps[0], "foo bar=baz");
         assert_eq!(steps[1], "bonk:bonk $bonk");
-        let (steps, _) = "\n\r\r\n    ||| | \n\n\r\n\r  |  \n\r\r \n  ".split_into_steps();
+        let steps = "\n\r\r\n    ||| | \n\n\r\n\r  |  \n\r\r \n  ".split_into_steps();
         assert_eq!(steps.len(), 0);
 
         Ok(())

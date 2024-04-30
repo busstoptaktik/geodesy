@@ -9,8 +9,8 @@ use std::collections::BTreeMap;
 /// - For checking whether a key is a macro name ("resource name"), and
 /// - For accessing the name of a given operator.
 pub trait Tokenize {
-    /// Split a pipeline definition into steps and a potentially empty docstring
-    fn split_into_steps(&self) -> (Vec<String>, String);
+    /// Remove comments and split a pipeline definition into steps
+    fn split_into_steps(&self) -> Vec<String>;
 
     /// Split a step/an operation into parameters. Give special treatment
     /// to names and flags:
@@ -52,7 +52,7 @@ impl<T> Tokenize for T
 where
     T: AsRef<str>,
 {
-    fn split_into_steps(&self) -> (Vec<String>, String) {
+    fn split_into_steps(&self) -> Vec<String> {
         // Impose some line ending sanity
         let all = self
             .as_ref()
@@ -61,17 +61,10 @@ where
             .replace('\r', "\n") // The fruit company
             .replace("\n:", "\n") // Line continuation markers
             .to_string();
-        // Collect docstrings and remove plain comments
+        // Remove comments
         let mut trimmed = String::new();
-        let mut docstring = Vec::<String>::new();
         for line in all.lines() {
             let line = line.trim();
-
-            // Collect docstrings
-            if line.starts_with("##") {
-                docstring.push((line.to_string() + "    ")[3..].trim_end().to_string());
-                continue;
-            }
 
             // Remove comments - both inline and separate lines
             let line: Vec<&str> = line.trim().split('#').collect();
@@ -85,9 +78,6 @@ where
             trimmed += line[0].trim();
         }
 
-        // Finalize the docstring
-        let docstring = docstring.join("\n").trim().to_string();
-
         // Remove empty steps and other non-significant whitespace
         let steps: Vec<String> = trimmed
             .normalize()
@@ -100,7 +90,7 @@ where
             // and turn into Vec<String>
             .collect();
 
-        (steps, docstring)
+        steps
     }
 
     fn split_into_parameters(&self) -> BTreeMap<String, String> {
@@ -445,9 +435,7 @@ mod tests {
 
         // Splitting a pipeline into steps
         assert_eq!(
-            "foo>bar <baz  =  bonk, bonk , bonk<zap"
-                .split_into_steps()
-                .0[3],
+            "foo>bar <baz  =  bonk, bonk , bonk<zap".split_into_steps()[3],
             "omit_fwd zap"
         );
 
@@ -565,7 +553,7 @@ mod tests {
         // *at the top of the argument list*. Here: x=1 masquerades as the global value,
         // while x=2 is the step local one, which overwrites the global
         let op = ctx.op("helmert x=1 x=2")?;
-        let mut operands = some_basic_coor2dinates();
+        let mut operands = crate::test_data::coor2d();
         assert_eq!(2, ctx.apply(op, Fwd, &mut operands)?);
         assert_eq!(operands[0][0], 57.0);
         assert_eq!(operands[1][0], 61.0);

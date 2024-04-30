@@ -62,7 +62,7 @@ pub const GAMUT: [OpParameter; 1] = [
 
 pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
     let definition = &parameters.definition;
-    let thesteps = definition.split_into_steps().0;
+    let thesteps = definition.split_into_steps();
     let mut steps = Vec::new();
 
     for step in thesteps {
@@ -92,7 +92,7 @@ mod tests {
     fn pipeline() -> Result<(), Error> {
         let mut ctx = Minimal::default();
         let op = ctx.op("addone|addone|addone")?;
-        let mut data = some_basic_coor2dinates();
+        let mut data = crate::test_data::coor2d();
 
         assert_eq!(2, ctx.apply(op, Fwd, &mut data)?);
         assert_eq!(data[0][0], 58.);
@@ -103,7 +103,7 @@ mod tests {
         assert_eq!(data[1][0], 59.);
 
         let op = ctx.op("addone|addone inv|addone")?;
-        let mut data = some_basic_coor2dinates();
+        let mut data = crate::test_data::coor2d();
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
 

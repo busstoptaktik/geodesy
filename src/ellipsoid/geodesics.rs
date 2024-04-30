@@ -25,11 +25,11 @@ pub trait Geodesics: EllipsoidBase {
         let (U1sin, U1cos) = U1.sin_cos();
 
         // σ_1, here ss1, is the angular distance on the aux sphere from P1 to equator
-        let azicos = azimuth.cos();
+        let (azisin, azicos) = azimuth.sin_cos();
         let ss1 = ((1. - self.flattening()) * B1.tan()).atan2(azicos);
 
         // α, the forward azimuth of the geodesic at equator
-        let aasin = U1cos * azimuth.sin();
+        let aasin = U1cos * azisin;
         let aasin2 = aasin * aasin;
         let aacos2 = 1. - aasin2;
 

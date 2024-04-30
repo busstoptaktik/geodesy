@@ -61,10 +61,9 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         }
         geodesic[3] = (geodesic[1] + 180.0) % 360.0;
 
-        let distance = geodesic[2];
-        let return_azi = geodesic[3];
-
         if reversible {
+            let distance = geodesic[2];
+            let return_azi = geodesic[3];
             operands.set_coord(i, &Coor4D::raw(coord[2], coord[3], return_azi, distance));
             continue;
         }

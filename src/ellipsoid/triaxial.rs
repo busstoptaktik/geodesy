@@ -29,7 +29,7 @@ impl EllipsoidBase for TriaxialEllipsoid {
     }
 }
 
-/// Constructors for `Ellipsoid`
+/// Constructors for `TriaxialEllipsoid`
 impl TriaxialEllipsoid {
     /// User defined ellipsoid
     #[must_use]
@@ -56,6 +56,12 @@ impl TriaxialEllipsoid {
             // EPSG convention: zero reciproque flattening indicates zero flattening
             let f = if rf != 0.0 { 1.0 / rf } else { rf };
             return Ok(TriaxialEllipsoid::new(ax, ay, f));
+        }
+
+        // Remove optional parenthesis
+        let mut name = name;
+        if name.starts_with('(') && name.ends_with(')') {
+            name = name.strip_prefix('(').unwrap().strip_suffix(')').unwrap();
         }
 
         // The "semimajor, semimedian, reciproque-flattening" form, e.g. "6378137, 6345678, 298.3"
@@ -96,6 +102,10 @@ mod tests {
         assert_eq!(ellps.flattening(), 1. / 297.);
 
         let ellps = TriaxialEllipsoid::named("6378137, 298.25")?;
+        assert_eq!(ellps.semimajor_axis(), 6378137.0);
+        assert_eq!(ellps.flattening(), 1. / 298.25);
+
+        let ellps = TriaxialEllipsoid::named("(6378137, 298.25)")?;
         assert_eq!(ellps.semimajor_axis(), 6378137.0);
         assert_eq!(ellps.flattening(), 1. / 298.25);
 

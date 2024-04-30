@@ -15,7 +15,8 @@ The most important **features** are
 The most important **objectives** are
 
 - to support new, and hopefully better, abstractions,
-- to use these abstractions to build better, simpler, and more tractable, geospatial **standards, transformations, and software**.
+- to use these abstractions to build better, simpler, and more tractable,
+  geospatial **standards, transformations, and software**.
 
 If any of this resonates with you, read on after this minimal usage example...
 
@@ -31,7 +32,8 @@ $ cd foo
 $ cargo add geodesy
 ```
 
-Then copy this to the `foo/src/main.rs` file: A minimal example, computing the UTM coordinates of some Scandinavian capitals
+Then overwrite the contents of the `foo/src/main.rs` file with this:
+A minimal example, computing the UTM coordinates of some Scandinavian capitals
 
 ```rust
 use geodesy::prelude::*;
@@ -72,11 +74,28 @@ $ cargo r
 - Lambert Conformal Conic
 - Lambert Azimuthal Equal Area
 
-But fundamentally, *RG* is born as a *geodesy*, rather than *cartography* library. And while PROJ benefits from four decades of *reality hardening*, RG, being a platform for experiments, does not have operational robustness as a main focus. Hence, viewing *RG* as *another PROJ*, or *PROJ [RiiR](https://acronyms.thefreedictionary.com/RIIR)*, will lead to bad disappointment. At best, you may catch a weak mirage of a *potential* [shape of jazz to come](https://en.wikipedia.org/wiki/The_Shape_of_Jazz_to_Come) for the PROJ internal dataflow.
+But fundamentally, *RG* is born as a *geodesy*, rather than
+a *cartography* library. And while PROJ benefits from four
+decades of *reality hardening*, RG, being a platform for experiments,
+does not have operational robustness as a main focus.
+Hence, viewing *RG* as *another PROJ*, or
+*PROJ [RiiR](https://acronyms.thefreedictionary.com/RIIR)*,
+will lead to bad disappointment.
+At best, you may catch a weak mirage of a *potential*
+[shape of jazz to come](https://en.wikipedia.org/wiki/The_Shape_of_Jazz_to_Come)
+for the PROJ internal dataflow.
 
-That said, being written in Rust, with all the memory safety guarantees Rust provides, *RG* by design avoids a number of pitfalls that are explicitly worked around in the PROJ code base. So the miniscule size of *RG* compared to PROJ is not just a matter of functional pruning. It is also a matter of development using a tool wonderfully suited for the task at hand.
+That said, being written in Rust, with all the memory safety guarantees Rust provides,
+*RG* by design avoids a number of pitfalls that are explicitly worked
+around in the PROJ code base. So the miniscule size of *RG* compared to
+PROJ is not just a matter of functional pruning. It is also a matter of
+development using a tool wonderfully suited for the task at hand.
 
-Also, having the advantage of learning from PROJ experience, both from a user's and a developer's perspective, *RG* is designed to be significantly more extensible than PROJ. So perhaps for a number of applications, and despite its limitations, RG may be sufficient, and perhaps even useful.
+Also, having the advantage of learning from PROJ experience, both from
+a user's and a developer's perspective, *RG* is designed to be
+significantly more extensible than PROJ. So perhaps for a number of
+applications, and despite its limitations, RG may be sufficient, and
+perhaps even useful.
 
 ## Aims
 
@@ -87,7 +106,8 @@ Dataflow experimentation is just one aspect of *RG*. Overall, the aims are (at l
 3. Hence, provide easy access to a number of basic geodetic operations, not limited to coordinate operations.
 4. Support experiments with data flow and alternative abstractions. Mostly as a tool for aims (1, 2, 3)
 
-All four aims are guided by a wish to amend explicitly identified shortcomings in the existing geodetic system landscape.
+All four aims are guided by a wish to amend explicitly identified
+shortcomings in the existing geodetic system landscape.
 
 ## Documentation
 
@@ -103,7 +123,8 @@ The documentation is currently limited, but take a look at:
 
 ## License
 
-*Rust Geodesy*: Copyright 2020, 2021, 2022, 2023, 2024 by Thomas Knudsen <knudsen.thomas@gmail.com> and contributors.
+*Rust Geodesy*: Copyright 2020, 2021, 2022, 2023, 2024 by
+Thomas Knudsen <knudsen.thomas@gmail.com> and contributors.
 
 Licensed under either of
 
@@ -116,4 +137,7 @@ at your option.
 
 ## Contribution
 
-Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in the work by you, as defined in the Apache-2.0 license, shall be dual licensed as above, without any additional terms or conditions.
+Unless you explicitly state otherwise, any contribution intentionally
+submitted for inclusion in the work by you, as defined in the
+Apache-2.0 license, shall be dual licensed as above, without any
+additional terms or conditions.

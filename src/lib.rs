@@ -5,8 +5,6 @@ pub mod prelude {
     pub use crate::coord::*;
     pub use crate::ctx::*;
     pub use crate::ellps::*;
-    #[cfg(test)]
-    pub use crate::test_coords::*;
     pub use crate::Error;
 }
 
@@ -175,22 +173,28 @@ mod token;
 
 /// Some generic coordinates for test composition
 #[cfg(test)]
-mod test_coords {
-    pub fn some_basic_coor4dinates() -> [crate::coord::Coor4D; 2] {
+mod test_data {
+    pub fn coor4d() -> [crate::coord::Coor4D; 2] {
         let copenhagen = crate::coord::Coor4D::raw(55., 12., 0., 0.);
         let stockholm = crate::coord::Coor4D::raw(59., 18., 0., 0.);
         [copenhagen, stockholm]
     }
 
-    pub fn some_basic_coor3dinates() -> [crate::coord::Coor3D; 2] {
+    pub fn coor3d() -> [crate::coord::Coor3D; 2] {
         let copenhagen = crate::coord::Coor3D::raw(55., 12., 0.);
         let stockholm = crate::coord::Coor3D::raw(59., 18., 0.);
         [copenhagen, stockholm]
     }
 
-    pub fn some_basic_coor2dinates() -> [crate::coord::Coor2D; 2] {
+    pub fn coor2d() -> [crate::coord::Coor2D; 2] {
         let copenhagen = crate::coord::Coor2D::raw(55., 12.);
         let stockholm = crate::coord::Coor2D::raw(59., 18.);
+        [copenhagen, stockholm]
+    }
+
+    pub fn coor32() -> [crate::coord::Coor32; 2] {
+        let copenhagen = crate::coord::Coor32::raw(55., 12.);
+        let stockholm = crate::coord::Coor32::raw(59., 18.);
         [copenhagen, stockholm]
     }
 }

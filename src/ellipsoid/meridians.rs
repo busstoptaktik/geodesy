@@ -7,7 +7,7 @@ pub trait Meridians: EllipsoidBase {
     ///  of the meridian. "Normalized", because we measure it in units of the
     /// semimajor axis, *a*.
     ///
-    /// König und Weise p.50 (96), p.19 (38b), p.5 (2), here using the extended
+    /// [König und Weise](crate::Bibliography::KuW51) p.50 (96), p.19 (38b), p.5 (2), here using the extended
     /// version from [Karney 2010](crate::Bibliography::Kar10) eq. (29)
     #[must_use]
     fn normalized_meridian_arc_unit(&self) -> f64 {

@@ -1,4 +1,4 @@
-/// Stack functionality for pipelines (push/pop/swap)
+//! Stack functionality for pipelines (push/pop/swap)
 use crate::authoring::*;
 
 // NOTE: roll and drop are not implemented yet

@@ -83,10 +83,17 @@ pub enum Bibliography {
     Kar22,
 
     /// Thomas Knudsen, Kristian Evers, Geir Arne Hjelle,
-    /// Guðmundur Valsson, Martin Lidberg and Pasi Häkli (2019):
+    /// Guðmundur Valsson, Martin Lidberg and Pasi Häkli, 2019:
     /// *The Bricks and Mortar for Contemporary Reimplementation of Legacy Nordic Transformations*.
     /// Geophysica, 54(1), pp. 107–116.
     Knu19,
+
+    /// R. König and K.H. Weise, 1951:
+    /// *Mathematische Grundlagen der Höheren Geodäsie und Kartographie:
+    /// Erster Band: Das Erdsphäroid und Seine Konformen Abbildungen*
+    /// Berlin: Springer, 540 pp.
+    /// [URL](https://link.springer.com/book/10.1007/978-3-642-87438-3)
+    KuW51,
 
     /// L. Krüger (1912). *Konforme Abbildung des Erdellipsoids in der Ebene*.
     /// Veröffentlichung des Königlich Preuszischen Geodätischen Instituts:
@@ -95,6 +102,13 @@ pub enum Bibliography {
     /// [URL](https://gfzpublic.gfz-potsdam.de/pubman/item/item_8827)
     /// [pdf](https://gfzpublic.gfz-potsdam.de/rest/items/item_8827_5/component/file_130038/content).
     Kru12,
+
+    /// Knud Poder and Karsten Engsager, 1998.
+    /// *Some Conformal Mappings and Transformations for Geodesy and Topographic Cartography*.
+    /// Copenhagen, Denmark: Geodetic Division, KMS,
+    /// Skrifter 4. række, bind 6, 63 pp.
+    /// [URL](https://ftp.space.dtu.dk/pub/Altimetry/ENGSAGER/SomeConformalMappings.pdf)
+    Pod98,
 
     /// A. C. Ruffhead (2016):  The SMITSWAM method of datum transformations
     /// consisting of Standard Molodensky in two stages with applied misclosures,
