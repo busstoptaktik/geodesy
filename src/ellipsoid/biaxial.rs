@@ -51,6 +51,12 @@ impl Ellipsoid {
             return Ok(Ellipsoid::new(ax, f));
         }
 
+        // Remove optional parenthesis
+        let mut name = name;
+        if name.starts_with('(') && name.ends_with(')') {
+            name = name.strip_prefix('(').unwrap().strip_suffix(')').unwrap();
+        }
+
         // The "semimajor, reciproque-flattening" form, e.g. "6378137, 298.3"
         let a_and_rf = name.split(',').collect::<Vec<_>>();
         if a_and_rf.len() == 2_usize {
@@ -85,6 +91,10 @@ mod tests {
         assert_eq!(ellps.flattening(), 1. / 297.);
 
         let ellps = Ellipsoid::named("6378137, 298.25")?;
+        assert_eq!(ellps.semimajor_axis(), 6378137.0);
+        assert_eq!(ellps.flattening(), 1. / 298.25);
+
+        let ellps = Ellipsoid::named("(6378137, 298.25)")?;
         assert_eq!(ellps.semimajor_axis(), 6378137.0);
         assert_eq!(ellps.flattening(), 1. / 298.25);
 

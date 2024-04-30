@@ -1,4 +1,4 @@
-/// CoordinateSet is the fundamental coordinate access interface in ISO-19111.
+/// `CoordinateSet` is the fundamental coordinate access interface in ISO-19111.
 /// Strictly speaking, it is not a set, but (in abstract terms) rather an
 /// indexed list, or (in more concrete terms): An array.
 ///
@@ -352,7 +352,7 @@ mod tests {
     // Test the "impl<const N: usize> CoordinateSet for [Coor4D; N]"
     #[test]
     fn array() {
-        let mut operands = some_basic_coor4dinates();
+        let mut operands = crate::test_data::coor4d();
         assert_eq!(operands.len(), 2);
         assert!(!operands.is_empty());
 
@@ -374,7 +374,7 @@ mod tests {
     // Test the "impl CoordinateSet for Vec<Coor4D>"
     #[test]
     fn vector() {
-        let mut operands = Vec::from(some_basic_coor4dinates());
+        let mut operands = Vec::from(crate::test_data::coor2d());
         assert_eq!(operands.len(), 2);
         assert!(!operands.is_empty());
 
@@ -396,7 +396,7 @@ mod tests {
     // Test the "AngularUnits" conversion trait
     #[test]
     fn angular() {
-        let operands = some_basic_coor2dinates();
+        let operands = crate::test_data::coor2d();
         let cph = operands.get_coord(0);
 
         // Note the different usage patterns when using the AngularUnits trait with

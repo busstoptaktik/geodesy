@@ -145,7 +145,7 @@ mod tests {
             "foo|bar baz=bonk,bonk,bonk"
         );
         assert_eq!(
-            "foo |  bar baz  =  bonk, bonk , bonk".split_into_steps().0[0],
+            "foo |  bar baz  =  bonk, bonk , bonk".split_into_steps()[0],
             "foo"
         );
         assert_eq!("foo bar baz=bonk".split_into_parameters()["_name"], "foo");

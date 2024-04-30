@@ -107,13 +107,13 @@ all_coord_operators!(Coor2D, Coor2D, coor2d);
 all_coord_operators!(Coor2D, Coor32, coor2d);
 all_coord_operators!(Coor32, Coor32, coor32);
 
-/// CoordinateTuple is the ISO-19111 atomic spatial/spatiotemporal
+/// `CoordinateTuple` is the ISO-19111 atomic spatial/spatiotemporal
 /// referencing element. So loosely speaking, a CoordinateSet is a
 /// collection of CoordinateTuples.
 ///
 /// Note that (despite the formal name) the underlying data structure
-/// need not be a tuple: It can be any item, for which it makes sense
-/// to implement the CoordinateTuple trait.
+/// need not be a Rust tuple: It can be any item, for which it makes
+///  sense to implement the CoordinateTuple trait.
 ///
 /// The CoordinateTuple trait provides a number of convenience accessors
 /// for accessing single coordinate elements or tuples of subsets.

@@ -12,7 +12,6 @@ use std::{
 /// external grids, and macros.
 /// Sufficient for most uses, especially geodetic grid development.
 /// May get somewhat clunky when working with large numbers of grids or macros,
-/// as each reside in its own file.
 #[derive(Debug)]
 pub struct Plain {
     constructors: BTreeMap<String, OpConstructor>,
@@ -120,7 +119,9 @@ impl Context for Plain {
 
     /// Instantiate an operator. Recognizes PROJ syntax and converts it to Geodesy syntax.
     /// Bear in mind, however, that Geodesy does not support all PROJ operators, and that
-    /// the input/output conventions differ.
+    /// the input/output conventions differ. This functionality may be a better fit for
+    /// somewhere between [`token::split_into_steps()`](crate::token::Tokenize::split_into_steps())
+    /// and [`token::normalize()`](crate::token::Tokenize::normalize())
     fn op(&mut self, definition: &str) -> Result<OpHandle, Error> {
         // It may be a PROJ string, so we filter it through the PROJ parser
         let definition = parse_proj(definition)?;
@@ -311,7 +312,7 @@ mod tests {
         let op = ctx.op("stupid:way")?;
 
         // ...and it works as expected?
-        let mut data = some_basic_coor2dinates();
+        let mut data = crate::test_data::coor2d();
         assert_eq!(data[0].x(), 55.);
         assert_eq!(data[1].x(), 59.);
 
@@ -341,7 +342,7 @@ mod tests {
         let op = ctx.op("stupid:way_too")?;
 
         // ...and it works as expected?
-        let mut data = some_basic_coor2dinates();
+        let mut data = crate::test_data::coor2d();
 
         ctx.apply(op, Fwd, &mut data)?;
         assert_eq!(data[0].x(), 57.);
@@ -352,13 +353,13 @@ mod tests {
         assert!(matches!(op, Err(Error::Syntax(_))));
 
         let op = ctx.op("stupid:addthree")?;
-        let mut data = some_basic_coor2dinates();
+        let mut data = crate::test_data::coor2d();
         ctx.apply(op, Fwd, &mut data)?;
         assert_eq!(data[0].x(), 58.);
         assert_eq!(data[1].x(), 62.);
 
         let op = ctx.op("stupid:addthree_one_by_one")?;
-        let mut data = some_basic_coor2dinates();
+        let mut data = crate::test_data::coor2d();
         ctx.apply(op, Fwd, &mut data)?;
         assert_eq!(data[0].x(), 58.);
         assert_eq!(data[1].x(), 62.);
@@ -373,7 +374,7 @@ mod tests {
 
         // But this classic should work...
         let op = ctx.op("geo:in | utm zone=32")?;
-        let mut data = some_basic_coor2dinates();
+        let mut data = crate::test_data::coor2d();
         ctx.apply(op, Fwd, &mut data)?;
         let expected = [691875.6321396609, 6098907.825005002];
         assert_float_eq!(data[0].0, expected, abs_all <= 1e-9);

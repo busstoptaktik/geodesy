@@ -381,7 +381,7 @@ mod tests {
     #[test]
     fn no_unit_conversion() -> Result<(), Error> {
         let mut ctx = Minimal::default();
-        let mut data = some_basic_coor2dinates();
+        let mut data = crate::test_data::coor2d();
         let swap = ctx.op("adapt from=neuf")?;
         assert_eq!(ctx.apply(swap, Fwd, &mut data)?, 2);
         assert_eq!(data[0][0], 12.0);
@@ -405,7 +405,7 @@ mod tests {
         let expected = [691875.6321396609, 6098907.825005002];
 
         // Roundtrip geo->utm->geo, using separate ops for fwd and inv
-        let mut data = some_basic_coor2dinates();
+        let mut data = crate::test_data::coor2d();
 
         assert_eq!(ctx.apply(utm, Fwd, &mut data)?, 2);
         assert_float_eq!(data[0].0, expected, abs_all <= 1e-9);
@@ -414,7 +414,7 @@ mod tests {
         assert_float_eq!(data[0].0, [55., 12.], abs_all <= 1e-9);
 
         // Same, but using a plain Inv invocation for the return trip
-        let mut data = some_basic_coor2dinates();
+        let mut data = crate::test_data::coor2d();
 
         assert_eq!(ctx.apply(utm, Fwd, &mut data)?, 2);
         assert_float_eq!(data[0].0, expected, abs_all <= 1e-9);
@@ -423,7 +423,7 @@ mod tests {
         assert_float_eq!(data[0].0, [55., 12.], abs_all <= 1e-9);
 
         // Swap data by reading them as geo, writing them as gis
-        let mut data = some_basic_coor2dinates();
+        let mut data = crate::test_data::coor2d();
         let swap = ctx.op("geo:in | gis:out")?;
         assert_eq!(ctx.apply(swap, Fwd, &mut data)?, 2);
         assert_float_eq!(data[0].0, [12., 55.], abs_all <= 1e-9);

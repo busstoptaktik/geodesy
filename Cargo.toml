@@ -66,7 +66,7 @@ required-features = ["binary"]
 
 [profile.release]
 lto = true
-strip = true # Automatically strip symbols from the binary.
+strip = true
 
 [target.wasm32-unknown-unknown.dependencies]
 wasm-bindgen = "0.2"

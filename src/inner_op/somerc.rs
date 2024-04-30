@@ -37,9 +37,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let cos_phi_0_p = op.params.real["cos_phi_0_p"];
 
     for i in 0..n {
-        let mut coord = operands.get_coord(i);
-        let lam = coord[0];
-        let phi = coord[1];
+        let (lam, phi) = operands.xy(i);
         let sp = e * phi.sin();
         let phi_p = 2.
             * ((c * ((FRAC_PI_4 + 0.5 * phi).tan().ln() - hlf_e * ((1. + sp) / (1. - sp)).ln())
@@ -58,10 +56,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         let x = R * lam_pp + x_0;
         let y = R * (FRAC_PI_4 + 0.5 * phi_pp).tan().ln() + y_0;
 
-        coord[0] = x;
-        coord[1] = y;
-
-        operands.set_coord(i, &coord);
+        operands.set_xy(i, x, y);
         successes += 1;
     }
 
@@ -90,9 +85,9 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let x_0 = op.params.real["x_0"];
 
     for i in 0..n {
-        let mut coord = operands.get_coord(i);
-        let X = coord[0] - x_0;
-        let Y = coord[1] - y_0;
+        let (x, y) = operands.xy(i);
+        let X = x - x_0;
+        let Y = y - y_0;
 
         let phi_pp = 2.0 * (((Y / R).exp()).atan() - FRAC_PI_4);
         let lam_pp = X / R;
@@ -121,11 +116,10 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
             j -= 1;
         }
         if j <= 0 {
-            panic!("somerc - inverse: Too many iterations")
+            operands.set_xy(i, core::f64::NAN, core::f64::NAN);
+            continue;
         } else {
-            coord[0] = lam;
-            coord[1] = phi_p;
-            operands.set_coord(i, &coord);
+            operands.set_xy(i, lam, phi);
             successes += 1;
         }
     }

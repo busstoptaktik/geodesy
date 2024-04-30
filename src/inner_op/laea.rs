@@ -297,7 +297,7 @@ mod tests {
         Ok(())
     }
 
-    // Test the "if rho < EPS10" brach in the inverse case.
+    // Test the "if rho < EPS10" branch in the inverse case.
     // From this issue: https://github.com/busstoptaktik/geodesy/issues/89
     // reported by @maximkaaa
     #[test]

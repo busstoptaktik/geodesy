@@ -88,8 +88,8 @@ pub fn sinhpsi_to_tanphi(taup: f64, e: f64) -> f64 {
     // rooteps, tol and tmax are compile time constants, but currently
     // Rust cannot const-evaluate powers and roots, so we must either
     // evaluate these "constants" as lazy_statics, or just swallow the
-    // penalty of an extra sqrt and two divisions on each call.
-    // If this shows unbearable, we can just also assume IEEE-64 bit
+    // penalty of an extra sqrt and two divisions on each call. If this
+    // shows to be unbearable, we can just also assume IEEE-64 bit
     // arithmetic, and set rooteps = 0.000000014901161193847656
     let rooteps: f64 = f64::EPSILON.sqrt();
     let tol: f64 = rooteps / 10.; // the criterion for Newton's method

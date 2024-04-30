@@ -1,4 +1,4 @@
-//! Transverse Mercator, following [Bowring (1989)](crate::Bibliography::Bow89)
+//! Transverse Mercator, following [Bowring (1989)](crate::bibliography::Bibliography::Bow89)
 use crate::authoring::*;
 
 // ----- F O R W A R D -----------------------------------------------------------------
@@ -68,8 +68,8 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         // Footpoint latitude, i.e. the latitude of a point on the central meridian
         // having the same northing as the point of interest
         let lat = ellps.meridian_distance_to_latitude((coord[1] - y_0) / k_0);
-        let t = lat.tan();
-        let c = lat.cos();
+        let (s, c) = lat.sin_cos();
+        let t = s / c;
         let cc = c * c;
         #[allow(non_snake_case)]
         let N = ellps.prime_vertical_radius_of_curvature(lat);

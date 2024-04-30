@@ -1,4 +1,4 @@
-//! Transverse Mercator, following Engsager & Poder (2007)
+//! Transverse Mercator, following [Engsager & Poder (2007)](crate::bibliography::Bibliography::Eng07)
 use crate::authoring::*;
 
 // ----- F O R W A R D -----------------------------------------------------------------
@@ -278,8 +278,8 @@ fn precompute(op: &mut Op) {
         .insert("conformal", conformal);
 
     // The Fourier series for the transverse mercator coordinates,
-    // from [Engsager & Poder, 2007](crate::Bibliography::Eng07),
-    // with extensions to 6th order by [Karney, 2011](crate::Bibliography::Kar11).
+    // from [Engsager & Poder, 2007](crate::bibliography::Bibliography::Eng07),
+    // with extensions to 6th order by [Karney, 2011](crate::bibliography::Bibliography::Kar11).
     let tm = fourier_coefficients(n, &TRANSVERSE_MERCATOR);
     op.params.fourier_coefficients.insert("tm", tm);
 

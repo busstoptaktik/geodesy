@@ -15,7 +15,7 @@ pub struct OpDescriptor {
 
 impl OpDescriptor {
     pub fn new(definition: &str, fwd: InnerOp, inv: Option<InnerOp>) -> OpDescriptor {
-        let (steps, _) = definition.split_into_steps();
+        let steps = definition.split_into_steps();
         let definition = definition.to_string();
         let invertible = inv.is_some();
         let inverted = false; // Handled higher up in the call hierarchy

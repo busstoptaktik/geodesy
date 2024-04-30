@@ -18,9 +18,9 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
 
     if prime {
         for i in sliced {
-            let mut coord = operands.get_coord(i);
-            coord[0] = ellps.prime_vertical_radius_of_curvature(coord[0].to_radians());
-            operands.set_coord(i, &coord);
+            let (lat, lon) = operands.xy(i);
+            let lat = ellps.prime_vertical_radius_of_curvature(lat.to_radians());
+            operands.set_xy(i, lat, lon);
             successes += 1;
         }
         return successes;
@@ -28,9 +28,9 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
 
     if meridional {
         for i in sliced {
-            let mut coord = operands.get_coord(i);
-            coord[0] = ellps.meridian_radius_of_curvature(coord[0].to_radians());
-            operands.set_coord(i, &coord);
+            let (lat, lon) = operands.xy(i);
+            let lat = ellps.meridian_radius_of_curvature(lat.to_radians());
+            operands.set_xy(i, lat, lon);
             successes += 1;
         }
         return successes;
@@ -38,12 +38,12 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
 
     if gaussian {
         for i in sliced {
-            let mut coord = operands.get_coord(i);
-            let lat = coord[0].to_radians();
+            let (lat, lon) = operands.xy(i);
+            let lat = lat.to_radians();
             let m = ellps.meridian_radius_of_curvature(lat);
             let n = ellps.prime_vertical_radius_of_curvature(lat);
-            coord[0] = (n * m).sqrt();
-            operands.set_coord(i, &coord);
+            let lat = (n * m).sqrt();
+            operands.set_xy(i, lat, lon);
             successes += 1;
         }
         return successes;
@@ -51,12 +51,12 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
 
     if mean {
         for i in sliced {
-            let mut coord = operands.get_coord(i);
-            let lat = coord[0].to_radians();
+            let (lat, lon) = operands.xy(i);
+            let lat = lat.to_radians();
             let m = ellps.meridian_radius_of_curvature(lat);
             let n = ellps.prime_vertical_radius_of_curvature(lat);
-            coord[0] = 2.0 * (n.recip() + m.recip()).recip();
-            operands.set_coord(i, &coord);
+            let lat = 2.0 * (n.recip() + m.recip()).recip();
+            operands.set_xy(i, lat, lon);
             successes += 1;
         }
         return successes;
@@ -64,14 +64,12 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
 
     if azimuthal {
         for i in sliced {
-            let mut coord = operands.get_coord(i);
-            let lat = coord[0].to_radians();
-            let azi = coord[1].to_radians();
+            let (lat, azi) = operands.xy(i).xy_to_radians();
             let m = ellps.meridian_radius_of_curvature(lat);
             let n = ellps.prime_vertical_radius_of_curvature(lat);
             let (s, c) = azi.sin_cos();
-            coord[0] = (c * c / m + s * s / n).recip();
-            operands.set_coord(i, &coord);
+            let lat = (c * c / m + s * s / n).recip();
+            operands.set_xy(i, lat, azi);
             successes += 1;
         }
         return successes;

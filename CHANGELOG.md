@@ -14,6 +14,10 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   in coordinate tuple types (Coor4D, Coor3D, Coor2D, Coor32)
 - `TriaxialEllpisoid`, mostly as a placeholder
 
+### Fixed
+
+- A large number of linguistic errors and ambiguities
+
 ### Changed
 
 - `CoordinateTuple` trait now requires implementation of the constructor
@@ -22,12 +26,14 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   and a number of associated traits requiring `EllipsoidBase`.
 - Meaning of `EllipsoidBase::aspect_ratio()` switched from *b / a* to the
   apparently more common *a / b*
-- Major restructuring and clean up of `lib.rs`. Only marignally visible externally,
+- Major restructuring and clean up of `lib.rs`. Only marginally visible externally,
   if using `use geodesy::prelude::*`
+- Moved some_basic_coorNdinates to `crate::test_dat::coorNd`
 
 ### Removed
 
-- CHANGES.md
+- `CHANGES.md`
+- Unused parallel context stup `context/parallel.rs`
 
 ## [0.13.0] - 2024-04-06
 

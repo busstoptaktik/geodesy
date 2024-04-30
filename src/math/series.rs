@@ -122,7 +122,7 @@ pub mod fourier {
 
     /// Evaluate Σ cᵢ sin( i · arg ), for i ∈ {order, ... , 1}, using Clenshaw summation
     ///
-    /// Functionally identical to [clenshaw_sin](crate::math::fourier::sin), but
+    /// Functionally identical to [clenshaw_sin](crate::math::series::fourier::sin), but
     /// takes advantage trigonometric factors, which are conveniently computed ahead-of-call in
     /// the Transverse Mercator code, tmerc. Since tmerc is so widely used, this optimization
     /// makes good sense, despite the more clumsy call signature. Also, for the same reason
@@ -145,7 +145,7 @@ pub mod fourier {
     /// Evaluate Σ cᵢ Sin( i · arg ), for i ∈ {order, ... , 1}, using Clenshaw summation.
     /// i.e. a series of complex sines with real coefficients.
     ///
-    /// Functionally identical to [clenshaw_complex_sin](crate::math::fourier::complex_sin), but
+    /// Functionally identical to [clenshaw_complex_sin](crate::math::series::fourier::complex_sin), but
     /// takes advantage of some trigonometric and hyperbolic factors, which are conveniently
     /// computed ahead-of-call in the Transverse Mercator code, tmerc. Since tmerc is so widely
     /// used, this optimization makes good sense, despite the more clumsy call signature. Also,

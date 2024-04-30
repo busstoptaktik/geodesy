@@ -16,10 +16,8 @@ pub trait GeoCart: EllipsoidBase {
         let (lam, phi, h, t) = geographic.xyzt();
 
         let N = self.prime_vertical_radius_of_curvature(phi);
-        let cosphi = phi.cos();
-        let sinphi = phi.sin();
-        let coslam = lam.cos();
-        let sinlam = lam.sin();
+        let (sinphi, cosphi) = phi.sin_cos();
+        let (sinlam, coslam) = lam.sin_cos();
 
         let X = (N + h) * cosphi * coslam;
         let Y = (N + h) * cosphi * sinlam;

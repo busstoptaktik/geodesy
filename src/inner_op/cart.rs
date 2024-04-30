@@ -22,15 +22,15 @@ fn cart_fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> us
 
 fn cart_inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let ellps = op.params.ellps(0);
+
     // eccentricity squared, Fukushima's E, Claessens' c3 = 1-c2`
     let es = ellps.eccentricity_squared();
-    // semiminor axis
+
     let b = ellps.semiminor_axis();
-    // semimajor axis
     let a = ellps.semimajor_axis();
-    // reciproque of a
     let ra = 1. / ellps.semimajor_axis();
-    // aspect ratio, b/a: Fukushima's ec, Claessens' c4
+
+    // b/a: Fukushima's ec, Claessens' c4
     let ar = b * ra;
     // 1.5 times the fourth power of the eccentricity
     let ce4 = 1.5 * es * es;
@@ -54,7 +54,7 @@ fn cart_inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> us
         let p = X.hypot(Y);
 
         // If we're close to the Z-axis, the full algorithm breaks down. But if
-        // we're close to the Z-axis, we also know that the latitude must be close
+        // we're close to the Z-axis, we also assert that the latitude is close
         // to one of the poles. So we force the latitude to the relevant pole and
         // compute the height as |Z| - b
         if p < cutoff {
@@ -73,7 +73,7 @@ fn cart_inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> us
         // in Fukushima's and Claessens' Fortranesque implementations,
         // were explicitly eliminated (by introducing s02 = S0*S0, etc.).
         // For clarity, we keep the full expressions here, and leave the
-        // elimination task to the optimizer.
+        // elimination task to the compiler's optimizer step.
         let A = S0.hypot(C0);
         let F = P * A * A * A - es * C0 * C0 * C0;
         let B = ce4 * S0 * S0 * C0 * C0 * P * (A - ar);
