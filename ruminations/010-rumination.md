@@ -31,7 +31,7 @@ With only a slight dose of exaggeration, that world view can be described in bri
 
 > Geodetic coordinate systems, like their mathematical namesakes, are built on an axiomatic foundation, an eternal, immutable ether called WGS84. And **ANY** coordinate system can be strictly defined as a Helmert transformation from WGS84.
 
-While surficially nonsensical, this world view is actually quite reasonable: It is simple to implement and sufficiently accurate if the expected georeference accuracy is at the metre level, as it was in the 1990's.
+While superficially nonsensical, this world view is actually quite reasonable: It is simple to implement and sufficiently accurate if the expected georeference accuracy is at the metre level, as it was in the 1990's.
 
 But with steadily increasing accuracy requirements, and with the ubiquity of GNSS, the conceptual world view of that era has long ago ceased being generally feasible. And with 19111(2019), the standard represents a geodetically fairly realistic, while still end user applicable, conceptual world view.
 
@@ -57,7 +57,7 @@ Bridging the gap between contextual sloppiness, and context free rigor is no sim
 
 It is still overly underexposed in 19111, that geodetic reference frames are **empirical contraptions**, while geometric coordinate systems are **axiomatic idealizations** and that the only way to establish a connection between the abstract coordinate tuples, and the concrete physical world, is through a reference frame squarely embedded in that physical world.
 
-So to remedy this, 19111 should stop talking about coordinates referenced to metadata (as in [Figure 3](https://docs.ogc.org/as/18-005r4/18-005r4.html#figure_3)), but rather try to make clear that e.g:
+So to remedy this, 19111 should stop talking about coordinates referenced to metadata (as in [Figure 3](https://docs.ogc.org/as/18-005r4/18-005r4.html#figure_3)), but rather try to make it clear that e.g:
 
 - Coordinates are surveyed and adjusted *according* to rules given in reference **system** definitions, but *referenced* to reference **frames**.
 - The georeference does not change when a transformation is applied. But through the transformation, the data referenced to reference frame **A** may be made somewhat more interoperable ("aligned") with those referenced to frame **B**.
@@ -81,7 +81,7 @@ Let's dig deeper into this under item 7 below, but in the meantime, let's look a
 
 ## Item 2: `CoordinateSet` is vaguely defined, and not sufficiently useful
 
-In 19111, `CoordinateSet` is the fundamental interface to actual data (cf. fig 5, sect. 7.4).
+In 19111, `CoordinateSet` is the fundamental interface to actual data (cf. [figure 5](https://docs.ogc.org/as/18-005r4/18-005r4.html#figure_5), sect. 7.4).
 
 The `CoordinateSet` interface models something that, in practical implementations would be e.g. *a stack, list, or array* of `CoordinateTuple`s combined with a link to the relevant `CoordinateMetadata`.
 
@@ -91,7 +91,7 @@ Now, what's wrong with that? Quite a bit, actually...
 
 **First:** `CoordinateSet` is an interface for accessing `coordinateTuple` elements which, with a reference to 19107, are defined as an ordered set [1..*] of `DirectPosition`s. In other words, *an empty set of coordinate tuples is not allowed*.
 
-For practical use cases, this is unfortunate, since one must start somewhere, and for observational time series (or for iteratively computed, derived data sets), you start without anything: The data structure, with pointers to metadata and backing memory is instantiated **prior to** the registration of the first observation!
+For practical use cases, this is unfortunate, since one must start somewhere, and for observational time series (or for iteratively computed, derived data sets), we start without anything: The data structure, with pointers to metadata and backing memory is instantiated **prior to** the registration of the first observation!
 
 Hence, `[1..*]` should be `[0..*]`.
 
@@ -136,6 +136,9 @@ The typical CRS today, consists of a reference frame plus some kind of coordinat
 
 [Figure 3](https://docs.ogc.org/as/18-005r4/18-005r4.html#figure_3) illustrates some of this.
 
+TODO
+
+<!--
 Refererer til metadata, men geodæsi handler om at referere til virkeligheden. Det er 19111's mission - i modsætning til 19107. Og georeferencen er til en referenceramme, ikke til et sæt metadata.
 
 En transformation er empirisk, og flytter ikke georeferencen til en anden ramme. Den implementerer en prædiktion ("hvilken koordinat X2 ville vi have opnået i system B, givet at vi har X1 i system A)
@@ -143,6 +146,7 @@ En transformation er empirisk, og flytter ikke georeferencen til en anden ramme.
 Derfor er figur 3 misvisende: Det sammensatte datasæt er ikke refereret til CM3 - men CS1 og CS2 er blevet gjort "noget interoperable" ved hjælp af dels en empirisk prædiktion (CS1), dels en aksiomatisk konvertering (CS2)
 
 It is important that 19111 reflects how geodesy *actually* works. And "geodetic coordinate systems are not coordinate systems"
+-->
 
 ## Item 5: `DatumEnsemble` is too narrowly defined
 
@@ -154,7 +158,7 @@ But systems come before realizations, and the first realization of  a (planned) 
 
 ## Item 6: Support pipelines of operations
 
-Coordinate operations can be used to align datasets from different referece frames. But often a series of commonly-implemented operations (e.g. operations from the gamut of EPSG Guidance Note 7-2), is needed to implement the alignment between two CRS. Also, what comprises an operation is by-and-large arbitrary: A projection operator including false easting and northing yields identical results as a false-origin-free version followed by a linear transformation.
+Coordinate operations can be used to align datasets from different referece frames. But often a series of commonly-implemented operations (e.g. operations from the gamut of EPSG Guidance Note 7-2), is needed to implement the alignment between two CRS. Also, what comprises an operation is by-and-large arbitrary: A projection operator including false easting and northing yields identical results to a false-origin-free version followed by a linear transformation.
 
 While ISO-19111 allows operation concatenation, it does so only in cases where intermediate CRS exist for every step. This is quite impractical, and we should try to establish a way of more directly supporting operation pipelines.
 
@@ -213,6 +217,7 @@ No - but perhaps we should vote for revision!
 - [Rumination 008](https://github.com/busstoptaktik/geodesy/blob/main/ruminations/008-rumination.md): Geodesy from a PROJ perspective
 - [Rumination 009](https://github.com/busstoptaktik/geodesy/blob/main/ruminations/009-rumination.md): Teach yourself Geodesy in less than 900 seconds (of arc)
 
+<!--
 ## Endnotes
 
 **In the light of that world view,** when the apparent center of mass, related to the ED50 datum differs by approximately 200 m from that of WGS84, then it's because the Wise Fathers of ED50 had figured *"wouldn't it be nice with a coordinate system somewhat offset from the earth's centre-of-mass?".*
@@ -222,3 +227,4 @@ So they equipped an expedition, and went underground to locate the earth's centr
 problemet med kommunikation når standarden ikke svarer til geodæsien, og kommunikationen bliver stedse vigtigere når nøjagtighedskravene bliver større
 
 De praktiske ændringer i implementeringer vil være minimale, men kommunikationen med slutbrugere vil være simplere
+-->
