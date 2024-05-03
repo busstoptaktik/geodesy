@@ -89,7 +89,7 @@ impl Ntv2Grid {
                 current_grid_id = grid_id.clone();
 
                 if let Some(children) = self.lookup_table.get(&current_grid_id) {
-                    queue = children.clone();
+                    queue.clone_from(children);
                 } else {
                     // If we get here it means the current_parent_id has no children and we've found the grid
                     break;
