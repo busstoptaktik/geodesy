@@ -86,10 +86,10 @@ impl Ntv2Grid {
                     continue;
                 }
 
-                current_grid_id = grid_id.clone();
+                current_grid_id.clone_from(&grid_id);
 
                 if let Some(children) = self.lookup_table.get(&current_grid_id) {
-                    queue = children.clone();
+                    queue.clone_from(children);
                 } else {
                     // If we get here it means the current_parent_id has no children and we've found the grid
                     break;
@@ -207,7 +207,7 @@ mod tests {
             .contains(&"5458".to_string()));
 
         // Grids with no children do not appear in the lookup table
-        assert!(ntv2_grid.lookup_table.get("5556").is_none());
+        assert!(!ntv2_grid.lookup_table.contains_key("5556"));
 
         Ok(())
     }

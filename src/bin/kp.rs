@@ -185,7 +185,7 @@ fn transform(
     // to compute the roundtrip differences
     let mut buffer = Vec::new();
     if options.roundtrip {
-        buffer = operands.clone();
+        buffer.clone_from(operands);
     }
 
     let mut n = if options.inverse {
