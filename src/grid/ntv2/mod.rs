@@ -86,7 +86,7 @@ impl Ntv2Grid {
                     continue;
                 }
 
-                current_grid_id = grid_id.clone();
+                current_grid_id.clone_from(&grid_id);
 
                 if let Some(children) = self.lookup_table.get(&current_grid_id) {
                     queue.clone_from(children);
