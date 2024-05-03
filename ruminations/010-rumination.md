@@ -13,9 +13,9 @@ The material is initially published here, as a part of the Rust Geodesy [Ruminat
 The text is long, and the subject both sprawling and convoluted. But the gist of it is, that:
 
 - The original conceptual model leading to 19111 was mostly in disagreement with the common geodetic world view. But it was simple and sufficient as long as metre-level absolute accuracy was acceptable
-- As accuracy requirements grew, this non-geodetic conceptual model was not feasible anymore, and the 19111 model had to get into closer agreement with modern geodesy
-- The 2019 edition has come a long way, but there is still more work worth doing
-- Also, a number of concepts are either too vaguely or too restrictively defined in 19111(2019), and hence should be revised
+- As accuracy requirements grew, this non-geodetic conceptual model was not feasible anymore, and the model had to get into closer agreement with modern geodesy
+- The 2019 edition of 19111 has come a long way, but there is still more work worth doing
+- Also, a number of concepts are still either too vaguely or too restrictively defined, and hence should be revised
 
 **Also note that** while some of the changes proposed may seem extensive at first glance, they are actually rather clarifications than substantial changes. The aim is to support communication with end users and developers, through better alignment between geomatics and geodesy. The changes should require minor-to-no changes to software implementations of the standard.
 
@@ -25,7 +25,7 @@ The text is long, and the subject both sprawling and convoluted. But the gist of
 
 With the personal luck of (narrowly) escaping becoming part of the geospatial standardization efforts at their inception back in the 1990's, I first started participating in the work around ISO-19111 "Referencing by Coordinates" when its 2019 revision was well under way.
 
-Hence, my impression of the conceptual world view behind especially the earliest versions, is based on anecdotal evidence - although largely supported by excavation of archaeological traces still visible in the current revision.
+Hence, my impression of the conceptual world view behind early geospatial standardization is based on anecdotal evidence - although largely supported by excavation of archaeological traces still visible in 19111.
 
 With only a slight dose of exaggeration, that world view can be described in brief as follows:
 
@@ -41,11 +41,11 @@ In my humble opinion, it is, however, still possible to take further steps towar
 
 Also, as will hopefully become clear in the following, such steps may lead toward great conceptual simplification, by not having to paper over differences between the conceptual world view and the geodetic realities. Perhaps, we may deprecate, and even (in a later revision) entirely eliminate these aspects.
 
-Below, I try to identify a number of conceptual problems, some needing much discussion, some more immediately actionable. So except for a few cases, I will not present ready-baked solutions, rather try to invite to discussion. Not only discussion of the specific matters, but also the overall problem that ISO 19111 is way too careful in its language.
+Below, I try to identify a number of conceptual problems, some needing much discussion, some more immediately actionable. So except for a few cases, I will not present ready-baked solutions, rather try to inspire discussion. Not only discussion of the specific matters, but also the overall problem that ISO 19111 is way too careful in its language.
 
 ### Divided by a common language
 
-As 19111 (along with 19161) describes the relation between coordinates (i.e. numbers), and locations (i.e. the physical world), 19111 should speak in geodetic and hence empirical terms. As elaborated under Item 0 below, there is no axiomatic highway towards the georeference. The georeference is fundamentally geodetic and empirical, so 19111 needs to bridge the canyon between geodesy and geomatics - in other words, 19111 must "speak geodesy".
+As 19111 (along with 19161) describes the relation between coordinates (i.e. numbers), and locations (i.e. the physical world), 19111 should speak in geodetic and hence empirical terms. As elaborated under Item 0 below, there is no axiomatic highway towards the georeference. The georeference is fundamentally geodetic and empirical, so 19111 needs to bridge the gap between geodesy and geomatics - in other words, 19111 must "speak geodesy".
 
 But geodesists communicate about the physical world, so they tend to get away with being linguistically much more sloppy than geomaticians, since physical reality and human conception are magnificent disambiguators.
 
@@ -89,13 +89,13 @@ The `CoordinateMetadata` consists of either a `CRSid` or a `CRS`, and (if the CR
 
 Now, what's wrong with that? Quite a bit, actually...
 
-**First:** The `coordinateTuple` element is, with a reference to 19107, defined as an ordered set [1..*] of `DirectPosition`s. In other words, *an empty set of coordinate tuples is not allowed*.
+**First:** `CoordinateSet` is an interface for accessing `coordinateTuple` elements which, with a reference to 19107, are defined as an ordered set [1..*] of `DirectPosition`s. In other words, *an empty set of coordinate tuples is not allowed*.
 
 For practical use cases, this is unfortunate, since one must start somewhere, and for observational time series (or for iteratively computed, derived data sets), you start without anything: The data structure, with pointers to metadata and backing memory is instantiated **prior to** the registration of the first observation!
 
 Hence, `[1..*]` should be `[0..*]`.
 
-**Second:** Additionally, the data type should probably be a sequence, not an ordered set: The reasonable intention is to model an *array*-like item, i.e. something that can be read and handled in indexed order. An ordered *set* implies that the material is ordered with respect to some intrinsic property of the elements of the set - which is simple for numerical data in one dimension, but not in two or more (where lexical ordering by dimension may stop the gap, but not in any terribly useful way: For continuous data it is effectively identical to sorting along the first dimension)
+**Second:** Additionally, the data type should probably be a sequence, not an ordered set: The reasonable intention is to model an *array*-like item, i.e. something that can be read and handled in indexed order. An ordered *set* implies that the material is ordered with respect to some **intrinsic property** of the elements of the set - which is simple for numerical data in one dimension, but not in two or more (where lexical ordering by dimension may stop the gap, but not in any terribly useful way: For continuous data it is effectively identical to sorting along the first dimension)
 
 **Third:** the 19107 `DirectPosition` device, which (as seen from this observer's vantage point), is rather obscure, at least is clear enough to allow one to conclude, that it refers to something entirely and exclusively *spatial*.
 
@@ -115,9 +115,7 @@ So if anyone actually cares about 19107, let them revise it to make it the other
 
 **In continuation: Do we actually have a way of expressing CRS `foo` to the observation epoch?**
 
-To me, it looks like this is impossible. Please convince me that it can be done. If it cannot, this is clearly missing.
-
-The entire case looks a bit like say, ETRS89, which by definition coincides with ITRS (or rather, their corresponding frames do) at the 1989.0 epoch, but in that case, we're talking of two different reference systems, and the epoch is an implementation detail.
+Apparently this is impossible. If true, this is clearly a missing feature. The entire case looks a bit like say, ETRS89, which by definition coincides with ITRS (or rather, their corresponding frames do) at the 1989.0 epoch, but in that case, we're talking of two different reference systems, and the epoch is an implementation detail.
 
 ## Item 3: The 'S' in CRS is misleading
 
