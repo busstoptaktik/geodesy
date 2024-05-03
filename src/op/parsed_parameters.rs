@@ -535,12 +535,12 @@ mod tests {
 
         // Booleans correctly parsed?
         assert!(
-            p.boolean.get("flag").is_some(),
+            p.boolean.contains("flag"),
             "`flag` not in registered booleans: {:#?}",
             p.boolean
         );
         assert!(
-            p.boolean.get("galf").is_none(),
+            !p.boolean.contains("galf"),
             "`galf` not in registered booleans: {:?}",
             p.boolean
         );

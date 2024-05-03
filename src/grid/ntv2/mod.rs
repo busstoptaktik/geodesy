@@ -207,7 +207,7 @@ mod tests {
             .contains(&"5458".to_string()));
 
         // Grids with no children do not appear in the lookup table
-        assert!(ntv2_grid.lookup_table.get("5556").is_none());
+        assert!(!ntv2_grid.lookup_table.contains_key("5556"));
 
         Ok(())
     }
