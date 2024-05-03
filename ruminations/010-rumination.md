@@ -1,23 +1,27 @@
+<!-- markdownlint-disable MD013 -->
+
 # What's wrong with ISO-19111?
 
 **Thomas Knudsen,** <thokn@sdfi.dk>, 2024-02-26
 
 ## Motivation
 
-The most recent edition of ISO-19111 "Referencing by coordinates" was published in 2019. Hence, according to ISO's 5 year life cycle of standards, 19111 is up for consideration-of-revision in 2024. The following is my input for these considerations to DS/S-276, the Danish national committee of [ISO Technical Committee 211](https://www.isotc211.org/).
+The most recent edition of ISO-19111 "Referencing by coordinates" was published in 2019. Hence, according to ISO's 5 year life cycle of standards, 19111 is up for consideration-of-revision in 2024. The following is my input for these considerations to [DS/S-276](https://www.ds.dk/da/udvalg/kategorier/it/geografisk-information), the Danish national committee of [ISO Technical Committee 211](https://www.isotc211.org/) and [CEN TC 287](https://standards.cencenelec.eu/dyn/www/f?p=205:7:0::::FSP_ORG_ID:6268&cs=1D5368A4F6E101B66AD14AB12AC0FC914).
 
 The material is initially published here, as a part of the Rust Geodesy [Ruminations](https://github.com/busstoptaktik/geodesy/blob/main/ruminations/README.md), since it is by and large a result of my work with [Rust Geodesy](https://github.com/busstoptaktik/geodesy) as a demonstration platform, outlining a road towards a simpler, leaner ISO-19111.
 
 The text is long, and the subject both sprawling and convoluted. But the gist of it is, that:
 
-- The original conceptual model behind 19111 was mostly in disagreement with the common geodetic world view. But it was simple and sufficient as long as metre-level absolute accuracy was acceptable
+- The original conceptual model leading to 19111 was mostly in disagreement with the common geodetic world view. But it was simple and sufficient as long as metre-level absolute accuracy was acceptable
 - As accuracy requirements grew, this non-geodetic conceptual model was not feasible anymore, and the 19111 model had to get into closer agreement with modern geodesy
-- The 2019 edition comprises an enormous leap in this direction, but there is still more work worth doing
+- The 2019 edition has come a long way, but there is still more work worth doing
 - Also, a number of concepts are either too vaguely or too restrictively defined in 19111(2019), and hence should be revised
 
 **Also note that** while some of the changes proposed may seem extensive at first glance, they are actually rather clarifications than substantial changes. The aim is to support communication with end users and developers, through better alignment between geomatics and geodesy. The changes should require minor-to-no changes to software implementations of the standard.
 
 ## Introduction
+
+### Point-of-view
 
 With the personal luck of (narrowly) escaping becoming part of the geospatial standardization efforts at their inception back in the 1990's, I first started participating in the work around ISO-19111 "Referencing by Coordinates" when its 2019 revision was well under way.
 
@@ -25,23 +29,33 @@ Hence, my impression of the conceptual world view behind especially the earliest
 
 With only a slight dose of exaggeration, that world view can be described in brief as follows:
 
-> Geodetic coordinate systems, like their mathematical namesakes, are built on an axiomatic foundation, an eternal, immutable ether called WGS84. And **ANY** coordinate system can be strictly defined as a 7 parameter Helmert transformation from WGS84.
+> Geodetic coordinate systems, like their mathematical namesakes, are built on an axiomatic foundation, an eternal, immutable ether called WGS84. And **ANY** coordinate system can be strictly defined as a Helmert transformation from WGS84.
 
 While surficially nonsensical, this world view is actually quite reasonable: It is simple to implement and sufficiently accurate if the expected georeference accuracy is at the metre level, as it was in the 1990's.
 
-But with steadily increasing accuracy requirements, and with the ubiquity of GNSS, the conceptual world view of that era has long ago ceased being generally feasible. And with 19111(2019), the standard took huge leaps toward a more geodetically realistic, while still end user applicable, conceptual world view.
+But with steadily increasing accuracy requirements, and with the ubiquity of GNSS, the conceptual world view of that era has long ago ceased being generally feasible. And with 19111(2019), the standard represents a geodetically fairly realistic, while still end user applicable, conceptual world view.
 
-In my humble opinion, it is, however, still possible to take further steps in this direction, so it is my hope that an upcoming revision of 19111 will take some of these steps, in addition to the obvious tasks of repairing bugs, relaxing constraints, and clarifying ambiguities.
+### Directions
+
+In my humble opinion, it is, however, still possible to take further steps toward geodetic realism, so it is my hope that an upcoming revision of 19111 will take some of these steps, in addition to the obvious tasks of repairing bugs, relaxing constraints, and clarifying ambiguities.
 
 Also, as will hopefully become clear in the following, such steps may lead toward great conceptual simplification, by not having to paper over differences between the conceptual world view and the geodetic realities. Perhaps, we may deprecate, and even (in a later revision) entirely eliminate these aspects.
 
-Below, I try to identify some immediately actionable items. Except for a few cases, I will not present ready-baked solutions, rather try to open up for discussion. Not only discussion of the specific matters, but also the overall problem that ISO 19111 is way too careful in its language.
+Below, I try to identify a number of conceptual problems, some needing much discussion, some more immediately actionable. So except for a few cases, I will not present ready-baked solutions, rather try to invite to discussion. Not only discussion of the specific matters, but also the overall problem that ISO 19111 is way too careful in its language.
 
-As 19111 (along with 19161) describes the relation between coordinates as numbers, and locations in the physical world, it should speak in geodetic (and hence empirical) terms.
+### Divided by a common language
+
+As 19111 (along with 19161) describes the relation between coordinates (i.e. numbers), and locations (i.e. the physical world), 19111 should speak in geodetic and hence empirical terms. As elaborated under Item 0 below, there is no axiomatic highway towards the georeference. The georeference is fundamentally geodetic and empirical, so 19111 needs to bridge the canyon between geodesy and geomatics - in other words, 19111 must "speak geodesy".
+
+But geodesists communicate about the physical world, so they tend to get away with being linguistically much more sloppy than geomaticians, since physical reality and human conception are magnificent disambiguators.
+
+Geomaticians on the other hand, must be conceptually and linguistically more strict, since they concern themselves with feeding the bit-crunching monsters, which posess neither imagination, nor reason.
+
+Bridging the gap between contextual sloppiness, and context free rigor is no simple feat. Reaching a common understanding may very well take yet another few decades. But while that understanding materializes, at least we can try to maintain, trim and focus 19111, making sure it doesn't buckle under its own load *en route*.
 
 ## Item 0: Empirical contraptions vs. axiomatic idealizations
 
-It is still overly underexposed in 19111, that geodetic reference frames are **empirical contraptions**, while geometric coordinate systems are **axiomatic idealizations**. and that the only way to establish a connection between the abstract coordinate tuples, and the concrete physical world, is by basing that connection on a reference frame squarely embedded in that physical world.
+It is still overly underexposed in 19111, that geodetic reference frames are **empirical contraptions**, while geometric coordinate systems are **axiomatic idealizations** and that the only way to establish a connection between the abstract coordinate tuples, and the concrete physical world, is through a reference frame squarely embedded in that physical world.
 
 So to remedy this, 19111 should stop talking about coordinates referenced to metadata (as in [Figure 3](https://docs.ogc.org/as/18-005r4/18-005r4.html#figure_3)), but rather try to make clear that e.g:
 
@@ -54,7 +68,7 @@ So to remedy this, 19111 should stop talking about coordinates referenced to met
 
 ## Item 1: The concept of "coordinate transformations" is *way* too underexposed
 
-In section 3.1 "Terms and definitions", the two notes to item 3.1.12 "coordinate transformation" comprises the entire geodetic justification for 19111
+In section 3.1 "Terms and definitions", the two notes to entry 3.1.12 "coordinate transformation" comprises most of the geodetic justification for 19111
 
 > **3.1.12 coordinate transformation:**
 > coordinate operation that changes coordinates in a source coordinate reference system to coordinates in a target coordinate reference system in which the source and target coordinate reference systems are based on different datums
@@ -101,7 +115,7 @@ So if anyone actually cares about 19107, let them revise it to make it the other
 
 **In continuation: Do we actually have a way of expressing CRS `foo` to the observation epoch?**
 
-To me, it doesn't look like. Please convince me that it can be done.
+To me, it looks like this is impossible. Please convince me that it can be done. If it cannot, this is clearly missing.
 
 The entire case looks a bit like say, ETRS89, which by definition coincides with ITRS (or rather, their corresponding frames do) at the 1989.0 epoch, but in that case, we're talking of two different reference systems, and the epoch is an implementation detail.
 
@@ -124,7 +138,7 @@ The typical CRS today, consists of a reference frame plus some kind of coordinat
 
 [Figure 3](https://docs.ogc.org/as/18-005r4/18-005r4.html#figure_3) illustrates some of this.
 
-Referer til metadata, men geodæsi handler om at referere til virkeligheden. Det er 19111's mission - i modsætning til 19107. Og georeferencen er til en referenceramme, ikke til et sæt metadata.
+Refererer til metadata, men geodæsi handler om at referere til virkeligheden. Det er 19111's mission - i modsætning til 19107. Og georeferencen er til en referenceramme, ikke til et sæt metadata.
 
 En transformation er empirisk, og flytter ikke georeferencen til en anden ramme. Den implementerer en prædiktion ("hvilken koordinat X2 ville vi have opnået i system B, givet at vi har X1 i system A)
 
@@ -138,13 +152,13 @@ A datum ensemble is used when the accuracy requirements are sufficiently lax to 
 
 Typically we name the ensemble-of-reference-frames after a common abstract reference **system** behind the individual realizations, i.e. for the examples just given, WGS84 and ETRS89, respectively.
 
-But systems come before realizations, and the first realization of  a (planned) series is also part of the series. So the current definition of DatumEnsemble as `Datum [2..*]` should be either `[1..*]` or `[0..*]`.
+But systems come before realizations, and the first realization of  a (planned) series is also part of the series. So the current definition of DatumEnsemble as `Datum [2..*]` should be either `[1..*]` or (preferably) `[0..*]`.
 
 ## Item 6: Support pipelines of operations
 
-Coordinate operations can be used to align datasets from different referece frames. But often a series of commonly-implemented operations (e.g. operations from the gamut of EPSG Guidance Note 7-2), is needed to implement the alignment between two CRS. While ISO-19111 allows concatenation, it does so only in cases where intermediate CRS exist for every step.
+Coordinate operations can be used to align datasets from different referece frames. But often a series of commonly-implemented operations (e.g. operations from the gamut of EPSG Guidance Note 7-2), is needed to implement the alignment between two CRS. Also, what comprises an operation is by-and-large arbitrary: A projection operator including false easting and northing yields identical results as a false-origin-free version followed by a linear transformation.
 
-This is quite impractical, and we should try to support a way of more directly supporting operation-pipelines
+While ISO-19111 allows operation concatenation, it does so only in cases where intermediate CRS exist for every step. This is quite impractical, and we should try to establish a way of more directly supporting operation pipelines.
 
 ## Item 7: Operations are underspecified, and the definitions given are potentially misleading
 
@@ -154,17 +168,31 @@ That level of detail and specificity is not appropriate for 19111. But it is lik
 
 Especially, it is not sufficiently clear that the discrimination between transformations and conversions are related to whether the parameters of the operation are *formally defined* (conversion) or *empirically derived* (transformation). In other words: Any operation may implement either a conversion or a transformation, depending on the lineage of their parameters.
 
-As an example, the Transverse Mercator operation, is usually considered a conversion, while the 7 parameter Helmert operation, is usually considered a transformation, implementing rotation, translation, and scaling, through empirically derived parameters.
+As an example, the Transverse Mercator operation is usually considered a conversion, while the Helmert operation is usually considered a transformation (implementing rotation, translation, and scaling, through empirically derived parameters).
 
 The rotation, translation, and scaling can however, also be implemented by empirical manipulation of the center meridian, false origin, and scale parameters of the Transverse Mercator operator.
 
-Hence, the difference between conversions and transformations is not in their algorithmic definition, but in the *lineage of their associated parameters.*
+Hence, the difference between conversions and transformations is not in their algorithmic definition, but in the *lineage of their associated parameters*. This is actually hinted at in the (informative, not normative) Annex C.5, and in a rather indirect way, as mentioned in [Item 1](#item-1-the-concept-of-coordinate-transformations-is-way-too-underexposed), in a note to sub-section 3.1.12 "coordinate transformation" in the *Terms and definitions* chapter.
 
-As mentioned in [Item 1](#item-1-the-concept-of-coordinate-transformations-is-way-too-underexposed), this *is actually* hinted at in 19111, but in a note to item 3.1.12 "coordinate transformation" in the *Terms and definitions* chapter.
+Rather than being relegated to a remark in an annex, and a footnote in a sub-section, this distinction should be elaborated on at chapter or at least section level.
 
-Rather than being relegated to a footnote in a sub-section, this distinction should be elaborated on at chapter or at least section level.
+It also raises the question of whether it makes sense to discern formally between conversions and transformations. Fundamentally the difference is beween whether the formal error when applying the operation is 0 or non-0.
 
-**Additional value** could be provided by more clearly describing the relation between reversible operations and their inverses. In the current state of affairs, the transformation from A to B that from B to A are just two unrelated transformations.
+What we colloquially call a datum shift is a prediction between two fundamentally **empirical** reference frames, and neither the provided ("source")  nor the predicted ("target") coordinate is known exactly - unless, of course, the provided coordinate is one of the defining stations of the source reference frame. In this special case, the predicted coordinate will swim in a lake of prediction-variance only.
+
+In the general case, however, the predicted coordinate will posess uncertainty from a combination of the original variance and the prediction-variance. Neither of which are easy to formalize in operational terms.
+
+But the conceptualization of operations, conversions and transformations does not make it easier in any way to start this discussion, which becomes increasingly important as the demand for positional accuracy increases.
+
+Hence, we could simply talk about operations, as a first step towards tackling the problem of operationalizing the representation of variance propagation in geodetic ~~transformations~~ conversions:
+
+- We **convert** coordinates to **align** them with a different reference frame (or a different CRS based on the same reference frame, in which case the alignment will be perfect).
+- We do so by applying an **operator** (which may be implemented as a pipeline of more fundamental operators)
+- The operator, parameterized by its parameters (which may be defined or derived) implements the **operation** applied to the source coordinates.
+- The target coordinates still have exactly the same variance with respect to the **source** reference frame (since we may take the operator parameters to be given by definition, and transform back to the source coordinates).
+- With respect to the **target reference frame,** however, the variance of the target coordinates has increased.
+
+**Additional value** could be provided by more clearly describing the relation between reversible operations and their inverses. In the current state of affairs, the conversion from A to B and that from B to A are just two unrelated operators.
 
 ## Conclusion?
 
