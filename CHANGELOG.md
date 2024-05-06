@@ -13,6 +13,7 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Vector space operators (Add, Sub, Mul, Div) for all built
   in coordinate tuple types (Coor4D, Coor3D, Coor2D, Coor32)
 - `TriaxialEllpisoid`, mostly as a placeholder
+- Rumination #10: What's wrong with 19111
 
 ### Fixed
 

@@ -13,11 +13,11 @@ The material is initially published here, as a part of the Rust Geodesy [Ruminat
 The text is long, and the subject both sprawling and convoluted. But the gist of it is, that:
 
 - The original conceptual model leading to 19111 was mostly in disagreement with the common geodetic world view. But it was simple and sufficient as long as metre-level absolute accuracy was acceptable
-- As accuracy requirements grew, this non-geodetic conceptual model was not feasible anymore, and the model had to get into closer agreement with modern geodesy
-- The 2019 edition of 19111 has come a long way, but there is still more work worth doing
+- As accuracy requirements grew, this non-geodetic conceptual model was not feasible anymore, and the model, in its 19111 incarnation, is in closer agreement with common geodetic world views
+- Hence, 19111 has come a long way, but there is still more work worth doing
 - Also, a number of concepts are still either too vaguely or too restrictively defined, and hence should be revised
 
-**Also note that** while some of the changes proposed may seem extensive at first glance, they are actually rather clarifications than substantial changes. The aim is to support communication with end users and developers, through better alignment between geomatics and geodesy. The changes should require minor-to-no changes to software implementations of the standard.
+**Note that** while some of the changes proposed may seem extensive at first glance, they are actually rather clarifications than substantial changes. The aim is to support communication with end users and developers, through better alignment between geomatics and geodesy. The changes should require minor-to-no changes to software implementations of the standard.
 
 ## Introduction
 
@@ -25,7 +25,7 @@ The text is long, and the subject both sprawling and convoluted. But the gist of
 
 With the personal luck of (narrowly) escaping becoming part of the geospatial standardization efforts at their inception back in the 1990's, I first started participating in the work around ISO-19111 "Referencing by Coordinates" when its 2019 revision was well under way.
 
-Hence, my impression of the conceptual world view behind early geospatial standardization is based on anecdotal evidence - although largely supported by excavation of archaeological traces still visible in 19111.
+Hence, my impression of the conceptual world view behind early (and especially pre-19111) geospatial standardization is based on anecdotal evidence - although largely supported by excavation of archaeological traces still visible in 19111.
 
 With only a slight dose of exaggeration, that world view can be described in brief as follows:
 
@@ -47,11 +47,11 @@ Below, I try to identify a number of conceptual problems, some needing much disc
 
 As 19111 (along with 19161) describes the relation between coordinates (i.e. numbers), and locations (i.e. the physical world), 19111 should speak in geodetic and hence empirical terms. As elaborated under Item 0 below, there is no axiomatic highway towards the georeference. The georeference is fundamentally geodetic and empirical, so 19111 needs to bridge the gap between geodesy and geomatics - in other words, 19111 must "speak geodesy".
 
-But geodesists communicate about the physical world, so they tend to get away with being linguistically much more sloppy than geomaticians, since physical reality and human conception are magnificent disambiguators.
+When we communicate as **geodesists**, we communicate about the physical world, so we tend to get away with being linguistically sloppy, since physical reality and human conception are magnificent disambiguators.
 
-Geomaticians on the other hand, must be conceptually and linguistically more strict, since they concern themselves with feeding the bit-crunching monsters, which posess neither imagination, nor reason.
+When we communicate as **geomaticians**, on the other hand, we must be conceptually and linguistically more strict, since we concern ourselves with feeding the bit-crunching monsters, which posess neither imagination, nor reason.
 
-Bridging the gap between contextual sloppiness, and context free rigor is no simple feat. Reaching a common understanding may very well take yet another few decades. But while that understanding materializes, at least we can try to maintain, trim and focus 19111, making sure it doesn't buckle under its own load *en route*.
+Bridging the gap between contextual sloppiness, and context free rigor is no simple feat. Building a sufficiently rich terminology and understanding may very well take yet another few decades. But while that materializes, at least we can try to maintain, trim and focus 19111, making sure it doesn't buckle under its own load *en route*.
 
 ## Item 0: Empirical contraptions vs. axiomatic idealizations
 
@@ -64,7 +64,7 @@ So to remedy this, 19111 should stop talking about coordinates referenced to met
 - Transformations are *empirical predictions*, not magic wands conjuring up new georeferences without having to do the surveys.
 - Geodetic reference frames are given as coordinate- and velocity lists (or, equivalently in the satellite navigation case: as ephemerides), not as orthogonal unit vectors in an idealized vector space.
 
-19111 ties coordinates to the physical reality, and should not be ashamed of that.
+**19111 ties coordinates to the physical reality,** and hence marks the point where geomatics standardization must transcend the abstractions, and tie into the empirical. This is the entire *raison d'etre* for 19111, and we should not be ashamed of that.
 
 ## Item 1: The concept of "coordinate transformations" is *way* too underexposed
 
@@ -131,17 +131,18 @@ But since a CRS *is not a system,* could we find a reasonable alternative expans
 
 ## Item 4: The CRS concept leads to unnecessary complication
 
-According to 19111, a CRS has a "definition".
-The typical CRS today, consists of a reference frame plus some kind of coordinate operation
+**TODO**
+According to 19111, a CRS has a "definition". But at the bottom of any CRS is a reference frame. And as argued above, a reference frame is empirical, hence irreducible and non-definable.
 
-[Figure 3](https://docs.ogc.org/as/18-005r4/18-005r4.html#figure_3) illustrates some of this.
+So the concept that "a CRS has a definition, and from the definition, we can infer transformations to other CRS" is highly limited: It works as long as we stay within the same reference frame, but no longer than that.
+
+But modulo the reference frame ("Base CRS"), the "definition of a CRS" is just the operation going from the CRS back to the reference frame. For this, we introduce an entire class of new concepts (perhaps most of [chapter 9](https://docs.ogc.org/as/18-005r4/18-005r4.html#27)), essentially covering the same ground as if just associating an operation with the CRS.
 
 TODO
 
 <!--
-Refererer til metadata, men geodæsi handler om at referere til virkeligheden. Det er 19111's mission - i modsætning til 19107. Og georeferencen er til en referenceramme, ikke til et sæt metadata.
 
-En transformation er empirisk, og flytter ikke georeferencen til en anden ramme. Den implementerer en prædiktion ("hvilken koordinat X2 ville vi have opnået i system B, givet at vi har X1 i system A)
+[Figure 5](https://docs.ogc.org/as/18-005r4/18-005r4.html#figure_5) illustrates some of this.
 
 Derfor er figur 3 misvisende: Det sammensatte datasæt er ikke refereret til CM3 - men CS1 og CS2 er blevet gjort "noget interoperable" ved hjælp af dels en empirisk prædiktion (CS1), dels en aksiomatisk konvertering (CS2)
 
