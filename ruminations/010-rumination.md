@@ -131,23 +131,27 @@ But since a CRS *is not a system,* could we find a reasonable alternative expans
 
 ## Item 4: The CRS concept leads to unnecessary complication
 
-**TODO**
 According to 19111, a CRS has a "definition". But at the bottom of any CRS is a reference frame. And as argued above, a reference frame is empirical, hence irreducible and non-definable.
 
 So the concept that "a CRS has a definition, and from the definition, we can infer transformations to other CRS" is highly limited: It works as long as we stay within the same reference frame, but no longer than that.
 
 But modulo the reference frame ("Base CRS"), the "definition of a CRS" is just the operation going from the CRS back to the reference frame. For this, we introduce an entire class of new concepts (perhaps most of [chapter 9](https://docs.ogc.org/as/18-005r4/18-005r4.html#27)), essentially covering the same ground as if just associating an operation with the CRS.
 
-TODO
+This was covered more extensively in [this 2021 discussion](https://github.com/OSGeo/PROJ/issues/2854) where I a.o. opined that:
 
-<!--
-
-[Figure 5](https://docs.ogc.org/as/18-005r4/18-005r4.html#figure_5) illustrates some of this.
-
-Derfor er figur 3 misvisende: Det sammensatte datasæt er ikke refereret til CM3 - men CS1 og CS2 er blevet gjort "noget interoperable" ved hjælp af dels en empirisk prædiktion (CS1), dels en aksiomatisk konvertering (CS2)
-
-It is important that 19111 reflects how geodesy *actually* works. And "geodetic coordinate systems are not coordinate systems"
--->
+> The confusion of these matters is encouraged by the mistaken foundation of the ISO/OGC geospatial standards series, which somehow asserts that a CRS is definable in absolute terms. Being able to define a CRS in absolute terms would be nice, since once you have an absolute definition of two CRS', you would be able to determine an infallible transformation between the two.
+>
+> That's possible in mathematics, where coordinate systems are Platonic ideals. In geodesy, coordinate systems are much more messy: You can only **define** a reference system, by writing a book describing how to **realize** that system on the physical Earth.
+>
+> The **reference system** *is the book*. The realization is the corresponding **reference *frame***. And the reference frame (i.e. a collection of physical points with associated coordinate and velocity information) is what you can measure point coordinates with respect to.
+>
+> So the definition (i.e. the book) may guide us toward constructing a transformation involving a given CRS/reference frame. But we cannot determine any coordinates of physical features with respect to the **system** - only with respect to the **frame**.
+>
+> The projected CRS `EPSG:3395` is related to the geographical base CRS `EPSG:4326` by the coordinate operation described by `proj=merc ellps=WGS84` (or actually its inverse form). So the closest you can get to a "definition" of `EPSG:3395` is to say that `EPSG:3395` is the CRS for which coordinates gets related to `EPSG:4326` by subjecting them to the coordinate operation given by `inv proj=merc ellps=WGS84`. Or in other words: *The definition of a CRS is the coordinate operation which brings us to its base CRS*. Once we arrive at the base CRS, that's the end of the definition in absolute terms: You have arrived from your trip from the platonic gardens of mathematics to the messy moors of geodesy.
+>
+> To continue the journey from there and onto another base CRS, you will have to rely on empirically determined transformations - you are in the waste lands of approximations, where a meter is not a meter, a radian not a radian, and the distance between two points is not the same as the difference between their coordinates. Welcome to geodesy!
+>
+> In one sense, however, things are much simpler in geodesy: A CRS is really just a label, without any internal state. While that sounds strange comming from the ISO/OGC world, it really simplifies a lot of things, since that label is the key to looking up the transformation to any other CRS in **the little black book all geodesists are secretly given upon graduation** (or, having lost the book: Looking it up at the [EPSG](https://epsg.org) website).
 
 ## Item 5: `DatumEnsemble` is too narrowly defined
 
