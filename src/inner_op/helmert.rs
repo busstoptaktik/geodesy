@@ -44,7 +44,7 @@ fn helmert_common(
     let mut TT = [T[0], T[1], T[2]];
     let mut SS = S;
 
-    let mut prev_t = std::f64::NAN;
+    let mut prev_t = f64::NAN;
     let n = operands.len();
     for i in 0..n {
         let mut c = operands.get_coord(i);
@@ -167,10 +167,10 @@ pub const GAMUT: [OpParameter; 25] = [
     OpParameter::Real { key: "ds", default: Some(0f64) },  // TODO: scale by 1e-6
 
     // Epoch - "beginning of time for this transformation"
-    OpParameter::Real { key: "t_epoch", default: Some(std::f64::NAN) },
+    OpParameter::Real { key: "t_epoch", default: Some(f64::NAN) },
 
     // Fixed observation time - ignore the fourth coordinate.
-    OpParameter::Real { key: "t_obs", default: Some(std::f64::NAN) },
+    OpParameter::Real { key: "t_obs", default: Some(f64::NAN) },
 ];
 
 pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> {
@@ -581,7 +581,7 @@ mod tests {
         let definition = "
             helmert  exact    convention = coordinate_frame
             angular_velocity = 0.00150379, 0.00118346,  0.00120716
-            t_epoch = 2020.0 
+            t_epoch = 2020.0
         ";
         let op = ctx.op(definition)?;
 

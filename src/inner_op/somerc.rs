@@ -116,7 +116,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
             j -= 1;
         }
         if j <= 0 {
-            operands.set_xy(i, core::f64::NAN, core::f64::NAN);
+            operands.set_xy(i, f64::NAN, f64::NAN);
             continue;
         } else {
             operands.set_xy(i, lam, phi);
