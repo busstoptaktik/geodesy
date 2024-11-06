@@ -150,11 +150,11 @@ macro_rules! coordinate_set_impl_3d_subset {
 /// this will usually be what you need:
 ///
 /// - The `0` as the third coordinate will make transformations behave as if the points
-/// are placed immediately on the reference ellipsoid, `h==0`
+///   are placed immediately on the reference ellipsoid, `h==0`
 ///
 /// - The `f64::NAN` as the fourth coordinate will spill into the plane coordinate
-/// values if passing these static coordinates through any dynamic transformations,
-/// requiring a proper time coordinate, hence giving a very noisy debugging signal
+///   values if passing these static coordinates through any dynamic transformations,
+///   requiring a proper time coordinate, hence giving a very noisy debugging signal
 ///
 /// If other fixed values for third and fourth coordinate are needed, the
 /// `CoordinateSet` trait is also blanket-implemented for the tuple

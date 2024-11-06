@@ -199,17 +199,17 @@ where
 ///
 /// ## Ellipsoid definitions
 /// - Geodesy only supports a limited set of builtin ellipsoids OR or definition
-/// via semi-major and reverse-flattening parameters  `ellps=a,rf`.
+///   via semi-major and reverse-flattening parameters  `ellps=a,rf`.
 /// - PROJ has [richer ellipsoid](https://proj.org/en/9.3/usage/ellipsoids.html#ellipsoid-size-parameters)
-/// support which *parse_proj* provides partial support for.
+///   support which *parse_proj* provides partial support for.
 /// - Specifically if an ellipsoid is defined via `a` and `rf` parameters, *parse_proj*
-/// will redefine them as `ellps=a,rf` and remove the `a` and `rf` parameters.
+///   will redefine them as `ellps=a,rf` and remove the `a` and `rf` parameters.
 /// - All other cases supported by PROJ are NOT handled by *parse_proj* and will
-/// fail when instantiating the operator.
+///   fail when instantiating the operator.
 ///
 /// ## Scaling via `k` parameter
 /// - PROJ still supports the deprecated `k` parameter. Most output from `projinfo` will
-/// have the scaling defined as `k` instead of `k_0`.
+///   have the scaling defined as `k` instead of `k_0`.
 /// - *parse_proj* will replace `k` with `k_0` whenever it is encountered.
 ///
 pub fn parse_proj(definition: &str) -> Result<String, Error> {
