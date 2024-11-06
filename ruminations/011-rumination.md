@@ -1,10 +1,14 @@
 <!-- markdownlint-disable MD013 -->
 
-# A DRAFT of a new introduction to a revised version of ISO 19111/OGC topic 2
+# Some potential elements of an introduction to a revised version of ISO 19111/OGC topic 2
 
-**Thomas Knudsen,** <thokn@sdfi.dk>, 2024-07-12
+**Thomas Knudsen,** <thokn@kds.dk>, 2024-11-06
 
-As indicated in the essay [What's wrong with ISO-19111?](https://github.com/busstoptaktik/geodesy/blob/main/ruminations/010-rumination.md), quite a few things could be improved in the current version of ISO-19111 "Referencing by coordinates". The following is a draft of a suggested introduction to an updated version of 19111, providing an overview of a few of the most important prerequisites for a simpler, more straightforwardly geodetic, standard for "referencing by coordinates". Feel free to discuss the contents [here](https://github.com/busstoptaktik/geodesy/discussions/116), or by e-mailing me directly.
+As indicated in the essay [What's wrong with ISO-19111?](https://github.com/busstoptaktik/geodesy/blob/main/ruminations/010-rumination.md), quite a few things could be improved in the current version of ISO-19111 "Referencing by coordinates".
+
+The following is an informal suggestion for some elements of an introduction to an updated version of 19111, providing an overview of a few of the most important prerequisites for a simpler, more straightforwardly geodetic, standard for "referencing by coordinates".
+
+Feel free to discuss the contents [here](https://github.com/busstoptaktik/geodesy/discussions/116), or by e-mailing me directly.
 
 ## Introduction
 
@@ -18,7 +22,7 @@ In the following we will mostly use earth-based terms and expositions. The appli
 
 In abstract terms, the relation between coordinates and positions is based on mathematial coordinate systems. The earth, however, is not an abstract mathematical object, but a concrete physical body. Hence, in order to relate coordinates to positions we also need *physical realizations* of the coordinate systems.
 
-Historically such physical realizations (called "reference frames") consist of collections of physical markers in the landscape, with corresponding coordinates adopted by convention. In modern cases, the coordinates may be supplemented with velocity vectors, and the physical markers and their coordinates may be represented by satellites and their ephemerides.
+Historically such physical realizations (called "reference frames") consist of collections of physical markers in the landscape, with corresponding coordinates, computed from observations and adopted by convention. In modern cases, the coordinates may be supplemented with velocity vectors, and the physical markers and their coordinates may be represented by satellites and their ephemerides.
 
 ### Mathematical abstractions and empirical contraptions
 
