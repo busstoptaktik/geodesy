@@ -42,6 +42,8 @@ $ echo 553036. -124509 | kp "dms:in | geo:out"
 - [`molodensky`](#operator-molodensky): The full and abridged Molodensky transformations
 - [`noop`](#operator-noop): The no-operation
 - [`omerc`](#operator-omerc): The oblique Mercator projection
+- [`permtide`](#operator-permtide):
+  Convert geoid undulations between different permanent tide systems
 - [`pop`](#operator-pop): Pop a dimension from the stack into the operands
 - [`push`](#operator-push): Push a dimension from the operands onto the stack
 - [`stack`](#operator-stack): Push/pop/swap dimensions from the operands onto the stack
@@ -858,6 +860,65 @@ k_0=0.99984 alpha=53:18:56.9537 gamma_c=53:07:48.3685
 **See also:** [PROJ documentation](https://proj.org/operations/projections/omerc.html): *Oblique Mercator*.
 The parameter names differ slightly between PROJ and RG: PROJ's `lat_0` is `latc` here, to match `lonc`,
 and RG does not support PROJ's "indirectly given azimuth" case.
+
+---
+
+### Operator `permtide`
+
+**Purpose:** Convert geoid undulations between different permanent tide systems
+
+**Description:**
+
+Since the orbits of the sun and the moon (as observed from the earth)
+are concentrated at lower latitudes, the mean tidal effect of these
+celestial bodies do not vanish, but results in a non-zero mean potential.
+
+Hence, if we compute the long term mean of a series of repeated
+levellings between two fixed points at different latitudes, then
+we will eliminate the time-varying parts of the lunar and solar tidal
+potentials, but the non-vanishing long term mean will still blend into
+our attempt to measure the geopotential difference between the two
+points. This is known as *the mean tide* case.
+
+If correcting for the mean as well, we formally obtain a more pure
+*geo*-potential. This is known as the *zero-tide* case, and is
+the equivalent to formally moving all external gravitating masses to
+infinity.
+
+But since the permanent tide not only influences the potential, but
+also the shape of the earth's crust, there is a secondary effect from
+the external gravitating bodies due to the deformation. When we
+formally remove that as well, we are left with what is known as the
+*non-tidal* or *tide free* case.
+
+In height systems, we must discern between *mean tide*,
+*zero tide*, and *tide free* conventions, and adapt the corresponding
+geoid model to fit with the convention. Hence, this operator uses
+geoid-centric terminology and sign conventions.
+
+
+
+
+| Argument | Description |
+|----------|-------------|
+| `inv` | swap forward and inverse operations |
+| `ellps=name` | Use ellipsoid `name` for the conversion |
+| `k` | zero frequency Love number. Defaults to $0.3$ |
+| `from=system` | Convert from either `mean`, `zero` or `free` tide system |
+| `to=system` | Convert to either `mean`, `zero` or `free` tide system |
+
+**Example**: Convert a geoid model using the zero-tide convention to a
+corresponding model using the mean-tide convention
+
+```geodesy
+permtide from=zero to=mean ellps=GRS80
+```
+
+**See also:**
+[Martin Losch and Verena Seufer, 2003:](https://mitgcm.org/~mlosch/geoidcookbook.pdf)
+*How to Compute Geoid Undulations (Geoid Height Relative to a Given
+Reference Ellipsoid) from Spherical Harmonic Coefficients for
+Satellite Altimetry Applications*
 
 ---
 

@@ -103,6 +103,20 @@ pub enum Bibliography {
     /// [pdf](https://gfzpublic.gfz-potsdam.de/rest/items/item_8827_5/component/file_130038/content).
     Kru12,
 
+    /// Martin Losch and Verena Seufer, 2003:
+    /// *How to Compute Geoid Undulations (Geoid Height Relative to a Given Reference Ellipsoid)
+    /// from Spherical Harmonic Coefficients for Satellite Altimetry Applications*
+    /// Unpublished manuscript, 10 pp.
+    /// [html](https://mitgcm.org/~mlosch/geoidcookbook/geoidcookbook.html)
+    /// [pdf](https://mitgcm.org/~mlosch/geoidcookbook.pdf).
+    Los03,
+
+    /// Gérard Petit and Brian Luzum (eds), 2010:
+    /// *IERS conventions (2010)*.
+    /// IERS technical note 36.
+    /// Verlag des Bundesamts für Kartographie und Geodäsie, Frankfurt am Main, 179 pp.
+    /// [pdf](https://iers-conventions.obspm.fr/content/tn36.pdf)
+
     /// Knud Poder and Karsten Engsager, 1998.
     /// *Some Conformal Mappings and Transformations for Geodesy and Topographic Cartography*.
     /// Copenhagen, Denmark: Geodetic Division, KMS,
@@ -115,6 +129,12 @@ pub enum Bibliography {
     /// Survey Review, 48:350, pp. 376-384,
     /// [DOI](https://doi.org/10.1080/00396265.2016.1191748).
     Ruf16,
+
+    /// Dru A. Smith, 1998:
+    /// *There is no such thing as "The" EGM96 geoid: Subtle points on the use of a global geopotential model*,
+    /// IGeS Bulletin No. 8, International Geoid Service, Milan, Italy, pp. 17-28,
+    /// [URL](https://www.ngs.noaa.gov/PUBS_LIB/EGM96_GEOID_PAPER/egm96_geoid_paper.html).
+    Dru98,
 
     /// T. Vincenty (1975) *Direct and Inverse Solutions of Geodesics on the Ellipsoid
     /// with application of nested equations*.
