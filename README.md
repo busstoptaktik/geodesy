@@ -8,7 +8,7 @@ Rust Geodesy provides a number of **features** to support a number of **objectiv
 
 The most important **features** are
 
-- a set of more than 20 geodetic **transformation primitives**
+- a set of more than 30 geodetic **transformation primitives**
 - a set of more than 40 primitives for **operations on the ellipsoid**
 - a means for **composing** these primitives into more complex operations.
 
