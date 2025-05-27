@@ -12,7 +12,7 @@ pub(super) const ELLIPSOID_LIST: [(&str, &str, &str, &str, &str); 47] = [
     ("APL4.9",    "6378137",       "6378137.0",    "298.25",             "Appl. Physics. 1965"),
     ("NWL9D",     "6378145",       "6378145.0",    "298.25",             "Naval Weapons Lab., 1965"),
     ("mod_airy",  "6377340.189",   "6377340.189",  "299.3249373654824",  "Modified Airy"),
-    ("andrae",    "6377104.43 ",   "6377104.43",   "300.0",              "Andrae 1876 (Denmark, Iceland)"),
+    ("andrae",    "6377104.43",    "6377104.43",   "300.0",              "Andrae 1876 (Denmark, Iceland)"),
     ("danish",    "6377019.2563",  "6377019.2563", "300.0",              "Andrae 1876 (Denmark, Iceland)"),
     ("aust_SA",   "6378160",       "6378160",      "298.25",             "Australian Natl & S. Amer. 1969"),
     ("GRS67",     "6378160",       "6378160",      "298.2471674270",     "GRS 67(IUGG 1967)"),
