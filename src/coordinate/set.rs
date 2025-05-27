@@ -161,7 +161,6 @@ macro_rules! coordinate_set_impl_3d_subset {
 /// `(T, f64, f64) where T: CoordinateSet`, so any data structure implementing the
 /// `CoordinateSet` trait can be combined with two fixed values for third and fourth
 /// coordinate dimension.
-
 macro_rules! coordinate_set_impl_for_coor2d {
     ($kind:ident) => {
         coordinate_set_impl_2d_subset!(2, $kind);
