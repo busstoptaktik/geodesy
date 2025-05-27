@@ -1,4 +1,4 @@
-/// Units are taken from PROJ https://github.com/OSGeo/PROJ/blob/master/src/units.c,
+// Units are taken from PROJ https://github.com/OSGeo/PROJ/blob/master/src/units.c,
 
 // the factor and description elements are not used for now, but
 // we keep them and allow(dead_code) to maintain alignment with

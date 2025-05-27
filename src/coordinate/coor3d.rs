@@ -91,7 +91,7 @@ impl Coor3D {
         Coor3D([1., 1., 1.])
     }
 
-    /// Arithmetic (also see the operator trait implementations `add, sub, mul, div`)
+    // Arithmetic (also see the operator trait implementations `add, sub, mul, div`)
 
     /// Multiply by a scalar
     #[must_use]
