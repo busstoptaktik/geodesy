@@ -5,7 +5,7 @@ use log::warn;
 /// minutes forced to unsigned by i16 type, but passing a negative value for
 /// seconds leads to undefined behaviour.
 pub fn dms_to_dd(d: i32, m: u16, s: f64) -> f64 {
-    d.signum() as f64 * (d.abs() as f64 + (m as f64 + s / 60.) / 60.)
+    (d.abs() as f64 + (m as f64 + s / 60.) / 60.).copysign(d as f64)
 }
 
 /// Simplistic transformation from degrees and minutes-with-decimals
@@ -13,7 +13,7 @@ pub fn dms_to_dd(d: i32, m: u16, s: f64) -> f64 {
 /// degree-component, but passing a negative value for minutes leads
 /// to undefined behaviour.
 pub fn dm_to_dd(d: i32, m: f64) -> f64 {
-    d.signum() as f64 * (d.abs() as f64 + (m / 60.))
+    (d.abs() as f64 + (m / 60.)).copysign(d as f64)
 }
 
 /// Simplistic transformation from the ISO-6709 DDDMM.mmm format to
@@ -21,21 +21,19 @@ pub fn dm_to_dd(d: i32, m: f64) -> f64 {
 /// such as 5575.75 (where the number of minutes exceed 60) leads
 /// to undefined behaviour.
 pub fn iso_dm_to_dd(iso_dm: f64) -> f64 {
-    let sign = iso_dm.signum();
-    let dm = iso_dm.abs() as u32;
-    let fraction = iso_dm.abs() - dm as f64;
-    let d = dm / 100;
-    let m = (dm - d * 100) as f64 + fraction;
-    sign * (d as f64 + (m / 60.))
+    let magn = iso_dm.abs();
+    let dm = magn.trunc() as u64;
+    let d = (dm / 100) as f64;
+    let m = (dm % 100) as f64 + magn.fract();
+    (d + (m / 60.)).copysign(iso_dm)
 }
 
 /// Transformation from degrees-with-decimals to the ISO-6709 DDDMM.mmm format.
 pub fn dd_to_iso_dm(dd: f64) -> f64 {
-    let sign = dd.signum();
-    let dd = dd.abs();
-    let d = dd.floor();
-    let m = (dd - d) * 60.;
-    sign * (d * 100. + m)
+    let dm = dd.abs();
+    let d = dm.trunc();
+    let m = dm.fract() * 60.;
+    (d * 100. + m).copysign(dd)
 }
 
 /// Simplistic transformation from the ISO-6709 DDDMMSS.sss
@@ -43,26 +41,24 @@ pub fn dd_to_iso_dm(dd: f64) -> f64 {
 /// such as 557575.75 (where the number of minutes and seconds both
 /// exceed 60) leads to undefined behaviour.
 pub fn iso_dms_to_dd(iso_dms: f64) -> f64 {
-    let sign = iso_dms.signum();
-    let dms = iso_dms.abs() as u32;
-    let fraction = iso_dms.abs() - dms as f64;
+    let magn = iso_dms.abs();
+    let dms = magn as u32;
     let d = dms / 10000;
-    let ms = dms - d * 10000;
+    let ms = dms % 10000;
     let m = ms / 100;
-    let s = (ms - m * 100) as f64 + fraction;
-    sign * (d as f64 + ((s / 60.) + m as f64) / 60.)
+    let s = (ms % 100) as f64 + magn.fract();
+    (d as f64 + ((s / 60.) + m as f64) / 60.).copysign(iso_dms)
 }
 
 /// Transformation from degrees-with-decimals to the extended
 /// ISO-6709 DDDMMSS.sss format.
 pub fn dd_to_iso_dms(dd: f64) -> f64 {
-    let sign = dd.signum();
-    let dd = dd.abs();
-    let d = dd.floor();
-    let mm = (dd - d) * 60.;
-    let m = mm.floor();
-    let s = (mm - m) * 60.;
-    sign * (d * 10000. + m * 100. + s)
+    let magn = dd.abs();
+    let d = magn.trunc();
+    let mm = magn.fract() * 60.;
+    let m = mm.trunc();
+    let s = mm.fract() * 60.;
+    (d * 10000. + m * 100. + s).copysign(dd)
 }
 
 /// normalize arbitrary angles to [-π, π)
