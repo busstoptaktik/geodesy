@@ -64,7 +64,14 @@ $ cargo r
 
 ## Concrete
 
-*Rust Geodesy* (RG), is a platform for experiments with geodetic software, transformations, and standards. *RG* vaguely resembles the [PROJ](https://proj.org) transformation system, and was built in part on the basis of experiments with *alternative data flow models for PROJ*. The fundamental **transformation** functionality of *RG* is fairly complete (i.e. on par with the datum shift/reference frame transformation capability of PROJ), while the number of **projections** supported is a far cry from PROJ's enormous gamut. It does, however, support a suite of the most important ones:
+*Rust Geodesy* (RG), is a platform for experiments with geodetic software,
+transformations, and standards. *RG* vaguely resembles the [PROJ](https://proj.org)
+transformation system, and was built in part on the basis of experiments with
+*alternative data flow models for PROJ*. The fundamental **transformation** functionality
+of *RG* is fairly complete (i.e. on par with the datum shift/reference frame
+transformation capability of PROJ), while the number of **projections** supported
+is a far cry from PROJ's enormous gamut. It does, however, support a suite of the most
+important ones:
 
 - Transverse Mercator
 - Universal Transverse Mercator (UTM)
@@ -103,8 +110,10 @@ Dataflow experimentation is just one aspect of *RG*. Overall, the aims are (at l
 
 1. Support experiments for evolution of geodetic standards.
 2. Support development of geodetic transformations.
-3. Hence, provide easy access to a number of basic geodetic operations, not limited to coordinate operations.
-4. Support experiments with data flow and alternative abstractions. Mostly as a tool for aims (1, 2, 3)
+3. Hence, provide easy access to a number of basic geodetic operations,
+   not limited to coordinate operations.
+4. Support experiments with data flow and alternative abstractions.
+   Mostly as a tool for aims (1, 2, 3)
 
 All four aims are guided by a wish to amend explicitly identified
 shortcomings in the existing geodetic system landscape.
@@ -114,16 +123,32 @@ shortcomings in the existing geodetic system landscape.
 The documentation is currently limited, but take a look at:
 
 - The coordinate operator [documentation](https://github.com/busstoptaktik/geodesy/blob/main/ruminations/002-rumination.md)
-- The [description of `kp`](https://github.com/busstoptaktik/geodesy/blob/main/ruminations/003-rumination.md), the *Rust Geodesy* coordinate processing program
-- This essayistic [rumination](https://github.com/busstoptaktik/geodesy/blob/main/ruminations/000-rumination.md), outlining the overall philosophy and architecture of *Rust Geodesy*, and [this related](https://github.com/busstoptaktik/geodesy/blob/main/ruminations/008-rumination.md) comparison between PROJ and RG
+- The [description of `kp`](https://github.com/busstoptaktik/geodesy/blob/main/ruminations/003-rumination.md),
+the *Rust Geodesy* coordinate processing program
+- This essayistic [rumination](https://github.com/busstoptaktik/geodesy/blob/main/ruminations/000-rumination.md),
+outlining the overall philosophy and architecture of *Rust Geodesy*, and
+[this related](https://github.com/busstoptaktik/geodesy/blob/main/ruminations/008-rumination.md)
+comparison between PROJ and RG
 - The API documentation at [Docs.rs](https://docs.rs/geodesy)
 - The [`examples`](https://github.com/busstoptaktik/geodesy/tree/main/examples)
 - The tests embedded in the [source code](https://github.com/busstoptaktik/geodesy/tree/main/src)
-- [This](https://github.com/busstoptaktik/geodesy/blob/main/ruminations/006-rumination.md) rather concrete and [this](https://github.com/busstoptaktik/geodesy/blob/main/ruminations/005-rumination.md) more philosophical description of the main discrepancy between geodesy and geomatics, *RG* tries to elucidate and amend.
+- [This](https://github.com/busstoptaktik/geodesy/blob/main/ruminations/006-rumination.md)
+  rather concrete and
+  [this](https://github.com/busstoptaktik/geodesy/blob/main/ruminations/005-rumination.md)
+  more philosophical description of the main discrepancy between geodesy and geomatics,
+  *RG* tries to elucidate and amend.
+
+## Geodesy & friends
+
+[Corey Farwell](https://rwell.org/) provides the crates
+[geo-geodesy](https://github.com/frewsxcv/geo-geodesy) and
+[crs-definitions](https://github.com/frewsxcv/crs-definitions) which greatly facilitate the
+interoperability between `Geodesy` and the [`geo`](https://github.com/georust/geo) crate of
+the [GeoRust](https://github.com/georust) ecosystem.
 
 ## License
 
-*Rust Geodesy*: Copyright 2020, 2021, 2022, 2023, 2024 by
+*Rust Geodesy*: Copyright 2020, 2021, 2022, 2023, 2024, 2025 by
 Thomas Knudsen <knudsen.thomas@gmail.com> and contributors.
 
 Licensed under either of
