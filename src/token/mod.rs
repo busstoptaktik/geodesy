@@ -385,7 +385,7 @@ fn tidy_proj(elements: &mut Vec<String>) -> Result<(), Error> {
     if let [None, Some(a_idx), Some(rf_idx)] = ellps_def {
         let a = elements[a_idx][2..].to_string();
         let rf = elements[rf_idx][3..].to_string();
-        elements.push(format!("ellps={},{}", a, rf).to_string());
+        elements.push(format!("ellps={a},{rf}").to_string());
 
         // Remove the a and rf elements from the vector
         if a_idx > rf_idx {

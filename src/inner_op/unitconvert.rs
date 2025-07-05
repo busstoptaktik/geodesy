@@ -186,7 +186,6 @@ mod tests {
 
         // Forward
         let successes = ctx.apply(op, Fwd, &mut operands)?;
-        println!("{:?}", operands);
         assert_float_eq!(operands[0][0], 1.524003048, abs_all <= 1e-9);
         assert_float_eq!(operands[0][1], 1.524003048, abs_all <= 1e-9);
         assert_float_eq!(operands[0][2], 1.524003048, abs_all <= 1e-9);

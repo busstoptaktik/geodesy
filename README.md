@@ -124,11 +124,11 @@ The documentation is currently limited, but take a look at:
 
 - The coordinate operator [documentation](https://github.com/busstoptaktik/geodesy/blob/main/ruminations/002-rumination.md)
 - The [description of `kp`](https://github.com/busstoptaktik/geodesy/blob/main/ruminations/003-rumination.md),
-the *Rust Geodesy* coordinate processing program
+  the *Rust Geodesy* coordinate processing program
 - This essayistic [rumination](https://github.com/busstoptaktik/geodesy/blob/main/ruminations/000-rumination.md),
-outlining the overall philosophy and architecture of *Rust Geodesy*, and
-[this related](https://github.com/busstoptaktik/geodesy/blob/main/ruminations/008-rumination.md)
-comparison between PROJ and RG
+  outlining the overall philosophy and architecture of *Rust Geodesy*, and
+  [this related](https://github.com/busstoptaktik/geodesy/blob/main/ruminations/008-rumination.md)
+  comparison between PROJ and RG
 - The API documentation at [Docs.rs](https://docs.rs/geodesy)
 - The [`examples`](https://github.com/busstoptaktik/geodesy/tree/main/examples)
 - The tests embedded in the [source code](https://github.com/busstoptaktik/geodesy/tree/main/src)
