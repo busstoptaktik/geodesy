@@ -250,7 +250,7 @@ fn coordinate_order_descriptor(desc: &str) -> Option<CoordinateOrderDescriptor> 
         count[(indices[i].abs() - 1) as usize] += 1;
     }
     if count != [1, 1, 1, 1] {
-        warn!("adapt: {:?} is not a proper permutation", desc);
+        warn!("adapt: {desc:?} is not a proper permutation");
         return None;
     }
 
