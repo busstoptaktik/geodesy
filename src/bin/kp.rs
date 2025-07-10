@@ -1,4 +1,5 @@
 use clap::Parser;
+use geodesy::authoring::Jacobian;
 use geodesy::prelude::*;
 use log::{info, trace}; // debug, error, warn: not used
 use std::fs::File;
@@ -21,6 +22,11 @@ struct Cli {
     /// Inverse operation
     #[clap(long = "inv")]
     inverse: bool,
+
+    /// Specify a base ellipsoid for evaluation of deformation factors,
+    /// based on the jacobian
+    #[clap(long)]
+    factors: Option<String>,
 
     /// Specify a fixed height for all coordinates
     #[clap(short = 'z', long)]
@@ -181,12 +187,18 @@ fn transform(
 ) -> Result<usize, geodesy::Error> {
     let output_dimension = options.dimension.unwrap_or(number_of_dimensions_in_input);
 
-    // When roundtripping, we must keep a copy of the input to be able
-    // to compute the roundtrip differences
+    // When roundtripping, or computing deformation factors,
+    // we must keep a copy of the input to be able to compute
+    // the roundtrip differences/factors from the Jacobian
     let mut buffer = Vec::new();
-    if options.roundtrip {
-        buffer.clone_from(operands);
-    }
+    buffer.clone_from(operands);
+
+    let factors = options.factors.is_some();
+    let ellps = if factors {
+        Ellipsoid::named(options.factors.as_ref().unwrap())?
+    } else {
+        Ellipsoid::named("GRS80")?
+    };
 
     let mut n = if options.inverse {
         ctx.apply(op, Inv, operands)?
@@ -228,22 +240,47 @@ fn transform(
         .unwrap_or(if operands[0][0] > 1000. { 5 } else { 10 });
 
     // Finally output the transformed coordinates
-    for coord in operands {
+    for (index, coord) in operands.iter().enumerate() {
         match output_dimension {
-            0 | 4 => println!(
+            0 | 4 => print!(
                 "{1:.0$} {2:.0$} {3:.0$} {4:.0$} ",
                 decimals, coord[0], coord[1], coord[2], coord[3]
             ),
-            1 => println!("{1:.0$} ", decimals, coord[0]),
-            2 => println!("{1:.0$} {2:.0$} ", decimals, coord[0], coord[1]),
-            3 => println!(
+            1 => print!("{1:.0$} ", decimals, coord[0]),
+            2 => print!("{1:.0$} {2:.0$} ", decimals, coord[0], coord[1]),
+            3 => print!(
                 "{1:.0$} {2:.0$} {3:.0$} ",
                 decimals, coord[0], coord[1], coord[2]
             ),
-            _ => println!(
+            _ => print!(
                 "{1:.0$} {2:.0$} {3:.0$} {4:.0$} ",
                 decimals, coord[0], coord[1], coord[2], coord[3]
             ),
+        }
+
+        if factors {
+            let scale = [1., 1.];
+            let swap = [true, true];
+            let at = Coor2D([buffer[index][0], buffer[index][1]]);
+            let f = Jacobian::new(ctx, op, scale, swap, ellps, at)?.factors();
+            if options.verbose.is_present() {
+                // Full output, as with the proj "-V" option
+                println!();
+                println!("{f:#?}");
+            } else {
+                // Inline output, as with the proj "-S" option
+                println!(
+                    "  < {0:.10} {1:.10} {2:.10} | {3:.5} {4:.5} {5:.5} >",
+                    f.meridional_scale,
+                    f.parallel_scale,
+                    f.areal_scale,
+                    f.angular_distortion,
+                    f.meridian_parallel_angle,
+                    f.meridian_convergence
+                );
+            }
+        } else {
+            println!();
         }
     }
     Ok(n)
