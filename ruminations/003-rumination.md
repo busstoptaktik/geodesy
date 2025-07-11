@@ -77,10 +77,10 @@ dimensions (unless the `-D n` option is given):
 
 ```console
 $ echo 55 12 | kp "geo:in | utm zone=32"
-> 691875.6321 6098907.8250
+> 691875.63214 6098907.82501
 
 $ echo 55 12 | kp -D3 "geo:in | utm zone=32"
-> 691875.6321 6098907.8250 0.0000
+> 691875.63214 6098907.82501 0.0000
 
 $ echo 55 | kp "curvature mean"
 > 6385431.75306
@@ -104,20 +104,72 @@ $ echo 55 12 | kp --roundtrip "geo:in | utm zone=32"
 The `inv` option runs the specified pipeline inversely:
 
 ```console
-$ echo 691875.6321 6098907.8250 | kp --inv "geo:in | utm zone=32"
-> 54.9999999996 11.9999999994 0.00000 0.00000
+$ echo 691875.63214 6098907.82501 | kp --inv "geo:in | utm zone=32"
+> 55.0000000000 12.0000000000
 ```
+
+The `factors=` option provides deformation factors in a format inspired by the `proj`
+options `-S` and `-V`. Contrary to `proj`, however, the `factors=` option requires an
+argument, specifying the ellipsoid for the evaluation of the factors.
+
+Also, contrary to `proj`, `kp` expects input in latitude-longitude order, and output
+in northing-easting order, hence typically needing wrapping by a `geo:in | ... | neu:out`
+pair. The output is given as 3 scales (meridional, parallel, areal), followed by 3 angular
+items: (angular distortion, meridian/parallel, meridian convergence)
+
+The long-format version (`proj`s `-V`) is invoked by combining the `factors` and `verbose`
+options.
+
+
+```console
+$ echo 12 55 | proj -S +proj=utm +ellps=GRS80 +zone=32
+691875.63	6098907.83	<1.00005 1.00005 1.0001 1.20736e-06 1.00005 1.00005>
+
+
+$ echo 55 12 | kp --factors=GRS80 "geo:in | utm ellps=GRS80 zone=32 | neu:out"
+6098907.82501 691875.63214   < 1.0000516809 1.0000516809 1.0001033645 | 0.00000 90.00000 2.45820 >
+
+
+$ echo 12 55 | proj -V +proj=utm +ellps=GRS80 +zone=32
+(...)
+Longitude: 12dE [ 12 ]
+Latitude:  55dN [ 55 ]
+Easting (x):   691875.63
+Northing (y):  6098907.83
+Meridian scale (h) : 1.00005168  ( 0.005168 % error )
+Parallel scale (k) : 1.00005168  ( 0.005168 % error )
+Areal scale (s):     1.00010336  ( 0.01034 % error )
+Angular distortion (w): 0.000
+Meridian/Parallel angle: 90.00000
+Convergence : 2d27'29.52" [ 2.45819987 ]
+Max-min (Tissot axis a-b) scale error: 1.00005 1.00005
+
+
+$ echo 55 12 | kp --factors=GRS80 --verbose "geo:in | utm ellps=GRS80 zone=32 | neu:out"
+6098907.82501 691875.63214
+Factors {
+    meridional_scale: 1.0000516809310758,
+    parallel_scale: 1.0000516808991158,
+    areal_scale: 1.0001033645011084,
+    angular_distortion: 2.1072335301308353e-8,
+    meridian_parallel_angle: 89.99999879258172,
+    meridian_convergence: 2.458199874328705,
+    tissot_semimajor: 1.000051691451808,
+    tissot_semiminor: 1.0000516703783837,
+}
+```
+
 
 ### Options
 
 The `help` option gives the list of options:
 
-```txt
+```console
 $ kp --help
 
 KP: The Rust Geodesy 'Coordinate Processing' program
 
-Usage: kp.exe [OPTIONS] <OPERATION> [ARGS]...
+Usage: kp [OPTIONS] <OPERATION> [ARGS]...
 
 Arguments:
   <OPERATION>  The operation to carry out e.g. 'kp "utm zone=32"'
@@ -125,6 +177,8 @@ Arguments:
 
 Options:
       --inv                    Inverse operation
+      --factors <FACTORS>      Specify a base ellipsoid for evaluation of deformation
+                               factors, based on the jacobian
   -z, --height <HEIGHT>        Specify a fixed height for all coordinates
   -t, --time <TIME>            Specify a fixed observation time for all coordinates
   -d, --decimals <DECIMALS>    Number of decimals in output
@@ -132,8 +186,8 @@ Options:
       --debug                  Activate debug mode
   -r, --roundtrip              Report fwd-inv roundtrip deviation
   -e, --echo                   Echo input to output
-  -v, --verbose...             More output per occurrence
-  -q, --quiet...               Less output per occurrence
+  -v, --verbose...             Increase logging verbosity
+  -q, --quiet...               Decrease logging verbosity
   -o, --output <OUTPUT>        Output file, stdout if not present
   -h, --help                   Print help
   -V, --version                Print version
