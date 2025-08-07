@@ -843,9 +843,9 @@ geo:in | cart | noop helmert x=84 y=96 z=116 | cart inv | merc
 | `x_0` | False easting  |
 | `y_0` | False northing |
 | `alpha` | Azimuth of the initial line |
-| `gamma` | Angle from the rectified grid to the oblique grid |
+| `gamma_c` | Angle from the rectified grid to the oblique grid |
 | `variant` | Use the "variant B" formulation (changes the interpretation of `x_0` and `y_0`) |
-| `laborde` | Approximate the Laborde formultaion using "variant B" with `gamma = alpha`) |
+| `laborde` | Approximate the Laborde formultaion using "variant B" with `gamma_c = alpha`) |
 
 **Example**: EPSG Guidance Note 7-2 implementation of Projected coordinate system
 *Timbalai 1948 / R.S.O. Borneo*
