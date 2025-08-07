@@ -120,10 +120,9 @@ items: (angular distortion, meridian/parallel, meridian convergence)
 The long-format version (`proj`s `-V`) is invoked by combining the `factors` and `verbose`
 options.
 
-
 ```console
 $ echo 12 55 | proj -S +proj=utm +ellps=GRS80 +zone=32
-691875.63	6098907.83	<1.00005 1.00005 1.0001 1.20736e-06 1.00005 1.00005>
+691875.63  6098907.83  <1.00005 1.00005 1.0001 1.20736e-06 1.00005 1.00005>
 
 
 $ echo 55 12 | kp --factors=GRS80 "geo:in | utm ellps=GRS80 zone=32 | neu:out"
@@ -158,7 +157,6 @@ Factors {
     tissot_semiminor: 1.0000516703783837,
 }
 ```
-
 
 ### Options
 
