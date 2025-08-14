@@ -5,7 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
 ## [Unreleased]
+
+### Added
+
+### Fixed
+
+### Changed
+
+### Removed
+
+
+## [0.14.0] - 2025-08-14
 
 ### Added
 
@@ -14,6 +26,9 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   in coordinate tuple types (Coor4D, Coor3D, Coor2D, Coor32)
 - `TriaxialEllpisoid`, mostly as a placeholder
 - Rumination #10: What's wrong with 19111
+- kp, the coordinate processing tool, now supports computation of scale, distortion,
+  and meridian convergence factors, akin to PROJ's  `proj -S ...` and `proj -V ...`
+  switches
 
 ### Fixed
 
@@ -30,6 +45,7 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Major restructuring and clean up of `lib.rs`. Only marginally visible externally,
   if using `use geodesy::prelude::*`
 - Moved some_basic_coorNdinates to `crate::test_dat::coorNd`
+- Changed MSRV to 1.74
 
 ### Removed
 
