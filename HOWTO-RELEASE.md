@@ -27,7 +27,7 @@
 Twitter/Mastodon/DiscordGeo:
 
 ```txt
-Rust Geodesy version 0.15.0 just released. X months and Y commits in the making. Get it while it's hot! https://lib.rs/geodesy | https://crates.io/crates/geodesy | https://docs.rs/geodesy/latest/geodesy/
+Rust Geodesy version 0.15.0 just released. X months and Y commits in the making. Get it while it's hot!  https://crates.io/crates/geodesy | https://docs.rs/geodesy/latest/geodesy/ | git commit -a -m "Start of work towards 0.16.0
 ```
 
 Also post new section of Changelog to DiscordGeo
