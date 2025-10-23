@@ -2,7 +2,7 @@
 
 Register of geographical systems and definitions based on the transverse mercator projection
 
-### ITM
+## ITM
 
 The Irish Transverse Mercator: ETRS89 based TM with origin, scale, and false origin fit
 for Ireland
@@ -15,7 +15,9 @@ tmerc lat_0=53.5 lon_0=-8 k_0=0.99982 x_0=600000 y_0=750000 ellps=GRS80
 geo:in | TM:itm_core | enu:out
 ```
 
-### DKTM
+## DKTM
+
+### DKTM1
 
 ```geodesy:dktm1_core
 tmerc lat_0=0 lon_0=9     k=0.99998 x_0=200000 y_0=-5000000 ellps=GRS80
@@ -26,6 +28,8 @@ tmerc lat_0=0 lon_0=9     k=0.99998 x_0=200000 y_0=-5000000 ellps=GRS80
 geo:in | TM:dktm1_core | enu:out
 ```
 
+### DKTM2
+
 ```geodesy:dktm2_core
 tmerc lat_0=0 lon_0=10    k=0.99998 x_0=400000 y_0=-5000000 ellps=GRS80
 ```
@@ -34,6 +38,8 @@ tmerc lat_0=0 lon_0=10    k=0.99998 x_0=400000 y_0=-5000000 ellps=GRS80
 geo:in | TM:dktm2_core | enu:out
 ```
 
+### DKTM3
+
 ```geodesy:dktm3_core
 tmerc lat_0=0 lon_0=11.75 k=0.99998 x_0=600000 y_0=-5000000 ellps=GRS80
 ```
@@ -41,6 +47,8 @@ tmerc lat_0=0 lon_0=11.75 k=0.99998 x_0=600000 y_0=-5000000 ellps=GRS80
 ```geodesy:DKTM3
 geo:in | TM:dktm3_core | enu:out
 ```
+
+### DKTM4
 
 ```geodesy:dktm4_core
 tmerc lat_0=0 lon_0=15    k=1       x_0=800000 y_0=-5000000 ellps=GRS80
