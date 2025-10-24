@@ -24,7 +24,6 @@ tmerc lat_0=0 lon_0=9     k=0.99998 x_0=200000 y_0=-5000000 ellps=GRS80
 ```
 
 ```geodesy:DKTM1
-# haha
 geo:in | TM:dktm1_core | enu:out
 ```
 
@@ -48,6 +47,11 @@ tmerc lat_0=0 lon_0=11.75 k=0.99998 x_0=600000 y_0=-5000000 ellps=GRS80
 geo:in | TM:dktm3_core | enu:out
 ```
 
+```geodesy:DKTM3_inv
+# Mostly for testing the proper handling of inline comments and prefix modifiers
+enu:in | inv TM:dktm3_core | geo:out
+```
+
 ### DKTM4
 
 ```geodesy:dktm4_core
@@ -58,7 +62,7 @@ tmerc lat_0=0 lon_0=15    k=1       x_0=800000 y_0=-5000000 ellps=GRS80
 geo:in | TM:dktm4_core | enu:out
 ```
 
-```
+```proj
 <DKTM1_DVR90> proj=pipeline step init=DK:DVR90 step init=DK:DKTM1
 <DKTM2_DVR90> proj=pipeline step init=DK:DVR90 step init=DK:DKTM2
 <DKTM3_DVR90> proj=pipeline step init=DK:DVR90 step init=DK:DKTM3
