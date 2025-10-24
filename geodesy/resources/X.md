@@ -22,6 +22,8 @@ GeoNotes 13, Version 2, 2025-08-01
 >
 > Rotationshastighederne svarer til en bevægelse på ca. 20 mm/år i nordvestlig retning.
 
+#### itrf2020_gr96
+
 ```geodesy:itrf2020_gr96
 
 helmert exact
@@ -34,12 +36,18 @@ helmert exact
 
 ```
 
+---
+
 ## GR96
 
 Transformations with GR96(1996) as the source. They provide the (shaky) connection
 to the older Greenland datums Qoornoq, Ammassalik, and Scoresbysund.
 
+---
+
 ### Qoornoq (Qôrnoκ?)
+
+#### gr96_qoornoq
 
 ```geodesy:gr96_qoornoq
 
@@ -50,11 +58,15 @@ helmert exact inv convention = coordinate_frame
 
 ```
 
+#### geo_gr96_qoornoq
+
 ```geodesy:geo_gr96_qoornoq
 geo:in | cart ellps=GRS80 | X:gr96_qoornoq | inv cart ellps=intl | geo:out
 ```
 
-```Compare results from KP and KMSTrans2
+#### Compare results from KP and KMSTrans2
+
+```console
 KMSTrans2:
 geoEqornoq   64                -51                 0
 geoEgr96     63.998 719 082    -50.995 543 584    30.8619
@@ -63,6 +75,8 @@ KP:
 echo 64 -51 0 | kp "X:geo_gr96_qoornoq inv" | clip
 kp           63.998 719 0817   -50.995 543 5843 30.8619079967
 ```
+
+#### qoornoq_gr96
 
 ```geodesy:qoornoq_gr96
 
@@ -74,14 +88,20 @@ helmert exact
 
 ```
 
+#### geo_qoornoq_gr96
+
 ```geodesy:geo_qoornoq_gr96
 geo:in | cart ellps=intl | X:qoornoq_gr96 | inv cart ellps=GRS80 | geo:out
 ```
+
+---
 
 ### Ammassalik
 
 The published constants implement the Ammassalik->GR96 case, so we use helmert inv
 to make the name fit the constants
+
+#### gr96_ammassalik
 
 ```geodesy:gr96_ammassalik
 helmert inv
@@ -89,22 +109,31 @@ helmert inv
     translation=308.9415,136.2020,986.3661
     rotation=-3.87420,3.77827,-7.61345
     scale=-171.673150
-
 ```
+
+#### geo_gr96_ammassalik
 
 ```geodesy:geo_gr96_ammassalik
 geo:in | cart ellps=GRS80 | X:gr96_ammassalik | inv cart ellps=intl | geo:out
 ```
 
+#### geo_gr96_ammassalik_xyz
+
 ```geodesy:geo_gr96_ammassalik_xyz
 geo:in | cart ellps=GRS80 | X:gr96_ammassalik
 ```
+
+#### xyz_gr96_ammassalik_geo
 
 ```geodesy:xyz_gr96_ammassalik_geo
 cart ellps=GRS80 | X:gr96_ammassalik | geo:out
 ```
 
+---
+
 ### Scoresbysund
+
+#### gr96_scoresbysund
 
 ```geodesy:gr96_scoresbysund
 helmert inv
@@ -114,13 +143,15 @@ helmert inv
     scale=-59.923872
 ```
 
+#### geo_gr96_scoresbysund
 
 ```geodesy:geo_gr96_scoresbysund
 geo:in | cart ellps=GRS80 | X:gr96_scoresbysund | inv cart ellps=intl | geo:out
 ```
 
+#### Authoritative definition from KMSTrans2 def_lab.txt
+
 ```txt
-* Original definition from KMSTrans2 def_lab.txt;
 #scosd
  22    gr96     Hayford  0  GL
  7                218.2330 m    270.6151 m    253.1391 m
