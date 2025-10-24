@@ -9,7 +9,12 @@ use std::collections::BTreeMap;
 /// - For checking whether a key is a macro name ("resource name"), and
 /// - For accessing the name of a given operator.
 pub trait Tokenize {
-    /// Remove comments and split a pipeline definition into steps
+    /// Remove inline and block comments
+    fn remove_comments(&self) -> String;
+    /// Rotate prefix modifiers (inv, omit_fwd, omit_inv) to the end of parameter list
+    fn handle_prefix_modifiers(&self) -> String;
+
+    /// Split a pipeline definition into steps
     fn split_into_steps(&self) -> Vec<String>;
 
     /// Split a step/an operation into parameters. Give special treatment
@@ -52,7 +57,7 @@ impl<T> Tokenize for T
 where
     T: AsRef<str>,
 {
-    fn split_into_steps(&self) -> Vec<String> {
+    fn remove_comments(&self) -> String {
         // Impose some line ending sanity
         let all = self
             .as_ref()
@@ -65,8 +70,11 @@ where
         let mut trimmed = String::new();
         for line in all.lines() {
             let line = line.trim();
+            if line.is_empty() {
+                continue;
+            }
 
-            // Remove comments - both inline and separate lines
+            // Remove comments - both inline and separate lines ("block comments")
             let line: Vec<&str> = line.trim().split('#').collect();
             // Full line comment - just skip
             if line[0].starts_with('#') {
@@ -77,29 +85,13 @@ where
             trimmed += " ";
             trimmed += line[0].trim();
         }
-
-        // Remove empty steps and other non-significant whitespace
-        let steps: Vec<String> = trimmed
-            .normalize()
-            // split into steps
-            .split('|')
-            // remove empty steps
-            .filter(|x| !x.is_empty())
-            // convert &str to String
-            .map(|x| x.to_string())
-            // and turn into Vec<String>
-            .collect();
-
-        steps
+        trimmed
     }
 
-    fn split_into_parameters(&self) -> BTreeMap<String, String> {
-        // Remove non-significant whitespace
-        let step = self.as_ref().normalize();
-        let mut params = BTreeMap::new();
-        let mut elements: Vec<_> = step.split_whitespace().collect();
+    fn handle_prefix_modifiers(&self) -> String {
+        let mut elements: Vec<_> = self.as_ref().split_whitespace().collect();
         if elements.is_empty() {
-            return params;
+            return "".to_string();
         }
 
         // Rotate any desugared modifiers to the end of the list
@@ -107,6 +99,27 @@ where
         while modifiers.contains(&elements[0]) {
             elements.rotate_left(1);
         }
+        elements.join(" ")
+    }
+
+    fn split_into_steps(&self) -> Vec<String> {
+        self.remove_comments()
+            .normalize()
+            // split into steps
+            .split('|')
+            // remove empty steps
+            .filter(|x| !x.trim().is_empty())
+            // rotate modifiers and convert &str to String
+            .map(|x| x.handle_prefix_modifiers())
+            // and turn into Vec<String>
+            .collect()
+    }
+
+    fn split_into_parameters(&self) -> BTreeMap<String, String> {
+        // Remove non-significant whitespace, then split by significant
+        let step = self.as_ref().normalize().handle_prefix_modifiers();
+        let elements: Vec<_> = step.split_whitespace().collect();
+        let mut params = BTreeMap::new();
 
         for element in elements {
             // Split a key=value-pair into key and value parts
@@ -423,8 +436,8 @@ mod tests {
         // Whitespace normalization
         assert_eq!("foo bar $ baz = bonk".normalize(), "foo bar $baz=bonk");
         assert_eq!(
-            "foo |  bar baz  =  bonk, bonk , bonk".normalize(),
-            "foo|bar baz=bonk,bonk,bonk"
+            "foo |  bar baz  =  bonk, bonk , bonk x₁=42  y₁ = 7".normalize(),
+            "foo|bar baz=bonk,bonk,bonk x_1=42 y_1=7"
         );
 
         // Whitespace agnostic desugaring of '<', '>' into '|omit_fwd', '|omit_inv'
@@ -433,11 +446,13 @@ mod tests {
             "foo|omit_inv bar|omit_fwd baz=bonk,bonk,bonk|omit_fwd zap"
         );
 
-        // Splitting a pipeline into steps
-        assert_eq!(
-            "foo>bar <baz  =  bonk, bonk , bonk<zap".split_into_steps()[3],
-            "omit_fwd zap"
-        );
+        // Splitting a pipeline into steps (and handle prefix modifiers)
+        let all = "foo>bar |baz  bonk=bonk, bonk , bonk x₁=42 <zap".split_into_steps();
+        assert_eq!(all.len(), 4);
+        assert_eq!(all[0], "foo");
+        assert_eq!(all[1], "bar omit_inv");
+        assert_eq!(all[2], "baz bonk=bonk,bonk,bonk x_1=42");
+        assert_eq!(all[3], "zap omit_fwd");
 
         // Parameter splitting
         let args = "foo bar baz=bonk".split_into_parameters();
@@ -445,23 +460,13 @@ mod tests {
         assert_eq!(args["bar"], "true");
         assert_eq!(args["baz"], "bonk");
         assert_eq!("foo bar baz=bonk".operator_name(), "foo");
+        assert_eq!("inv foo bar baz=bonk".operator_name(), "foo");
 
         // Detection of pipelines and resources
         assert!("foo | bar".is_pipeline());
         assert!("foo > bar".is_pipeline());
         assert!("foo < bar".is_pipeline());
         assert!("foo:bar".is_resource_name());
-
-        // Proper handling of prefix modifiers
-        let args = "omit_inv baz".split_into_parameters();
-        assert_eq!(args["_name"], "baz");
-        assert_eq!(args["omit_inv"], "true");
-        let args = "omit_fwd baz".split_into_parameters();
-        assert_eq!(args["_name"], "baz");
-        assert_eq!(args["omit_fwd"], "true");
-        let args = "inv baz".split_into_parameters();
-        assert_eq!(args["_name"], "baz");
-        assert_eq!(args["inv"], "true");
 
         // Proper handling of subscripts
         let args = "foo x₁=42".split_into_parameters();

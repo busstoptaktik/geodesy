@@ -120,6 +120,8 @@ impl Op {
         }
         // A user defined macro?
         else if let Ok(macro_definition) = ctx.get_resource(&name) {
+            let macro_definition = macro_definition.remove_comments();
+            let macro_definition = macro_definition.handle_prefix_modifiers();
             // search for whitespace-delimited "inv" in order to avoid matching
             // tokens *containing* inv (INVariant, subINVolution, and a few other
             // pathological cases)
