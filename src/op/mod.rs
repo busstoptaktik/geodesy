@@ -52,7 +52,11 @@ impl Op {
 
     pub fn new(definition: &str, ctx: &dyn Context) -> Result<Op, Error> {
         let globals = ctx.globals();
-        let parameters = RawParameters::new(definition, &globals);
+        let definition = definition
+            .remove_comments()
+            .normalize()
+            .handle_prefix_modifiers();
+        let parameters = RawParameters::new(&definition, &globals);
         Self::op(parameters, ctx)
     }
 
@@ -120,14 +124,16 @@ impl Op {
         }
         // A user defined macro?
         else if let Ok(macro_definition) = ctx.get_resource(&name) {
-            let macro_definition = macro_definition.remove_comments();
-            let macro_definition = macro_definition.handle_prefix_modifiers();
+            let macro_definition = macro_definition
+                .remove_comments()
+                .normalize()
+                .handle_prefix_modifiers();
             // search for whitespace-delimited "inv" in order to avoid matching
             // tokens *containing* inv (INVariant, subINVolution, and a few other
             // pathological cases)
-            let def = &parameters.definition;
+            let def = &parameters.definition.handle_prefix_modifiers();
             let inverted = def.contains(" inv ") || def.ends_with(" inv");
-            let mut next_param = parameters.next(def);
+            let mut next_param = parameters.recurse(def);
             next_param.definition = macro_definition;
             return Op::op(next_param, ctx)?.handle_inversion(inverted);
         }

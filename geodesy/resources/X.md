@@ -126,7 +126,7 @@ geo:in | cart ellps=GRS80 | X:gr96_ammassalik
 #### xyz_gr96_ammassalik_geo
 
 ```geodesy:xyz_gr96_ammassalik_geo
-cart ellps=GRS80 | X:gr96_ammassalik | geo:out
+X:gr96_ammassalik | inv cart ellps=intl | geo:out
 ```
 
 ---

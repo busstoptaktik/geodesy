@@ -89,12 +89,16 @@ where
     }
 
     fn handle_prefix_modifiers(&self) -> String {
+        if self.is_pipeline() {
+            return self.as_ref().to_string();
+        }
+
         let mut elements: Vec<_> = self.as_ref().split_whitespace().collect();
         if elements.is_empty() {
             return "".to_string();
         }
 
-        // Rotate any desugared modifiers to the end of the list
+        // Rotate all desugared modifiers to the end of the list
         let modifiers = ["inv", "omit_fwd", "omit_inv"];
         while modifiers.contains(&elements[0]) {
             elements.rotate_left(1);

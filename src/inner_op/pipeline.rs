@@ -66,7 +66,8 @@ pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
     let mut steps = Vec::new();
 
     for step in thesteps {
-        let step_parameters = parameters.next(&step);
+        //let step_parameters = parameters.recurse(&step);
+        let step_parameters = RawParameters::new(&step, &parameters.globals);
         steps.push(Op::op(step_parameters, ctx)?);
     }
 
@@ -91,6 +92,8 @@ mod tests {
     #[test]
     fn pipeline() -> Result<(), Error> {
         let mut ctx = Minimal::default();
+
+        // Plain pipeline
         let op = ctx.op("addone|addone|addone")?;
         let mut data = crate::test_data::coor2d();
 
@@ -102,6 +105,7 @@ mod tests {
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
 
+        // Pipeline with one inverted step
         let op = ctx.op("addone|addone inv|addone")?;
         let mut data = crate::test_data::coor2d();
         assert_eq!(data[0][0], 55.);
@@ -114,6 +118,80 @@ mod tests {
         ctx.apply(op, Inv, &mut data)?;
         assert_eq!(data[0][0], 55.);
         assert_eq!(data[1][0], 59.);
+
+        // Same, but with prefix modifier syntax
+        let op = ctx.op("addone|inv addone|addone")?;
+        ctx.apply(op, Fwd, &mut data)?;
+        assert_eq!(data[0][0], 56.);
+        assert_eq!(data[1][0], 60.);
+
+        ctx.apply(op, Inv, &mut data)?;
+        assert_eq!(data[0][0], 55.);
+        assert_eq!(data[1][0], 59.);
+
+        // Registered resource
+        ctx.register_resource("why:eggs", "helmert x=$eggs | helmert y=$why(1)");
+        let op = ctx.op("why:eggs eggs=4")?;
+        ctx.apply(op, Fwd, &mut data)?;
+        assert_eq!(data[0][0], 59.);
+        assert_eq!(data[1][0], 63.);
+        assert_eq!(data[0][1], 13.);
+        assert_eq!(data[1][1], 19.);
+
+        ctx.apply(op, Inv, &mut data)?;
+        assert_eq!(data[0][0], 55.);
+        assert_eq!(data[1][0], 59.);
+
+        // Invoke it as inverted
+        let op = ctx.op("inv why:eggs eggs=4")?;
+        ctx.apply(op, Inv, &mut data)?;
+        assert_eq!(data[0][0], 59.);
+        assert_eq!(data[1][0], 63.);
+        assert_eq!(data[0][1], 13.);
+        assert_eq!(data[1][1], 19.);
+
+        ctx.apply(op, Fwd, &mut data)?;
+        assert_eq!(data[0][0], 55.);
+        assert_eq!(data[1][0], 59.);
+
+        // And with inversion in postfix position
+        let op = ctx.op("why:eggs eggs=4 inv")?;
+        ctx.apply(op, Inv, &mut data)?;
+        assert_eq!(data[0][0], 59.);
+        assert_eq!(data[1][0], 63.);
+        assert_eq!(data[0][1], 13.);
+        assert_eq!(data[1][1], 19.);
+
+        ctx.apply(op, Fwd, &mut data)?;
+        assert_eq!(data[0][0], 55.);
+        assert_eq!(data[1][0], 59.);
+
+        // Pipeline with registered resource as one step
+        let op = ctx.op("helmert x=-2 | why:eggs eggs=1 why=0")?;
+        ctx.apply(op, Fwd, &mut data)?;
+        assert_eq!(data[0][0], 54.);
+        assert_eq!(data[1][0], 58.);
+        assert_eq!(data[0][1], 12.);
+        assert_eq!(data[1][1], 18.);
+
+        ctx.apply(op, Inv, &mut data)?;
+        assert_eq!(data[0][0], 55.);
+        assert_eq!(data[1][0], 59.);
+
+        // Pipeline with registered resource as one INVERTED step
+        let op = ctx.op("helmert x=-2 | inv why:eggs eggs=1 why=0")?;
+        ctx.apply(op, Fwd, &mut data)?;
+        assert_eq!(data[0][0], 52.);
+        assert_eq!(data[1][0], 56.);
+        assert_eq!(data[0][1], 12.);
+        assert_eq!(data[1][1], 18.);
+
+        ctx.apply(op, Inv, &mut data)?;
+        assert_eq!(data[0][0], 55.);
+        assert_eq!(data[1][0], 59.);
+
+        // Try to invoke the registered resource, without a required parameter
+        assert!(matches!(ctx.op("why:eggs why=10"), Err(Error::Syntax(_))));
 
         // Try to invoke garbage as a pipeline step
         assert!(matches!(
