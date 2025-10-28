@@ -66,7 +66,6 @@ pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
     let mut steps = Vec::new();
 
     for step in thesteps {
-        //let step_parameters = parameters.recurse(&step);
         let step_parameters = RawParameters::new(&step, &parameters.globals);
         steps.push(Op::op(step_parameters, ctx)?);
     }

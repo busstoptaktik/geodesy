@@ -15,7 +15,7 @@ pub struct RawParameters {
     pub invocation: String,
     pub definition: String,
     pub globals: BTreeMap<String, String>,
-    recursion_level: usize,
+    pub recursion_level: usize,
 }
 
 impl RawParameters {
@@ -49,20 +49,7 @@ impl RawParameters {
         // modifiers to the end.
         let invocation = invocation.handle_prefix_modifiers();
 
-        // If it is a macro invocation, the `recurse()` method is called
-        // to do the parameter handling
-        if invocation.is_resource_name() {
-            let resource_definition = invocation.clone();
-            return RawParameters {
-                invocation,
-                definition: "".to_string(),
-                globals: globals.clone(),
-                recursion_level: 0,
-            }
-            .recurse(&resource_definition);
-        }
-
-        // Not a macro, and not a pipeline? Then it is either a built-in or
+        // Not a pipeline? Then it is either a macro, a built-in or
         // a user defined op, and we can just carry on
         let definition = invocation.clone();
         RawParameters {
@@ -71,38 +58,6 @@ impl RawParameters {
             globals: globals.clone(),
             recursion_level: 0,
         }
-    }
-
-    // If the step is a macro (i.e. potentially an embedded pipeline),
-    // we take a copy of the arguments from the macro invocation and enter
-    // them into the globals.
-    // Otherwise, we just copy the globals from the previous step, and
-    // update the recursion counter.
-    pub fn recurse(&self, definition: &str) -> RawParameters {
-        let mut globals = self.globals.clone();
-
-        globals.remove("_name");
-        globals.extend(definition.split_into_parameters());
-
-        // In the macro case, inversion is handled one level up by the `Op::op`
-        // constructor through the `handle_inversion()` method: We do not yet
-        // know whether the macro is really a pipeline, so at this level, we remove
-        // the `inv` from the globals, to avoid poisoning the pipeline at the single
-        // step level
-        globals.remove("inv");
-
-        let invocation = self.invocation.clone();
-        let definition = definition.trim().to_string();
-        RawParameters {
-            invocation,
-            definition,
-            globals,
-            recursion_level: self.recursion_level + 1,
-        }
-    }
-
-    pub fn nesting_too_deep(&self) -> bool {
-        self.recursion_level > 100
     }
 }
 

@@ -102,7 +102,7 @@ impl Op {
     // built-in operators
     #[allow(clippy::self_named_constructors)]
     pub fn op(parameters: RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
-        if parameters.nesting_too_deep() {
+        if parameters.recursion_level > 100 {
             return Err(Error::Recursion(
                 parameters.invocation,
                 parameters.definition,
@@ -122,20 +122,38 @@ impl Op {
                 return constructor.0(&parameters, ctx)?.handle_op_inversion();
             }
         }
-        // A user defined macro?
+        // If the step is a macro (i.e. potentially an embedded pipeline),
+        // we take a copy of the arguments from the macro invocation and enter
+        // them into the globals, then enter the expanded macro into the
+        // definition field of the paramters, and recursively call Op::op().
         else if let Ok(macro_definition) = ctx.get_resource(&name) {
             let macro_definition = macro_definition
                 .remove_comments()
                 .normalize()
                 .handle_prefix_modifiers();
-            // search for whitespace-delimited "inv" in order to avoid matching
-            // tokens *containing* inv (INVariant, subINVolution, and a few other
-            // pathological cases)
-            let def = &parameters.definition.handle_prefix_modifiers();
-            let inverted = def.contains(" inv ") || def.ends_with(" inv");
-            let mut next_param = parameters.recurse(def);
-            next_param.definition = macro_definition;
-            return Op::op(next_param, ctx)?.handle_inversion(inverted);
+            // Is the macro called in inverse mode? Search for whitespace-delimited
+            // "inv" in order to avoid matching INVariant, subINVolution, etc.
+            let inverted =
+                parameters.definition.contains(" inv ") || parameters.definition.ends_with(" inv");
+
+            let mut globals = parameters.globals.clone();
+            globals.remove("_name");
+            globals.extend(parameters.definition.split_into_parameters());
+
+            // Inversion of macros is handled by the `handle_inversion()` method:
+            // We do not yet know whether the macro is really a pipeline. So at
+            // this level, we remove the `inv` from the globals, to avoid poisoning
+            // the pipeline at the single step level
+            globals.remove("inv");
+
+            let parameters = RawParameters {
+                invocation: parameters.invocation.clone(),
+                definition: macro_definition,
+                globals,
+                recursion_level: parameters.recursion_level + 1,
+            };
+
+            return Op::op(parameters, ctx)?.handle_inversion(inverted);
         }
 
         // A built in operator?
