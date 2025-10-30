@@ -55,19 +55,19 @@ impl Context for Minimal {
 
     fn params(&self, op: OpHandle, index: usize) -> Result<ParsedParameters, Error> {
         let op = self.operators.get(&op).ok_or(BAD_ID_MESSAGE)?;
-        // Leaf level?
-        if op.steps.is_empty() {
+        if op.is_pipeline() {
+            let steps = op.steps.as_ref().unwrap();
+            if index >= steps.len() {
+                return Err(Error::General("Minimal: Bad step index"));
+            }
+            Ok(steps[index].params.clone())
+        } else {
+            // Not a pipeline
             if index > 0 {
                 return Err(Error::General("Minimal: Bad step index"));
             }
-            return Ok(op.params.clone());
+            Ok(op.params.clone())
         }
-
-        // Not leaf level
-        if index >= op.steps.len() {
-            return Err(Error::General("Minimal: Bad step index"));
-        }
-        Ok(op.steps[index].params.clone())
     }
 
     fn register_op(&mut self, name: &str, constructor: OpConstructor) {

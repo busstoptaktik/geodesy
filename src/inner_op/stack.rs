@@ -106,14 +106,12 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
 
     // The true action is handled by 'pipeline', so the `InnerOp`s are placeholders
     let descriptor = OpDescriptor::new(def, InnerOp::default(), Some(InnerOp::default()));
-    let steps = Vec::new();
-    let id = OpHandle::new();
 
     Ok(Op {
         descriptor,
         params,
-        steps,
-        id,
+        steps: None,
+        id: OpHandle::new(),
     })
 }
 

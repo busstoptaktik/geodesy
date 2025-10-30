@@ -59,14 +59,12 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     let params = ParsedParameters::new(parameters, &GAMUT)?;
 
     let descriptor = OpDescriptor::new(def, InnerOp(fwd), Some(InnerOp(inv)));
-    let steps = Vec::<Op>::new();
-    let id = OpHandle::new();
 
     Ok(Op {
         descriptor,
         params,
-        steps,
-        id,
+        steps: None,
+        id: OpHandle::new(),
     })
 }
 

@@ -7,7 +7,8 @@ use crate::authoring::*;
 fn pipeline_fwd(op: &Op, ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let mut stack = Vec::new();
     let mut n = usize::MAX;
-    for step in &op.steps {
+    let steps = op.steps.as_ref().unwrap();
+    for step in steps {
         if step.params.boolean("omit_fwd") {
             continue;
         }
@@ -32,7 +33,8 @@ fn pipeline_fwd(op: &Op, ctx: &dyn Context, operands: &mut dyn CoordinateSet) ->
 fn pipeline_inv(op: &Op, ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let mut stack = Vec::new();
     let mut n = usize::MAX;
-    for step in op.steps.iter().rev() {
+    let steps = op.steps.as_ref().unwrap();
+    for step in steps.iter().rev() {
         if step.params.boolean("omit_inv") {
             continue;
         }
@@ -78,7 +80,7 @@ pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
     Ok(Op {
         descriptor,
         params,
-        steps,
+        steps: Some(steps),
         id,
     })
 }

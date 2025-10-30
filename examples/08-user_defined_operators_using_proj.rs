@@ -159,14 +159,12 @@ pub fn proj_constructor(parameters: &RawParameters, _ctx: &dyn Context) -> Resul
     let fwd = InnerOp(proj_fwd);
     let inv = InnerOp(proj_inv);
     let descriptor = OpDescriptor::new(def, fwd, Some(inv));
-    let steps = Vec::<Op>::new();
-    let id = OpHandle::new();
 
     Ok(Op {
         descriptor,
         params,
-        steps,
-        id,
+        steps: None,
+        id: OpHandle::new(),
     })
 }
 

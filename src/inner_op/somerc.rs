@@ -179,14 +179,12 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     params.real.insert("cos_phi_0_p", cos_phi_0_p);
 
     let descriptor = OpDescriptor::new(def, InnerOp(fwd), Some(InnerOp(inv)));
-    let steps = Vec::<Op>::new();
-    let id = OpHandle::new();
 
     Ok(Op {
         descriptor,
         params,
-        steps,
-        id,
+        steps: None,
+        id: OpHandle::new(),
     })
 }
 

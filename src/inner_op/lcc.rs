@@ -201,12 +201,11 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     params.real.insert("lat_0", lat_0);
 
     let descriptor = OpDescriptor::new(def, InnerOp(fwd), Some(InnerOp(inv)));
-    let steps = Vec::<Op>::new();
     let id = OpHandle::new();
     Ok(Op {
         descriptor,
         params,
-        steps,
+        steps: None,
         id,
     })
 }

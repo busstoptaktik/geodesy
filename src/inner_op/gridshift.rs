@@ -131,13 +131,12 @@ pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
     let fwd = InnerOp(fwd);
     let inv = InnerOp(inv);
     let descriptor = OpDescriptor::new(def, fwd, Some(inv));
-    let steps = Vec::new();
     let id = OpHandle::new();
 
     Ok(Op {
         descriptor,
         params,
-        steps,
+        steps: None,
         id,
     })
 }

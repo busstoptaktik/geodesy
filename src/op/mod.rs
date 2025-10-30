@@ -30,7 +30,7 @@ impl Default for OpHandle {
 pub struct Op {
     pub descriptor: OpDescriptor,
     pub params: ParsedParameters,
-    pub steps: Vec<Op>,
+    pub steps: Option<Vec<Op>>,
     pub id: OpHandle,
 }
 
@@ -86,13 +86,12 @@ impl Op {
         }
 
         let descriptor = OpDescriptor::new(def, fwd, inv);
-        let steps = Vec::<Op>::new();
         let id = OpHandle::new();
 
         Ok(Op {
             descriptor,
             params,
-            steps,
+            steps: None,
             id,
         })
     }
@@ -184,6 +183,10 @@ impl Op {
         }
 
         Ok(self)
+    }
+
+    pub fn is_pipeline(&self) -> bool {
+        self.steps.is_some()
     }
 }
 

@@ -98,14 +98,12 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     params.real.insert("pivot_to_z_out", 1. / z_out_to_pivot);
 
     let descriptor = OpDescriptor::new(def, InnerOp(fwd), Some(InnerOp(inv)));
-    let steps = Vec::<Op>::new();
-    let id = OpHandle::new();
 
     Ok(Op {
         descriptor,
         params,
-        steps,
-        id,
+        steps: None,
+        id: OpHandle::new(),
     })
 }
 

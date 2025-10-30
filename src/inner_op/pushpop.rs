@@ -22,14 +22,12 @@ pub fn push(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error>
     let params = ParsedParameters::new(parameters, &PUSH_POP_GAMUT)?;
 
     let descriptor = OpDescriptor::new(def, InnerOp::default(), Some(InnerOp::default()));
-    let steps = Vec::new();
-    let id = OpHandle::new();
 
     Ok(Op {
         descriptor,
         params,
-        steps,
-        id,
+        steps: None,
+        id: OpHandle::new(),
     })
 }
 
@@ -38,14 +36,12 @@ pub fn pop(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     let params = ParsedParameters::new(parameters, &PUSH_POP_GAMUT)?;
 
     let descriptor = OpDescriptor::new(def, InnerOp::default(), Some(InnerOp::default()));
-    let steps = Vec::new();
-    let id = OpHandle::new();
 
     Ok(Op {
         descriptor,
         params,
-        steps,
-        id,
+        steps: None,
+        id: OpHandle::new(),
     })
 }
 
