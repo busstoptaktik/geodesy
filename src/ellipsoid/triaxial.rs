@@ -90,10 +90,10 @@ impl TriaxialEllipsoid {
 
 #[cfg(test)]
 mod tests {
+    use crate::Error;
     use crate::ellps::EllipsoidBase;
     use crate::ellps::Meridians;
     use crate::ellps::TriaxialEllipsoid;
-    use crate::Error;
 
     #[test]
     fn test_triaxial_ellipsoid() -> Result<(), Error> {

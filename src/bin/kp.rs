@@ -172,7 +172,9 @@ fn main() -> Result<(), anyhow::Error> {
     )?;
 
     let duration = start.elapsed();
-    info!("Read {number_of_operands_read} coordinates and succesfully transformed {number_of_operands_succesfully_transformed} in {duration:?}");
+    info!(
+        "Read {number_of_operands_read} coordinates and succesfully transformed {number_of_operands_succesfully_transformed} in {duration:?}"
+    );
 
     Ok(())
 }

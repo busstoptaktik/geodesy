@@ -79,10 +79,10 @@ impl Ellipsoid {
 
 #[cfg(test)]
 mod tests {
+    use crate::Error;
     use crate::ellps::Ellipsoid;
     use crate::ellps::EllipsoidBase;
     use crate::ellps::Meridians;
-    use crate::Error;
 
     #[test]
     fn test_ellipsoid() -> Result<(), Error> {

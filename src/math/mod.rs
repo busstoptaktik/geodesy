@@ -17,6 +17,6 @@ pub mod series;
 pub use series::fourier;
 pub use series::taylor;
 
-pub use series::taylor::fourier_coefficients;
 pub use series::FourierCoefficients;
 pub use series::PolynomialCoefficients;
+pub use series::taylor::fourier_coefficients;

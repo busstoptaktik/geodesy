@@ -125,7 +125,7 @@ pub(super) fn stack_fwd(
         return 0;
     };
 
-    let successes = match action.as_str() {
+    match action.as_str() {
         "push" => {
             let args = params.series_as_usize("push").unwrap();
             stack_push(stack, operands, &args)
@@ -157,17 +157,11 @@ pub(super) fn stack_fwd(
             if n > 1 {
                 stack.swap(n - 1, n - 2)
             }
-            if n == 0 {
-                0
-            } else {
-                stack[0].len()
-            }
+            if n == 0 { 0 } else { stack[0].len() }
         }
 
         _ => 0,
-    };
-
-    successes
+    }
 }
 
 /// Called by `pipeline_inv` to execute stack operations in inverse mode.
@@ -182,7 +176,7 @@ pub(super) fn stack_inv(
         return 0;
     };
 
-    let successes = match action.as_str() {
+    match action.as_str() {
         // An inverse push is a pop with reversed args
         "push" => {
             let mut args = params.series_as_usize("push").unwrap();
@@ -219,17 +213,11 @@ pub(super) fn stack_inv(
             if n > 1 {
                 stack.swap(n - 1, n - 2)
             }
-            if n == 0 {
-                0
-            } else {
-                stack[0].len()
-            }
+            if n == 0 { 0 } else { stack[0].len() }
         }
 
         _ => 0,
-    };
-
-    successes
+    }
 }
 
 /// Push elements from a CoordinateSet onto the stack

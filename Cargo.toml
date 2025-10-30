@@ -5,11 +5,11 @@ keywords = ["geospatial", "geodesy", "cartography", "geography"]
 categories = ["science"]
 license = "MIT OR Apache-2.0"
 version = "0.14.0"
-rust-version = "1.74" # MSRV from clap-verbosity-flag
 authors = ["Thomas Knudsen <knudsen.thomas@gmail.com>"]
 readme = "README.md"
 repository = "https://github.com/busstoptaktik/geodesy/"
-edition = "2021"
+edition = "2024"
+rust-version = "1.85"
 
 default-run = "kp"
 

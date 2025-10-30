@@ -1,7 +1,7 @@
 //! The `InnerOp` specific representation of the operator arguments
 
-use crate::math::angular;
 use crate::math::FourierCoefficients;
+use crate::math::angular;
 use std::collections::BTreeSet;
 use std::sync::Arc;
 

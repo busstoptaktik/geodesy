@@ -2,10 +2,10 @@
 
 /// The bread-and-butter, shrink-wrapped and ready to use
 pub mod prelude {
+    pub use crate::Error;
     pub use crate::coord::*;
     pub use crate::ctx::*;
     pub use crate::ellps::*;
-    pub use crate::Error;
 }
 
 /// Extended prelude for authoring Contexts and InnerOp modules
@@ -34,18 +34,19 @@ pub mod authoring {
 
 /// Context related elements
 pub mod ctx {
-    pub use crate::context::minimal::Minimal;
-    #[cfg(feature = "with_plain")]
-    pub use crate::context::plain::Plain;
-    pub use crate::context::Context;
-    pub use crate::op::OpHandle;
     pub use crate::Direction;
     pub use crate::Direction::Fwd;
     pub use crate::Direction::Inv;
+    pub use crate::context::Context;
+    pub use crate::context::minimal::Minimal;
+    #[cfg(feature = "with_plain")]
+    pub use crate::context::plain::Plain;
+    pub use crate::op::OpHandle;
 }
 
 /// Ellipsoid related elements
 pub mod ellps {
+    pub use crate::ellipsoid::EllipsoidBase;
     pub use crate::ellipsoid::biaxial::Ellipsoid;
     pub use crate::ellipsoid::geocart::GeoCart;
     pub use crate::ellipsoid::geodesics::Geodesics;
@@ -53,21 +54,20 @@ pub mod ellps {
     pub use crate::ellipsoid::latitudes::Latitudes;
     pub use crate::ellipsoid::meridians::Meridians;
     pub use crate::ellipsoid::triaxial::TriaxialEllipsoid;
-    pub use crate::ellipsoid::EllipsoidBase;
 }
 
 /// Coordinate related elements
 pub mod coord {
     // Coordinate types
     pub use crate::coordinate::coor2d::Coor2D;
-    pub use crate::coordinate::coor32::Coor32;
     pub use crate::coordinate::coor3d::Coor3D;
     pub use crate::coordinate::coor4d::Coor4D;
+    pub use crate::coordinate::coor32::Coor32;
     // Coordinate traits
-    pub use crate::coordinate::set::CoordinateSet;
-    pub use crate::coordinate::tuple::CoordinateTuple;
     pub use crate::coordinate::AngularUnits;
     pub use crate::coordinate::CoordinateMetadata;
+    pub use crate::coordinate::set::CoordinateSet;
+    pub use crate::coordinate::tuple::CoordinateTuple;
     pub use crate::math::angular;
 }
 
@@ -84,10 +84,10 @@ mod ops {
 
 /// Elements for handling grids
 mod grd {
-    pub use crate::grid::grids_at;
-    pub use crate::grid::ntv2::Ntv2Grid;
     pub use crate::grid::BaseGrid;
     pub use crate::grid::Grid;
+    pub use crate::grid::grids_at;
+    pub use crate::grid::ntv2::Ntv2Grid;
 }
 
 /// Elements for parsing both Geodesy and PROJ syntax

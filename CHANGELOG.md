@@ -5,17 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-
 ## [Unreleased]
 
 ### Added
 
+- X.md, the transformation register
+- Some additions to the TM register
+
 ### Fixed
+
+- Prefix modifiers for macros now works properly
 
 ### Changed
 
+- MSRV set to 1.85, and Rust Version to 2024, foloowing georust/geo
+- Clean up and consolidate the macro- and operation decoding
+- Make Op.steps is only used by the pipeline operator, so make it
+  an `Option<Vec<Op>>`, instead of a zero-sized `Vec<Op>`
+
 ### Removed
 
+- Nothing
 
 ## [0.14.0] - 2025-08-14
 
@@ -50,7 +60,7 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Removed
 
 - `CHANGES.md`
-- Unused parallel context stup `context/parallel.rs`
+- Unused parallel context stub `context/parallel.rs`
 
 ## [0.13.0] - 2024-04-06
 

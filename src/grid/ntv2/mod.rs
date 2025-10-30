@@ -3,8 +3,8 @@ mod subgrid;
 
 use self::subgrid::NODE_SIZE;
 use super::BaseGrid;
-use crate::{coord::Coor4D, grid::Grid, Error};
-use parser::{NTv2Parser, HEADER_SIZE};
+use crate::{Error, coord::Coor4D, grid::Grid};
+use parser::{HEADER_SIZE, NTv2Parser};
 use std::collections::BTreeMap;
 
 /// Grid for using the NTv2 format.
@@ -200,11 +200,13 @@ mod tests {
 
         assert!(ntv2_grid.subgrids.len() == 2);
         assert!(!ntv2_grid.lookup_table.get("NONE").unwrap().is_empty());
-        assert!(ntv2_grid
-            .lookup_table
-            .get("NONE")
-            .unwrap()
-            .contains(&"5458".to_string()));
+        assert!(
+            ntv2_grid
+                .lookup_table
+                .get("NONE")
+                .unwrap()
+                .contains(&"5458".to_string())
+        );
 
         // Grids with no children do not appear in the lookup table
         assert!(!ntv2_grid.lookup_table.contains_key("5556"));

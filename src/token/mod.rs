@@ -506,7 +506,9 @@ mod tests {
 
         // A pipeline with 3 steps and 2 global arguments
         assert_eq!(
-            parse_proj("proj=pipeline +foo = bar ellps=GRS80 step proj=cart step proj=helmert s=3 step proj=cart ellps=intl")?,
+            parse_proj(
+                "proj=pipeline +foo = bar ellps=GRS80 step proj=cart step proj=helmert s=3 step proj=cart ellps=intl"
+            )?,
             "cart foo=bar ellps=GRS80 | helmert foo=bar ellps=GRS80 s=3 | cart foo=bar ellps=GRS80 ellps=intl"
         );
 
@@ -520,7 +522,9 @@ mod tests {
         // and for args called 'step' (which, however, cannot be flags - must come with a value
         // to be recognized as a key=value pair)
         assert_eq!(
-            parse_proj("  +step proj = step step=quickstep step step proj=utm inv zone=32 step proj=stepwise step proj=quickstep")?,
+            parse_proj(
+                "  +step proj = step step=quickstep step step proj=utm inv zone=32 step proj=stepwise step proj=quickstep"
+            )?,
             "step step=quickstep | utm inv zone=32 | stepwise | quickstep"
         );
 
@@ -528,13 +532,17 @@ mod tests {
         // Also throw a few additional spanners in the works, in the form of some ugly, but
         // PROJ-accepted, syntactical abominations
         assert_eq!(
-            parse_proj("inv ellps=intl proj=pipeline ugly=syntax +step inv proj=utm zone=32 step proj=utm zone=33")?,
+            parse_proj(
+                "inv ellps=intl proj=pipeline ugly=syntax +step inv proj=utm zone=32 step proj=utm zone=33"
+            )?,
             "utm inv ellps=intl ugly=syntax zone=33 | utm ellps=intl ugly=syntax zone=32"
         );
 
         // Check for the proper inversion of directional omissions
         assert_eq!(
-            parse_proj("proj=pipeline inv   +step   omit_fwd inv proj=utm zone=32   step   omit_inv proj=utm zone=33")?,
+            parse_proj(
+                "proj=pipeline inv   +step   omit_fwd inv proj=utm zone=32   step   omit_inv proj=utm zone=33"
+            )?,
             "utm inv omit_fwd zone=33 | utm omit_inv zone=32"
         );
 
@@ -574,9 +582,11 @@ mod tests {
     fn tidy_proj() -> Result<(), Error> {
         // Ellipsoid defined with `a` and `rf` parameters instead of ellps
         assert_eq!(
-                parse_proj("+proj=pipeline +step +inv +proj=tmerc +a=6378249.145 +rf=293.465 +step +proj=step2")?,
-                "tmerc inv ellps=6378249.145,293.465 | step2"
-            );
+            parse_proj(
+                "+proj=pipeline +step +inv +proj=tmerc +a=6378249.145 +rf=293.465 +step +proj=step2"
+            )?,
+            "tmerc inv ellps=6378249.145,293.465 | step2"
+        );
 
         // Ellipsoid is defined with a builtin
         assert_eq!(parse_proj("+proj=tmerc +ellps=GRS80")?, "tmerc ellps=GRS80");

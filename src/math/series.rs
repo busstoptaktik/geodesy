@@ -21,8 +21,8 @@ pub struct FourierCoefficients {
 
 pub mod taylor {
     use super::FourierCoefficients;
-    use super::PolynomialCoefficients;
     use super::POLYNOMIAL_ORDER;
+    use super::PolynomialCoefficients;
 
     /// Compute Fourier coefficients by evaluating their corresponding
     /// Taylor polynomiums
