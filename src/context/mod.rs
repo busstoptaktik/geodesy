@@ -32,7 +32,7 @@ pub trait Context {
     fn globals(&self) -> BTreeMap<String, String>;
 
     /// Definitions of steps
-    fn steps(&self, op: OpHandle) -> Result<&Vec<String>, Error>;
+    fn steps(&self, op: OpHandle) -> Result<Vec<String>, Error>;
 
     /// Parsed parameters of a specific step
     fn params(&self, op: OpHandle, index: usize) -> Result<ParsedParameters, Error>;

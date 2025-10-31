@@ -189,6 +189,7 @@ impl Op {
         self.steps.is_some()
     }
 
+    #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
         if self.is_pipeline() {
             self.steps.as_ref().unwrap().len()

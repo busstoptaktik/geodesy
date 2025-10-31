@@ -5,7 +5,6 @@ use super::*;
 pub struct OpDescriptor {
     pub invoked_as: String, // e.g. geo:helmert ellps_0=GRS80 x=1 y=2 z=3 ellps_1=intl
     pub instantiated_as: String, // e.g. cart ellps=$ellps_0 | helmert | cart inv ellps=$ellps_1
-    pub steps: Vec<String>,
     pub invertible: bool,
     pub inverted: bool,
     pub fwd: InnerOp,
@@ -15,7 +14,6 @@ pub struct OpDescriptor {
 
 impl OpDescriptor {
     pub fn new(definition: &str, fwd: InnerOp, inv: Option<InnerOp>) -> OpDescriptor {
-        let steps = definition.split_into_steps();
         let definition = definition.to_string();
         let invertible = inv.is_some();
         let inverted = false; // Handled higher up in the call hierarchy
@@ -25,7 +23,6 @@ impl OpDescriptor {
         OpDescriptor {
             invoked_as: invocation,
             instantiated_as: definition,
-            steps,
             invertible,
             inverted,
             fwd,

@@ -52,9 +52,9 @@ impl Context for Maximal {
         Ok(op.apply(self, operands, direction))
     }
 
-    fn steps(&self, op: OpHandle) -> Result<&Vec<String>, Error> {
+    fn steps(&self, op: OpHandle) -> Result<Vec<String>, Error> {
         let op = self.operators.get(&op).ok_or(BAD_ID_MESSAGE)?;
-        Ok(&op.descriptor.steps)
+        Ok(op.descriptor.instantiated_as.split_into_steps())
     }
 
     fn params(&self, op: OpHandle, index: usize) -> Result<ParsedParameters, Error> {
