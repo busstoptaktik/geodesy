@@ -180,7 +180,7 @@ impl ParsedParameters {
         parameters: &RawParameters,
         gamut: &[OpParameter],
     ) -> Result<ParsedParameters, Error> {
-        let locals = parameters.definition.split_into_parameters();
+        let locals = parameters.instantiated_as.split_into_parameters();
         let globals = &parameters.globals;
         let mut boolean = BTreeSet::<&'static str>::new();
         let mut natural = BTreeMap::<&'static str, usize>::new();

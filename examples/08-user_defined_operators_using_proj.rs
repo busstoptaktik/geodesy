@@ -127,7 +127,7 @@ pub const GAMUT: [OpParameter; 1] = [
 ];
 
 pub fn proj_constructor(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> {
-    let def = &parameters.definition;
+    let def = &parameters.instantiated_as;
     let given_args = ParsedParameters::new(parameters, &GAMUT)?.given;
     if Command::new("proj").stderr(Stdio::piped()).spawn().is_err() {
         return Err(Error::NotFound(

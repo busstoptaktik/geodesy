@@ -184,7 +184,7 @@ pub const GAMUT: [OpParameter; 6] = [
 ];
 
 pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> {
-    let def = &parameters.definition;
+    let def = &parameters.instantiated_as;
     let mut params = ParsedParameters::new(parameters, &GAMUT)?;
 
     let lat_0 = params.real("lat_0").unwrap_or(0.).to_radians();

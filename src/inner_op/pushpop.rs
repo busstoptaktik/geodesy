@@ -18,7 +18,7 @@ pub const PUSH_POP_GAMUT: [OpParameter; 4] = [
 ];
 
 pub fn push(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> {
-    let def = &parameters.definition;
+    let def = &parameters.instantiated_as;
     let params = ParsedParameters::new(parameters, &PUSH_POP_GAMUT)?;
 
     let descriptor = OpDescriptor::new(def, InnerOp::default(), Some(InnerOp::default()));
@@ -32,7 +32,7 @@ pub fn push(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error>
 }
 
 pub fn pop(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> {
-    let def = &parameters.definition;
+    let def = &parameters.instantiated_as;
     let params = ParsedParameters::new(parameters, &PUSH_POP_GAMUT)?;
 
     let descriptor = OpDescriptor::new(def, InnerOp::default(), Some(InnerOp::default()));

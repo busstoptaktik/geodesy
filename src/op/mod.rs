@@ -71,7 +71,7 @@ impl Op {
         gamut: &[OpParameter],
         _ctx: &dyn Context,
     ) -> Result<Op, Error> {
-        let def = parameters.definition.as_str();
+        let def = parameters.instantiated_as.as_str();
         let mut params = ParsedParameters::new(parameters, gamut)?;
 
         // Convert lat_{0..4} and lon_{0..4} to radians
@@ -103,15 +103,15 @@ impl Op {
     pub fn op(parameters: RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
         if parameters.recursion_level > 100 {
             return Err(Error::Recursion(
-                parameters.invocation,
-                parameters.definition,
+                parameters.invoked_as,
+                parameters.instantiated_as,
             ));
         }
 
-        let name = parameters.definition.operator_name();
+        let name = parameters.instantiated_as.operator_name();
 
         // A pipeline?
-        if parameters.definition.is_pipeline() {
+        if parameters.instantiated_as.is_pipeline() {
             return super::inner_op::pipeline::new(&parameters, ctx);
         }
 
@@ -133,11 +133,11 @@ impl Op {
             // Is the macro called in inverse mode? Search for whitespace-delimited
             // "inv" in order to avoid matching INVariant, subINVolution, etc.
             let inverted =
-                parameters.definition.contains(" inv ") || parameters.definition.ends_with(" inv");
+                parameters.instantiated_as.contains(" inv ") || parameters.instantiated_as.ends_with(" inv");
 
             let mut globals = parameters.globals.clone();
             globals.remove("_name");
-            globals.extend(parameters.definition.split_into_parameters());
+            globals.extend(parameters.instantiated_as.split_into_parameters());
 
             // Inversion of macros is handled by the `handle_inversion()` method:
             // We do not yet know whether the macro is really a pipeline. So at
@@ -146,8 +146,8 @@ impl Op {
             globals.remove("inv");
 
             let parameters = RawParameters {
-                invocation: parameters.invocation.clone(),
-                definition: macro_definition,
+                invoked_as: parameters.invoked_as.clone(),
+                instantiated_as: macro_definition,
                 globals,
                 recursion_level: parameters.recursion_level + 1,
             };
@@ -162,7 +162,7 @@ impl Op {
 
         Err(Error::NotFound(
             name,
-            ": ".to_string() + &parameters.definition,
+            ": ".to_string() + &parameters.instantiated_as,
         ))
     }
 
@@ -179,7 +179,7 @@ impl Op {
             return Ok(self);
         }
         if inverted {
-            return Err(Error::NonInvertible(self.descriptor.definition));
+            return Err(Error::NonInvertible(self.descriptor.instantiated_as));
         }
 
         Ok(self)
@@ -188,6 +188,17 @@ impl Op {
     pub fn is_pipeline(&self) -> bool {
         self.steps.is_some()
     }
+
+    pub fn len(&self) -> usize {
+        if self.is_pipeline() {
+            self.steps.as_ref().unwrap().len()
+        }
+        else {
+            1
+        }
+    }
+
+
 }
 
 // ----- T E S T S ------------------------------------------------------------------

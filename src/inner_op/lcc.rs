@@ -118,7 +118,7 @@ pub const GAMUT: [OpParameter; 9] = [
 ];
 
 pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> {
-    let def = &parameters.definition;
+    let def = &parameters.instantiated_as;
     let mut params = ParsedParameters::new(parameters, &GAMUT)?;
     if !params.real.contains_key("lat_2") {
         params.real.insert("lat_2", params.lat(1));

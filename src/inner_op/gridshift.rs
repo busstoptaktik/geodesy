@@ -104,7 +104,7 @@ pub const GAMUT: [OpParameter; 3] = [
 ];
 
 pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
-    let def = &parameters.definition;
+    let def = &parameters.instantiated_as;
     let mut params = ParsedParameters::new(parameters, &GAMUT)?;
 
     for mut grid_name in params.texts("grids")?.clone() {

@@ -134,7 +134,7 @@ pub const GAMUT: [OpParameter; 3] = [
 
 pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> {
     let mut params = ParsedParameters::new(parameters, &GAMUT)?;
-    let descriptor = OpDescriptor::new(&parameters.definition, InnerOp(fwd), Some(InnerOp(inv)));
+    let descriptor = OpDescriptor::new(&parameters.instantiated_as, InnerOp(fwd), Some(InnerOp(inv)));
 
     // What we go `from` and what we go `to` both defaults to the internal
     // representation - i.e. "do nothing", neither on in- nor output.

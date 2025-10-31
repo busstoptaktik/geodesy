@@ -3,8 +3,8 @@ use super::*;
 /// The fundamental elements of an operator (i.e. everything but steps and args)
 #[derive(Debug, Default)]
 pub struct OpDescriptor {
-    pub invocation: String, // e.g. geo:helmert ellps_0=GRS80 x=1 y=2 z=3 ellps_1=intl
-    pub definition: String, // e.g. cart ellps=$ellps_0 | helmert | cart inv ellps=$ellps_1
+    pub invoked_as: String, // e.g. geo:helmert ellps_0=GRS80 x=1 y=2 z=3 ellps_1=intl
+    pub instantiated_as: String, // e.g. cart ellps=$ellps_0 | helmert | cart inv ellps=$ellps_1
     pub steps: Vec<String>,
     pub invertible: bool,
     pub inverted: bool,
@@ -23,8 +23,8 @@ impl OpDescriptor {
         let inv = inv.unwrap_or_default();
         let id = OpHandle::new();
         OpDescriptor {
-            invocation,
-            definition,
+            invoked_as: invocation,
+            instantiated_as: definition,
             steps,
             invertible,
             inverted,

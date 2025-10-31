@@ -122,7 +122,7 @@ pub const UTM_GAMUT: [OpParameter; 4] = [
 ];
 
 pub fn utm(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> {
-    let def = &parameters.definition;
+    let def = &parameters.instantiated_as;
     let mut params = ParsedParameters::new(parameters, &UTM_GAMUT)?;
 
     // The UTM zone should be an integer between 1 and 60

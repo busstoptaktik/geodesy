@@ -74,7 +74,7 @@ pub const GAMUT: [OpParameter; 8] = [
 ];
 
 pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> {
-    let def = &parameters.definition;
+    let def = &parameters.instantiated_as;
     let mut params = ParsedParameters::new(parameters, &GAMUT)?;
     let ellps = params.ellps(0);
 

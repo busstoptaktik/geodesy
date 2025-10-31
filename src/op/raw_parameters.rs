@@ -12,8 +12,8 @@ use super::*;
 /// `ParsedParameters`.
 #[derive(Debug, Default, Clone)]
 pub struct RawParameters {
-    pub invocation: String,
-    pub definition: String,
+    pub invoked_as: String,
+    pub instantiated_as: String,
     pub globals: BTreeMap<String, String>,
     pub recursion_level: usize,
 }
@@ -33,8 +33,8 @@ impl RawParameters {
         if invocation.is_pipeline() {
             let definition = invocation.clone();
             return RawParameters {
-                invocation,
-                definition,
+                invoked_as: invocation,
+                instantiated_as: definition,
                 globals,
                 recursion_level,
             };
@@ -53,8 +53,8 @@ impl RawParameters {
         // a user defined op, and we can just carry on
         let definition = invocation.clone();
         RawParameters {
-            invocation,
-            definition,
+            invoked_as: invocation,
+            instantiated_as: definition,
             globals: globals.clone(),
             recursion_level: 0,
         }

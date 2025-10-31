@@ -174,7 +174,7 @@ pub const GAMUT: [OpParameter; 25] = [
 ];
 
 pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> {
-    let def = &parameters.definition;
+    let def = &parameters.instantiated_as;
     let mut params = ParsedParameters::new(parameters, &GAMUT)?;
 
     // Translation
@@ -182,7 +182,7 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     if translation.len() != 3 {
         return Err(Error::BadParam(
             "translation".to_string(),
-            parameters.invocation.clone(),
+            parameters.invoked_as.clone(),
         ));
     }
     let x = if params.real("x")? != 0. {
@@ -207,7 +207,7 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     if velocity.len() != 3 {
         return Err(Error::BadParam(
             "velocity".to_string(),
-            parameters.invocation.clone(),
+            parameters.invoked_as.clone(),
         ));
     }
     let dx = if params.real("dx")? != 0. {
@@ -232,7 +232,7 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     if rotation.len() != 3 {
         return Err(Error::BadParam(
             "rotation".to_string(),
-            parameters.invocation.clone(),
+            parameters.invoked_as.clone(),
         ));
     }
     let rx = if params.real("rx")? != 0. {
@@ -261,7 +261,7 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     if angular_velocity.len() != 3 {
         return Err(Error::BadParam(
             "angular_velocity".to_string(),
-            parameters.invocation.clone(),
+            parameters.invoked_as.clone(),
         ));
     }
     let drx = if params.real("drx")? != 0. {

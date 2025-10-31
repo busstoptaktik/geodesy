@@ -15,7 +15,7 @@ pub const STACK_GAMUT: [OpParameter; 7] = [
 
 /// Construct a new stack operator. Check the syntax and semantics
 pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> {
-    let def = &parameters.definition;
+    let def = &parameters.instantiated_as;
     let mut params = ParsedParameters::new(parameters, &STACK_GAMUT)?;
 
     // The subcommands (push, pop, roll, swap, drop) are mutually exclusive,
