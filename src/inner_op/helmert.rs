@@ -363,12 +363,10 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     let fwd = InnerOp(helmert_fwd);
     let inv = InnerOp(helmert_inv);
     let descriptor = OpDescriptor::new(def, fwd, Some(inv));
-    let id = OpHandle::new();
     Ok(Op {
         descriptor,
         params,
         steps: None,
-        id,
     })
 }
 

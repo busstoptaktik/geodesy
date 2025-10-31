@@ -27,7 +27,6 @@ pub fn push(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error>
         descriptor,
         params,
         steps: None,
-        id: OpHandle::new(),
     })
 }
 
@@ -41,7 +40,6 @@ pub fn pop(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
         descriptor,
         params,
         steps: None,
-        id: OpHandle::new(),
     })
 }
 

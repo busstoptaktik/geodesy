@@ -20,8 +20,10 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - MSRV set to 1.85, and Rust Version to 2024, foloowing georust/geo
 - Clean up and consolidate the macro- and operation decoding
-- Make Op.steps is only used by the pipeline operator, so make it
+- Op.steps is only used by the pipeline operator, so make it
   an `Option<Vec<Op>>`, instead of a zero-sized `Vec<Op>`
+- Remove superfluous fields `steps` and `id` from `OpDescriptor`
+- Remove superfluous field `id` from `Op`
 
 ### Removed
 

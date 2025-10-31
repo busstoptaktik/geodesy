@@ -31,7 +31,6 @@ pub struct Op {
     pub descriptor: OpDescriptor,
     pub params: ParsedParameters,
     pub steps: Option<Vec<Op>>,
-    pub id: OpHandle,
 }
 
 impl Op {
@@ -86,13 +85,11 @@ impl Op {
         }
 
         let descriptor = OpDescriptor::new(def, fwd, inv);
-        let id = OpHandle::new();
 
         Ok(Op {
             descriptor,
             params,
             steps: None,
-            id,
         })
     }
 
@@ -132,8 +129,8 @@ impl Op {
                 .handle_prefix_modifiers();
             // Is the macro called in inverse mode? Search for whitespace-delimited
             // "inv" in order to avoid matching INVariant, subINVolution, etc.
-            let inverted =
-                parameters.instantiated_as.contains(" inv ") || parameters.instantiated_as.ends_with(" inv");
+            let inverted = parameters.instantiated_as.contains(" inv ")
+                || parameters.instantiated_as.ends_with(" inv");
 
             let mut globals = parameters.globals.clone();
             globals.remove("_name");
@@ -193,13 +190,10 @@ impl Op {
     pub fn len(&self) -> usize {
         if self.is_pipeline() {
             self.steps.as_ref().unwrap().len()
-        }
-        else {
+        } else {
             1
         }
     }
-
-
 }
 
 // ----- T E S T S ------------------------------------------------------------------

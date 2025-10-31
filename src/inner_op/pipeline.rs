@@ -76,12 +76,10 @@ pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
     let fwd = InnerOp(pipeline_fwd);
     let inv = InnerOp(pipeline_inv);
     let descriptor = OpDescriptor::new(definition, fwd, Some(inv));
-    let id = OpHandle::new();
     Ok(Op {
         descriptor,
         params,
         steps: Some(steps),
-        id,
     })
 }
 

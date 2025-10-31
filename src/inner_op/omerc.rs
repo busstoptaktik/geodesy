@@ -256,7 +256,6 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
         descriptor,
         params,
         steps: None,
-        id: OpHandle::new(),
     })
 }
 

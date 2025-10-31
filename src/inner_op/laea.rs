@@ -246,12 +246,10 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     params.fourier_coefficients.insert("authalic", authalic);
 
     let descriptor = OpDescriptor::new(def, InnerOp(fwd), Some(InnerOp(inv)));
-    let id = OpHandle::new();
     Ok(Op {
         descriptor,
         params,
         steps: None,
-        id,
     })
 }
 

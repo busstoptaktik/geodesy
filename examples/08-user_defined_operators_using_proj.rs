@@ -164,7 +164,6 @@ pub fn proj_constructor(parameters: &RawParameters, _ctx: &dyn Context) -> Resul
         descriptor,
         params,
         steps: None,
-        id: OpHandle::new(),
     })
 }
 

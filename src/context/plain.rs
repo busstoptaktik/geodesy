@@ -127,7 +127,7 @@ impl Context for Plain {
         let definition = parse_proj(definition)?;
 
         let op = Op::new(&definition, self)?;
-        let id = op.id;
+        let id = OpHandle::new();
         self.operators.insert(id, op);
         assert!(self.operators.contains_key(&id));
         Ok(id)
