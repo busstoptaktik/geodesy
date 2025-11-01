@@ -41,12 +41,21 @@ impl Op {
         operands: &mut dyn CoordinateSet,
         direction: Direction,
     ) -> usize {
-        let forward = direction == Direction::Fwd;
-        // Short form of (inverted && !forward) || (forward && !inverted)
-        if self.descriptor.inverted != forward {
+        let going_forward = direction == Direction::Fwd;
+
+        // We use the .fwd method if we're either not inverted and going forward
+        // or inverted and not going forward
+        if self.descriptor.inverted != going_forward {
             return self.descriptor.fwd.0(self, ctx, operands);
         }
-        self.descriptor.inv.0(self, ctx, operands)
+
+        // Otherwise, we use the .inv method, if it exists
+        if let Some(inv) = &self.descriptor.inv {
+            return inv.0(self, ctx, operands);
+        }
+
+        // If it doesn't exist, we do nothing, and tell it by reporting zero successes
+        0
     }
 
     pub fn new(definition: &str, ctx: &dyn Context) -> Result<Op, Error> {
@@ -163,18 +172,23 @@ impl Op {
         ))
     }
 
+    fn is_invertible(&self) -> bool {
+        self.descriptor.inv.is_some()
+    }
+
     fn handle_op_inversion(self) -> Result<Op, Error> {
         let inverted = self.params.boolean("inv");
         self.handle_inversion(inverted)
     }
 
     fn handle_inversion(mut self, inverted: bool) -> Result<Op, Error> {
-        if self.descriptor.invertible {
+        if self.is_invertible() {
             if inverted {
                 self.descriptor.inverted = !self.descriptor.inverted;
             }
             return Ok(self);
         }
+
         if inverted {
             return Err(Error::NonInvertible(self.descriptor.instantiated_as));
         }

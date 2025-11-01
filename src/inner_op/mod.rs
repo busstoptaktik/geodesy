@@ -124,7 +124,7 @@ impl core::fmt::Debug for InnerOp {
     }
 }
 
-// Defaults to no_op
+// Defaults to no_op. Used by the pushpop and stack pseudo-operators
 impl Default for InnerOp {
     fn default() -> InnerOp {
         InnerOp(noop_placeholder)
