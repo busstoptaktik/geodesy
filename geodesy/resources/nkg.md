@@ -2,7 +2,8 @@
 
 ## Geodesy implementations
 
-This section contains the Rust Geodesy (RG) implementations of the NKG transformations from ITRF2014 to the national realizations of ETRS89
+This section contains the Rust Geodesy (RG) implementations of the NKG
+transformations from ITRF2014 to the national realizations of ETRS89
 
 ### Sweden
 
