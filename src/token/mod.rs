@@ -124,6 +124,10 @@ where
         let step = self.as_ref().normalize().handle_prefix_modifiers();
         let elements: Vec<_> = step.split_whitespace().collect();
         let mut params = BTreeMap::new();
+        if step.is_pipeline() {
+            params.insert(String::from("_name"), step);
+            return params;
+        }
 
         for element in elements {
             // Split a key=value-pair into key and value parts

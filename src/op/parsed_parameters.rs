@@ -190,8 +190,7 @@ impl ParsedParameters {
         let mut text = BTreeMap::<&'static str, String>::new();
         let mut texts = BTreeMap::<&'static str, Vec<String>>::new();
         let grids = Vec::new();
-        #[allow(unused_mut)]
-        let mut uuid = BTreeMap::<&'static str, uuid::Uuid>::new();
+        let uuid = BTreeMap::<&'static str, uuid::Uuid>::new();
         let fourier_coefficients = BTreeMap::<&'static str, FourierCoefficients>::new();
 
         // Try to locate all accepted parameters, type check, and place them into

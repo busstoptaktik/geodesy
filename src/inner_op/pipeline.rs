@@ -58,9 +58,7 @@ fn pipeline_inv(op: &Op, ctx: &dyn Context, operands: &mut dyn CoordinateSet) ->
 // ----- C O N S T R U C T O R ---------------------------------------------------------
 
 #[rustfmt::skip]
-pub const GAMUT: [OpParameter; 1] = [
-    OpParameter::Flag { key: "inv" },
-];
+pub const GAMUT: [OpParameter; 0] = [];
 
 pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
     let definition = &parameters.instantiated_as;
@@ -72,7 +70,12 @@ pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
         steps.push(Op::op(step_parameters, ctx)?);
     }
 
+    // params is not really useful in the pipeline case, but needed in order
+    // to instantiate the Op. The token/split_into_parameters() function
+    // special-cases pipelines, so the `_name` entry becomes the entire
+    // definition (`instantiated_as`)
     let params = ParsedParameters::new(parameters, &GAMUT)?;
+
     let fwd = InnerOp(pipeline_fwd);
     let inv = InnerOp(pipeline_inv);
     let descriptor = OpDescriptor::new(definition, fwd, Some(inv));
