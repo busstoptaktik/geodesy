@@ -6,6 +6,20 @@ pub mod minimal;
 #[cfg(feature = "with_plain")]
 pub mod plain;
 
+/// The key, returned to the user, representing the actual operation handled by the `Context`
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Copy, Clone)]
+pub struct OpHandle(uuid::Uuid);
+impl OpHandle {
+    pub fn new() -> Self {
+        OpHandle(uuid::Uuid::new_v4())
+    }
+}
+impl Default for OpHandle {
+    fn default() -> Self {
+        OpHandle(uuid::Uuid::new_v4())
+    }
+}
+
 // ----- T H E   C O N T E X T   T R A I T ---------------------------------------------
 
 /// Modes of communication between the *Rust Geodesy* internals and the external

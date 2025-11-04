@@ -11,20 +11,6 @@ pub use parameter::OpParameter;
 pub use parsed_parameters::ParsedParameters;
 pub use raw_parameters::RawParameters;
 
-/// The key, returned to the user, representing the actual operation handled by the `Context`
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Copy, Clone)]
-pub struct OpHandle(uuid::Uuid);
-impl OpHandle {
-    pub fn new() -> Self {
-        OpHandle(uuid::Uuid::new_v4())
-    }
-}
-impl Default for OpHandle {
-    fn default() -> Self {
-        OpHandle(uuid::Uuid::new_v4())
-    }
-}
-
 /// The defining parameters and functions for an operator
 #[derive(Debug)]
 pub struct Op {

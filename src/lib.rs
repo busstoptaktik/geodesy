@@ -38,10 +38,10 @@ pub mod ctx {
     pub use crate::Direction::Fwd;
     pub use crate::Direction::Inv;
     pub use crate::context::Context;
+    pub use crate::context::OpHandle;
     pub use crate::context::minimal::Minimal;
     #[cfg(feature = "with_plain")]
     pub use crate::context::plain::Plain;
-    pub use crate::op::OpHandle;
 }
 
 /// Ellipsoid related elements
