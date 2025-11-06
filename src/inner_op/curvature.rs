@@ -91,8 +91,8 @@ pub const GAMUT: [OpParameter; 6] = [
     OpParameter::Text { key: "ellps", default: Some("GRS80") }
 ];
 
-pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
-    let op = Op::plain(parameters, InnerOp(fwd), None, &GAMUT, ctx)?;
+pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> {
+    let op = Op::plain(parameters, InnerOp(fwd), None, &GAMUT)?;
     let mut number_of_flags = 0;
 
     for parameter in GAMUT {

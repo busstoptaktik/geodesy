@@ -109,8 +109,8 @@ pub const GAMUT: [OpParameter; 7] = [
     OpParameter::Real { key: "k_0",   default: Some(1_f64) },
 ];
 
-pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
-    Op::plain(parameters, InnerOp(fwd), Some(InnerOp(inv)), &GAMUT, ctx)
+pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> {
+    Op::plain(parameters, InnerOp(fwd), Some(InnerOp(inv)), &GAMUT)
 }
 
 #[rustfmt::skip]

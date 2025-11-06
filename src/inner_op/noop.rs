@@ -20,8 +20,8 @@ fn inv(_op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize 
 pub const GAMUT: [OpParameter; 0] = [
 ];
 
-pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
-    Op::plain(parameters, InnerOp(fwd), Some(InnerOp(inv)), &GAMUT, ctx)
+pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> {
+    Op::plain(parameters, InnerOp(fwd), Some(InnerOp(inv)), &GAMUT)
 }
 
 // ----- T E S T S ------------------------------------------------------------------

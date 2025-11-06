@@ -288,8 +288,8 @@ fn precompute(op: &mut Op) {
     op.params.real.insert("zb", zb);
 }
 
-pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
-    let mut op = Op::plain(parameters, InnerOp(fwd), Some(InnerOp(inv)), &GAMUT, ctx)?;
+pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> {
+    let mut op = Op::plain(parameters, InnerOp(fwd), Some(InnerOp(inv)), &GAMUT)?;
     precompute(&mut op);
     Ok(op)
 }

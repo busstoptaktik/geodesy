@@ -102,8 +102,8 @@ pub const GAMUT: [OpParameter; 7] = [
     OpParameter::Text { key: "ellps", default: Some("GRS80") },
 ];
 
-pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
-    let mut op = Op::plain(parameters, InnerOp(fwd), None, &GAMUT, ctx)?;
+pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> {
+    let mut op = Op::plain(parameters, InnerOp(fwd), None, &GAMUT)?;
     let valid = ["cassinis", "jeffreys", "grs67", "grs80", "welmec"];
 
     // Check that at most one normal gravity formula is specified

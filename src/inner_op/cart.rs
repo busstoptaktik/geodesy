@@ -103,13 +103,12 @@ pub const GAMUT: [OpParameter; 2] = [
     OpParameter::Text { key: "ellps", default: Some("GRS80") },
 ];
 
-pub fn new(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
+pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> {
     Op::plain(
         parameters,
         InnerOp(cart_fwd),
         Some(InnerOp(cart_inv)),
         &GAMUT,
-        ctx,
     )
 }
 

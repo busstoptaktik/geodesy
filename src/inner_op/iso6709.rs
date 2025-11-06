@@ -90,24 +90,12 @@ pub const GAMUT: [OpParameter; 1] = [
     OpParameter::Flag { key: "inv" },
 ];
 
-pub fn dm(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
-    Op::plain(
-        parameters,
-        InnerOp(dm_fwd),
-        Some(InnerOp(dm_inv)),
-        &GAMUT,
-        ctx,
-    )
+pub fn dm(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> {
+    Op::plain(parameters, InnerOp(dm_fwd), Some(InnerOp(dm_inv)), &GAMUT)
 }
 
-pub fn dms(parameters: &RawParameters, ctx: &dyn Context) -> Result<Op, Error> {
-    Op::plain(
-        parameters,
-        InnerOp(dms_fwd),
-        Some(InnerOp(dms_inv)),
-        &GAMUT,
-        ctx,
-    )
+pub fn dms(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> {
+    Op::plain(parameters, InnerOp(dms_fwd), Some(InnerOp(dms_inv)), &GAMUT)
 }
 
 // ----- T E S T S ---------------------------------------------------------------------
