@@ -232,6 +232,7 @@ fn stack_push(
     let mut ext = vec![vec![0f64; number_of_operands]; number_of_pushes];
 
     // Extract the coordinate elements into the new stack elements
+    #[allow(clippy::needless_range_loop)]
     for i in 0..number_of_operands {
         let coord = operands.get_coord(i);
         for j in 0..number_of_pushes {
@@ -259,6 +260,7 @@ fn stack_flip(stack: &mut [Vec<f64>], operands: &mut dyn CoordinateSet, args: &[
     }
 
     // Swap the stack elements and their corresponding coordinate elements
+    #[allow(clippy::needless_range_loop)]
     for i in 0..number_of_operands {
         let mut coord = operands.get_coord(i);
         for j in 0..number_of_flips {
@@ -326,6 +328,7 @@ fn stack_pop(stack: &mut Vec<Vec<f64>>, operands: &mut dyn CoordinateSet, args: 
 
     // Inject the required stack elements into the proper
     // positions of the coordinate elements
+    #[allow(clippy::needless_range_loop)]
     for i in 0..number_of_operands {
         let mut coord = operands.get_coord(i);
         for j in 0..number_of_pops {
