@@ -40,7 +40,9 @@ impl Op {
             return inv.0(self, ctx, operands);
         }
 
-        // If it doesn't exist, we do nothing, and tell it by reporting zero successes
+        // If it doesn't exist, we do nothing, and tell it by stomping on the
+        // operands, and reporting zero successes
+        operands.stomp();
         0
     }
 
