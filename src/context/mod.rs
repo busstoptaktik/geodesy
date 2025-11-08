@@ -53,11 +53,13 @@ pub trait Context {
 
     /// Register a new user-defined operator
     fn register_op(&mut self, name: &str, constructor: OpConstructor);
+
     /// Register a new user-defined resource (macro, ellipsoid parameter set...)
     fn register_resource(&mut self, name: &str, definition: &str);
 
     /// Helper for the `Op` instantiation logic in `Op::op(...)`
     fn get_op(&self, name: &str) -> Result<OpConstructor, Error>;
+
     /// Helper for the `Op` instantiation logic in `Op::op(...)`
     fn get_resource(&self, name: &str) -> Result<String, Error>;
 
@@ -66,6 +68,15 @@ pub trait Context {
 
     /// Access grid resources by identifier
     fn get_grid(&self, name: &str) -> Result<Arc<dyn Grid>, Error>;
+
+    /// Get grid value by index (helping [`BaseGrid`](crate::grid::BaseGrid)
+    /// access externally stored grid collections)
+    #[expect(unused)]
+    fn get_grid_value(&self, level: usize, index: usize) -> Result<Coor4D, Error> {
+        Err(Error::Unsupported(
+            "External grids not supported by Context".to_string(),
+        ))
+    }
 }
 
 /// Help context providers provide canonically named, built in coordinate adaptors

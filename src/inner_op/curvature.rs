@@ -92,7 +92,7 @@ pub const GAMUT: [OpParameter; 6] = [
 ];
 
 pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> {
-    let op = Op::plain(parameters, InnerOp(fwd), None, &GAMUT)?;
+    let op = Op::basic(parameters, InnerOp(fwd), None, &GAMUT)?;
     let mut number_of_flags = 0;
 
     for parameter in GAMUT {

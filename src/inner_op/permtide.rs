@@ -58,7 +58,7 @@ pub const GAMUT: [OpParameter; 5] = [
 ];
 
 pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> {
-    let mut op = Op::plain(parameters, InnerOp(fwd), Some(InnerOp(inv)), &GAMUT)?;
+    let mut op = Op::basic(parameters, InnerOp(fwd), Some(InnerOp(inv)), &GAMUT)?;
     let k = op.params.real("k")?;
 
     let Ok(to) = op.params.text("to") else {

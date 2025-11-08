@@ -133,9 +133,14 @@ impl Grid for Ntv2Grid {
         self.find_grid(position, margin).is_some()
     }
 
-    fn at(&self, coord: &Coor4D, margin: f64) -> Option<Coor4D> {
+    fn at(
+        &self,
+        ctx: Option<&dyn crate::context::Context>,
+        coord: &Coor4D,
+        margin: f64,
+    ) -> Option<Coor4D> {
         self.find_grid(coord, margin)
-            .and_then(|grid| grid.1.at(coord, margin))
+            .and_then(|grid| grid.1.at(ctx, coord, margin))
     }
 }
 
@@ -174,7 +179,7 @@ mod tests {
         // Followed by
         //     eva (39.99882421665721-40)*3600
         //     eva (-0.001203127834531996)*3600
-        let v = ntv2_grid.at(&next, 0.0).unwrap();
+        let v = ntv2_grid.at(None, &next, 0.0).unwrap();
         let dlon = v[0].to_degrees() * 3600.0;
         let dlat = v[1].to_degrees() * 3600.0;
         dbg!((dlon, dlat));
@@ -184,7 +189,7 @@ mod tests {
         // Interpolation to the south-eastern corner, i.e. the
         // set of corrections placed physically first in the
         // file
-        let v = ntv2_grid.at(&first, 1.0).unwrap();
+        let v = ntv2_grid.at(None, &first, 1.0).unwrap();
         let dlon = v[0].to_degrees() * 3600.0;
         let dlat = v[1].to_degrees() * 3600.0;
         dbg!((dlon, dlat));

@@ -76,7 +76,7 @@ pub const GAMUT: [OpParameter; 2] = [
 ];
 
 pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> {
-    let op = Op::plain(parameters, InnerOp(fwd), Some(InnerOp(inv)), &GAMUT)?;
+    let op = Op::basic(parameters, InnerOp(fwd), Some(InnerOp(inv)), &GAMUT)?;
 
     // We default to order=1,2,3,4, so if order is not given, all is OK
     let Ok(order) = op.params.series("order") else {

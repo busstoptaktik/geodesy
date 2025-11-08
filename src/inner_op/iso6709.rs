@@ -91,11 +91,11 @@ pub const GAMUT: [OpParameter; 1] = [
 ];
 
 pub fn dm(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> {
-    Op::plain(parameters, InnerOp(dm_fwd), Some(InnerOp(dm_inv)), &GAMUT)
+    Op::basic(parameters, InnerOp(dm_fwd), Some(InnerOp(dm_inv)), &GAMUT)
 }
 
 pub fn dms(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> {
-    Op::plain(parameters, InnerOp(dms_fwd), Some(InnerOp(dms_inv)), &GAMUT)
+    Op::basic(parameters, InnerOp(dms_fwd), Some(InnerOp(dms_inv)), &GAMUT)
 }
 
 // ----- T E S T S ---------------------------------------------------------------------

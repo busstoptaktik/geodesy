@@ -104,7 +104,7 @@ pub const GAMUT: [OpParameter; 2] = [
 ];
 
 pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> {
-    Op::plain(
+    Op::basic(
         parameters,
         InnerOp(cart_fwd),
         Some(InnerOp(cart_inv)),

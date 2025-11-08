@@ -13,7 +13,7 @@ pub trait Grid: Debug + Sync + Send {
     /// **Contain** is in the sense of the `contains` method, i.e. the point is
     /// considered contained if it is inside a margin of `margin` grid units of
     /// the grid.
-    fn at(&self, at: &Coor4D, margin: f64) -> Option<Coor4D>;
+    fn at(&self, ctx: Option<&dyn Context>, at: &Coor4D, margin: f64) -> Option<Coor4D>;
 }
 
 /// Grid characteristics and interpolation.
@@ -23,6 +23,7 @@ pub trait Grid: Debug + Sync + Send {
 ///
 /// In principle grid format agnostic, but includes a parser for
 /// geodetic grids in the Gravsoft format.
+#[expect(unused)]
 #[derive(Debug, Default, Clone)]
 pub struct BaseGrid {
     lat_n: f64, // Latitude of the first (typically northernmost) row of the grid
@@ -35,6 +36,7 @@ pub struct BaseGrid {
     cols: usize,
     pub bands: usize,
     offset: usize,  // typically 0, but may be any number for externally stored grids
+    external: bool, // if external, we ask the context for the value
     grid: Vec<f32>, // May be zero sized in cases where the Context provides access to an externally stored grid
 }
 
@@ -82,7 +84,8 @@ impl Grid for BaseGrid {
     // It is, however, one of the cases where a more extensive use of abstractions
     // leads to a significantly larger code base, much harder to maintain and
     // comprehend.
-    fn at(&self, at: &Coor4D, margin: f64) -> Option<Coor4D> {
+    #[expect(unused)]
+    fn at(&self, ctx: Option<&dyn Context>, at: &Coor4D, margin: f64) -> Option<Coor4D> {
         if !self.contains(at, margin) {
             return None;
         };
@@ -153,11 +156,7 @@ impl Grid for BaseGrid {
 }
 
 impl BaseGrid {
-    pub fn plain(
-        header: &[f64],
-        grid: Option<&[f32]>,
-        offset: Option<usize>,
-    ) -> Result<Self, Error> {
+    pub fn new(header: &[f64], grid: Option<&[f32]>, offset: usize) -> Result<Self, Error> {
         if header.len() < 7 {
             return Err(Error::General("Malformed header"));
         }
@@ -166,15 +165,16 @@ impl BaseGrid {
         let lat_s = header[1];
         let lon_w = header[2];
         let lon_e = header[3];
+
         let dlat = header[4].copysign(lat_s - lat_n);
         let dlon = header[5].copysign(lon_e - lon_w);
+
         let bands = header[6] as usize;
         let rows = ((lat_s - lat_n) / dlat + 1.5).floor() as usize;
         let cols = ((lon_e - lon_w) / dlon + 1.5).floor() as usize;
         let elements = rows * cols * bands;
 
-        let offset = offset.unwrap_or(0);
-
+        let external = grid.is_none();
         let grid = Vec::from(grid.unwrap_or(&[]));
 
         if elements == 0 || (offset == 0 && elements > grid.len()) || bands < 1 {
@@ -192,13 +192,14 @@ impl BaseGrid {
             cols,
             bands,
             offset,
+            external,
             grid,
         })
     }
 
     pub fn gravsoft(buf: &[u8]) -> Result<Self, Error> {
         let (header, grid) = gravsoft_grid_reader(buf)?;
-        BaseGrid::plain(&header, Some(&grid), None)
+        BaseGrid::new(&header, Some(&grid), 0)
     }
 }
 
@@ -206,19 +207,18 @@ impl BaseGrid {
 fn normalize_gravsoft_grid_values(header: &mut [f64], grid: &mut [f32]) {
     // If any boundary is outside of [-720; 720], the grid must (by a wide margin) be
     // in projected coordinates and the correction in meters, so we simply return.
-    for h in header.iter().take(4) {
-        if h.abs() > 720. {
-            return;
+    let projected = header.iter().take(4).any(|h| h.abs() > 720.0);
+
+    // The header values are in decimal degrees
+    if !projected {
+        for h in header.iter_mut().take(6) {
+            *h = h.to_radians();
         }
     }
 
-    // The header values are in decimal degrees
-    for h in header.iter_mut().take(6) {
-        *h = h.to_radians();
-    }
+    let h = BaseGrid::new(header, Some(grid), 0).unwrap_or_default();
 
     // If we're handling a geoid grid, we're done: Grid values are in meters
-    let h = BaseGrid::plain(header, Some(grid), None).unwrap_or_default();
     if h.bands == 1 {
         return;
     }
@@ -321,7 +321,7 @@ fn gravsoft_grid_reader(buf: &[u8]) -> Result<(Vec<f64>, Vec<f32>), Error> {
 pub fn grids_at(grids: &[Arc<dyn Grid>], coord: &Coor4D, use_null_grid: bool) -> Option<Coor4D> {
     for margin in [0.0, 0.5] {
         for grid in grids.iter() {
-            let d = grid.at(coord, margin);
+            let d = grid.at(None, coord, margin);
             if d.is_some() {
                 return d;
             }
@@ -377,15 +377,15 @@ mod tests {
         let mut datum_grid = Vec::from(DATUM);
         normalize_gravsoft_grid_values(&mut datum_header, &mut datum_grid);
 
-        // But Since we use BaseGrid::plain(...) to instantiate, we need a plain header here
+        // But Since we use BaseGrid::new(...) to instantiate, we need a plain header here
         datum_header.swap(0, 1);
         datum_header[4] = -datum_header[4];
-        let datum = BaseGrid::plain(&datum_header, Some(&datum_grid), None)?;
+        let datum = BaseGrid::new(&datum_header, Some(&datum_grid), 0)?;
 
         // Extrapolation
         let c = Coor4D::geo(100., 50., 0., 0.);
         // ...with output converted back to arcsec
-        let d = datum.at(&c, 100.0).unwrap().to_arcsec();
+        let d = datum.at(None, &c, 100.0).unwrap().to_arcsec();
 
         // The grid is constructed to make the position in degrees equal to
         // the extrapolation value in arcsec.
@@ -400,7 +400,7 @@ mod tests {
         // Check that we're not extrapolating
         assert!(datum.contains(&c, 0.0));
         // ...with output converted back to arcsec
-        let d = datum.at(&c, 0.0).unwrap().to_arcsec();
+        let d = datum.at(None, &c, 0.0).unwrap().to_arcsec();
         // We can do slightly better for interpolation than for extrapolation,
         // but the grid values are f32, so we have only approx 7 significant
         // figures...
@@ -410,13 +410,13 @@ mod tests {
         let mut geoid_header = datum_header.clone();
         geoid_header[6] = 1.0; // 1 band
         let geoid_grid = Vec::from(GEOID);
-        let geoid = BaseGrid::plain(&geoid_header, Some(&geoid_grid), None)?;
+        let geoid = BaseGrid::new(&geoid_header, Some(&geoid_grid), 0)?;
 
         let c = Coor4D::geo(58.75, 08.25, 0., 0.);
         assert!(!geoid.contains(&c, 0.0));
         assert!(geoid.contains(&c, 1.0));
 
-        let n = geoid.at(&c, 1.0).unwrap();
+        let n = geoid.at(None, &c, 1.0).unwrap();
         assert!((n[0] - (58.75 + 0.0825)).abs() < 0.0001);
         Ok(())
     }

@@ -60,7 +60,7 @@ impl Op {
     // (and common) case, where the `InnerOp` constructor does not need to set any
     // other parameters than the ones defined by the instantiation parameter
     // arguments.
-    pub fn plain(
+    pub fn basic(
         parameters: &RawParameters,
         fwd: InnerOp,
         inv: Option<InnerOp>,
