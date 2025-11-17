@@ -258,7 +258,7 @@ mod tests {
         let op2 = ctx2.op("gridshift grids=@test_subset.datum, @missing.gsb, test.datum")?;
 
         // Copenhagen is outside of the (optional, but present, subset grid)
-        let cph = Coor4D::geo(55., 12., 0., 0.);
+        let cph = Coor2D::geo(55., 12.);
         let mut data = [cph];
         let mut data2 = [cph];
 

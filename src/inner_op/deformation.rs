@@ -338,11 +338,12 @@ mod tests {
         ctx.register_resource("another_test.deformation", another_test_deformation);
 
         let buf = ctx.get_blob("test.deformation")?;
-        let grid = BaseGrid::gravsoft(&buf)?;
+        let grid = BaseGrid::gravsoft("test_deformation", &buf)?;
 
         // Velocity in the ENU space
         let v = grid.at(None, &cph, 0.0).unwrap();
-        // Which we rotate into the XYZ space and integrate for 1000 years
+        // Which we rotate into the XYZ space and integrate for 1000 years - and mutate into Coor3D,
+        // to remove the NaN from the 4th dimension, which make the tests crash, because NaN!=NaN
         let deformation = rotate_and_integrate_velocity(v, cph[0], cph[1], 1000.);
 
         // Check that the length of the deformation correction, expressed as the
@@ -350,6 +351,11 @@ mod tests {
         let expected_length_of_correction = (55f64 * 55. + 12. * 12.).sqrt();
         let length_of_scaled_velocity = v.scale(1000.0).dot(v.scale(1000.0)).sqrt();
         let length_of_rotated_deformation = deformation.dot(deformation).sqrt();
+        dbg!(length_of_rotated_deformation);
+        dbg!(expected_length_of_correction);
+        dbg!(length_of_scaled_velocity);
+        dbg!(deformation);
+        dbg!(v);
         assert!((length_of_scaled_velocity - expected_length_of_correction).abs() < 1e-6);
         assert!((length_of_rotated_deformation - expected_length_of_correction).abs() < 1e-6);
 

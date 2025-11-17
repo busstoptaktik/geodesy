@@ -122,7 +122,7 @@ impl Context for Maximal {
     /// Access grid resources by identifier
     fn get_grid(&self, name: &str) -> Result<Arc<dyn Grid>, Error> {
         let buf = self.get_blob(name)?;
-        let grid = BaseGrid::gravsoft(&buf)?;
+        let grid = BaseGrid::gravsoft(name, &buf)?;
 
         Ok(Arc::new(grid))
     }

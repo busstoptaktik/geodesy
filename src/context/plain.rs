@@ -59,7 +59,7 @@ impl GridCollection {
                     .insert(name.to_string(), Arc::new(Ntv2Grid::new(&grid)?));
             } else {
                 self.0
-                    .insert(name.to_string(), Arc::new(BaseGrid::gravsoft(&grid)?));
+                    .insert(name.to_string(), Arc::new(BaseGrid::gravsoft(name, &grid)?));
             }
             if let Some(grid) = self.0.get(name) {
                 return Ok(grid.clone());
@@ -281,6 +281,85 @@ impl Context for Plain {
             .unwrap()
             .get_grid(name, &self.paths)
     }
+}
+
+use byteorder::{NativeEndian, ReadBytesExt};
+use std::fs::File;
+use std::io::{BufRead, BufReader, Seek};
+#[expect(dead_code)]
+pub fn read_unigrid_index() -> Result<BTreeMap<String, BaseGrid>, Box<dyn std::error::Error>> {
+    let unifile = File::options().read(true).open("geodesy/unigrid.grids")?;
+    let mut gridreader = BufReader::new(unifile);
+    let uniindex = File::options().read(true).open("geodesy/unigrid.index")?;
+    let indexreader = BufReader::new(uniindex);
+
+    let mut grids = BTreeMap::new();
+
+    for line in indexreader.lines() {
+        let line = line?;
+        let line = line.trim();
+        if line.is_empty() {
+            continue;
+        }
+        let args = line.split_whitespace().collect::<Vec<_>>();
+        if args[0] == "#" {
+            continue;
+        }
+        if args.len() != 4 {
+            return Err("Cannot interpret `{line:#?}` as a unigrid index record".into());
+        }
+
+        // Parse the unigrid index record
+        let grid_id = args[0].to_string();
+        let index = args[1].parse::<usize>()?;
+        let hdr_offset = args[2].parse::<u64>()?;
+
+        // Locate the header for the current grid_id
+        gridreader.seek(std::io::SeekFrom::Start(hdr_offset))?;
+
+        // And read the header
+        let lat_n = gridreader.read_f64::<NativeEndian>()?;
+        let lat_s = gridreader.read_f64::<NativeEndian>()?;
+        let lon_w = gridreader.read_f64::<NativeEndian>()?;
+        let lon_e = gridreader.read_f64::<NativeEndian>()?;
+
+        let dlat = gridreader.read_f64::<NativeEndian>()?;
+        let dlon = gridreader.read_f64::<NativeEndian>()?;
+
+        let bands = gridreader.read_u64::<NativeEndian>()?;
+        let offset = gridreader.read_u64::<NativeEndian>()?;
+
+        // let rows = ((lat_s - lat_n) / dlat + 1.5).floor() as u64;
+        // let cols = ((lon_e - lon_w) / dlon + 1.5).floor() as u64;
+
+        // The BaseGrid constructor takes input as a Gravsoft style header
+        let header = [lat_n, lat_s, lon_w, lon_e, dlat, dlon, bands as f64];
+        let name = format!("{grid_id}[{index}]");
+        let grid = BaseGrid::new(&name, &header, None, offset as usize)?;
+
+        // Parent grids (index==0) go into the grid collection, while subgrids
+        // go into the `subgrids` vector of their parent
+        if index == 0 {
+            grids.insert(grid_id, grid);
+        } else {
+            let Some(parent) = grids.get_mut(&grid_id) else {
+                return Err("Parent grid not found for subgrid {index} of {grid_id:?}".into());
+            };
+            parent.subgrids.push(grid);
+        }
+    }
+
+    // // Check that grid lengths are reasonable
+    // let mut g = grids.values().collect::<Vec<_>>();
+    // g.sort_by(|a, b| a.offset.cmp(&b.offset));
+    // for pair in g.windows(2) {
+    //     let a = pair[0];
+    //     let b = pair[1];
+    //     let assumed_diff = a.rows*a.cols*a.bands*size_of::<f32>()+HEADER_SIZE;
+    //     assert!(b.offset - a.offset >= assumed_diff);
+    // }
+
+    Ok(grids)
 }
 
 // ----- T E S T S ------------------------------------------------------------------
