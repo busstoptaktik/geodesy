@@ -1,6 +1,5 @@
 #[cfg(feature = "with_plain")]
 use crate::authoring::*;
-use crate::grid::ntv2::Ntv2Grid;
 use std::{
     path::PathBuf,
     sync::{Arc, Mutex, OnceLock},
@@ -55,8 +54,10 @@ impl GridCollection {
             };
 
             if ext == "gsb" {
-                self.0
-                    .insert(name.to_string(), Arc::new(Ntv2Grid::new(&grid)?));
+                self.0.insert(
+                    name.to_string(),
+                    Arc::new(crate::grid::ntv2::ntv2_basegrid(&grid)?),
+                );
             } else {
                 self.0
                     .insert(name.to_string(), Arc::new(BaseGrid::gravsoft(name, &grid)?));

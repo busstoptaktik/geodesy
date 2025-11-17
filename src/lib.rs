@@ -88,7 +88,6 @@ mod grd {
     pub use crate::grid::Grid;
     pub use crate::grid::gravsoft_grid_reader;
     pub use crate::grid::grids_at;
-    pub use crate::grid::ntv2::Ntv2Grid;
 }
 
 /// Elements for parsing both Geodesy and PROJ syntax

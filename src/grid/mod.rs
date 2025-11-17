@@ -61,51 +61,46 @@ impl Grid for BaseGrid {
         let (lon, lat) = position.xy();
 
         // We start by assuming that the last row (latitude) is the southernmost
-        let mut latmin = self.lat_s;
-        let mut latmax = self.lat_n;
-
+        let mut lat_min = self.lat_s;
+        let mut lat_max = self.lat_n;
         // If it's not, we swap
         if self.dlat > 0. {
-            (latmin, latmax) = (latmax, latmin);
+            (lat_min, lat_max) = (lat_max, lat_min);
         }
 
         let lat_grace = margin * self.dlat.abs();
-        latmin -= lat_grace;
-        latmax += lat_grace;
-
-        // Out by latitude?
-        if lat != lat.clamp(latmin, latmax) {
+        lat_min -= lat_grace;
+        lat_max += lat_grace;
+        if lat != lat.clamp(lat_min, lat_max) {
             return false;
         }
 
         // The default assumption is the other way round for columns (longitudes)
-        let mut lonmin = self.lon_w;
-        let mut lonmax = self.lon_e;
+        let mut lon_min = self.lon_w;
+        let mut lon_max = self.lon_e;
         // If it's not, we swap
         if self.dlon < 0. {
-            (lonmin, lonmax) = (lonmax, lonmin);
+            (lon_min, lon_max) = (lon_max, lon_min);
         }
 
         let lon_grace = margin * self.dlon.abs();
-        lonmin -= lon_grace;
-        lonmax += lon_grace;
-
-        // Out by longitude?
-        if lon != lon.clamp(lonmin, lonmax) {
+        lon_min -= lon_grace;
+        lon_max += lon_grace;
+        if lon != lon.clamp(lon_min, lon_max) {
             return false;
         }
 
-        // If we fell through all the way to the bottom, we're inside the grid, but we
+        // If we fell through all the way down here, we're inside the grid, but we
         // still need to take care of the boundary conventions
-        if (!all_inclusive) && (lon == lonmax || lat == latmax) {
+        if (!all_inclusive) && ((lon == lon_max) || (lat == lat_max)) {
             return false;
         }
-
         true
     }
 
     fn which_subgrid_contains(&self, coord: Coor4D, margin: f64) -> Option<String> {
-        if !self.contains(&coord, margin, true) {
+        if !self.contains(&coord, margin.max(1e-12), true) {
+            dbg!("! contains");
             return None;
         }
         for grid in self.subgrids.iter().rev() {
