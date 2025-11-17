@@ -1,7 +1,7 @@
 use crate::Error;
 
 // Both overview and sub grid headers have 11 fields of 16 bytes each.
-pub(crate) const HEADER_SIZE: usize = 11 * 16;
+pub(super) const HEADER_SIZE: usize = 11 * 16;
 
 // Buffer offsets for the NTv2 overview header
 const HEAD_NUM_RECORDS: usize = 8; // (i32) number of records in the file

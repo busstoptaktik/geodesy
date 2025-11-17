@@ -98,7 +98,7 @@ fn parse_subgrid_grid(
     }
 
     let mut grid = Vec::with_capacity(2 * num_nodes);
-    for i in 0..num_nodes {
+    for i in (0..num_nodes).rev() {
         let offset = grid_start + i * NODE_SIZE;
         let lat_offset = offset + NODE_LAT_CORRECTION;
         let lon_offset = offset + NODE_LON_CORRECTION;
@@ -107,10 +107,9 @@ fn parse_subgrid_grid(
         let mut lon_corr = -parser.get_f32(lon_offset) as f64;
         lat_corr = (lat_corr / 3600.).to_radians();
         lon_corr = (lon_corr / 3600.).to_radians();
-        grid.push(lat_corr as f32);
         grid.push(lon_corr as f32);
+        grid.push(lat_corr as f32);
     }
-    grid.reverse();
 
     Ok(grid)
 }
