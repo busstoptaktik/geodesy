@@ -83,11 +83,13 @@ mod ops {
 }
 
 /// Elements for handling grids
-mod grd {
+pub mod grd {
     pub use crate::grid::BaseGrid;
+    pub use crate::grid::ExternalGridLocator;
     pub use crate::grid::Grid;
     pub use crate::grid::gravsoft_grid_reader;
     pub use crate::grid::grids_at;
+    pub use crate::grid::read_unigrid_index;
 }
 
 /// Elements for parsing both Geodesy and PROJ syntax

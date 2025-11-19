@@ -11,7 +11,7 @@ pub(super) fn ntv2_subgrid(
     let grid_start = head_offset + HEADER_SIZE;
     let grid = parse_subgrid_grid(parser, grid_start, head.num_nodes as usize)?;
     let header = head.into_header();
-    let base_grid = BaseGrid::new(&name, &header, Some(&grid), 0)?;
+    let base_grid = BaseGrid::new(&name, &header, Some(&grid), None)?;
     Ok((name, parent, base_grid))
 }
 

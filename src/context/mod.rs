@@ -67,15 +67,12 @@ pub trait Context {
     fn get_blob(&self, name: &str) -> Result<Vec<u8>, Error>;
 
     /// Access grid resources by identifier
-    fn get_grid(&self, name: &str) -> Result<Arc<dyn Grid>, Error>;
+    fn get_grid(&self, name: &str) -> Result<Arc<BaseGrid>, Error>;
 
     /// Get grid value by index (helping [`BaseGrid`](crate::grid::BaseGrid)
     /// access externally stored grid collections)
-    #[expect(unused)]
-    fn get_grid_value(&self, level: usize, index: usize) -> Result<Coor4D, Error> {
-        Err(Error::Unsupported(
-            "External grids not supported by Context".to_string(),
-        ))
+    fn get_grid_values(&self, _grid: &BaseGrid, _index: &[usize], _buf: &[Coor4D]) -> usize {
+        0
     }
 }
 

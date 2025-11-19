@@ -1,0 +1,3 @@
+test 0 0 "geodesy\\datum\\test.datum"
+test 1 424 "geodesy\\datum\\test_subset.datum"
+test_subset 0 560 "geodesy\\datum\\test_subset.datum"

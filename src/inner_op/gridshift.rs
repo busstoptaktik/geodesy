@@ -3,7 +3,7 @@ use crate::authoring::*;
 
 // ----- F O R W A R D --------------------------------------------------------------
 
-fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
+fn fwd(op: &Op, ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let grids = &op.params.grids;
     let use_null_grid = op.params.boolean("null_grid");
 
@@ -15,10 +15,12 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         return n;
     }
 
+    let ctx = Some(ctx);
+
     for i in 0..n {
         let mut coord = operands.get_coord(i);
 
-        if let Some(d) = grids_at(grids, &coord, use_null_grid) {
+        if let Some(d) = grids_at(ctx, grids, &coord, use_null_grid) {
             // Geoid
             if grids[0].bands() == 1 {
                 coord[2] -= d[0];
@@ -46,7 +48,7 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
 
 // ----- I N V E R S E --------------------------------------------------------------
 
-fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
+fn inv(op: &Op, ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let grids = &op.params.grids;
     let use_null_grid = op.params.boolean("null_grid");
 
@@ -58,9 +60,11 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         return n;
     }
 
+    let ctx = Some(ctx);
+
     'points: for i in 0..n {
         let mut coord = operands.get_coord(i);
-        if let Some(t) = grids_at(grids, &coord, use_null_grid) {
+        if let Some(t) = grids_at(ctx, grids, &coord, use_null_grid) {
             // Geoid
             if grids[0].bands() == 1 {
                 coord[2] += t[0];
@@ -72,7 +76,7 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
             // Inverse case datum shift - iteration needed
             let mut t = coord - t;
             for _ in 0..10 {
-                if let Some(t2) = grids_at(grids, &t, use_null_grid) {
+                if let Some(t2) = grids_at(ctx, grids, &t, use_null_grid) {
                     let d = t - coord + t2;
                     t = t - d;
                     if d[0].hypot(d[1]) < 1e-12 {

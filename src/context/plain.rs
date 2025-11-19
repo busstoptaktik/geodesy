@@ -17,21 +17,21 @@ pub struct Plain {
     resources: BTreeMap<String, String>,
     operators: BTreeMap<OpHandle, Op>,
     paths: Vec<std::path::PathBuf>,
+    unigrids: Vec<BTreeMap<String, BaseGrid>>,
 }
 
 // Helper for Plain: Provide grid access for all `Op`s
 // in all instantiations of `Plain` by handing out
 // reference counted clones to a single heap allocation
-
 static GRIDS: OnceLock<Mutex<GridCollection>> = OnceLock::new();
 
 fn init_grids() -> Mutex<GridCollection> {
-    Mutex::new(GridCollection(BTreeMap::<String, Arc<dyn Grid>>::new()))
+    Mutex::new(GridCollection(BTreeMap::<String, Arc<BaseGrid>>::new()))
 }
 
-struct GridCollection(BTreeMap<String, Arc<dyn Grid>>);
+struct GridCollection(BTreeMap<String, Arc<BaseGrid>>);
 impl GridCollection {
-    fn get_grid(&mut self, name: &str, paths: &[PathBuf]) -> Result<Arc<dyn Grid>, Error> {
+    fn get_grid(&mut self, name: &str, paths: &[PathBuf], unigrids: &[BTreeMap<String, BaseGrid>]) -> Result<Arc<BaseGrid>, Error> {
         // If the grid is already there, just return a reference clone
         if let Some(grid) = self.0.get(name) {
             return Ok(grid.clone());
@@ -66,6 +66,18 @@ impl GridCollection {
                 return Ok(grid.clone());
             }
         }
+
+        // And finally among the unigrids
+        for unigrid in unigrids.iter().rev() { // TODO!!! Check whether rev is needed here! paths may start with local
+            if let Some(grid) = unigrid.get(name) {
+                self.0
+                    .insert(name.to_string(), Arc::new(grid.clone()));
+                if let Some(grid) = self.0.get(name) {
+                    return Ok(grid.clone());
+                }
+            }
+        }
+
         Err(Error::NotFound(name.to_string(), ": Grid".to_string()))
     }
 }
@@ -99,12 +111,14 @@ impl Default for Plain {
             userpath.push("geodesy");
             paths.push(userpath);
         }
+        let unigrids = Vec::new();
 
         Plain {
             constructors,
             resources,
             operators,
             paths,
+            unigrids,
         }
     }
 }
@@ -115,6 +129,10 @@ impl Context for Plain {
         for item in BUILTIN_ADAPTORS {
             ctx.register_resource(item.0, item.1);
         }
+        let Ok(unigrids) = crate::grid::read_unigrid_index(&ctx.paths) else {
+            return ctx;
+        };
+        ctx.unigrids = unigrids;
         ctx
     }
 
@@ -272,7 +290,7 @@ impl Context for Plain {
     }
 
     /// Access grid resources by identifier
-    fn get_grid(&self, name: &str) -> Result<Arc<dyn Grid>, Error> {
+    fn get_grid(&self, name: &str) -> Result<Arc<BaseGrid>, Error> {
         // The GridCollection does all the hard work here, but accessing GRIDS,
         // which is a mutable static is (mis-)diagnosed as unsafe by the compiler,
         // even though the mutable static is behind a Mutex guard
@@ -280,87 +298,16 @@ impl Context for Plain {
             .get_or_init(init_grids)
             .lock()
             .unwrap()
-            .get_grid(name, &self.paths)
-    }
-}
-
-use byteorder::{NativeEndian, ReadBytesExt};
-use std::fs::File;
-use std::io::{BufRead, BufReader, Seek};
-#[expect(dead_code)]
-pub fn read_unigrid_index() -> Result<BTreeMap<String, BaseGrid>, Box<dyn std::error::Error>> {
-    let unifile = File::options().read(true).open("geodesy/unigrid.grids")?;
-    let mut gridreader = BufReader::new(unifile);
-    let uniindex = File::options().read(true).open("geodesy/unigrid.index")?;
-    let indexreader = BufReader::new(uniindex);
-
-    let mut grids = BTreeMap::new();
-
-    for line in indexreader.lines() {
-        let line = line?;
-        let line = line.trim();
-        if line.is_empty() {
-            continue;
-        }
-        let args = line.split_whitespace().collect::<Vec<_>>();
-        if args[0] == "#" {
-            continue;
-        }
-        if args.len() != 4 {
-            return Err("Cannot interpret `{line:#?}` as a unigrid index record".into());
-        }
-
-        // Parse the unigrid index record
-        let grid_id = args[0].to_string();
-        let index = args[1].parse::<usize>()?;
-        let hdr_offset = args[2].parse::<u64>()?;
-
-        // Locate the header for the current grid_id
-        gridreader.seek(std::io::SeekFrom::Start(hdr_offset))?;
-
-        // And read the header
-        let lat_n = gridreader.read_f64::<NativeEndian>()?;
-        let lat_s = gridreader.read_f64::<NativeEndian>()?;
-        let lon_w = gridreader.read_f64::<NativeEndian>()?;
-        let lon_e = gridreader.read_f64::<NativeEndian>()?;
-
-        let dlat = gridreader.read_f64::<NativeEndian>()?;
-        let dlon = gridreader.read_f64::<NativeEndian>()?;
-
-        let bands = gridreader.read_u64::<NativeEndian>()?;
-        let offset = gridreader.read_u64::<NativeEndian>()?;
-
-        // let rows = ((lat_s - lat_n) / dlat + 1.5).floor() as u64;
-        // let cols = ((lon_e - lon_w) / dlon + 1.5).floor() as u64;
-
-        // The BaseGrid constructor takes input as a Gravsoft style header
-        let header = [lat_n, lat_s, lon_w, lon_e, dlat, dlon, bands as f64];
-        let name = format!("{grid_id}[{index}]");
-        let grid = BaseGrid::new(&name, &header, None, offset as usize)?;
-
-        // Parent grids (index==0) go into the grid collection, while subgrids
-        // go into the `subgrids` vector of their parent
-        if index == 0 {
-            grids.insert(grid_id, grid);
-        } else {
-            let Some(parent) = grids.get_mut(&grid_id) else {
-                return Err("Parent grid not found for subgrid {index} of {grid_id:?}".into());
-            };
-            parent.subgrids.push(grid);
-        }
+            .get_grid(name, &self.paths, &self.unigrids)
     }
 
-    // // Check that grid lengths are reasonable
-    // let mut g = grids.values().collect::<Vec<_>>();
-    // g.sort_by(|a, b| a.offset.cmp(&b.offset));
-    // for pair in g.windows(2) {
-    //     let a = pair[0];
-    //     let b = pair[1];
-    //     let assumed_diff = a.rows*a.cols*a.bands*size_of::<f32>()+HEADER_SIZE;
-    //     assert!(b.offset - a.offset >= assumed_diff);
-    // }
-
-    Ok(grids)
+    fn get_grid_values(&self, grid: &BaseGrid, index: &[usize], buf: &[Coor4D]) -> usize {
+        // ********** TODO *********** læs direkte i filerne
+        if grid.grid.is_some() {
+            return 0;
+        }
+        0
+    }
 }
 
 // ----- T E S T S ------------------------------------------------------------------
@@ -473,6 +420,18 @@ mod tests {
         let _op2 = ctx.op("gridshift grids=5458.gsb, 5458_with_subgrid.gsb")?;
         let _op3 = ctx.op("gridshift grids=test.geoid")?;
         assert!(ctx.op("gridshift grids=non.existing").is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn unigrid() -> Result<(), Error> {
+        let mut ctx = Plain::new();
+
+        // Here, we only invoke reference counting in the GridCollection. The tests in
+        // gridshift and deformation makes sure that the correct grids are actually
+        // provided by GridCollection::get_grid()
+        let _op1 = ctx.op("gridshift grids=test")?;
+        let _op2 = ctx.op("gridshift grids=test_subset")?;
         Ok(())
     }
 }

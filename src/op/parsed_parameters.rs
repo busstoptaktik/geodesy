@@ -50,7 +50,7 @@ pub struct ParsedParameters {
 
     // Pointers to the grids required by the operator
     // They should be inserted in the order they appear in the definition
-    pub grids: Vec<Arc<dyn Grid>>,
+    pub grids: Vec<Arc<BaseGrid>>,
 }
 
 // Accessors

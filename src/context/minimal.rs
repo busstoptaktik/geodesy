@@ -113,7 +113,7 @@ impl Context for Minimal {
     }
 
     /// Access grid resources by identifier
-    fn get_grid(&self, _name: &str) -> Result<Arc<dyn Grid>, Error> {
+    fn get_grid(&self, _name: &str) -> Result<Arc<BaseGrid>, Error> {
         Err(Error::General(
             "Grid access by identifier not supported by the Minimal context provider",
         ))

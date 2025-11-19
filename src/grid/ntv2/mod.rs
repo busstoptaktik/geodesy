@@ -33,7 +33,7 @@ pub(crate) fn ntv2_basegrid(buf: &[u8]) -> Result<BaseGrid, Error> {
     let mut offset = HEADER_SIZE;
     for _ in 0..num_sub_grids {
         let (name, parent, grid) = subgrid::ntv2_subgrid(&parser, offset)?;
-        offset += HEADER_SIZE + grid.grid.len() / 2 * NODE_SIZE;
+        offset += HEADER_SIZE + grid.grid.as_ref().unwrap().len() / 2 * NODE_SIZE;
         grids.push((name, parent, grid));
     }
 
@@ -111,7 +111,7 @@ mod tests {
         let next = Coor4D::geo(40.0, 0., 0., 0.);
 
         assert_eq!(basegrid.subgrids.len(), 0);
-        assert_eq!(basegrid.grid.len(), 1591 * 2);
+        assert_eq!(basegrid.grid.as_ref().unwrap().len(), 1591 * 2);
 
         assert_eq!(basegrid.bands(), 2);
         assert!(basegrid.contains(&barc, 0.5, true));
