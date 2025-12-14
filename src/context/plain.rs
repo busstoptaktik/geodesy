@@ -31,7 +31,12 @@ fn init_grids() -> Mutex<GridCollection> {
 
 struct GridCollection(BTreeMap<String, Arc<BaseGrid>>);
 impl GridCollection {
-    fn get_grid(&mut self, name: &str, paths: &[PathBuf], unigrids: &[BTreeMap<String, BaseGrid>]) -> Result<Arc<BaseGrid>, Error> {
+    fn get_grid(
+        &mut self,
+        name: &str,
+        paths: &[PathBuf],
+        unigrids: &[BTreeMap<String, BaseGrid>],
+    ) -> Result<Arc<BaseGrid>, Error> {
         // If the grid is already there, just return a reference clone
         if let Some(grid) = self.0.get(name) {
             return Ok(grid.clone());
@@ -68,10 +73,10 @@ impl GridCollection {
         }
 
         // And finally among the unigrids
-        for unigrid in unigrids.iter().rev() { // TODO!!! Check whether rev is needed here! paths may start with local
+        for unigrid in unigrids.iter().rev() {
+            // TODO!!! Check whether rev is needed here! paths may start with local
             if let Some(grid) = unigrid.get(name) {
-                self.0
-                    .insert(name.to_string(), Arc::new(grid.clone()));
+                self.0.insert(name.to_string(), Arc::new(grid.clone()));
                 if let Some(grid) = self.0.get(name) {
                     return Ok(grid.clone());
                 }
@@ -301,7 +306,8 @@ impl Context for Plain {
             .get_grid(name, &self.paths, &self.unigrids)
     }
 
-    fn get_grid_values(&self, grid: &BaseGrid, index: &[usize], buf: &[Coor4D]) -> usize {
+    #[expect(unused_variables)]
+    fn get_grid_values(&self, grid: &BaseGrid, index: &[usize], buf: &mut [Coor4D]) -> usize {
         // ********** TODO *********** læs direkte i filerne
         if grid.grid.is_some() {
             return 0;
