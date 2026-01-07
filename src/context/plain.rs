@@ -1,8 +1,8 @@
 #[cfg(feature = "with_plain")]
 use crate::authoring::*;
+use crate::grid::GridSource;
 use std::{
-    path::PathBuf,
-    sync::{Arc, Mutex, OnceLock},
+    fs::File, io::BufReader, path::PathBuf, sync::{Arc, Mutex, OnceLock}
 };
 
 // ----- T H E   P L A I N   C O N T E X T ---------------------------------------------
@@ -17,13 +17,14 @@ pub struct Plain {
     resources: BTreeMap<String, String>,
     operators: BTreeMap<OpHandle, Op>,
     paths: Vec<std::path::PathBuf>,
-    unigrids: Vec<BTreeMap<String, BaseGrid>>,
+    unigrid_elements: Vec<BTreeMap<String, Arc<BaseGrid>>>,
+    unigrid_backing_files: Vec<Option<BufReader<File>>>
 }
 
 // Helper for Plain: Provide grid access for all `Op`s
 // in all instantiations of `Plain` by handing out
 // reference counted clones to a single heap allocation
-static GRIDS: OnceLock<Mutex<GridCollection>> = OnceLock::new();
+static GLOBALLY_ALLOCATED_GRIDS: OnceLock<Mutex<GridCollection>> = OnceLock::new();
 
 fn init_grids() -> Mutex<GridCollection> {
     Mutex::new(GridCollection(BTreeMap::<String, Arc<BaseGrid>>::new()))
@@ -34,8 +35,7 @@ impl GridCollection {
     fn get_grid(
         &mut self,
         name: &str,
-        paths: &[PathBuf],
-        unigrids: &[BTreeMap<String, BaseGrid>],
+        paths: &[PathBuf]
     ) -> Result<Arc<BaseGrid>, Error> {
         // If the grid is already there, just return a reference clone
         if let Some(grid) = self.0.get(name) {
@@ -72,17 +72,6 @@ impl GridCollection {
             }
         }
 
-        // And finally among the unigrids
-        for unigrid in unigrids.iter().rev() {
-            // TODO!!! Check whether rev is needed here! paths may start with local
-            if let Some(grid) = unigrid.get(name) {
-                self.0.insert(name.to_string(), Arc::new(grid.clone()));
-                if let Some(grid) = self.0.get(name) {
-                    return Ok(grid.clone());
-                }
-            }
-        }
-
         Err(Error::NotFound(name.to_string(), ": Grid".to_string()))
     }
 }
@@ -90,13 +79,14 @@ impl GridCollection {
 const BAD_ID_MESSAGE: Error = Error::General("Plain: Unknown operator id");
 
 impl Plain {
-    /// To avoid having the heap allocated collection of grids stored in `GRIDS`
-    /// growing through the roof, we may clear it occasionally.
+    /// To avoid having the heap allocated collection of grids stored in
+    /// `GLOBALLY_ALLOCATED_GRIDS` growing through the roof, we may clear
+    /// it occasionally.
     /// As the grids are behind an `Arc` reference counter, this is safe to do
     /// even though they may still be in use by some remaining operator
     /// instantiations.
     pub fn clear_grids() {
-        if let Some(grids) = GRIDS.get() {
+        if let Some(grids) = GLOBALLY_ALLOCATED_GRIDS.get() {
             grids.lock().unwrap().0.clear();
         }
     }
@@ -116,14 +106,16 @@ impl Default for Plain {
             userpath.push("geodesy");
             paths.push(userpath);
         }
-        let unigrids = Vec::new();
+        let unigrid_elements = Vec::new();
+        let unigrid_backing_files = Vec::new();
 
         Plain {
             constructors,
             resources,
             operators,
             paths,
-            unigrids,
+            unigrid_elements,
+            unigrid_backing_files
         }
     }
 }
@@ -137,7 +129,18 @@ impl Context for Plain {
         let Ok(unigrids) = crate::grid::read_unigrid_index(&ctx.paths) else {
             return ctx;
         };
-        ctx.unigrids = unigrids;
+        ctx.unigrid_elements = unigrids;
+
+        let mut buffered_backing_files = Vec::new();
+        for path in ctx.paths.iter() {
+            let unifile_path = path.join("unigrid.grids");
+            let Ok(unifile) = File::options().read(true).open(unifile_path) else {
+                buffered_backing_files.push(None);
+                continue;
+            };
+            buffered_backing_files.push(Some(BufReader::new(unifile)));
+        }
+        ctx.unigrid_backing_files = buffered_backing_files;
         ctx
     }
 
@@ -296,23 +299,39 @@ impl Context for Plain {
 
     /// Access grid resources by identifier
     fn get_grid(&self, name: &str) -> Result<Arc<BaseGrid>, Error> {
-        // The GridCollection does all the hard work here, but accessing GRIDS,
-        // which is a mutable static is (mis-)diagnosed as unsafe by the compiler,
-        // even though the mutable static is behind a Mutex guard
-        GRIDS
+        // First search among the run time loaded grids
+        if let Ok(grid) = GLOBALLY_ALLOCATED_GRIDS
             .get_or_init(init_grids)
             .lock()
             .unwrap()
-            .get_grid(name, &self.paths, &self.unigrids)
+            .get_grid(name, &self.paths) {
+                return Ok(grid);
+        }
+
+        // Then among the unigrids
+        for unigrid in self.unigrid_elements.iter().rev() {
+            // TODO!!! Check whether rev is needed here! paths may start with local
+            if let Some(grid) = unigrid.get(name) {
+                return Ok(grid.clone());
+            }
+        }
+
+        // Not found
+        Err(Error::NotFound(name.to_string(), ": Grid".to_string()))
     }
 
     #[expect(unused_variables)]
     fn get_grid_values(&self, grid: &BaseGrid, index: &[usize], buf: &mut [Coor4D]) -> usize {
-        // ********** TODO *********** læs direkte i filerne
-        if grid.grid.is_some() {
-            return 0;
+        // TODO: Her skal bl.a. bruges noget i retning af
+        // let (level, offset) = match self.grid {
+        //     GridSource::External{level, offset} => (level, offset),
+        //     GridSource::Internal{..} => (0, 0)
+        // };
+
+        match &grid.grid {
+            GridSource::External { level, offset } => 0,
+            GridSource::Internal { values } => 0,
         }
-        0
     }
 }
 

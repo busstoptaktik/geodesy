@@ -85,7 +85,6 @@ mod ops {
 /// Elements for handling grids
 pub mod grd {
     pub use crate::grid::BaseGrid;
-    pub use crate::grid::ExternalGridLocator;
     pub use crate::grid::Grid;
     pub use crate::grid::gravsoft_grid_reader;
     pub use crate::grid::grids_at;

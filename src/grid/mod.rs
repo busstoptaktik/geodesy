@@ -17,17 +17,18 @@ pub trait Grid: Debug + Sync + Send {
     /// Mostly intended for debugging purposes
     fn which_subgrid_contains(&self, coord: Coor4D, margin: f64) -> Option<String>;
 
-    /// Returns `None` if the grid or any of its sub-grids do not contain the point.
+    /// Returns `None` if neither the grid, nor any of its sub-grids contain the point.
     /// **Contain** is in the sense of the `contains` method, i.e. the point is
     /// considered contained if it is inside a margin of `margin` grid units of
     /// the grid.
     fn at(&self, ctx: Option<&dyn Context>, at: &Coor4D, margin: f64) -> Option<Coor4D>;
 }
 
-#[derive(Debug, Default, Clone)]
-pub struct ExternalGridLocator {
-    pub level: usize,
-    pub offset: usize,
+#[derive(Debug, Clone)]
+pub enum GridSource {
+    // if external, we ask the context for the value
+    External { level: usize, offset: usize },
+    Internal { values: Vec<f32> },
 }
 
 /// Grid characteristics and interpolation.
@@ -37,7 +38,7 @@ pub struct ExternalGridLocator {
 ///
 /// In principle grid format agnostic, but includes a parser for
 /// geodetic grids in the Gravsoft format.
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Clone)]
 pub struct BaseGrid {
     pub name: String,
     pub lat_n: f64, // Latitude of the first (typically northernmost) row of the grid
@@ -49,8 +50,7 @@ pub struct BaseGrid {
     pub rows: usize,
     pub cols: usize,
     pub bands: usize,
-    pub external: Option<ExternalGridLocator>, // if external, we ask the context for the value
-    pub grid: Option<Vec<f32>>, // May be `None` in cases where the Context provides access to an externally stored grid
+    pub grid: GridSource,
     pub subgrids: Vec<BaseGrid>, // Not optional, because external grids can have subgrids too
 }
 
@@ -125,12 +125,11 @@ impl Grid for BaseGrid {
         if !self.contains(at, margin, true) {
             return None;
         };
-        let external = self.external.is_some();
-        if external && ctx.is_none() {
+        if let GridSource::External { .. } = self.grid
+            && ctx.is_none()
+        {
             return None;
         }
-
-        let grid = &self.grid;
 
         // For now, we support top-to-bottom, left-to-right scan order only.
         // This is the common case for most non-block grid formats, with
@@ -152,18 +151,13 @@ impl Grid for BaseGrid {
         let col = col.clamp(0_i64, (self.cols - 2) as i64) as usize;
         let row = row.clamp(1_i64, (self.rows - 1) as i64) as usize;
 
-        let offset = if external {
-            self.external.as_ref()?.offset
-        } else {
-            0
-        };
         // Index of the first band element of each corner value
         #[rustfmt::skip]
         let (ll, lr, ul, ur) = (
-            offset + self.bands * (self.cols *  row      + col    ),
-            offset + self.bands * (self.cols *  row      + col + 1),
-            offset + self.bands * (self.cols * (row - 1) + col    ),
-            offset + self.bands * (self.cols * (row - 1) + col + 1),
+            self.bands * (self.cols *  row      + col    ),
+            self.bands * (self.cols *  row      + col + 1),
+            self.bands * (self.cols * (row - 1) + col    ),
+            self.bands * (self.cols * (row - 1) + col + 1),
         );
 
         let ll_lon = self.lon_w + col as f64 * dlon;
@@ -185,17 +179,25 @@ impl Grid for BaseGrid {
         const LR: usize = 1;
         const UL: usize = 2;
         const UR: usize = 3;
-        if external {
-            ctx.unwrap()
-                .get_grid_values(self, &corner_indices, &mut corners);
-        } else {
-            let grid = grid.as_ref().unwrap();
-            for i in 0..maxbands {
-                corners[LL][i] = grid[ll + i] as f64;
-                corners[LR][i] = grid[lr + i] as f64;
-                corners[UL][i] = grid[ul + i] as f64;
-                corners[UR][i] = grid[ur + i] as f64;
+
+        let n = match &self.grid {
+            GridSource::External { .. } => {
+                ctx.unwrap()
+                    .get_grid_values(self, &corner_indices, &mut corners)
             }
+            GridSource::Internal { values } => {
+                for i in 0..maxbands {
+                    corners[LL][i] = values[ll + i] as f64;
+                    corners[LR][i] = values[lr + i] as f64;
+                    corners[UL][i] = values[ul + i] as f64;
+                    corners[UR][i] = values[ur + i] as f64;
+                }
+                4
+            }
+        };
+
+        if n != 4 {
+            return None;
         }
 
         // Interpolate (or extrapolate, if we're outside of the physical grid)
@@ -223,24 +225,9 @@ impl Grid for BaseGrid {
 }
 
 impl BaseGrid {
-    pub fn new(
-        name: &str,
-        header: &[f64],
-        grid: Option<&[f32]>,
-        external: Option<ExternalGridLocator>,
-    ) -> Result<Self, Error> {
+    pub fn new(name: &str, header: &[f64], grid: GridSource) -> Result<Self, Error> {
         if header.len() < 7 {
             return Err(Error::General("Malformed header"));
-        }
-        if grid.is_none() && external.is_none() {
-            return Err(Error::General(
-                "Need either a valid grid or a valid external grid locator",
-            ));
-        }
-        if grid.is_some() && external.is_some() {
-            return Err(Error::General(
-                "Grid and external grid locator are mutually exclusive",
-            ));
         }
 
         let lat_n = header[0];
@@ -255,14 +242,17 @@ impl BaseGrid {
         let rows = ((lat_s - lat_n) / dlat + 1.5).floor() as usize;
         let cols = ((lon_e - lon_w) / dlon + 1.5).floor() as usize;
         let elements = rows * cols * bands;
-
-        let internal = grid.is_some();
-        if elements == 0 || (internal && elements > grid.unwrap().len()) || bands < 1 {
+        if elements == 0 || bands < 1 {
             return Err(Error::General("Malformed grid"));
         }
 
+        if let GridSource::Internal { values } = &grid {
+            if elements > values.len() {
+                return Err(Error::General("Malformed grid"));
+            }
+        }
+
         let subgrids = Vec::new();
-        let grid = grid.map(Vec::from);
 
         Ok(BaseGrid {
             name: name.to_string(),
@@ -275,15 +265,14 @@ impl BaseGrid {
             rows,
             cols,
             bands,
-            external,
             grid,
             subgrids,
         })
     }
 
     pub fn gravsoft(name: &str, buf: &[u8]) -> Result<Self, Error> {
-        let (header, grid) = gravsoft_grid_reader(buf)?;
-        BaseGrid::new(name, &header, Some(&grid), None)
+        let (header, values) = gravsoft_grid_reader(buf)?;
+        BaseGrid::new(name, &header, GridSource::Internal { values })
     }
 }
 
@@ -403,6 +392,14 @@ pub fn gravsoft_grid_reader(buf: &[u8]) -> Result<(Vec<f64>, Vec<f32>), Error> {
 /// Search the grids in slice order and return the first hit.
 /// If no hits are found, try once more, this time adding a half grid-cell
 /// margin around each grid
+///
+/// TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+/// grids_at starter med at søge i ctx->unigrid
+/// eller de regulære unigridreferencer bliver alle udhåndet som Arc<BaseGrid> (men ikke klonet, bare nyskabt: De fylder jo ikke mere end headerinformationen)
+/// unigridreferencer skal IKKE ligge i den globale GRIDS, da de kan være forskellige for forskellige contexts.
+/// Så måske skal konteksten bare starte med at lave og oplagre Arc<BaseGrid> - og så faktisk klone når hun bliver bedt om en kopi
+///
+/// Så get_grid i plain-ctx skal kigge i sine unigrids, før hun kalder GRIDS.get_grid - og returnerer en Arc-klon
 pub fn grids_at(
     ctx: Option<&dyn Context>,
     grids: &[Arc<BaseGrid>],
@@ -431,14 +428,13 @@ use std::fs::File;
 use std::io::{BufReader, Seek};
 pub fn read_unigrid_index(
     paths: &[std::path::PathBuf],
-) -> Result<Vec<BTreeMap<String, BaseGrid>>, Box<dyn std::error::Error>> {
+) -> Result<Vec<BTreeMap<String, Arc<BaseGrid>>>, Box<dyn std::error::Error>> {
     let mut index = Vec::new();
     // We can have unigrids in multiple locations. Typically local, user, group,
     // and global conventional directories, so we loop over all levels, and
     // accept that not all levels need to be populated
     for (level, path) in paths.iter().enumerate() {
         let mut grids = BTreeMap::new();
-
         // Open the index file, with buffering
         let uniindex_path = path.join("unigrid.index");
         let Ok(uniindex) = File::options().read(true).open(uniindex_path) else {
@@ -493,23 +489,23 @@ pub fn read_unigrid_index(
             let bands = gridreader.read_u64::<NativeEndian>()?;
             let offset = gridreader.read_u64::<NativeEndian>()? as usize;
 
-            let locator = ExternalGridLocator { level, offset };
+            let grid = GridSource::External { level, offset };
 
             // The BaseGrid constructor takes input as a Gravsoft style header
             let header = [lat_n, lat_s, lon_w, lon_e, dlat, dlon, bands as f64];
             let name = format!("{grid_id}[{grid_index}]");
-            let grid = BaseGrid::new(&name, &header, None, Some(locator))?;
+            let grid = BaseGrid::new(&name, &header, grid)?;
 
             // Parent grids (index==0) go into the grid collection, while subgrids
             // go into the `subgrids` vector of their parent
             if grid_index == 0 {
                 dbg!(&grid_id);
-                grids.insert(grid_id, grid);
+                grids.insert(grid_id, Arc::new(grid));
             } else {
                 let Some(parent) = grids.get_mut(&grid_id) else {
                     return Err("Parent grid not found for subgrid {index} of {grid_id:?}".into());
                 };
-                parent.subgrids.push(grid);
+                Arc::get_mut(parent).unwrap().subgrids.push(grid);
             }
         }
         index.push(grids);
@@ -562,7 +558,11 @@ mod tests {
         // But Since we use BaseGrid::new(...) to instantiate, we need a plain header here
         datum_header.swap(0, 1);
         datum_header[4] = -datum_header[4];
-        let datum = BaseGrid::new("hohoho", &datum_header, Some(&datum_grid), None)?;
+        let datum = BaseGrid::new(
+            "hohoho",
+            &datum_header,
+            GridSource::Internal { values: datum_grid },
+        )?;
 
         // Extrapolation
         let c = Coor4D::geo(100., 50., 0., 0.);
@@ -592,7 +592,11 @@ mod tests {
         let mut geoid_header = datum_header.clone();
         geoid_header[6] = 1.0; // 1 band
         let geoid_grid = Vec::from(GEOID);
-        let geoid = BaseGrid::new("geoid", &geoid_header, Some(&geoid_grid), None)?;
+        let geoid = BaseGrid::new(
+            "geoid",
+            &geoid_header,
+            GridSource::Internal { values: geoid_grid },
+        )?;
 
         let c = Coor4D::geo(58.75, 08.25, 0., 0.);
         assert!(!geoid.contains(&c, 0.0, true));
