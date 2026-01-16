@@ -1,9 +1,11 @@
+
 #[cfg(feature = "with_plain")]
 use crate::authoring::*;
 use crate::grid::GridSource;
 use std::{
-    fs::File, io::BufReader, path::PathBuf, sync::{Arc, Mutex, OnceLock}
+    fs::File, path::PathBuf, sync::{Arc, Mutex, OnceLock}
 };
+use memmap2::Mmap;
 
 // ----- T H E   P L A I N   C O N T E X T ---------------------------------------------
 
@@ -18,7 +20,7 @@ pub struct Plain {
     operators: BTreeMap<OpHandle, Op>,
     paths: Vec<std::path::PathBuf>,
     unigrid_elements: Vec<BTreeMap<String, Arc<BaseGrid>>>,
-    unigrid_backing_files: Vec<Option<BufReader<File>>>
+    memmapped_unigrids: Vec<Option<Mmap>>
 }
 
 // Helper for Plain: Provide grid access for all `Op`s
@@ -32,7 +34,7 @@ fn init_grids() -> Mutex<GridCollection> {
 
 struct GridCollection(BTreeMap<String, Arc<BaseGrid>>);
 impl GridCollection {
-    fn get_grid(
+    fn get_grid_from_global_collection(
         &mut self,
         name: &str,
         paths: &[PathBuf]
@@ -107,7 +109,7 @@ impl Default for Plain {
             paths.push(userpath);
         }
         let unigrid_elements = Vec::new();
-        let unigrid_backing_files = Vec::new();
+        let memmapped_unigrids = Vec::new();
 
         Plain {
             constructors,
@@ -115,7 +117,7 @@ impl Default for Plain {
             operators,
             paths,
             unigrid_elements,
-            unigrid_backing_files
+            memmapped_unigrids
         }
     }
 }
@@ -131,16 +133,16 @@ impl Context for Plain {
         };
         ctx.unigrid_elements = unigrids;
 
-        let mut buffered_backing_files = Vec::new();
+        let mut memmapped_unigrids = Vec::new();
         for path in ctx.paths.iter() {
             let unifile_path = path.join("unigrid.grids");
             let Ok(unifile) = File::options().read(true).open(unifile_path) else {
-                buffered_backing_files.push(None);
+                memmapped_unigrids.push(None);
                 continue;
             };
-            buffered_backing_files.push(Some(BufReader::new(unifile)));
+            memmapped_unigrids.push(unsafe{memmap2::Mmap::map(&unifile).ok()});
         }
-        ctx.unigrid_backing_files = buffered_backing_files;
+        ctx.memmapped_unigrids = memmapped_unigrids;
         ctx
     }
 
@@ -304,13 +306,12 @@ impl Context for Plain {
             .get_or_init(init_grids)
             .lock()
             .unwrap()
-            .get_grid(name, &self.paths) {
+            .get_grid_from_global_collection(name, &self.paths) {
                 return Ok(grid);
         }
 
         // Then among the unigrids
-        for unigrid in self.unigrid_elements.iter().rev() {
-            // TODO!!! Check whether rev is needed here! paths may start with local
+        for unigrid in self.unigrid_elements.iter() {
             if let Some(grid) = unigrid.get(name) {
                 return Ok(grid.clone());
             }
@@ -320,17 +321,37 @@ impl Context for Plain {
         Err(Error::NotFound(name.to_string(), ": Grid".to_string()))
     }
 
-    #[expect(unused_variables)]
-    fn get_grid_values(&self, grid: &BaseGrid, index: &[usize], buf: &mut [Coor4D]) -> usize {
-        // TODO: Her skal bl.a. bruges noget i retning af
-        // let (level, offset) = match self.grid {
-        //     GridSource::External{level, offset} => (level, offset),
-        //     GridSource::Internal{..} => (0, 0)
-        // };
+    fn get_grid_values(&self, grid: &BaseGrid, indices: &[usize], grid_values: &mut [Coor4D]) -> usize {
+        dbg!(&self.unigrid_elements);
+        dbg!(&self.memmapped_unigrids);
 
         match &grid.grid {
-            GridSource::External { level, offset } => 0,
-            GridSource::Internal { values } => 0,
+            GridSource::External { level, offset } => {
+                for (i, index) in indices.iter().enumerate() {
+                    let mut val = Coor4D::nan();
+                    if let Some(file) = &self.memmapped_unigrids[*level] {
+                        for j in 0..grid.bands.min(4) {
+                            let start = (index + j) * 4 + offset;
+                            if start > file.len() - 4 {
+                                // TODO: log message
+                                return 0;
+                            }
+                            let range = start..start + 4;
+                            val[j] = f32::from_le_bytes(file[range].try_into().unwrap()).into();
+                        }
+                    }
+                    grid_values[i] = val;
+                }
+                indices.len()
+            },
+            GridSource::Internal { values } => {
+                for (i, index) in indices.iter().enumerate() {
+                    for j in 0..grid.bands.min(4) {
+                        grid_values[i][j] = values[index+j].into()
+                    }
+                }
+                indices.len()
+            }
         }
     }
 }
@@ -455,8 +476,28 @@ mod tests {
         // Here, we only invoke reference counting in the GridCollection. The tests in
         // gridshift and deformation makes sure that the correct grids are actually
         // provided by GridCollection::get_grid()
-        let _op1 = ctx.op("gridshift grids=test")?;
-        let _op2 = ctx.op("gridshift grids=test_subset")?;
+        let _op1 = ctx.op("gridshift grids=unigrid_test")?;
+        let _op2 = ctx.op("gridshift grids=unigrid_test_subset")?;
+
+        let unigrid_test = ctx.get_grid("unigrid_test").unwrap();
+        // let test = ctx.get_grid("test").unwrap();
+        let test_point = Coor4D::geo(56f64, 12f64, 0., 0.);
+        let res = unigrid_test.at(Some(&ctx), &test_point, 0.).unwrap();
+
+        if let Ok(ellps) = Ellipsoid::named("GRS80") {
+            let d = ellps.distance(&test_point, &res.to_arcsec().to_radians());
+            dbg!(test_point.to_degrees(), res.to_arcsec(), d);
+            dbg!(test_point, res.to_arcsec().to_radians(), d);
+            assert!(d < 1e-3);
+        }
+
+        dbg!(test_point.to_arcsec());
+        dbg!(res.to_arcsec());
+        dbg!(ctx);
+        dbg!(&unigrid_test);
+        let ged = res.to_arcsec();
+        dbg!(ged);
+        assert!(1==2);
         Ok(())
     }
 }

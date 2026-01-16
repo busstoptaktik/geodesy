@@ -33,6 +33,7 @@ log = "0.4"
 thiserror = "1.0.50"
 float_eq = "1.0.0"
 byteorder = "1.5.0"
+memmap2 = "0.9.9"
 
 [dev-dependencies]
 # Needed for building doc-tests

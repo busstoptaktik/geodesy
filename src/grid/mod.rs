@@ -26,8 +26,18 @@ pub trait Grid: Debug + Sync + Send {
 
 #[derive(Debug, Clone)]
 pub enum GridSource {
-    // if external, we ask the context for the value
-    External { level: usize, offset: usize },
+    /// if external, we ask the context for the value
+    External {
+        /// The local, user, or global level
+        level: usize,
+        /// The offset from the top-of-file to the first byte of the grid-proper,
+        /// i.e. after the header. The offset given in the `unigrid.index` file is
+        /// the offset to the header, not of the grid-proper.
+        /// For unigrid files written strictly sequentially, the offset of the grid
+        /// will exceed the offset of the header by 64 bytes. This can, however,
+        /// not be counted on.
+        offset: usize
+    },
     Internal { values: Vec<f32> },
 }
 
@@ -151,7 +161,7 @@ impl Grid for BaseGrid {
         let col = col.clamp(0_i64, (self.cols - 2) as i64) as usize;
         let row = row.clamp(1_i64, (self.rows - 1) as i64) as usize;
 
-        // Index of the first band element of each corner value
+        // Linear array index of the first band element of each corner value
         #[rustfmt::skip]
         let (ll, lr, ul, ur) = (
             self.bands * (self.cols *  row      + col    ),
@@ -173,7 +183,7 @@ impl Grid for BaseGrid {
 
         // Collect the grid values for the corners of the grid cell containing
         // the point of interest
-        let mut corners = [Coor4D::origin(); 4];
+        let mut corners = [Coor4D::nan(); 4];
         let corner_indices = [ll, lr, ul, ur];
         const LL: usize = 0;
         const LR: usize = 1;
