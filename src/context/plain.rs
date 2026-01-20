@@ -1,11 +1,12 @@
-
 #[cfg(feature = "with_plain")]
 use crate::authoring::*;
 use crate::grid::GridSource;
-use std::{
-    fs::File, path::PathBuf, sync::{Arc, Mutex, OnceLock}
-};
 use memmap2::Mmap;
+use std::{
+    fs::File,
+    path::PathBuf,
+    sync::{Arc, Mutex, OnceLock},
+};
 
 // ----- T H E   P L A I N   C O N T E X T ---------------------------------------------
 
@@ -20,7 +21,7 @@ pub struct Plain {
     operators: BTreeMap<OpHandle, Op>,
     paths: Vec<std::path::PathBuf>,
     unigrid_elements: Vec<BTreeMap<String, Arc<BaseGrid>>>,
-    memmapped_unigrids: Vec<Option<Mmap>>
+    memmapped_unigrids: Vec<Option<Mmap>>,
 }
 
 // Helper for Plain: Provide grid access for all `Op`s
@@ -37,7 +38,7 @@ impl GridCollection {
     fn get_grid_from_global_collection(
         &mut self,
         name: &str,
-        paths: &[PathBuf]
+        paths: &[PathBuf],
     ) -> Result<Arc<BaseGrid>, Error> {
         // If the grid is already there, just return a reference clone
         if let Some(grid) = self.0.get(name) {
@@ -117,7 +118,7 @@ impl Default for Plain {
             operators,
             paths,
             unigrid_elements,
-            memmapped_unigrids
+            memmapped_unigrids,
         }
     }
 }
@@ -140,7 +141,7 @@ impl Context for Plain {
                 memmapped_unigrids.push(None);
                 continue;
             };
-            memmapped_unigrids.push(unsafe{memmap2::Mmap::map(&unifile).ok()});
+            memmapped_unigrids.push(unsafe { memmap2::Mmap::map(&unifile).ok() });
         }
         ctx.memmapped_unigrids = memmapped_unigrids;
         ctx
@@ -306,8 +307,9 @@ impl Context for Plain {
             .get_or_init(init_grids)
             .lock()
             .unwrap()
-            .get_grid_from_global_collection(name, &self.paths) {
-                return Ok(grid);
+            .get_grid_from_global_collection(name, &self.paths)
+        {
+            return Ok(grid);
         }
 
         // Then among the unigrids
@@ -321,10 +323,12 @@ impl Context for Plain {
         Err(Error::NotFound(name.to_string(), ": Grid".to_string()))
     }
 
-    fn get_grid_values(&self, grid: &BaseGrid, indices: &[usize], grid_values: &mut [Coor4D]) -> usize {
-        dbg!(&self.unigrid_elements);
-        dbg!(&self.memmapped_unigrids);
-
+    fn get_grid_values(
+        &self,
+        grid: &BaseGrid,
+        indices: &[usize],
+        grid_values: &mut [Coor4D],
+    ) -> usize {
         match &grid.grid {
             GridSource::External { level, offset } => {
                 for (i, index) in indices.iter().enumerate() {
@@ -343,11 +347,11 @@ impl Context for Plain {
                     grid_values[i] = val;
                 }
                 indices.len()
-            },
+            }
             GridSource::Internal { values } => {
                 for (i, index) in indices.iter().enumerate() {
                     for j in 0..grid.bands.min(4) {
-                        grid_values[i][j] = values[index+j].into()
+                        grid_values[i][j] = values[index + j].into()
                     }
                 }
                 indices.len()
@@ -471,33 +475,21 @@ mod tests {
 
     #[test]
     fn unigrid() -> Result<(), Error> {
-        let mut ctx = Plain::new();
+        let ctx = Plain::new();
 
-        // Here, we only invoke reference counting in the GridCollection. The tests in
-        // gridshift and deformation makes sure that the correct grids are actually
-        // provided by GridCollection::get_grid()
-        let _op1 = ctx.op("gridshift grids=unigrid_test")?;
-        let _op2 = ctx.op("gridshift grids=unigrid_test_subset")?;
-
-        let unigrid_test = ctx.get_grid("unigrid_test").unwrap();
+        let unigrid_test = ctx.get_grid("unigrid_test_datum").unwrap();
         // let test = ctx.get_grid("test").unwrap();
-        let test_point = Coor4D::geo(56f64, 12f64, 0., 0.);
+        let test_point = Coor4D::geo(56.1f64, 12.3f64, 0., 0.);
         let res = unigrid_test.at(Some(&ctx), &test_point, 0.).unwrap();
 
         if let Ok(ellps) = Ellipsoid::named("GRS80") {
-            let d = ellps.distance(&test_point, &res.to_arcsec().to_radians());
-            dbg!(test_point.to_degrees(), res.to_arcsec(), d);
-            dbg!(test_point, res.to_arcsec().to_radians(), d);
-            assert!(d < 1e-3);
+            // Numerically the grid value IN ARCSEC should be identical to the grid location
+            // IN DEGREES. Hence, to make the test_point (which is a coordinate) comparable
+            // to res, which is given in arcsec, we must treat res as DEGREES, and convert to
+            // radians
+            let d = ellps.distance(&test_point, &res.to_radians());
+            assert!(d < 1e-15);
         }
-
-        dbg!(test_point.to_arcsec());
-        dbg!(res.to_arcsec());
-        dbg!(ctx);
-        dbg!(&unigrid_test);
-        let ged = res.to_arcsec();
-        dbg!(ged);
-        assert!(1==2);
         Ok(())
     }
 }

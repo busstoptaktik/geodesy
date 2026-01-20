@@ -72,7 +72,12 @@ pub trait Context {
     /// Get grid value by index (helping [`BaseGrid`](crate::grid::BaseGrid)
     /// access externally stored grid collections)
     #[expect(unused_variables)]
-    fn get_grid_values(&self, grid: &BaseGrid, index: &[usize], grid_values: &mut [Coor4D]) -> usize {
+    fn get_grid_values(
+        &self,
+        grid: &BaseGrid,
+        index: &[usize],
+        grid_values: &mut [Coor4D],
+    ) -> usize {
         0
     }
 }
