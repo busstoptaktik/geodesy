@@ -3,6 +3,7 @@
 pub mod ntv2;
 use crate::prelude::*;
 use std::{fmt::Debug, io::BufRead, sync::Arc};
+type UnigridIndex = BTreeMap<String, Arc<BaseGrid>>;
 
 pub trait Grid: Debug + Sync + Send {
     fn bands(&self) -> usize;
@@ -36,9 +37,11 @@ pub enum GridSource {
         /// For unigrid files written strictly sequentially, the offset of the grid
         /// will exceed the offset of the header by 64 bytes. This can, however,
         /// not be counted on.
-        offset: usize
+        offset: usize,
     },
-    Internal { values: Vec<f32> },
+    Internal {
+        values: Vec<f32>,
+    },
 }
 
 /// Grid characteristics and interpolation.
@@ -280,6 +283,14 @@ impl BaseGrid {
         })
     }
 
+    pub fn is_projected(&self) -> bool {
+        // If any boundary is outside of [-720; 720], the grid must (by a wide margin) be
+        // in projected coordinates
+        [self.lat_n, self.lat_s, self.lon_w, self.lon_e]
+            .iter()
+            .any(|h| h.abs() > 7.0)
+    }
+
     pub fn gravsoft(name: &str, buf: &[u8]) -> Result<Self, Error> {
         let (header, values) = gravsoft_grid_reader(buf)?;
         BaseGrid::new(name, &header, GridSource::Internal { values })
@@ -311,7 +322,6 @@ fn normalize_gravsoft_grid_values(header: &mut [f64], grid: &mut [f32]) {
     // and in latitude/longitude order. Swap them and convert into radians.
     if bands == 2 {
         for i in 0..grid.len() {
-            grid[i] = (grid[i] / 3600.0).to_radians();
             if i % 2 == 1 {
                 grid.swap(i, i - 1);
             }
@@ -438,7 +448,7 @@ use std::fs::File;
 use std::io::{BufReader, Seek};
 pub fn read_unigrid_index(
     paths: &[std::path::PathBuf],
-) -> Result<Vec<BTreeMap<String, Arc<BaseGrid>>>, Box<dyn std::error::Error>> {
+) -> Result<Vec<UnigridIndex>, Box<dyn std::error::Error>> {
     let mut index = Vec::new();
     // We can have unigrids in multiple locations. Typically local, user, group,
     // and global conventional directories, so we loop over all levels, and
@@ -509,7 +519,6 @@ pub fn read_unigrid_index(
             // Parent grids (index==0) go into the grid collection, while subgrids
             // go into the `subgrids` vector of their parent
             if grid_index == 0 {
-                dbg!(&grid_id);
                 grids.insert(grid_id, Arc::new(grid));
             } else {
                 let Some(parent) = grids.get_mut(&grid_id) else {
@@ -576,27 +585,27 @@ mod tests {
 
         // Extrapolation
         let c = Coor4D::geo(100., 50., 0., 0.);
-        // ...with output converted back to arcsec
-        let d = datum.at(None, &c, 100.0).unwrap().to_arcsec();
+        // ...with output in arcsec
+        let d = datum.at(None, &c, 100.0).unwrap();
 
         // The grid is constructed to make the position in degrees equal to
         // the extrapolation value in arcsec.
         // Even for this case of extreme extrapolation, we expect the difference
-        // to be less than 1/10_000 of an arcsec (i.e. approx 3 mm)
-        assert!(c.to_degrees().hypot2(&d) < 1e-4);
+        // to be insignificant
+        assert!(c.to_degrees().hypot2(&d) < 1e-10);
         // Spelled out
-        assert!((50.0 - d[0]).hypot(100.0 - d[1]) < 1e-4);
+        assert!((50.0 - d[0]).hypot(100.0 - d[1]) < 1e-10);
 
         // Interpolation
         let c = Coor4D::geo(55.06, 12.03, 0., 0.);
         // Check that we're not extrapolating
         assert!(datum.contains(&c, 0.0, true));
-        // ...with output converted back to arcsec
-        let d = datum.at(None, &c, 0.0).unwrap().to_arcsec();
+        // ...with output in arcsec
+        let d = datum.at(None, &c, 0.0).unwrap();
         // We can do slightly better for interpolation than for extrapolation,
         // but the grid values are f32, so we have only approx 7 significant
         // figures...
-        assert!(c.to_degrees().hypot2(&d) < 1e-5);
+        assert!(c.to_degrees().hypot2(&d) < 1e-12);
 
         // Create a geoid grid (1 band)
         let mut geoid_header = datum_header.clone();

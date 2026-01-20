@@ -107,10 +107,8 @@ fn parse_subgrid_grid(
         let lat_offset = offset + NODE_LAT_CORRECTION;
         let lon_offset = offset + NODE_LON_CORRECTION;
 
-        let mut lat_corr = parser.get_f32(lat_offset) as f64;
-        let mut lon_corr = -parser.get_f32(lon_offset) as f64;
-        lat_corr = (lat_corr / 3600.).to_radians();
-        lon_corr = (lon_corr / 3600.).to_radians();
+        let lat_corr = parser.get_f32(lat_offset) as f64;
+        let lon_corr = -parser.get_f32(lon_offset) as f64;
         grid.push(lon_corr as f32);
         grid.push(lat_corr as f32);
     }

@@ -31,6 +31,7 @@ fn fwd(op: &Op, ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
             }
 
             // Datum shift
+            let d = d.arcsec_to_radians();
             coord[0] += d[0];
             coord[1] += d[1];
             operands.set_coord(i, &coord);
@@ -74,10 +75,11 @@ fn inv(op: &Op, ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
             }
 
             // Inverse case datum shift - iteration needed
+            let t = t.arcsec_to_radians();
             let mut t = coord - t;
             for _ in 0..10 {
                 if let Some(t2) = grids_at(ctx, grids, &t, use_null_grid) {
-                    let d = t - coord + t2;
+                    let d = t - coord + t2.arcsec_to_radians();
                     t = t - d;
                     if d[0].hypot(d[1]) < 1e-12 {
                         operands.set_coord(i, &t);

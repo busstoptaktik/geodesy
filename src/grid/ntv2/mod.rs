@@ -96,7 +96,7 @@ pub(crate) fn ntv2_basegrid(buf: &[u8]) -> Result<BaseGrid, Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::coord::Coor4D;
+    use crate::coord::{Coor4D, CoordinateTuple};
     use crate::grid::Grid;
     use float_eq::assert_float_eq;
 
@@ -130,18 +130,14 @@ mod tests {
         // Followed by
         //     eva (39.99882421665721-40)*3600
         //     eva (-0.001203127834531996)*3600
-        let v = basegrid.at(None, &next, 0.0).unwrap();
-        let dlon = v[0].to_degrees() * 3600.0;
-        let dlat = v[1].to_degrees() * 3600.0;
+        let (dlon, dlat) = basegrid.at(None, &next, 0.0).unwrap().xy();
         assert_float_eq!(dlat, -4.2328200340, abs_all <= 1e-6);
         assert_float_eq!(dlon, -4.3312602043, abs_all <= 1e-6);
 
         // Interpolation to the south-eastern corner, i.e. the
         // set of corrections placed physically first in the
         // file
-        let v = basegrid.at(None, &first, 1.0).unwrap();
-        let dlon = v[0].to_degrees() * 3600.0;
-        let dlat = v[1].to_degrees() * 3600.0;
+        let (dlon, dlat) = basegrid.at(None, &first, 1.0).unwrap().xy();
         assert_float_eq!(dlat, -4.1843700409, abs_all <= 1e-6);
         assert_float_eq!(dlon, -3.9602699280, abs_all <= 1e-6);
 
