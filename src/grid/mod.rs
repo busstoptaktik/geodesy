@@ -54,6 +54,7 @@ pub enum GridSource {
 #[derive(Debug, Clone)]
 pub struct BaseGrid {
     pub name: String,
+    pub header: GridHeader,
     pub lat_n: f64, // Latitude of the first (typically northernmost) row of the grid
     pub lat_s: f64, // Latitude of the last (typically southernmost) row of the grid
     pub lon_w: f64, // Longitude of the first (typically westernmost) column of each row
@@ -65,6 +66,20 @@ pub struct BaseGrid {
     pub bands: usize,
     pub grid: GridSource,
     pub subgrids: Vec<BaseGrid>, // Not optional, because external grids can have subgrids too
+}
+
+/// Grid metadata: bounding box, quantization, size, dimension
+#[derive(Debug, Default, Clone)]
+pub struct GridHeader {
+    pub lat_n: f64, // Latitude of the first (typically northernmost) row of the grid
+    pub lat_s: f64, // Latitude of the last (typically southernmost) row of the grid
+    pub lon_w: f64, // Longitude of the first (typically westernmost) column of each row
+    pub lon_e: f64, // Longitude of the last (typically easternmost) column of each row
+    pub dlat: f64,  // Signed distance between two consecutive rows
+    pub dlon: f64,  // Signed distance between two consecutive columns
+    pub rows: usize,
+    pub cols: usize,
+    pub bands: usize,
 }
 
 impl Grid for BaseGrid {
@@ -252,8 +267,8 @@ impl BaseGrid {
         let dlon = header[5].copysign(lon_e - lon_w);
 
         let bands = header[6] as usize;
-        let rows = ((lat_s - lat_n) / dlat + 1.5).floor() as usize;
-        let cols = ((lon_e - lon_w) / dlon + 1.5).floor() as usize;
+        let rows = (((lat_s - lat_n) / dlat).abs() + 1.5).floor() as usize;
+        let cols = (((lon_e - lon_w) / dlon).abs() + 1.5).floor() as usize;
         let elements = rows * cols * bands;
         if elements == 0 || bands < 1 {
             return Err(Error::General("Malformed grid"));
@@ -269,6 +284,49 @@ impl BaseGrid {
 
         Ok(BaseGrid {
             name: name.to_string(),
+            header: GridHeader::default(),
+            lat_n,
+            lat_s,
+            lon_w,
+            lon_e,
+            dlat,
+            dlon,
+            rows,
+            cols,
+            bands,
+            grid,
+            subgrids,
+        })
+    }
+
+    pub fn new_new(name: &str, header: GridHeader, grid: GridSource) -> Result<Self, Error> {
+        let lat_n = header.lat_n;
+        let lat_s = header.lat_s;
+        let lon_w = header.lon_w;
+        let lon_e = header.lon_e;
+
+        let dlat = header.dlat.copysign(lat_s - lat_n);
+        let dlon = header.dlon.copysign(lon_e - lon_w);
+
+        let bands = header.bands;
+        let rows = header.rows;
+        let cols = header.cols;
+        let elements = rows * cols * bands;
+        if elements == 0 || bands < 1 {
+            return Err(Error::General("Malformed grid"));
+        }
+
+        if let GridSource::Internal { values } = &grid {
+            if elements > values.len() {
+                return Err(Error::General("Malformed grid"));
+            }
+        }
+
+        let subgrids = Vec::new();
+
+        Ok(BaseGrid {
+            name: name.to_string(),
+            header,
             lat_n,
             lat_s,
             lon_w,

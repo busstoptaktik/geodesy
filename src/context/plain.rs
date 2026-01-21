@@ -64,7 +64,7 @@ impl GridCollection {
             if ext == "gsb" {
                 self.0.insert(
                     name.to_string(),
-                    Arc::new(crate::grid::ntv2::ntv2_basegrid(&grid)?),
+                    Arc::new(crate::grid::ntv2::ntv2_grid(&grid)?),
                 );
             } else {
                 self.0
