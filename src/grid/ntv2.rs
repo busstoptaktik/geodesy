@@ -186,7 +186,7 @@ fn parse_ntv2_grid(
 
     let grid_start = head_offset + HEADER_SIZE;
     let grid = parse_ntv2_grid_nodes(parser, grid_start, header.rows * header.cols)?;
-    let base_grid = BaseGrid::new_new(
+    let base_grid = BaseGrid::new(
         &name,
         header,
         crate::grid::GridSource::Internal { values: grid },
@@ -300,8 +300,8 @@ mod tests {
         assert_eq!(values.len(), 1591 * 2);
 
         assert_eq!(basegrid.bands(), 2);
-        assert!(basegrid.contains(&barc, 0.5, true));
-        assert!(!basegrid.contains(&ldn, 0.5, true));
+        assert!(basegrid.contains(barc, 0.5, true));
+        assert!(!basegrid.contains(ldn, 0.5, true));
 
         // Interpolation to a point on the southern boundary
         // expected values from
@@ -309,14 +309,14 @@ mod tests {
         // Followed by
         //     eva (39.99882421665721-40)*3600
         //     eva (-0.001203127834531996)*3600
-        let (dlon, dlat) = basegrid.at(None, &next, 0.0).unwrap().xy();
+        let (dlon, dlat) = basegrid.at(None, next, 0.0).unwrap().xy();
         assert_float_eq!(dlat, -4.2328200340, abs_all <= 1e-6);
         assert_float_eq!(dlon, -4.3312602043, abs_all <= 1e-6);
 
         // Interpolation to the south-eastern corner, i.e. the
         // set of corrections placed physically first in the
         // file
-        let (dlon, dlat) = basegrid.at(None, &first, 1.0).unwrap().xy();
+        let (dlon, dlat) = basegrid.at(None, first, 1.0).unwrap().xy();
         assert_float_eq!(dlat, -4.1843700409, abs_all <= 1e-6);
         assert_float_eq!(dlon, -3.9602699280, abs_all <= 1e-6);
 

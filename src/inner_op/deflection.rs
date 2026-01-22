@@ -37,19 +37,19 @@ fn fwd(op: &Op, ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         // The longitude step corresponding to a 1 m linear step along the local parallel
         let dlon = (lat.cos() * ellps.prime_vertical_radius_of_curvature(lat)).recip();
 
-        let Some(origin) = grids_at(ctx, grids, &coord, false) else {
+        let Some(origin) = grids_at(ctx, grids, coord, false) else {
             operands.set_coord(i, &Coor4D::nan());
             continue;
         };
 
         coord[1] += dlat;
-        let Some(lat_1) = grids_at(ctx, grids, &coord, false) else {
+        let Some(lat_1) = grids_at(ctx, grids, coord, false) else {
             operands.set_coord(i, &Coor4D::nan());
             continue;
         };
         coord[1] = lat;
         coord[0] += dlon;
-        let Some(lon_1) = grids_at(ctx, grids, &coord, false) else {
+        let Some(lon_1) = grids_at(ctx, grids, coord, false) else {
             operands.set_coord(i, &Coor4D::nan());
             continue;
         };

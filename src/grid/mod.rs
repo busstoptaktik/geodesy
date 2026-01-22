@@ -1,9 +1,10 @@
 //! Grid characteristics and interpolation.
 
+pub mod gravsoft;
 pub mod ntv2;
+pub mod unigrid;
 use crate::prelude::*;
-use std::{fmt::Debug, io::BufRead, sync::Arc};
-type UnigridIndex = BTreeMap<String, Arc<BaseGrid>>;
+use std::{fmt::Debug, sync::Arc};
 
 pub trait Grid: Debug + Sync + Send {
     fn bands(&self) -> usize;
@@ -12,7 +13,7 @@ pub trait Grid: Debug + Sync + Send {
     /// If `all_inclusive==true`, a point is considered contained if it is on any
     /// of the grid borders. Otherwise only the westmost and southernmost border
     /// is considered to be within.
-    fn contains(&self, coord: &Coor4D, margin: f64, all_inclusive: bool) -> bool;
+    fn contains(&self, coord: Coor4D, margin: f64, all_inclusive: bool) -> bool;
 
     /// Return the name of the subgrid containing `coord` or, `None` if none do.
     /// Mostly intended for debugging purposes
@@ -22,7 +23,7 @@ pub trait Grid: Debug + Sync + Send {
     /// **Contain** is in the sense of the `contains` method, i.e. the point is
     /// considered contained if it is inside a margin of `margin` grid units of
     /// the grid.
-    fn at(&self, ctx: Option<&dyn Context>, at: &Coor4D, margin: f64) -> Option<Coor4D>;
+    fn at(&self, ctx: Option<&dyn Context>, at: Coor4D, margin: f64) -> Option<Coor4D>;
 }
 
 #[derive(Debug, Clone)]
@@ -46,7 +47,7 @@ pub enum GridSource {
 
 /// Grid characteristics and interpolation.
 ///
-/// The actual grid may be part of the `BaseGrid` struct, or
+/// The actual grid may be part of the `GridSource` struct, or
 /// provided externally (presumably by a [Context](crate::context::Context)).
 ///
 /// In principle grid format agnostic, but includes a parser for
@@ -55,17 +56,50 @@ pub enum GridSource {
 pub struct BaseGrid {
     pub name: String,
     pub header: GridHeader,
-    pub lat_n: f64, // Latitude of the first (typically northernmost) row of the grid
-    pub lat_s: f64, // Latitude of the last (typically southernmost) row of the grid
-    pub lon_w: f64, // Longitude of the first (typically westernmost) column of each row
-    pub lon_e: f64, // Longitude of the last (typically easternmost) column of each row
-    pub dlat: f64,  // Signed distance between two consecutive rows
-    pub dlon: f64,  // Signed distance between two consecutive columns
-    pub rows: usize,
-    pub cols: usize,
-    pub bands: usize,
+    // pub lat_n: f64, // Latitude of the first (typically northernmost) row of the grid
+    // pub lat_s: f64, // Latitude of the last (typically southernmost) row of the grid
     pub grid: GridSource,
     pub subgrids: Vec<BaseGrid>, // Not optional, because external grids can have subgrids too
+}
+
+impl BaseGrid {
+    pub fn new(name: &str, header: GridHeader, grid: GridSource) -> Result<Self, Error> {
+        let bands = header.bands;
+        let rows = header.rows;
+        let cols = header.cols;
+        let elements = rows * cols * bands;
+        if elements == 0 || bands < 1 {
+            return Err(Error::General("Malformed grid - A"));
+        }
+
+        if let GridSource::Internal { values } = &grid {
+            if elements > values.len() {
+                return Err(Error::General("Malformed grid - B"));
+            }
+        }
+
+        let subgrids = Vec::new();
+
+        Ok(BaseGrid {
+            name: name.to_string(),
+            header,
+            grid,
+            subgrids,
+        })
+    }
+
+    pub fn is_projected(&self) -> bool {
+        // If any boundary is outside of [-720; 720], the grid must (by a wide margin) be
+        // in projected coordinates
+        [
+            self.header.lat_n,
+            self.header.lat_s,
+            self.header.lon_w,
+            self.header.lon_e,
+        ]
+        .iter()
+        .any(|h| h.abs() > 7.0)
+    }
 }
 
 /// Grid metadata: bounding box, quantization, size, dimension
@@ -82,26 +116,65 @@ pub struct GridHeader {
     pub bands: usize,
 }
 
+impl GridHeader {
+    pub fn new(
+        n: f64,
+        s: f64,
+        w: f64,
+        e: f64,
+        dlat: f64,
+        dlon: f64,
+        bands: usize,
+    ) -> Result<Self, Error> {
+        let lat_n = n;
+        let lat_s = s;
+        let lon_w = w;
+        let lon_e = e;
+
+        let dlat = dlat.copysign(lat_s - lat_n);
+        let dlon = dlon.copysign(lon_e - lon_w);
+
+        let rows = (((lat_s - lat_n) / dlat).abs() + 1.5).floor() as usize;
+        let cols = (((lon_e - lon_w) / dlon).abs() + 1.5).floor() as usize;
+        let elements = rows * cols * bands;
+        if elements == 0 || bands < 1 {
+            return Err(Error::General("Malformed grid"));
+        }
+
+        Ok(GridHeader {
+            lat_n,
+            lat_s,
+            lon_w,
+            lon_e,
+            dlat,
+            dlon,
+            rows,
+            cols,
+            bands,
+        })
+    }
+}
+
 impl Grid for BaseGrid {
     fn bands(&self) -> usize {
-        self.bands
+        self.header.bands
     }
 
     /// Determine whether a given coordinate falls within the grid boundaries + margin.
     /// "On the boundary" qualifies as within for westernmost and southernmost, or for
     /// all boundaries if `all_inclusive==true`.
-    fn contains(&self, position: &Coor4D, margin: f64, all_inclusive: bool) -> bool {
+    fn contains(&self, position: Coor4D, margin: f64, all_inclusive: bool) -> bool {
         let (lon, lat) = position.xy();
 
         // We start by assuming that the last row (latitude) is the southernmost
-        let mut lat_min = self.lat_s;
-        let mut lat_max = self.lat_n;
+        let mut lat_min = self.header.lat_s;
+        let mut lat_max = self.header.lat_n;
         // If it's not, we swap
-        if self.dlat > 0. {
+        if self.header.dlat > 0. {
             (lat_min, lat_max) = (lat_max, lat_min);
         }
 
-        let lat_grace = margin * self.dlat.abs();
+        let lat_grace = margin * self.header.dlat.abs();
         lat_min -= lat_grace;
         lat_max += lat_grace;
         if lat != lat.clamp(lat_min, lat_max) {
@@ -109,15 +182,15 @@ impl Grid for BaseGrid {
         }
 
         // The default assumption is the other way round for columns (longitudes)
-        let mut lon_min = self.lon_w;
-        let mut lon_max = self.lon_e;
+        let mut lon_min = self.header.lon_w;
+        let mut lon_max = self.header.lon_e;
 
         // If it's not, we swap
-        if self.dlon < 0. {
+        if self.header.dlon < 0. {
             (lon_min, lon_max) = (lon_max, lon_min);
         }
 
-        let lon_grace = margin * self.dlon.abs();
+        let lon_grace = margin * self.header.dlon.abs();
         lon_min -= lon_grace;
         lon_max += lon_grace;
         if lon != lon.clamp(lon_min, lon_max) {
@@ -133,337 +206,160 @@ impl Grid for BaseGrid {
     }
 
     fn which_subgrid_contains(&self, coord: Coor4D, margin: f64) -> Option<String> {
-        if !self.contains(&coord, margin.max(1e-12), true) {
+        if !self.contains(coord, margin.max(1e-12), true) {
             return None;
         }
         for grid in self.subgrids.iter().rev() {
-            if grid.contains(&coord, margin, false) {
+            if grid.contains(coord, margin, false) {
                 return Some(grid.name.clone());
             }
         }
         Some(self.name.clone())
     }
 
-    // Since we store the entire grid in a single vector, the interpolation
-    // routine here looks strongly like a case of "writing Fortran 77 in Rust".
-    // It is, however, one of the cases where a more extensive use of abstractions
-    // leads to a significantly larger code base, much harder to maintain and
-    // comprehend.
-    fn at(&self, ctx: Option<&dyn Context>, at: &Coor4D, margin: f64) -> Option<Coor4D> {
+    fn at(&self, ctx: Option<&dyn Context>, at: Coor4D, margin: f64) -> Option<Coor4D> {
+        // If we're outside of the main grid, there is no chance
+        // we're inside of any sub-grid
         if !self.contains(at, margin, true) {
             return None;
         };
+
+        // We cannot handle unigrids without Context support
         if let GridSource::External { .. } = self.grid
             && ctx.is_none()
         {
             return None;
         }
 
-        // For now, we support top-to-bottom, left-to-right scan order only.
-        // This is the common case for most non-block grid formats, with
-        // NTv2 the odd man out. But since we normalize the NTv2 scan order
-        // during parsing, we just cruise along here
-        let dlat = self.dlat.abs();
-        let dlon = self.dlon.abs();
-
-        // The interpolation coordinate relative to the grid origin
-        let rlon = at[0] - self.lon_w;
-        let rlat = self.lat_n - at[1];
-
-        // The (row, column) of the lower left node of the grid cell containing
-        // the interpolation coordinate - or, in the case of extrapolation:
-        // the nearest cell inside the grid.
-        let row = (rlat / dlat).ceil() as i64;
-        let col = (rlon / dlon).floor() as i64;
-
-        let col = col.clamp(0_i64, (self.cols - 2) as i64) as usize;
-        let row = row.clamp(1_i64, (self.rows - 1) as i64) as usize;
-
-        // Linear array index of the first band element of each corner value
-        #[rustfmt::skip]
-        let (ll, lr, ul, ur) = (
-            self.bands * (self.cols *  row      + col    ),
-            self.bands * (self.cols *  row      + col + 1),
-            self.bands * (self.cols * (row - 1) + col    ),
-            self.bands * (self.cols * (row - 1) + col + 1),
-        );
-
-        let ll_lon = self.lon_w + col as f64 * dlon;
-        let ll_lat = self.lat_n - row as f64 * dlat;
-
-        // Cell relative, cell unit coordinates in a right handed CS
-        let rlon = (at[0] - ll_lon) / dlon;
-        let rlat = (at[1] - ll_lat) / dlat;
-
-        // We cannot return more than 4 bands in a Coor4D,
-        // so we ignore any exceeding bands
-        let maxbands = self.bands.min(4);
-
-        // Collect the grid values for the corners of the grid cell containing
-        // the point of interest
-        let mut corners = [Coor4D::nan(); 4];
-        let corner_indices = [ll, lr, ul, ur];
-        const LL: usize = 0;
-        const LR: usize = 1;
-        const UL: usize = 2;
-        const UR: usize = 3;
-
-        let n = match &self.grid {
-            GridSource::External { .. } => {
-                ctx.unwrap()
-                    .get_grid_values(self, &corner_indices, &mut corners)
+        // Locate the relevant sub-grid (if any)
+        for subgrid in &self.subgrids {
+            if subgrid.contains(at, margin, false) {
+                return interpolate(subgrid, ctx, at, 0.0);
             }
-            GridSource::Internal { values } => {
-                for i in 0..maxbands {
-                    corners[LL][i] = values[ll + i] as f64;
-                    corners[LR][i] = values[lr + i] as f64;
-                    corners[UL][i] = values[ul + i] as f64;
-                    corners[UR][i] = values[ur + i] as f64;
-                }
-                4
-            }
-        };
-
-        if n != 4 {
-            return None;
         }
 
-        // Interpolate (or extrapolate, if we're outside of the physical grid)
-        let mut left = Coor4D::origin();
-        for i in 0..maxbands {
-            let lower = corners[LL][i];
-            let upper = corners[UL][i];
-            left[i] = (1. - rlat) * lower + rlat * upper;
-        }
-
-        let mut right = Coor4D::origin();
-        for i in 0..maxbands {
-            let lower = corners[LR][i];
-            let upper = corners[UR][i];
-            right[i] = (1. - rlat) * lower + rlat * upper;
-        }
-
-        let mut result = Coor4D::origin();
-        for i in 0..maxbands {
-            result[i] = (1. - rlon) * left[i] + rlon * right[i];
-        }
-
-        Some(result)
+        // If we're not inside any of the sub-grids,
+        // we must be inside the main grid
+        interpolate(self, ctx, at, margin)
     }
 }
 
-impl BaseGrid {
-    pub fn new(name: &str, header: &[f64], grid: GridSource) -> Result<Self, Error> {
-        if header.len() < 7 {
-            return Err(Error::General("Malformed header"));
+// Helper for `at`. Carries out the actual interpolation. Not intended for
+// direct calls, and hence non-pub, and placed outside of the Grid trait
+// implementation
+//
+// Since we store the entire grid in a single vector, the interpolation
+// routine here looks strongly like a case of "writing Fortran 77 in Rust".
+// It is, however, one of the cases where a more extensive use of abstractions
+// leads to a significantly larger code base, much harder to maintain and
+// comprehend.
+fn interpolate(
+    base: &BaseGrid,
+    ctx: Option<&dyn Context>,
+    at: Coor4D,
+    margin: f64,
+) -> Option<Coor4D> {
+    if !base.contains(at, margin, true) {
+        return None;
+    };
+    if let GridSource::External { .. } = base.grid
+        && ctx.is_none()
+    {
+        return None;
+    }
+
+    let head = &base.header;
+
+    // For now, we support top-to-bottom, left-to-right scan order only.
+    // This is the common case for most non-block grid formats, with
+    // NTv2 the odd man out. But since we normalize the NTv2 scan order
+    // during parsing, we just cruise along here
+    let dlat = head.dlat.abs();
+    let dlon = head.dlon.abs();
+
+    // The interpolation coordinate relative to the grid origin
+    let rlon = at[0] - head.lon_w;
+    let rlat = head.lat_n - at[1];
+
+    // The (row, column) of the lower left node of the grid cell containing
+    // the interpolation coordinate - or, in the case of extrapolation:
+    // the nearest cell inside the grid.
+    let row = (rlat / dlat).ceil() as i64;
+    let col = (rlon / dlon).floor() as i64;
+
+    let col = col.clamp(0_i64, (head.cols - 2) as i64) as usize;
+    let row = row.clamp(1_i64, (head.rows - 1) as i64) as usize;
+
+    // Linear array index of the first band element of each corner value
+    #[rustfmt::skip]
+    let (ll, lr, ul, ur) = (
+        head.bands * (head.cols *  row      + col    ),
+        head.bands * (head.cols *  row      + col + 1),
+        head.bands * (head.cols * (row - 1) + col    ),
+        head.bands * (head.cols * (row - 1) + col + 1),
+    );
+
+    let ll_lon = head.lon_w + col as f64 * dlon;
+    let ll_lat = head.lat_n - row as f64 * dlat;
+
+    // Cell relative, cell unit coordinates in a right handed CS
+    let rlon = (at[0] - ll_lon) / dlon;
+    let rlat = (at[1] - ll_lat) / dlat;
+
+    // We cannot return more than 4 bands in a Coor4D,
+    // so we ignore any exceeding bands
+    let maxbands = head.bands.min(4);
+
+    // Collect the grid values for the corners of the grid cell containing
+    // the point of interest
+    let mut corners = [Coor4D::nan(); 4];
+    let corner_indices = [ll, lr, ul, ur];
+    const LL: usize = 0;
+    const LR: usize = 1;
+    const UL: usize = 2;
+    const UR: usize = 3;
+
+    let n = match &base.grid {
+        GridSource::External { .. } => {
+            ctx.unwrap()
+                .get_grid_values(base, &corner_indices, &mut corners)
         }
-
-        let lat_n = header[0];
-        let lat_s = header[1];
-        let lon_w = header[2];
-        let lon_e = header[3];
-
-        let dlat = header[4].copysign(lat_s - lat_n);
-        let dlon = header[5].copysign(lon_e - lon_w);
-
-        let bands = header[6] as usize;
-        let rows = (((lat_s - lat_n) / dlat).abs() + 1.5).floor() as usize;
-        let cols = (((lon_e - lon_w) / dlon).abs() + 1.5).floor() as usize;
-        let elements = rows * cols * bands;
-        if elements == 0 || bands < 1 {
-            return Err(Error::General("Malformed grid"));
-        }
-
-        if let GridSource::Internal { values } = &grid {
-            if elements > values.len() {
-                return Err(Error::General("Malformed grid"));
+        GridSource::Internal { values } => {
+            for i in 0..maxbands {
+                corners[LL][i] = values[ll + i] as f64;
+                corners[LR][i] = values[lr + i] as f64;
+                corners[UL][i] = values[ul + i] as f64;
+                corners[UR][i] = values[ur + i] as f64;
             }
+            4
         }
+    };
 
-        let subgrids = Vec::new();
-
-        Ok(BaseGrid {
-            name: name.to_string(),
-            header: GridHeader::default(),
-            lat_n,
-            lat_s,
-            lon_w,
-            lon_e,
-            dlat,
-            dlon,
-            rows,
-            cols,
-            bands,
-            grid,
-            subgrids,
-        })
+    if n != 4 {
+        return None;
     }
 
-    pub fn new_new(name: &str, header: GridHeader, grid: GridSource) -> Result<Self, Error> {
-        let lat_n = header.lat_n;
-        let lat_s = header.lat_s;
-        let lon_w = header.lon_w;
-        let lon_e = header.lon_e;
-
-        let dlat = header.dlat.copysign(lat_s - lat_n);
-        let dlon = header.dlon.copysign(lon_e - lon_w);
-
-        let bands = header.bands;
-        let rows = header.rows;
-        let cols = header.cols;
-        let elements = rows * cols * bands;
-        if elements == 0 || bands < 1 {
-            return Err(Error::General("Malformed grid"));
-        }
-
-        if let GridSource::Internal { values } = &grid {
-            if elements > values.len() {
-                return Err(Error::General("Malformed grid"));
-            }
-        }
-
-        let subgrids = Vec::new();
-
-        Ok(BaseGrid {
-            name: name.to_string(),
-            header,
-            lat_n,
-            lat_s,
-            lon_w,
-            lon_e,
-            dlat,
-            dlon,
-            rows,
-            cols,
-            bands,
-            grid,
-            subgrids,
-        })
+    // Interpolate (or extrapolate, if we're outside of the physical grid)
+    let mut left = Coor4D::origin();
+    for i in 0..maxbands {
+        let lower = corners[LL][i];
+        let upper = corners[UL][i];
+        left[i] = (1. - rlat) * lower + rlat * upper;
     }
 
-    pub fn is_projected(&self) -> bool {
-        // If any boundary is outside of [-720; 720], the grid must (by a wide margin) be
-        // in projected coordinates
-        [self.lat_n, self.lat_s, self.lon_w, self.lon_e]
-            .iter()
-            .any(|h| h.abs() > 7.0)
+    let mut right = Coor4D::origin();
+    for i in 0..maxbands {
+        let lower = corners[LR][i];
+        let upper = corners[UR][i];
+        right[i] = (1. - rlat) * lower + rlat * upper;
     }
 
-    pub fn gravsoft(name: &str, buf: &[u8]) -> Result<Self, Error> {
-        let (header, values) = gravsoft_grid_reader(buf)?;
-        BaseGrid::new(name, &header, GridSource::Internal { values })
-    }
-}
-
-// If the Gravsoft grid appears to be in angular units, convert it to radians
-fn normalize_gravsoft_grid_values(header: &mut [f64], grid: &mut [f32]) {
-    // If any boundary is outside of [-720; 720], the grid must (by a wide margin) be
-    // in projected coordinates and the correction in meters, so we simply return
-    if header.iter().take(4).any(|h| h.abs() > 720.0) {
-        return;
+    let mut result = Coor4D::origin();
+    for i in 0..maxbands {
+        result[i] = (1. - rlon) * left[i] + rlon * right[i];
     }
 
-    // Otherwise, the header values are in decimal degrees,
-    // so we convert to radians
-    for h in header.iter_mut().take(6) {
-        *h = h.to_radians();
-    }
-
-    let bands = header[6] as usize;
-
-    // If we're handling a geoid grid, we're done: Grid values are in meters
-    if bands == 1 {
-        return;
-    }
-
-    // For horizontal datum shifts, the grid values are in seconds-of-arc
-    // and in latitude/longitude order. Swap them and convert into radians.
-    if bands == 2 {
-        for i in 0..grid.len() {
-            if i % 2 == 1 {
-                grid.swap(i, i - 1);
-            }
-        }
-        return;
-    }
-
-    // For deformation grids, the grid values are in millimeters/year
-    // and in latitude/longitude/height order. Swap them and convert
-    // to meters/year
-    if bands == 3 {
-        for i in 0..grid.len() {
-            if i % 3 == 0 {
-                grid.swap(i, i + 1);
-            }
-            grid[i] /= 1000.0;
-        }
-    }
-}
-
-// Read a gravsoft grid. Discard '#'-style comments
-pub fn gravsoft_grid_reader(buf: &[u8]) -> Result<(Vec<f64>, Vec<f32>), Error> {
-    let all = std::io::BufReader::new(buf);
-    let mut grid = Vec::<f32>::new();
-    let mut header = Vec::<f64>::new();
-
-    for line in all.lines() {
-        // Remove comments
-        let line = line?;
-        let line = line.split('#').collect::<Vec<_>>()[0];
-        // Convert to f64
-        for item in line.split_whitespace() {
-            let value = item.parse::<f64>().unwrap_or(f64::NAN);
-            // In Gravsoft grids, the header is the first 6 numbers of the file
-            if header.len() < 6 {
-                header.push(value);
-            } else {
-                grid.push(value as f32);
-            }
-        }
-    }
-
-    if header.len() < 6 {
-        return Err(Error::General("Incomplete Gravsoft header"));
-    }
-
-    // The Gravsoft header has lat_s before lat_n
-    header.swap(0, 1);
-
-    // Count the number of bands
-    let lat_n = header[0];
-    let lat_s = header[1];
-    let lon_w = header[2];
-    let lon_e = header[3];
-
-    // The Gravsoft header has inverted sign for dlat. We force
-    // the two deltas to have signs compatible with the grid
-    // organization
-    let dlat = header[4].copysign(lat_s - lat_n);
-    let dlon = header[5].copysign(lon_e - lon_w);
-    let rows = ((lat_s - lat_n) / dlat + 1.5).floor() as usize;
-    let cols = ((lon_e - lon_w) / dlon + 1.5).floor() as usize;
-    let bands = grid.len() / (rows * cols);
-    if (rows * cols * bands) > grid.len() || bands < 1 {
-        return Err(Error::General("Incomplete Gravsoft grid"));
-    }
-
-    if (rows * cols * bands) != grid.len() {
-        return Err(Error::General(
-            "Unrecognized material at end of Gravsoft grid",
-        ));
-    }
-
-    if bands > 3 {
-        return Err(Error::General(
-            "Unsupported number of bands in Gravsoft grid",
-        ));
-    }
-
-    header.push(bands as f64);
-
-    // Handle linear/angular conversions
-    normalize_gravsoft_grid_values(&mut header, &mut grid);
-    Ok((header, grid))
+    Some(result)
 }
 
 /// Find the most appropriate grid value from a stack (i.e. slice) of grids.
@@ -481,7 +377,7 @@ pub fn gravsoft_grid_reader(buf: &[u8]) -> Result<(Vec<f64>, Vec<f32>), Error> {
 pub fn grids_at(
     ctx: Option<&dyn Context>,
     grids: &[Arc<BaseGrid>],
-    coord: &Coor4D,
+    coord: Coor4D,
     use_null_grid: bool,
 ) -> Option<Coor4D> {
     for margin in [0.0, 0.5] {
@@ -500,97 +396,6 @@ pub fn grids_at(
     None
 }
 
-use byteorder::{NativeEndian, ReadBytesExt};
-use std::collections::BTreeMap;
-use std::fs::File;
-use std::io::{BufReader, Seek};
-pub fn read_unigrid_index(
-    paths: &[std::path::PathBuf],
-) -> Result<Vec<UnigridIndex>, Box<dyn std::error::Error>> {
-    let mut index = Vec::new();
-    // We can have unigrids in multiple locations. Typically local, user, group,
-    // and global conventional directories, so we loop over all levels, and
-    // accept that not all levels need to be populated
-    for (level, path) in paths.iter().enumerate() {
-        let mut grids = BTreeMap::new();
-        // Open the index file, with buffering
-        let uniindex_path = path.join("unigrid.index");
-        let Ok(uniindex) = File::options().read(true).open(uniindex_path) else {
-            index.push(grids);
-            continue;
-        };
-        let indexreader = BufReader::new(uniindex);
-
-        // Open the grid file with buffering
-        let unifile_path = path.join("unigrid.grids");
-        let Ok(unifile) = File::options().read(true).open(unifile_path) else {
-            index.push(grids);
-            continue;
-        };
-        let mut gridreader = BufReader::new(unifile);
-
-        // Each line is an index record, but we ignore blank lines and comments
-        for line in indexreader.lines() {
-            let line = line?;
-            let line = line.trim();
-            if line.is_empty() {
-                continue;
-            }
-            let args = line.split_whitespace().collect::<Vec<_>>();
-            if args[0] == "#" {
-                continue;
-            }
-            if args.len() != 4 {
-                return Err(
-                    "Cannot interpret `{line:#?}` in `{uniindex_path}` as a unigrid index record"
-                        .into(),
-                );
-            }
-
-            // Parse the unigrid index record
-            let grid_id = args[0].to_string();
-            let grid_index = args[1].parse::<usize>()?;
-            let hdr_offset = args[2].parse::<u64>()?;
-
-            // Locate the header for the current grid_id
-            gridreader.seek(std::io::SeekFrom::Start(hdr_offset))?;
-
-            // And read the header
-            let lat_n = gridreader.read_f64::<NativeEndian>()?;
-            let lat_s = gridreader.read_f64::<NativeEndian>()?;
-            let lon_w = gridreader.read_f64::<NativeEndian>()?;
-            let lon_e = gridreader.read_f64::<NativeEndian>()?;
-
-            let dlat = gridreader.read_f64::<NativeEndian>()?;
-            let dlon = gridreader.read_f64::<NativeEndian>()?;
-
-            let bands = gridreader.read_u64::<NativeEndian>()?;
-            let offset = gridreader.read_u64::<NativeEndian>()? as usize;
-
-            let grid = GridSource::External { level, offset };
-
-            // The BaseGrid constructor takes input as a Gravsoft style header
-            let header = [lat_n, lat_s, lon_w, lon_e, dlat, dlon, bands as f64];
-            let name = format!("{grid_id}[{grid_index}]");
-            let grid = BaseGrid::new(&name, &header, grid)?;
-
-            // Parent grids (index==0) go into the grid collection, while subgrids
-            // go into the `subgrids` vector of their parent
-            if grid_index == 0 {
-                grids.insert(grid_id, Arc::new(grid));
-            } else {
-                let Some(parent) = grids.get_mut(&grid_id) else {
-                    return Err("Parent grid not found for subgrid {index} of {grid_id:?}".into());
-                };
-                Arc::get_mut(parent).unwrap().subgrids.push(grid);
-            }
-        }
-        index.push(grids);
-    }
-
-    Ok(index)
-}
-
 // ----- T E S T S ------------------------------------------------------------------
 
 #[cfg(test)]
@@ -598,16 +403,37 @@ mod tests {
     use super::*;
     use crate::coordinate::AngularUnits;
 
-    // lat_n, lat_s, lon_w, lon_e, dlat, dlon
-    const HEADER: [f64; 6] = [58., 54., 8., 16., -1., 1.];
+    const DATUM_HEADER: GridHeader = GridHeader {
+        lat_n: 58f64.to_radians(),
+        lat_s: 54f64.to_radians(),
+        lon_w: 8f64.to_radians(),
+        lon_e: 16f64.to_radians(),
+        dlat: -1f64.to_radians(),
+        dlon: 1f64.to_radians(),
+        rows: 5_usize,
+        cols: 9_usize,
+        bands: 2,
+    };
+
+    const GEOID_HEADER: GridHeader = GridHeader {
+        lat_n: 58f64.to_radians(),
+        lat_s: 54f64.to_radians(),
+        lon_w: 8f64.to_radians(),
+        lon_e: 16f64.to_radians(),
+        dlat: -1f64.to_radians(),
+        dlon: 1f64.to_radians(),
+        rows: 5_usize,
+        cols: 9_usize,
+        bands: 1,
+    };
 
     #[rustfmt::skip]
     const DATUM: [f32; 5*2*9] = [
-        58., 08., 58., 09., 58., 10., 58., 11., 58., 12., 58., 13., 58., 14., 58., 15., 58., 16.,
-        57., 08., 57., 09., 57., 10., 57., 11., 57., 12., 57., 13., 57., 14., 57., 15., 57., 16.,
-        56., 08., 56., 09., 56., 10., 56., 11., 56., 12., 56., 13., 56., 14., 56., 15., 56., 16.,
-        55., 08., 55., 09., 55., 10., 55., 11., 55., 12., 55., 13., 55., 14., 55., 15., 55., 16.,
-        54., 08., 54., 09., 54., 10., 54., 11., 54., 12., 54., 13., 54., 14., 54., 15., 54., 16.,
+        08., 58., 09., 58., 10., 58., 11., 58., 12., 58., 13., 58., 14., 58., 15., 58., 16., 58.,
+        08., 57., 09., 57., 10., 57., 11., 57., 12., 57., 13., 57., 14., 57., 15., 57., 16., 57.,
+        08., 56., 09., 56., 10., 56., 11., 56., 12., 56., 13., 56., 14., 56., 15., 56., 16., 56.,
+        08., 55., 09., 55., 10., 55., 11., 55., 12., 55., 13., 55., 14., 55., 15., 55., 16., 55.,
+        08., 54., 09., 54., 10., 54., 11., 54., 12., 54., 13., 54., 14., 54., 15., 54., 16., 54.,
     ];
 
     #[rustfmt::skip]
@@ -622,64 +448,55 @@ mod tests {
     #[test]
     fn grid_header() -> Result<(), Error> {
         // Create a datum correction grid (2 bands)
-        let mut datum_header = Vec::from(HEADER);
-
-        // Since we use normalize_gravsoft...(...) to handle angular normalization,
-        // we need a Gravsoft style header here
-        datum_header.swap(0, 1);
-        datum_header[4] = -datum_header[4];
-        datum_header.push(2_f64); // 2 bands
-        let mut datum_grid = Vec::from(DATUM);
-        normalize_gravsoft_grid_values(&mut datum_header, &mut datum_grid);
-
-        // But Since we use BaseGrid::new(...) to instantiate, we need a plain header here
-        datum_header.swap(0, 1);
-        datum_header[4] = -datum_header[4];
+        let datum_header = DATUM_HEADER;
+        let datum_grid = Vec::from(DATUM);
         let datum = BaseGrid::new(
             "hohoho",
-            &datum_header,
+            datum_header,
             GridSource::Internal { values: datum_grid },
         )?;
 
         // Extrapolation
-        let c = Coor4D::geo(100., 50., 0., 0.);
+        let c = Coor4D::geo(50., 100., 0., 0.);
         // ...with output in arcsec
-        let d = datum.at(None, &c, 100.0).unwrap();
+        let d = datum.at(None, c, 100.0).unwrap();
 
         // The grid is constructed to make the position in degrees equal to
         // the extrapolation value in arcsec.
         // Even for this case of extreme extrapolation, we expect the difference
         // to be insignificant
-        assert!(c.to_degrees().hypot2(&d) < 1e-10);
-        // Spelled out
-        assert!((50.0 - d[0]).hypot(100.0 - d[1]) < 1e-10);
+        let ellps = Ellipsoid::named("GRS80")?;
+        let dist = ellps.distance(&c, &d.to_radians());
+        assert!(dist < 1e-6);
 
         // Interpolation
         let c = Coor4D::geo(55.06, 12.03, 0., 0.);
         // Check that we're not extrapolating
-        assert!(datum.contains(&c, 0.0, true));
+        assert!(datum.contains(c, 0.0, true));
         // ...with output in arcsec
-        let d = datum.at(None, &c, 0.0).unwrap();
+        let d = datum.at(None, c, 0.0).unwrap();
         // We can do slightly better for interpolation than for extrapolation,
         // but the grid values are f32, so we have only approx 7 significant
         // figures...
-        assert!(c.to_degrees().hypot2(&d) < 1e-12);
+        let dist = ellps.distance(&c, &d.to_radians());
+        dbg!((dist * 1000.0, d));
+        assert!(1 == 2);
+        assert!(dist < 1e-6);
 
         // Create a geoid grid (1 band)
-        let mut geoid_header = datum_header.clone();
-        geoid_header[6] = 1.0; // 1 band
+        let geoid_header = GEOID_HEADER;
         let geoid_grid = Vec::from(GEOID);
         let geoid = BaseGrid::new(
             "geoid",
-            &geoid_header,
+            geoid_header,
             GridSource::Internal { values: geoid_grid },
         )?;
 
         let c = Coor4D::geo(58.75, 08.25, 0., 0.);
-        assert!(!geoid.contains(&c, 0.0, true));
-        assert!(geoid.contains(&c, 1.0, true));
+        assert!(!geoid.contains(c, 0.0, true));
+        assert!(geoid.contains(c, 1.0, true));
 
-        let n = geoid.at(None, &c, 1.0).unwrap();
+        let n = geoid.at(None, c, 1.0).unwrap();
         assert!((n[0] - (58.75 + 0.0825)).abs() < 0.0001);
         Ok(())
     }

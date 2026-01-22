@@ -86,9 +86,11 @@ mod ops {
 pub mod grd {
     pub use crate::grid::BaseGrid;
     pub use crate::grid::Grid;
-    pub use crate::grid::gravsoft_grid_reader;
+    pub use crate::grid::GridHeader;
+    pub use crate::grid::GridSource;
+    pub use crate::grid::gravsoft;
     pub use crate::grid::grids_at;
-    pub use crate::grid::read_unigrid_index;
+    pub use crate::grid::unigrid::read_unigrid_index;
 }
 
 /// Elements for parsing both Geodesy and PROJ syntax
@@ -105,6 +107,9 @@ use thiserror::Error;
 pub enum Error {
     #[error("i/o error")]
     Io(#[from] std::io::Error),
+
+    #[error("ParseInt error")]
+    ParseInt(#[from] std::num::ParseIntError),
 
     #[error("General error: '{0}'")]
     General(&'static str),

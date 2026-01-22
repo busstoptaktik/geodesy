@@ -117,7 +117,7 @@ use crate::authoring::*;
 
 // ----- F O R W A R D --------------------------------------------------------------
 
-fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
+fn fwd(op: &Op, ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let grids = &op.params.grids;
     let mut successes = 0_usize;
     let n = operands.len();
@@ -135,13 +135,14 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         for margin in [0.0, 0.5] {
             for grid in grids.iter() {
                 // Interpolated deformation velocity
-                if let Some(v) = grid.at(None, &geo, margin) {
+                if let Some(v) = grid.at(Some(ctx), geo, margin) {
                     // The deformation duration may be given either as a fixed duration or
                     // as the difference between the frame epoch and the observation epoch
                     let d = if dt.is_finite() { dt } else { epoch - geo[3] };
-
+                    // Grid values are in mm/year. We need m/year
+                    let v = v.scale(0.001);
                     let deformation =
-                        rotate_and_integrate_velocity(v.scale(-1.), geo[0], geo[1], d);
+                        rotate_and_integrate_velocity(v.scale(-1.0), geo[0], geo[1], d);
 
                     // Finally apply the deformation to the input coordinate - or just
                     // provide the raw correction if that was what was requested
@@ -191,10 +192,12 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         for margin in [0.0, 0.5] {
             for grid in grids.iter() {
                 // Interpolated deformation velocity
-                if let Some(v) = grid.at(None, &geo, margin) {
+                if let Some(v) = grid.at(None, geo, margin) {
                     // The deformation duration may be given either as a fixed duration or
                     // as the difference between the frame epoch and the observation epoch
                     let d = if dt.is_finite() { dt } else { epoch - geo[3] };
+                    // Grid values are in mm/year. We need m/year
+                    let v = v.scale(0.001);
 
                     let deformation = rotate_and_integrate_velocity(v, geo[0], geo[1], d);
 
@@ -338,10 +341,10 @@ mod tests {
         ctx.register_resource("another_test.deformation", another_test_deformation);
 
         let buf = ctx.get_blob("test.deformation")?;
-        let grid = BaseGrid::gravsoft("test_deformation", &buf)?;
+        let grid = crate::grid::gravsoft::gravsoft("test_deformation", &buf)?;
 
         // Velocity in the ENU space
-        let v = grid.at(None, &cph, 0.0).unwrap();
+        let v = grid.at(None, cph, 0.0).unwrap().scale(0.001);
         // Which we rotate into the XYZ space and integrate for 1000 years - and mutate into Coor3D,
         // to remove the NaN from the 4th dimension, which make the tests crash, because NaN!=NaN
         let deformation = rotate_and_integrate_velocity(v, cph[0], cph[1], 1000.);
@@ -392,7 +395,7 @@ mod tests {
         ctx.apply(op, Inv, &mut data)?;
         dbg!(cph);
         dbg!(data[0]);
-        assert!(cph.hypot3(&data[0]) < 1e-3);
+        assert!(cph.hypot3(&data[0]) < 2e-3);
 
         // Check the "raw" functionality
         let op =

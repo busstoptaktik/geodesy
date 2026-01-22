@@ -67,8 +67,10 @@ impl GridCollection {
                     Arc::new(crate::grid::ntv2::ntv2_grid(&grid)?),
                 );
             } else {
-                self.0
-                    .insert(name.to_string(), Arc::new(BaseGrid::gravsoft(name, &grid)?));
+                self.0.insert(
+                    name.to_string(),
+                    Arc::new(crate::grid::gravsoft::gravsoft(name, &grid)?),
+                );
             }
             if let Some(grid) = self.0.get(name) {
                 return Ok(grid.clone());
@@ -129,7 +131,7 @@ impl Context for Plain {
         for item in BUILTIN_ADAPTORS {
             ctx.register_resource(item.0, item.1);
         }
-        let Ok(unigrids) = crate::grid::read_unigrid_index(&ctx.paths) else {
+        let Ok(unigrids) = crate::grid::unigrid::read_unigrid_index(&ctx.paths) else {
             return ctx;
         };
         ctx.unigrid_elements = unigrids;
@@ -334,7 +336,7 @@ impl Context for Plain {
                 for (i, index) in indices.iter().enumerate() {
                     let mut val = Coor4D::nan();
                     if let Some(file) = &self.memmapped_unigrids[*level] {
-                        for j in 0..grid.bands.min(4) {
+                        for j in 0..grid.header.bands.min(4) {
                             let start = (index + j) * 4 + offset;
                             if start > file.len() - 4 {
                                 // TODO: log message
@@ -350,7 +352,7 @@ impl Context for Plain {
             }
             GridSource::Internal { values } => {
                 for (i, index) in indices.iter().enumerate() {
-                    for j in 0..grid.bands.min(4) {
+                    for j in 0..grid.header.bands.min(4) {
                         grid_values[i][j] = values[index + j].into()
                     }
                 }
@@ -476,20 +478,53 @@ mod tests {
     #[test]
     fn unigrid() -> Result<(), Error> {
         let ctx = Plain::new();
+        let ellps = Ellipsoid::named("GRS80")?;
 
-        let unigrid_test = ctx.get_grid("unigrid_test_datum").unwrap();
-        // let test = ctx.get_grid("test").unwrap();
-        let test_point = Coor4D::geo(56.1f64, 12.3f64, 0., 0.);
-        let res = unigrid_test.at(Some(&ctx), &test_point, 0.).unwrap();
+        let unigrid_test = ctx.get_grid("unigrid_test_datum")?;
 
-        if let Ok(ellps) = Ellipsoid::named("GRS80") {
-            // Numerically the grid value IN ARCSEC should be identical to the grid location
-            // IN DEGREES. Hence, to make the test_point (which is a coordinate) comparable
-            // to res, which is given in arcsec, we must treat res as DEGREES, and convert to
-            // radians
-            let d = ellps.distance(&test_point, &res.to_radians());
-            assert!(d < 1e-15);
-        }
+        // A test point outside of the subgrid, and the correction grid value at that point
+        let test_point = Coor4D::geo(55.1f64, 12.3f64, 0., 0.);
+        let correction = unigrid_test.at(Some(&ctx), test_point, 0.).unwrap();
+        let Some(subgrid) = unigrid_test.which_subgrid_contains(test_point, 0.0) else {
+            return Err(Error::General("No (sub-)grid found for (55.1E, 12.3E)"));
+        };
+        assert_eq!("unigrid_test_datum[0]", subgrid);
+
+        // Numerically the grid value IN ARCSEC should be identical to the grid location
+        // IN DEGREES. Hence, to make the test_point (which is a coordinate in RADIANS)
+        // comparable to res, which is given in arcsec, we must treat res as DEGREES, and
+        // convert to radians
+        let d = ellps.distance(&test_point, &correction.to_radians());
+        assert!(d < 1e-9);
+
+        // A test point within the subgrid, and the correction grid value at that point
+        let test_point = Coor4D::geo(56.3, 12.1, 0., 0.);
+        let correction = unigrid_test.at(Some(&ctx), test_point, 0.).unwrap();
+        // The correction values are offset by 0.001 in the sub-grid
+        let expected = Coor4D::geo(56.301, 12.101, 0., 0.);
+        let d = ellps.distance(&expected, &correction.to_radians());
+        dbg!((d * 1000.0, correction));
+        assert!(d < 0.1);
+        // The interpolated latitude above amounts to 56.30099945068359, leading to an
+        // apparently enormous discrepancy of 66 mm.
+        //
+        // However, 56.301-56.30099945068359 = 0.000_000_5493, i.e. a deviation
+        // at the 7th significant figure, which is as expected, since the backing grid consists
+        // of single precision floats (f32), having a typical accuracy of 7 figures.
+        //
+        // In real applications, the correction is on the order of a few seconds of arc. The
+        // deviation above is on the order of a microsecond of arc (uas).
+        //
+        // On the surface of the earth, 1 uas corresponds to approximately 30 micrometers,
+        // i.e. 0.03 mm, which is much smaller than the expected accuracy of any current
+        // or future datum shift estimate.
+
+        // (56.3N, 12.1E) is inside the subgrid
+        let Some(subgrid) = unigrid_test.which_subgrid_contains(test_point, 0.0) else {
+            return Err(Error::General("No (sub-)grid found for (56.3E, 12.1E)"));
+        };
+        assert_eq!("unigrid_test_datum[1]", subgrid);
+
         Ok(())
     }
 }

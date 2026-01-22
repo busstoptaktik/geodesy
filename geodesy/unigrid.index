@@ -1,3 +1,4 @@
 unigrid_test_datum 0 0 "geodesy\\datum\\test.datum"
 unigrid_test_datum 1 424 "geodesy\\datum\\test_subset.datum"
 unigrid_test_geoid 0 560 "geodesy\\geoid\\test.geoid"
+unigrid_test_subset_datum 0 804 "geodesy\\datum\\test_subset.datum"
