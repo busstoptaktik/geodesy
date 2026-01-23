@@ -399,6 +399,7 @@ pub fn grids_at(
 // ----- T E S T S ------------------------------------------------------------------
 
 #[cfg(test)]
+#[rustfmt::skip]
 mod tests {
     use super::*;
     use crate::coordinate::AngularUnits;
@@ -406,28 +407,27 @@ mod tests {
     const DATUM_HEADER: GridHeader = GridHeader {
         lat_n: 58f64.to_radians(),
         lat_s: 54f64.to_radians(),
-        lon_w: 8f64.to_radians(),
+        lon_w:  8f64.to_radians(),
         lon_e: 16f64.to_radians(),
         dlat: -1f64.to_radians(),
-        dlon: 1f64.to_radians(),
-        rows: 5_usize,
-        cols: 9_usize,
-        bands: 2,
+        dlon:   1f64.to_radians(),
+        rows:   5_usize,
+        cols:   9_usize,
+        bands:  2,
     };
 
     const GEOID_HEADER: GridHeader = GridHeader {
         lat_n: 58f64.to_radians(),
         lat_s: 54f64.to_radians(),
-        lon_w: 8f64.to_radians(),
+        lon_w:  8f64.to_radians(),
         lon_e: 16f64.to_radians(),
         dlat: -1f64.to_radians(),
-        dlon: 1f64.to_radians(),
-        rows: 5_usize,
-        cols: 9_usize,
-        bands: 1,
+        dlon:  1f64.to_radians(),
+        rows:   5_usize,
+        cols:   9_usize,
+        bands:  1,
     };
 
-    #[rustfmt::skip]
     const DATUM: [f32; 5*2*9] = [
         08., 58., 09., 58., 10., 58., 11., 58., 12., 58., 13., 58., 14., 58., 15., 58., 16., 58.,
         08., 57., 09., 57., 10., 57., 11., 57., 12., 57., 13., 57., 14., 57., 15., 57., 16., 57.,
@@ -436,7 +436,6 @@ mod tests {
         08., 54., 09., 54., 10., 54., 11., 54., 12., 54., 13., 54., 14., 54., 15., 54., 16., 54.,
     ];
 
-    #[rustfmt::skip]
     const GEOID: [f32; 5*9] = [
         58.08, 58.09, 58.10, 58.11, 58.12, 58.13, 58.14, 58.15, 58.16,
         57.08, 57.09, 57.10, 57.11, 57.12, 57.13, 57.14, 57.15, 57.16,
