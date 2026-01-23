@@ -480,7 +480,6 @@ mod tests {
         // figures...
         let dist = ellps.distance(&c, &d.to_radians());
         dbg!((dist * 1000.0, d));
-        assert!(1 == 2);
         assert!(dist < 1e-6);
 
         // Create a geoid grid (1 band)
