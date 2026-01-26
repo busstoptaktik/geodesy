@@ -342,6 +342,9 @@ mod tests {
 
         let buf = ctx.get_blob("test.deformation")?;
         let grid = crate::grid::gravsoft::gravsoft("test_deformation", &buf)?;
+        assert_eq!(grid.name, "test_deformation");
+        assert_eq!(grid.subgrids.len(), 0);
+        assert_eq!(grid.header.bands, 3);
 
         // Velocity in the ENU space
         let v = grid.at(None, cph, 0.0).unwrap().scale(0.001);
