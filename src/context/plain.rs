@@ -66,6 +66,11 @@ impl GridCollection {
                     name.to_string(),
                     Arc::new(crate::grid::ntv2::ntv2_grid(&grid)?),
                 );
+            } else if ext == "gtx" {
+                self.0.insert(
+                    name.to_string(),
+                    Arc::new(crate::grid::gtx::gtx(name, &grid)?),
+                );
             } else {
                 self.0.insert(
                     name.to_string(),
