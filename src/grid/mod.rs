@@ -1,6 +1,7 @@
 //! Grid characteristics and interpolation.
 
 pub mod gravsoft;
+pub mod gtx;
 pub mod ntv2;
 pub mod unigrid;
 use crate::prelude::*;
@@ -152,6 +153,17 @@ impl GridHeader {
             cols,
             bands,
         })
+    }
+
+    pub fn to_degrees(&self) -> Self {
+        let mut h = self.clone();
+        h.lat_n = h.lat_n.to_degrees();
+        h.lat_s = h.lat_s.to_degrees();
+        h.lon_w = h.lon_w.to_degrees();
+        h.lon_e = h.lon_e.to_degrees();
+        h.dlat = h.dlat.to_degrees();
+        h.dlon = h.dlon.to_degrees();
+        h
     }
 }
 
