@@ -1,11 +1,11 @@
 //! This NTv2 grid parser is based on the following documents:
-//! - https://web.archive.org/web/20140127204822if_/http://www.mgs.gov.on.ca:80/stdprodconsume/groups/content/@mgs/@iandit/documents/resourcelist/stel02_047447.pdf
-//! - http://mimaka.com/help/gs/html/004_NTV2%20Data%20Format.htm
-//! - https://github.com/Esri/ntv2-file-routines/blob/master/README.md
+//! - <https://web.archive.org/web/20140127204822if_/http://www.mgs.gov.on.ca:80/stdprodconsume/groups/content/@mgs/@iandit/documents/resourcelist/stel02_047447.pdf>
+//! - <http://mimaka.com/help/gs/html/004_NTV2%20Data%20Format.htm>
+//! - <https://github.com/Esri/ntv2-file-routines/blob/master/README.md>
 //!
 //! And inspired by existing implementations in
-//! - https://github.com/proj4js/proj4js/blob/master/lib/nadgrid.js
-//! - https://github.com/3liz/proj4rs/blob/main/src/nadgrids/grid.rs
+//! - <https://github.com/proj4js/proj4js/blob/master/lib/nadgrid.js>
+//! - <https://github.com/3liz/proj4rs/blob/main/src/nadgrids/grid.rs>
 //!
 //! It was originally written by [Sean Rennie](https://github.com/Rennzie),
 //! and gradually modified by Thomas Knudsen, to fit more tightly into the

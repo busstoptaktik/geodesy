@@ -91,8 +91,8 @@ mod tests {
         let u = grid.at(None, ul, 0.).unwrap();
         let v = grid.at(None, lr, 0.).unwrap();
         if let GridSource::Internal { values } = &grid.grid {
-            assert_eq!(u[0] as f32, *values.get(0).unwrap());
-            assert_eq!(v[0] as f32, *values.get(33 * 17 - 1).unwrap());
+            assert_eq!(u[0] as f32, *values.first().unwrap());
+            assert_eq!(v[0] as f32, *values.last().unwrap());
         } else {
             panic!("Unexpected GridSource enum")
         }

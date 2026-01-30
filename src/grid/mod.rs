@@ -378,14 +378,6 @@ fn interpolate(
 /// Search the grids in slice order and return the first hit.
 /// If no hits are found, try once more, this time adding a half grid-cell
 /// margin around each grid
-///
-/// TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-/// grids_at starter med at søge i ctx->unigrid
-/// eller de regulære unigridreferencer bliver alle udhåndet som Arc<BaseGrid> (men ikke klonet, bare nyskabt: De fylder jo ikke mere end headerinformationen)
-/// unigridreferencer skal IKKE ligge i den globale GRIDS, da de kan være forskellige for forskellige contexts.
-/// Så måske skal konteksten bare starte med at lave og oplagre Arc<BaseGrid> - og så faktisk klone når hun bliver bedt om en kopi
-///
-/// Så get_grid i plain-ctx skal kigge i sine unigrids, før hun kalder GRIDS.get_grid - og returnerer en Arc-klon
 pub fn grids_at(
     ctx: Option<&dyn Context>,
     grids: &[Arc<BaseGrid>],
