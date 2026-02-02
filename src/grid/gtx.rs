@@ -7,11 +7,9 @@ use std::io::{BufReader, Read};
 pub fn gtx(name: &str, buf: &[u8]) -> Result<BaseGrid, Error> {
     let mut buf = BufReader::new(buf);
 
-    // Read the 44-byte header
+    // Read and interpret the 40-byte GTX header
     let mut header = [0u8; 40];
     buf.read_exact(&mut header)?;
-
-    // Interpret the header information
     let lat_s = f64::from_be_bytes(header[0..8].try_into().unwrap());
     let lon_w = f64::from_be_bytes(header[8..16].try_into().unwrap());
     let dlat = f64::from_be_bytes(header[16..24].try_into().unwrap());
@@ -19,44 +17,42 @@ pub fn gtx(name: &str, buf: &[u8]) -> Result<BaseGrid, Error> {
     let nrows = u32::from_be_bytes(header[32..36].try_into().unwrap()) as usize;
     let ncols = u32::from_be_bytes(header[36..40].try_into().unwrap()) as usize;
 
-    // Read grid node information and store row-wise
-    let mut rows = Vec::with_capacity(nrows);
-    let mut node = [0u8; 4];
-    for _ in 0..nrows {
-        let mut row = Vec::with_capacity(ncols);
-        for _ in 0..ncols {
-            buf.read_exact(&mut node)?;
-            let mut node_value = f32::from_be_bytes(node);
-            if node_value == -88.8888 {
-                node_value = f32::NAN;
-            }
-            row.push(node_value);
-        }
-        rows.push(row);
-    }
-
-    // The grid is stored upside-down, so we add the rows to the final
-    // grid in reverse order
-    let mut grid = Vec::with_capacity(nrows * ncols);
-    for _ in 0..nrows {
-        grid.append(&mut rows.pop().unwrap());
-    }
-
-    // Construct the BaseGrid elements
-
+    // Constuct the corresponding `GridHeader` in a form describing a
+    // grid with the northernmost row first
+    #[rustfmt::skip]
     let header = GridHeader {
         lat_n: (lat_s + (nrows - 1) as f64 * dlat).to_radians(),
         lat_s: lat_s.to_radians(),
         lon_w: lon_w.to_radians(),
         lon_e: (lon_w + (ncols - 1) as f64 * dlon).to_radians(),
         dlat: -dlat.to_radians(),
-        dlon: dlon.to_radians(),
-        rows: nrows,
-        cols: ncols,
+        dlon:  dlon.to_radians(),
+        rows:  nrows,
+        cols:  ncols,
         bands: 1,
     };
 
+    // Read the grid node information and store it row-wise, taking into account
+    // that in a GTX file, the rows are stored southernmost-first.
+    // Also handle the GTX NODATA value of -88.8888, by turning it into a more
+    // appropriate `f32::NAN`.
+    let mut grid = Vec::new();
+    grid.resize(nrows * ncols, 0f32);
+    let mut node = [0u8; 4];
+    for row in (0..nrows).rev() {
+        for col in 0..ncols {
+            buf.read_exact(&mut node)?;
+            let node_value = f32::from_be_bytes(node);
+            grid[row * ncols + col] = if node_value == -88.8888 {
+                f32::NAN
+            } else {
+                node_value
+            };
+        }
+    }
     let grid = GridSource::Internal { values: grid };
+
+    // GTX does not support sub-grids, so we make do with an empty vector
     let subgrids = Vec::new();
     let name = name.to_string();
 
