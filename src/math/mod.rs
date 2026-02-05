@@ -12,7 +12,7 @@ pub mod angular;
 ///  of the geometrical properties of map projections.
 pub mod jacobian;
 
-/// Fourier- and Taylor series
+/// Fourier- and Taylor series.
 pub mod series;
 pub use series::fourier;
 pub use series::taylor;
@@ -20,3 +20,6 @@ pub use series::taylor;
 pub use series::FourierCoefficients;
 pub use series::PolynomialCoefficients;
 pub use series::taylor::fourier_coefficients;
+
+/// Intersection of line segments in the projected plane.
+pub mod intersection;
