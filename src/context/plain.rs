@@ -54,29 +54,48 @@ impl GridCollection {
             .unwrap_or_default();
 
         for path in paths {
-            let mut path = path.clone();
-            path.push(ext);
-            path.push(name);
-            let Ok(grid) = std::fs::read(path) else {
+            // First we look in the base directory
+            let mut gridpath = path.clone();
+            gridpath.push(name);
+            let mut grid = std::fs::read(gridpath);
+
+            // If not found there: Look in a subdirectory named after the file extension
+            if grid.is_err() {
+                gridpath = path.clone();
+                gridpath.push(ext);
+                gridpath.push(name);
+                grid = std::fs::read(gridpath);
+            }
+            let Ok(grid) = grid else {
                 continue;
             };
 
-            if ext == "gsb" {
-                self.0.insert(
-                    name.to_string(),
-                    Arc::new(crate::grid::ntv2::ntv2_grid(&grid)?),
-                );
-            } else if ext == "gtx" {
-                self.0.insert(
-                    name.to_string(),
-                    Arc::new(crate::grid::gtx::gtx(name, &grid)?),
-                );
-            } else {
-                self.0.insert(
-                    name.to_string(),
-                    Arc::new(crate::grid::gravsoft::gravsoft(name, &grid)?),
-                );
+            let key = name.to_string();
+            match ext {
+                "gsb" => {
+                    let value = crate::grid::ntv2::ntv2_grid(&grid)?;
+                    self.0.insert(key, Arc::new(value));
+                }
+
+                "gtx" => {
+                    let value = crate::grid::gtx::gtx(&key, &grid)?;
+                    self.0.insert(key, Arc::new(value));
+                }
+
+                _ => {
+                    // Neither GSA, nor Gravsoft can be identified by extension alone,
+                    // so we try GSA first, since it can identify itself from its
+                    // magic bytes 'DSAA'
+                    if let Ok(grid) = crate::grid::gsa::gsa(&key, &grid) {
+                        self.0.insert(name.to_string(), Arc::new(grid));
+                    } else {
+                        // Gravsoft
+                        let value = crate::grid::gravsoft::gravsoft(&key, &grid)?;
+                        self.0.insert(key, Arc::new(value));
+                    }
+                }
             }
+
             if let Some(grid) = self.0.get(name) {
                 return Ok(grid.clone());
             }

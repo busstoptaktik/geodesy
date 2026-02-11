@@ -1,6 +1,7 @@
 //! Grid characteristics and interpolation.
 
 pub mod gravsoft;
+pub mod gsa;
 pub mod gtx;
 pub mod ntv2;
 pub mod unigrid;
@@ -104,7 +105,7 @@ impl BaseGrid {
 }
 
 /// Grid metadata: bounding box, quantization, size, dimension
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default, Clone, PartialEq)]
 pub struct GridHeader {
     pub lat_n: f64, // Latitude of the first (typically northernmost) row of the grid
     pub lat_s: f64, // Latitude of the last (typically southernmost) row of the grid
