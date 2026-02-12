@@ -129,11 +129,11 @@ fn fwd(op: &Op, ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let use_null_grid = op.params.boolean("null_grid");
 
     // Datum shift
-    'points: for i in 0..n {
+    for i in 0..n {
         let cart = operands.get_coord(i);
         let geo = ellps.geographic(&cart);
         // Interpolated deformation velocity
-        if let Some(v) = grids_at(Some(ctx), grids, geo, false) {
+        if let Some(v) = grids_at(Some(ctx), grids, geo, use_null_grid) {
             // The deformation duration may be given either as a fixed duration or
             // as the difference between the frame epoch and the observation epoch
             let d = if dt.is_finite() { dt } else { epoch - geo[3] };
@@ -153,11 +153,6 @@ fn fwd(op: &Op, ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
             successes += 1;
 
             // We've found the grid that contains the point, so we can move on
-            continue 'points;
-        }
-
-        if use_null_grid {
-            successes += 1;
             continue;
         }
 
@@ -169,7 +164,7 @@ fn fwd(op: &Op, ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
 
 // ----- I N V E R S E --------------------------------------------------------------
 
-fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
+fn inv(op: &Op, ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let grids = &op.params.grids;
     let mut successes = 0_usize;
     let n = operands.len();
@@ -181,40 +176,31 @@ fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let use_null_grid = op.params.boolean("null_grid");
 
     // Datum shift
-    'points: for i in 0..n {
+    for i in 0..n {
         let cart = operands.get_coord(i);
         let geo = ellps.geographic(&cart);
-        for margin in [0.0, 0.5] {
-            for grid in grids.iter() {
-                // Interpolated deformation velocity
-                if let Some(v) = grid.at(None, geo, margin) {
-                    // The deformation duration may be given either as a fixed duration or
-                    // as the difference between the frame epoch and the observation epoch
-                    let d = if dt.is_finite() { dt } else { epoch - geo[3] };
-                    // Grid values are in mm/year. We need m/year
-                    let v = v.scale(0.001);
+        // Interpolated deformation velocity
+        if let Some(v) = grids_at(Some(ctx), grids, geo, use_null_grid) {
+            // The deformation duration may be given either as a fixed duration or
+            // as the difference between the frame epoch and the observation epoch
+            let d = if dt.is_finite() { dt } else { epoch - geo[3] };
+            // Grid values are in mm/year. We need m/year
+            let v = v.scale(0.001);
 
-                    let deformation = rotate_and_integrate_velocity(v, geo[0], geo[1], d);
+            let deformation = rotate_and_integrate_velocity(v, geo[0], geo[1], d);
 
-                    // Finally apply the deformation to the input coordinate - or just
-                    // provide the raw correction if that was what was requested
-                    if raw {
-                        let mut deformation_with_length = deformation;
-                        deformation_with_length[3] = deformation.dot(deformation).sqrt();
-                        operands.set_coord(i, &deformation_with_length);
-                    } else {
-                        operands.set_coord(i, &(cart + deformation));
-                    }
-                    successes += 1;
-
-                    // We've found the grid that contains the point, so we can move on
-                    continue 'points;
-                }
+            // Finally apply the deformation to the input coordinate - or just
+            // provide the raw correction if that was what was requested
+            if raw {
+                let mut deformation_with_length = deformation;
+                deformation_with_length[3] = deformation.dot(deformation).sqrt();
+                operands.set_coord(i, &deformation_with_length);
+            } else {
+                operands.set_coord(i, &(cart + deformation));
             }
-        }
-
-        if use_null_grid {
             successes += 1;
+
+            // We've found the grid that contains the point, so we can move on
             continue;
         }
 
