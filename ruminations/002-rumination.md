@@ -610,6 +610,7 @@ Both conventions are common, and trivially converted between as they differ by s
 | `t_obs` | fixed value for observation time. Ignore fourth coordinate |
 | `exact` | Do not use small-angle approximations when constructing the rotation matrix |
 | `convention` | Either `position_vector` or `coordinate_frame`, as described above. Mandatory if any of the rotation parameters are used. |
+| `uas` | Angular units are in microarcseconds and/or microarcseconds/year, rather than arcseconds |
 
 **Additional parameters for PROJ compatibility:**
 | Parameter | Description |

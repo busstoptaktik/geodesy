@@ -129,7 +129,7 @@ fn helmert_inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) ->
 // ----- C O N S T R U C T O R ------------------------------------------------------
 
 #[rustfmt::skip]
-pub const GAMUT: [OpParameter; 25] = [
+pub const GAMUT: [OpParameter; 26] = [
     OpParameter::Flag { key: "inv" },
 
     // Translation
@@ -159,6 +159,7 @@ pub const GAMUT: [OpParameter; 25] = [
     // Handling of rotation
     OpParameter::Text { key: "convention", default: Some("") },
     OpParameter::Flag { key: "exact" },
+    OpParameter::Flag { key: "uas" },
 
     // Scale and its time evoution
     OpParameter::Real { key: "scale", default: Some(0f64) },
@@ -250,11 +251,15 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     } else {
         rotation[2]
     };
-    let mut R = [
-        (rx / 3600.).to_radians(),
-        (ry / 3600.).to_radians(),
-        (rz / 3600.).to_radians(),
-    ];
+
+    // Handle angular units in either arcsec or micro arcsec
+    let angular_scale = if params.boolean("uas") {
+        std::f64::consts::PI / (3.6e9 * 180f64)
+    } else {
+        std::f64::consts::PI / (3.6e3f64 * 180f64)
+    };
+
+    let mut R = [rx * angular_scale, ry * angular_scale, rz * angular_scale];
 
     // Time evolution of rotation
     let angular_velocity = params.series("angular_velocity")?;
@@ -280,9 +285,9 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
         angular_velocity[2]
     };
     let DR = [
-        (drx / 3600.).to_radians(),
-        (dry / 3600.).to_radians(),
-        (drz / 3600.).to_radians(),
+        drx * angular_scale,
+        dry * angular_scale,
+        drz * angular_scale,
     ];
 
     // Handling of rotations: position vector vs. coordinate frame conventions.
