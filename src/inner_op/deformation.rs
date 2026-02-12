@@ -325,7 +325,7 @@ mod tests {
     #[test]
     fn deformation() -> Result<(), Error> {
         // Context and data
-        let mut ctx = Plain::default();
+        let mut ctx = Plain::new();
         let cph = Coor4D::geo(55., 12., 0., 0.);
         let test_deformation = include_str!("../../geodesy/deformation/test.deformation");
         let another_test_deformation =
@@ -352,11 +352,11 @@ mod tests {
         let expected_length_of_correction = (55f64 * 55. + 12. * 12.).sqrt();
         let length_of_scaled_velocity = v.scale(1000.0).dot(v.scale(1000.0)).sqrt();
         let length_of_rotated_deformation = deformation.dot(deformation).sqrt();
-        dbg!(length_of_rotated_deformation);
-        dbg!(expected_length_of_correction);
-        dbg!(length_of_scaled_velocity);
-        dbg!(deformation);
-        dbg!(v);
+        // dbg!(length_of_rotated_deformation);
+        // dbg!(expected_length_of_correction);
+        // dbg!(length_of_scaled_velocity);
+        // dbg!(deformation);
+        // dbg!(v);
         assert!((length_of_scaled_velocity - expected_length_of_correction).abs() < 1e-6);
         assert!((length_of_rotated_deformation - expected_length_of_correction).abs() < 1e-6);
 
@@ -372,7 +372,7 @@ mod tests {
         ctx.apply(op, Fwd, &mut data)?;
         let diff = data[0] - cph;
         let length_of_diff = diff.dot(diff).sqrt();
-        dbg!(length_of_diff);
+        // dbg!(length_of_diff);
         assert!((length_of_diff - expected_length_of_correction).abs() < 1e-6);
 
         // Check the length of the correction after an inverse step
@@ -380,10 +380,10 @@ mod tests {
         ctx.apply(op, Inv, &mut data)?;
         let diff = data[0] - cph;
         let length_of_diff = diff.dot(diff).sqrt();
-        dbg!(length_of_diff);
-        dbg!(expected_length_of_correction);
-        dbg!(data[0]);
-        dbg!(cph);
+        // dbg!(length_of_diff);
+        // dbg!(expected_length_of_correction);
+        // dbg!(data[0]);
+        // dbg!(cph);
         assert!((length_of_diff - expected_length_of_correction).abs() < 1e-6);
 
         // Check the accuracy of a roundtrip step. Consider improving the accuracy by
@@ -391,8 +391,8 @@ mod tests {
         let mut data = [cph];
         ctx.apply(op, Fwd, &mut data)?;
         ctx.apply(op, Inv, &mut data)?;
-        dbg!(cph);
-        dbg!(data[0]);
+        // dbg!(cph);
+        // dbg!(data[0]);
         assert!(cph.hypot3(&data[0]) < 2e-3);
 
         // Check the "raw" functionality
@@ -403,14 +403,12 @@ mod tests {
         let mut data = [cph];
         ctx.apply(op, Fwd, &mut data)?;
         let fwd = data[0];
-        dbg!(fwd);
         assert!((fwd[3] - expected_length_of_correction) < 0.001);
 
         // and inverse direction
         let mut data = [cph];
         ctx.apply(op, Inv, &mut data)?;
         let inv = data[0];
-        dbg!(inv);
         assert!((inv[3] - expected_length_of_correction) < 0.001);
         assert!((inv[3] - fwd[3]) < 0.001);
 
@@ -420,7 +418,6 @@ mod tests {
         let mut data = [tio];
         ctx.apply(op, Fwd, &mut data)?;
         let fwd = data[0];
-        dbg!(fwd);
         assert!(fwd[0].is_finite());
 
         // The Norwegian town of Longyearbyen is outside of both grids
@@ -429,6 +426,32 @@ mod tests {
         let mut data = [lyb];
         ctx.apply(op, Fwd, &mut data)?;
         assert!(data[0][0].is_nan());
+
+        // Check the old Gravsoft grid version of NKGRF17VEL, versus the new Unigrid
+        // based. For this test, we use a site of extreme uplift (almost 10 mm/a),
+        // some 40 km to the north-east of Luleå, close to Bottenviken, in the
+        // nothernmost part of the Baltic Sea.
+        let lul = Coor4D::geo(66., 23., 0., 0.);
+        let lul_cart = ellps.cartesian(&lul);
+
+        // First by using direct grid access
+        let g = ctx.get_grid("nkgrf17vel")?;
+        let gg = ctx.get_grid("eur_nkg_nkgrf17vel.deformation")?;
+        let val_unig = g.at(Some(&ctx), lul, 0.0);
+        let val_grav = gg.at(Some(&ctx), lul, 0.0);
+        assert_eq!(val_grav, val_unig);
+
+        // ...then by operation definitions
+        let grav =
+            ctx.op("deformation t_epoch=2000 dt=1000 grids=eur_nkg_nkgrf17vel.deformation")?;
+        let unig = ctx.op("deformation dt=1000 grids=nkgrf17vel")?;
+
+        // Forward direction
+        let mut gravdata = [lul_cart];
+        let mut unigdata = [lul_cart];
+        ctx.apply(grav, Fwd, &mut gravdata)?;
+        ctx.apply(unig, Fwd, &mut unigdata)?;
+        assert_eq!(gravdata[0], unigdata[0]);
 
         Ok(())
     }
