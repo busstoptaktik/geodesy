@@ -198,7 +198,6 @@ mod tests {
 
         ctx.apply(op, Fwd, &mut data)?;
         let res = data[0].to_geo();
-        dbg!(res[2]);
         assert!(res[2] as f32 + 54.12f32 < 1e-6);
 
         ctx.apply(op, Inv, &mut data)?;

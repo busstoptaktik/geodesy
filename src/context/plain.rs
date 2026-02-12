@@ -527,7 +527,6 @@ mod tests {
         // The correction values are offset by 0.001 in the sub-grid
         let expected = Coor4D::geo(56.301, 12.101, 0., 0.);
         let d = ellps.distance(&expected, &correction.to_radians());
-        dbg!((d * 1000.0, correction));
         assert!(d < 0.1);
         // The interpolated latitude above amounts to 56.30099945068359, leading to an
         // apparently enormous discrepancy of 66 mm.

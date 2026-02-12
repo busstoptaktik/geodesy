@@ -182,7 +182,6 @@ mod tests {
         // Now for a point that needs interpolation
         let pt = Coor4D::geo(56.1, 12.1, 0., 0.);
         let n = grid.at(None, pt, 0.).unwrap();
-        dbg!(n);
         assert!((n[0] - 36.6803439331055).abs() < 1e-8);
         assert!((n[1] - 136.6803430176).abs() < 1e-8);
         assert!((n[2] - 236.6803430176).abs() < 1e-8);
