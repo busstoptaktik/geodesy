@@ -105,7 +105,7 @@ impl BaseGrid {
 }
 
 /// Grid metadata: bounding box, quantization, size, dimension
-#[derive(Debug, Default, Clone, PartialEq)]
+#[derive(Default, Clone, PartialEq)]
 pub struct GridHeader {
     pub lat_n: f64, // Latitude of the first (typically northernmost) row of the grid
     pub lat_s: f64, // Latitude of the last (typically southernmost) row of the grid
@@ -116,6 +116,27 @@ pub struct GridHeader {
     pub rows: usize,
     pub cols: usize,
     pub bands: usize,
+}
+
+impl std::fmt::Debug for GridHeader {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let scaled = if self.is_angular() {
+            self.to_degrees()
+        } else {
+            self.clone()
+        };
+        fmt.debug_struct("GridHeader")
+            .field("lat_n", &scaled.lat_n)
+            .field("lat_s", &scaled.lat_s)
+            .field("lon_w", &scaled.lon_w)
+            .field("lon_e", &scaled.lon_e)
+            .field("dlon", &scaled.dlon)
+            .field("dlat", &scaled.dlat)
+            .field("rows", &scaled.rows)
+            .field("cols", &scaled.cols)
+            .field("bands", &scaled.bands)
+            .finish()
+    }
 }
 
 impl GridHeader {
@@ -165,6 +186,20 @@ impl GridHeader {
         h.dlat = h.dlat.to_degrees();
         h.dlon = h.dlon.to_degrees();
         h
+    }
+
+    /// Heuristic determination of whether a header describes an equiangular grid.
+    /// If any (potentially) angular element of the header exceeds 10 radians, we
+    /// assume we have linear coordinates. Otherwise assume angular.
+    /// Mostly for use in the implementation of the Debug trait, where it is useful
+    /// for the comprehension, if we can present the angular elements in degrees, rather
+    /// than radians.
+    pub fn is_angular(&self) -> bool {
+        ![
+            self.lat_n, self.lat_s, self.lon_e, self.lon_w, self.dlat, self.dlon,
+        ]
+        .iter()
+        .any(|x| (*x).abs() > 10.)
     }
 }
 
@@ -483,7 +518,6 @@ mod tests {
         // but the grid values are f32, so we have only approx 7 significant
         // figures...
         let dist = ellps.distance(&c, &d.to_radians());
-        dbg!((dist * 1000.0, d));
         assert!(dist < 1e-6);
 
         // Create a geoid grid (1 band)
