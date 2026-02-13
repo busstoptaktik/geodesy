@@ -54,6 +54,13 @@ pub enum Bibliography {
     /// [DOI](https://doi.org/10.1007/s00190-006-0023-2)
     Fuk06,
 
+    /// Pasi Häkli, Kristian Evers, Lotti Jivall, Tobias Nilsson, Sveinung Himle, Karin Kollo,
+    /// Ivars Liepiņš, Eimuntas Paršeliūnas, Olav Vestøl and Martin Lidberg, 2023:
+    /// *NKG2020 transformation: An updated transformation between dynamic and static
+    /// reference frames in the Nordic and Baltic countries*.
+    /// Journal of Geodetic Science, 13(1), 2023, pp. 20220155. [DOI](https://doi.org/10.1515/jogs-2022-0155)
+    Hak23,
+
     /// IOGP, 2019: *Coordinate Conversions and Transformations including Formulas. Revised - September 2019*
     /// IOGP Geomatics Guidance Note Number 7, part 2. IOGP publication no. 373-7-2, 162 pp.
     /// [pdf](https://www.iogp.org/wp-content/uploads/2019/09/373-07-02.pdf)

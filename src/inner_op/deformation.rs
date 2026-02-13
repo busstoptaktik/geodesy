@@ -115,9 +115,22 @@
 /// For now, this is the solution implemented here.
 use crate::authoring::*;
 
-// ----- F O R W A R D --------------------------------------------------------------
+// ----- C O M M O N -------------------------------------------------------------------
 
-fn fwd(op: &Op, ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
+// The forward and inverse implementations are virtually identical, so we combine them
+// into one, with the functionality selected from the "direction" parameter.
+//
+// The interrelation between the sign convention of the time differences involved, and in
+// which way we interpret "forward" versus "inverse" is, however, non-trivial. So before
+// adapting this code, read the introduction above, and the foundational paper by
+// [Häkli et al, 2023](crate::Bibliography::Hak23).
+
+fn common(
+    op: &Op,
+    ctx: &dyn Context,
+    operands: &mut dyn CoordinateSet,
+    direction: Direction,
+) -> usize {
     let grids = &op.params.grids;
     let mut successes = 0_usize;
     let n = operands.len();
@@ -127,6 +140,7 @@ fn fwd(op: &Op, ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let ellps = op.params.ellps(0);
     let raw = op.params.boolean("raw");
     let use_null_grid = op.params.boolean("null_grid");
+    let direction = if direction == Fwd { -1f64 } else { 1f64 };
 
     // Datum shift
     for i in 0..n {
@@ -136,10 +150,10 @@ fn fwd(op: &Op, ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
         if let Some(v) = grids_at(Some(ctx), grids, geo, use_null_grid) {
             // The deformation duration may be given either as a fixed duration or
             // as the difference between the frame epoch and the observation epoch
-            let d = if dt.is_finite() { dt } else { epoch - geo[3] };
+            let d = if dt.is_finite() { -dt } else { epoch - geo[3] };
             // Grid values are in mm/year. We need m/year
-            let v = v.scale(0.001);
-            let deformation = rotate_and_integrate_velocity(v.scale(-1.0), geo[0], geo[1], d);
+            let v = v.scale(direction * 0.001);
+            let deformation = rotate_and_integrate_velocity(v, geo[0], geo[1], d);
 
             // Finally apply the deformation to the input coordinate - or just
             // provide the raw correction if that was what was requested
@@ -162,52 +176,16 @@ fn fwd(op: &Op, ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     successes
 }
 
+// ----- F O R W A R D --------------------------------------------------------------
+
+fn fwd(op: &Op, ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
+    common(op, ctx, operands, Fwd)
+}
+
 // ----- I N V E R S E --------------------------------------------------------------
 
 fn inv(op: &Op, ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
-    let grids = &op.params.grids;
-    let mut successes = 0_usize;
-    let n = operands.len();
-
-    let dt = op.params.real("dt").unwrap();
-    let epoch = op.params.real("t_epoch").unwrap();
-    let ellps = op.params.ellps(0);
-    let raw = op.params.boolean("raw");
-    let use_null_grid = op.params.boolean("null_grid");
-
-    // Datum shift
-    for i in 0..n {
-        let cart = operands.get_coord(i);
-        let geo = ellps.geographic(&cart);
-        // Interpolated deformation velocity
-        if let Some(v) = grids_at(Some(ctx), grids, geo, use_null_grid) {
-            // The deformation duration may be given either as a fixed duration or
-            // as the difference between the frame epoch and the observation epoch
-            let d = if dt.is_finite() { dt } else { epoch - geo[3] };
-            // Grid values are in mm/year. We need m/year
-            let v = v.scale(0.001);
-
-            let deformation = rotate_and_integrate_velocity(v, geo[0], geo[1], d);
-
-            // Finally apply the deformation to the input coordinate - or just
-            // provide the raw correction if that was what was requested
-            if raw {
-                let mut deformation_with_length = deformation;
-                deformation_with_length[3] = deformation.dot(deformation).sqrt();
-                operands.set_coord(i, &deformation_with_length);
-            } else {
-                operands.set_coord(i, &(cart + deformation));
-            }
-            successes += 1;
-
-            // We've found the grid that contains the point, so we can move on
-            continue;
-        }
-
-        // No grid found so we stomp on the coordinate
-        operands.set_coord(i, &Coor4D::nan());
-    }
-    successes
+    common(op, ctx, operands, Inv)
 }
 
 // ----- C O N S T R U C T O R ------------------------------------------------------
@@ -438,6 +416,12 @@ mod tests {
         ctx.apply(grav, Fwd, &mut gravdata)?;
         ctx.apply(unig, Fwd, &mut unigdata)?;
         assert_eq!(gravdata[0], unigdata[0]);
+
+        // And roundtrip
+        ctx.apply(grav, Inv, &mut gravdata)?;
+        ctx.apply(unig, Inv, &mut unigdata)?;
+        assert_eq!(gravdata[0], unigdata[0]);
+        assert!(gravdata[0].hypot3(&lul_cart) < 1e-4);
 
         Ok(())
     }
