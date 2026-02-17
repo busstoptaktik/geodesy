@@ -3,7 +3,7 @@ use geodesy::authoring::Jacobian;
 use geodesy::prelude::*;
 use log::{info, trace}; // debug, error, warn: not used
 use std::fs::File;
-use std::io::{BufRead, BufReader};
+use std::io::{BufRead, BufReader, Write};
 use std::path::PathBuf;
 use std::time;
 
@@ -91,11 +91,11 @@ fn main() -> Result<(), anyhow::Error> {
     // Create context and operator
     let start = time::Instant::now();
     let mut ctx = Plain::new();
-    let duration = start.elapsed();
-    trace!("Created context in: {duration:?}");
+    let (lap, duration) = (start.elapsed(), start.elapsed());
+    trace!("Created context in: {lap:?}");
     let op = ctx.op(&options.operation)?;
-    let duration = start.elapsed();
-    trace!("Created operation in: {duration:?}");
+    let (lap, duration) = (start.elapsed() - duration, start.elapsed());
+    trace!("Created operation in: {lap:?}");
     trace!("{op:#?}");
 
     // Get ready to read and transform input data
@@ -103,7 +103,6 @@ fn main() -> Result<(), anyhow::Error> {
     let mut number_of_operands_succesfully_transformed = 0_usize;
     let mut number_of_dimensions_in_input = 0;
     let mut operands = Vec::new();
-    let start = time::Instant::now();
 
     // Now loop over all input files (of which stdin may be one)
     for arg in &options.args {
@@ -149,7 +148,7 @@ fn main() -> Result<(), anyhow::Error> {
             // To avoid unlimited buffer growth, we send material
             // on to the transformation factory every time, we have
             // 25000 operands to operate on
-            if operands.len() == 25000 {
+            if operands.len() == 25_000_000 {
                 number_of_operands_succesfully_transformed += transform(
                     &options,
                     op,
@@ -162,6 +161,10 @@ fn main() -> Result<(), anyhow::Error> {
         }
     }
 
+    let (lap, duration) = (start.elapsed() - duration, start.elapsed());
+    let each = lap / (number_of_operands_read as u32);
+    trace!("Read {number_of_operands_read} coordinates in {lap:?} ({each:?} each)");
+
     // Transform the remaining coordinates
     number_of_operands_succesfully_transformed += transform(
         &options,
@@ -171,9 +174,16 @@ fn main() -> Result<(), anyhow::Error> {
         &ctx,
     )?;
 
-    let duration = start.elapsed();
+    let lap = start.elapsed() - duration;
+    let each = lap / (number_of_operands_succesfully_transformed as u32);
+    let total = start.elapsed();
+    let total_each = total / (number_of_operands_succesfully_transformed as u32);
+    trace!(
+        "Transformed {number_of_operands_succesfully_transformed} coordinates in {lap:?} ({each:?} each)"
+    );
+
     info!(
-        "Read {number_of_operands_read} coordinates and succesfully transformed {number_of_operands_succesfully_transformed} in {duration:?}"
+        "Read {number_of_operands_read} coordinates and succesfully transformed {number_of_operands_succesfully_transformed} in {total:?}  ({total_each:?} each)"
     );
 
     Ok(())
@@ -187,13 +197,20 @@ fn transform(
     operands: &mut Vec<Coor4D>,
     ctx: &Plain,
 ) -> Result<usize, geodesy::Error> {
+    // Timing infrastructure
+    let start = time::Instant::now();
+    let duration = time::Duration::new(0, 1);
+    let lap = duration;
+
     let output_dimension = options.dimension.unwrap_or(number_of_dimensions_in_input);
 
     // When roundtripping, or computing deformation factors,
     // we must keep a copy of the input to be able to compute
     // the roundtrip differences/factors from the Jacobian
     let mut buffer = Vec::new();
-    buffer.clone_from(operands);
+    if options.roundtrip {
+        buffer.clone_from(operands);
+    }
 
     let factors = options.factors.is_some();
     let ellps = if factors {
@@ -201,6 +218,8 @@ fn transform(
     } else {
         Ellipsoid::named("GRS80")?
     };
+    let (lap, duration) = (start.elapsed() - duration, duration + lap);
+    trace!("    Prepared for transformation in : {lap:?}");
 
     let mut n = if options.inverse {
         ctx.apply(op, Inv, operands)?
@@ -225,15 +244,23 @@ fn transform(
             operands[index] = operands[index] - buffer[index];
         }
 
+        let lap = start.elapsed() - duration;
+        let each = lap / (m as u32);
+        trace!("    Roundtripped {m} coordinates in: {lap:?} ({each:?} each)");
+
         m
     } else {
+        let lap = start.elapsed() - duration;
+        let each = lap / (n as u32);
+        trace!("    Transformed {n} coordinates in: {lap:?} ({each:?} each)");
         n
     };
+    let duration = start.elapsed();
 
     n = n.min(m);
 
     // If the number of output decimals are not given as option "-d",
-    // we try guess a reasonable value, using the heuristic that if
+    // we try to guess a reasonable value, using the heuristic that if
     // the first coordinate is larger than 1000, the output is most
     // probably not in degrees. Hence give 5 decimals for linear units,
     // 10 for angular
@@ -241,23 +268,29 @@ fn transform(
         .decimals
         .unwrap_or(if operands[0][0] > 1000. { 5 } else { 10 });
 
+    let stdout = std::io::stdout();
+    let mut w = std::io::BufWriter::new(stdout.lock());
+
     // Finally output the transformed coordinates
     for (index, coord) in operands.iter().enumerate() {
         match output_dimension {
-            0 | 4 => print!(
+            0 | 4 => write!(
+                w,
                 "{1:.0$} {2:.0$} {3:.0$} {4:.0$} ",
                 decimals, coord[0], coord[1], coord[2], coord[3]
-            ),
-            1 => print!("{1:.0$} ", decimals, coord[0]),
-            2 => print!("{1:.0$} {2:.0$} ", decimals, coord[0], coord[1]),
-            3 => print!(
+            )?,
+            1 => write!(w, "{1:.0$} ", decimals, coord[0])?,
+            2 => write!(w, "{1:.0$} {2:.0$} ", decimals, coord[0], coord[1])?,
+            3 => write!(
+                w,
                 "{1:.0$} {2:.0$} {3:.0$} ",
                 decimals, coord[0], coord[1], coord[2]
-            ),
-            _ => print!(
+            )?,
+            _ => write!(
+                w,
                 "{1:.0$} {2:.0$} {3:.0$} {4:.0$} ",
                 decimals, coord[0], coord[1], coord[2], coord[3]
-            ),
+            )?,
         }
 
         if factors {
@@ -267,11 +300,12 @@ fn transform(
             let f = Jacobian::new(ctx, op, scale, swap, ellps, at)?.factors();
             if options.verbose.is_present() {
                 // Full output, as with the proj "-V" option
-                println!();
-                println!("{f:#?}");
+                writeln!(w)?;
+                writeln!(w, "{f:#?}")?;
             } else {
                 // Inline output, as with the proj "-S" option
-                println!(
+                writeln!(
+                    w,
                     "  < {0:.10} {1:.10} {2:.10} | {3:.5} {4:.5} {5:.5} >",
                     f.meridional_scale,
                     f.parallel_scale,
@@ -279,12 +313,25 @@ fn transform(
                     f.angular_distortion,
                     f.meridian_parallel_angle,
                     f.meridian_convergence
-                );
+                )?;
             }
         } else {
-            println!();
+            writeln!(w)?;
+        }
+
+        // Line buffering for small datasets (which are presumably the result of interactive operation)
+        if index < 10 {
+            w.flush()?;
         }
     }
+
+    let lap = start.elapsed() - duration;
+    let each = lap / (n as u32);
+    let total = start.elapsed();
+    let total_each = total / (n as u32);
+    trace!("    Wrote {n} coordinates to stdout in: {lap:?} ({each:?} each)");
+    trace!("    Handled {n} coordinates in {total:?} ({total_each:?} each)");
+
     Ok(n)
 }
 
