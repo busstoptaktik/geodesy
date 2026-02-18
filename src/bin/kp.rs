@@ -138,6 +138,7 @@ fn main() -> Result<(), anyhow::Error> {
             for e in args {
                 b.push(angular::parse_sexagesimal(e));
             }
+            // Height and time given in command options overrule those given in input
             b[2] = options.height.unwrap_or(b[2]);
             b[3] = options.time.unwrap_or(b[3]);
 
@@ -147,8 +148,8 @@ fn main() -> Result<(), anyhow::Error> {
 
             // To avoid unlimited buffer growth, we send material
             // on to the transformation factory every time, we have
-            // 25000 operands to operate on
-            if operands.len() == 25_000_000 {
+            // 50000 operands to operate on
+            if operands.len() == 50_000 {
                 number_of_operands_succesfully_transformed += transform(
                     &options,
                     op,
@@ -156,13 +157,17 @@ fn main() -> Result<(), anyhow::Error> {
                     &mut operands,
                     &ctx,
                 )?;
-                operands.truncate(0);
+                operands.clear();
             }
         }
     }
 
     let (lap, duration) = (start.elapsed() - duration, start.elapsed());
-    let each = lap / (number_of_operands_read as u32);
+    let each = if number_of_operands_read == 0 {
+        std::time::Duration::new(0, 0)
+    } else {
+        lap / number_of_operands_read.try_into().unwrap_or(u32::MAX)
+    };
     trace!("Read {number_of_operands_read} coordinates in {lap:?} ({each:?} each)");
 
     // Transform the remaining coordinates
@@ -175,9 +180,22 @@ fn main() -> Result<(), anyhow::Error> {
     )?;
 
     let lap = start.elapsed() - duration;
-    let each = lap / (number_of_operands_succesfully_transformed as u32);
+    let each = if number_of_operands_read == 0 {
+        std::time::Duration::new(0, 0)
+    } else {
+        lap / number_of_operands_succesfully_transformed
+            .try_into()
+            .unwrap_or(u32::MAX)
+    };
     let total = start.elapsed();
-    let total_each = total / (number_of_operands_succesfully_transformed as u32);
+    let total_each = if number_of_operands_succesfully_transformed == 0 {
+        std::time::Duration::new(0, 0)
+    } else {
+        total
+            / number_of_operands_succesfully_transformed
+                .try_into()
+                .unwrap_or(u32::MAX)
+    };
     trace!(
         "Transformed {number_of_operands_succesfully_transformed} coordinates in {lap:?} ({each:?} each)"
     );
@@ -245,13 +263,13 @@ fn transform(
         }
 
         let lap = start.elapsed() - duration;
-        let each = lap / (m as u32);
+        let each = lap / m.try_into().unwrap_or(u32::MAX);
         trace!("    Roundtripped {m} coordinates in: {lap:?} ({each:?} each)");
 
         m
     } else {
         let lap = start.elapsed() - duration;
-        let each = lap / (n as u32);
+        let each = lap / n.try_into().unwrap_or(u32::MAX);
         trace!("    Transformed {n} coordinates in: {lap:?} ({each:?} each)");
         n
     };
@@ -326,9 +344,9 @@ fn transform(
     }
 
     let lap = start.elapsed() - duration;
-    let each = lap / (n as u32);
+    let each = lap / n.try_into().unwrap_or(u32::MAX);
     let total = start.elapsed();
-    let total_each = total / (n as u32);
+    let total_each = total / n.try_into().unwrap_or(u32::MAX);
     trace!("    Wrote {n} coordinates to stdout in: {lap:?} ({each:?} each)");
     trace!("    Handled {n} coordinates in {total:?} ({total_each:?} each)");
 
