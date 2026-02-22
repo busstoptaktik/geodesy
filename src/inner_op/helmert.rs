@@ -129,7 +129,7 @@ fn helmert_inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) ->
 // ----- C O N S T R U C T O R ------------------------------------------------------
 
 #[rustfmt::skip]
-pub const GAMUT: [OpParameter; 26] = [
+pub const GAMUT: [OpParameter; 27] = [
     OpParameter::Flag { key: "inv" },
 
     // Translation
@@ -160,6 +160,7 @@ pub const GAMUT: [OpParameter; 26] = [
     OpParameter::Text { key: "convention", default: Some("") },
     OpParameter::Flag { key: "exact" },
     OpParameter::Flag { key: "uas" },
+    OpParameter::Flag { key: "mm" },
 
     // Scale and its time evoution
     OpParameter::Real { key: "scale", default: Some(0f64) },
@@ -177,6 +178,18 @@ pub const GAMUT: [OpParameter; 26] = [
 pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> {
     let def = &parameters.instantiated_as;
     let mut params = ParsedParameters::new(parameters, &GAMUT)?;
+
+    // Parameter units:
+
+    // Handle linear units in either m or mm
+    let linear_scale = if params.boolean("mm") { 0.001 } else { 1.0 };
+
+    // Handle angular units in either arcsec or micro arcsec
+    let angular_scale = if params.boolean("uas") {
+        std::f64::consts::PI / (3.6e9 * 180f64)
+    } else {
+        std::f64::consts::PI / (3.6e3f64 * 180f64)
+    };
 
     // Translation
     let translation = params.series("translation")?;
@@ -201,7 +214,7 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     } else {
         translation[2]
     };
-    let mut T = [x, y, z];
+    let mut T = [linear_scale * x, linear_scale * y, linear_scale * z];
 
     // Time evolution of translation
     let velocity = params.series("velocity")?;
@@ -226,7 +239,7 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     } else {
         velocity[2]
     };
-    let DT = [dx, dy, dz];
+    let DT = [linear_scale * dx, linear_scale * dy, linear_scale * dz];
 
     // Rotation
     let rotation = params.series("rotation")?;
@@ -250,13 +263,6 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
         params.real("rz")?
     } else {
         rotation[2]
-    };
-
-    // Handle angular units in either arcsec or micro arcsec
-    let angular_scale = if params.boolean("uas") {
-        std::f64::consts::PI / (3.6e9 * 180f64)
-    } else {
-        std::f64::consts::PI / (3.6e3f64 * 180f64)
     };
 
     let mut R = [rx * angular_scale, ry * angular_scale, rz * angular_scale];
