@@ -9,7 +9,7 @@ authors = ["Thomas Knudsen <knudsen.thomas@gmail.com>"]
 readme = "README.md"
 repository = "https://github.com/busstoptaktik/geodesy/"
 edition = "2024"
-rust-version = "1.85"
+rust-version = "1.87"
 
 default-run = "kp"
 
