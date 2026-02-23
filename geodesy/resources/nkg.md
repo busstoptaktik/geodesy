@@ -1,9 +1,20 @@
 # NKG Register
 
-## Geodesy implementations
+## NKG2020 transformation implementations
 
-This section contains the Rust Geodesy (RG) implementations of the NKG
-transformations from ITRF2014 to the national realizations of ETRS89
+This section contains the Rust Geodesy (RG) implementations of the NKG2020
+transformations from ITRF2014 to the national realizations of ETRS89, via
+the "common deformation frame" NKG_ETRF2014, and the common frame ETRF2000,
+as described by Häkli et al (2023)
+
+- **Pasi Häkli,**
+Kristian Evers, Lotti Jivall, Tobias Nilsson, Sveinung Himle,
+Karin Kollo, Ivars Liepiņš, Eimuntas Paršeliūnas, Olav Vestøl
+and Martin Lidberg, **2023:**
+*NKG2020 transformation: An updated transformation between dynamic and static
+reference frames in the Nordic and Baltic countries*.
+Journal of Geodetic Science, 13(1), 2023, pp. 20220155.
+[DOI](https://doi.org/10.1515/jogs-2022-0155)
 
 ---
 
@@ -11,17 +22,17 @@ transformations from ITRF2014 to the national realizations of ETRS89
 
 ```geodesy:itrf2014-sweref99
 
+# ITRF2014 (geo, h, t) -> SWEREF99 (geo, h, t)
+
 # Input is latitude/longitude/height/time with lat/lon in degrees, h in m, t in years CE,
 # but the transformation machinery works in cartesian coordinates
-|   adapt from=neuf_deg
+|   geo:in
 |   cart ellps=GRS80
 
 # Go from ITRF2014(t) to ETRF2014(t) using EUREF parameters
 |   helmert
-:       rotation = 1785, 11151, -16170
 :       angular_velocity = 85, 531, -770 uas
-:       t_epoch=1989
-:       convention=position_vector
+:       t_epoch = 1989  convention = position_vector
 
 # Staying in ETRF2014, remove the frame deformation since 2000.0
 |   deformation
@@ -31,7 +42,7 @@ transformations from ITRF2014 to the national realizations of ETRS89
 # Now, with t fixed at 2000.0, go from ETRF2014(2000) to ETRF97(2000),
 # which is the frame SWEREF99 is based on
 |   helmert
-:       translation = 0.03054, 0.04606, -0.07944
+:       translation = 30.54, 46.06, -79.44 mm
 :       rotation = 1419.58, 151.32, 1503.37 uas
 :       scale = 0.003002
 :       convention=position_vector
@@ -43,15 +54,15 @@ transformations from ITRF2014 to the national realizations of ETRS89
 
 # And get back to latitude/longitude/height/time
 |   cart inv ellps=GRS80
-|   adapt to=neuf_deg
+|   geo:out
 ```
 
 ---
 
 ### Denmark
 
-The 'dt' of the last deformation step in the DK transformation may seem odd, as
-it does not agree with the realization epoch of 1994.704 (i.e. 1994-09-15).
+The 'dt' of the last deformation step in the DK transformation may seem odd, as it
+does not agree with the formal realization epoch of 1994.704 (i.e. 1994-09-15).
 This is due to a minor adjustment of the DK realization at epoch 2015, in effect
 solid-body lifting it from the old passive markers onto the active CORS network.
 Or, as described by Häkli et al (2023):
@@ -77,9 +88,11 @@ deformation is much smaller in Denmark than in northern Sweden.
 
 ```geodesy:itrf2014-etrs89dk
 
+# ITRF2014 (geo, h, t) -> ETRS89-DNK (geo, h, t)
+
 # Input is latitude/longitude/height/time with lat/lon in degrees, h in m, t in years CE,
 # but the transformation machinery works in cartesian coordinates
-|   adapt from=neuf_deg
+|   geo:in
 |   cart ellps=GRS80
 
 # Go from ITRF2014(t) to ETRF2014(t) using EUREF parameters
@@ -89,12 +102,12 @@ deformation is much smaller in Denmark than in northern Sweden.
 
 # Staying in ETRF2014, remove the frame deformation since 2000.0
 |   deformation inv
-       t_epoch=2000.0 grids=eur_nkg_nkgrf17vel.deformation
+:      t_epoch=2000.0 grids=nkgrf17vel
 
 # Now, with t fixed at 2000.0, go from ETRF2014(2000) to ETRF94(2000),
 # which is the frame ETRS89-DNK is based on
 |   helmert
-:       translation = 0.66818, 0.04453, -0.45049
+:       translation = 668.18, 44.53, -450.49 mm
 :       rotation = 3128.83, -23734.23, 4429.69 uas
 :       scale =-0.003136
 :       convention=position_vector
@@ -107,32 +120,10 @@ deformation is much smaller in Denmark than in northern Sweden.
 
 # And get back to latitude/longitude/height/time
 |   cart inv ellps=GRS80
-|   adapt to=neuf_deg
+|   geo:out
 ```
 
-```console
-# Testing itrf2014-etrs89dk
-
-# Copenhagen (-ish)
-
-$ echo 55 12 0 2026 | cs2cs -d 18 itrf2014 etrs89 --area Denmark
-54.999994299501942407   11.999989796428588207 -0.014318614266812801 2026
-
-$ echo 55 12 0 2026 | cargo r --release -- -d 18 nkg:itrf2014-etrs89dk
-54.999994299501949513 11.999989796428593536 -0.014318615464977544 2026.000000000000000000
-
-# PROJ and RG are geodesically indiscernible
-$ echo 54.999994299501949513 11.999989796428593536 54.999994299501942407   11.999989796428588207 | kp "inv geodesic"
-0.0000000000 0.0000000000 0.0000000000 180.0000000000
-
-# And the height difference, at around a nanometre is absolutely acceptable
-$ eva 0.014318615464977544-0.014318614266812801
-0.0000000012
-
-# But, as we can see here, the total deformation during 26 years is only 19 mm, so not much to handle
-$ echo 55 12 0 2026 | cargo r --release -- -d 18 "geo:in | cart | deformation raw t_epoch=2000 grids=nkgrf17vel"
-0.016842274583094469 -0.005351231340245891 0.008113172013357279 0.019445345204122853
-```
+---
 
 ## PROJ implementations
 
@@ -168,7 +159,41 @@ Conversion from SWEREF99 (geocentric) to SWEREF99 (geog2D)
   +step +inv +proj=cart +ellps=GRS80
   +step +proj=unitconvert +xy_in=rad +xy_out=deg
   +step +proj=axisswap +order=2,1
-```
+
+
+And in single line format, suitable for cct
+
+cct -d 10 proj=pipeline step proj=axisswap order=2,1 step proj=unitconvert xy_in=deg xy_out=rad step proj=cart ellps=GRS80 step proj=helmert drx=8.5e-05 dry=0.000531 drz=-0.00077 t_epoch=1989 convention=position_vector step inv proj=deformation t_epoch=2000 grids=eur_nkg_nkgrf17vel.tif ellps=GRS80 step proj=helmert x=0.03054 y=0.04606 z=-0.07944 rx=0.00141958 ry=0.00015132 rz=0.00150337 s=0.003002 convention=position_vector step proj=deformation dt=-0.5 grids=eur_nkg_nkgrf17vel.tif ellps=GRS80 step inv proj=cart ellps=GRS80 step proj=unitconvert xy_in=rad xy_out=deg step proj=axisswap order=2,1 -- untracked\nkg_test.pts >nkg_test.cct
+
+cct Runs in 20 min 25 sec:
+
+$ echo %time%
+22:00:15,39
+
+$ cct -d 10 proj=pipeline step proj=axisswap order=2,1 step proj=unitconvert xy_in=deg xy_out=rad step proj=cart ellps=GRS80  step proj=helmert drx=8.5e-05 dry=0.000531 drz=-0.00077 t_epoch=1989 convention=position_vector step inv proj=deformation t_epoch=2000 grids=eur_nkg_nkgrf17vel.tif ellps=GRS80 step proj=helmert x=0.03054 y=0.04606 z=-0.07944 rx=0.00141958 ry=0.00015132 rz=0.00150337 s=0.003002 convention=position_vector step proj=deformation dt=-0.5 grids=eur_nkg_nkgrf17vel.tif ellps=GRS80 step inv proj=cart ellps=GRS80 step proj=unitconvert xy_in=rad xy_out=deg step proj=axisswap order=2,1 -- untracked\nkg_test.pts >nkg_test.cct
+
+$ echo %time%
+22:20:40,21
+
+kp runs in 17 sec
+
+$ echo %time% && kp -vvd 10 nkg:itrf2014-sweref99 untracked\nkg_test.pts> nkg_test.kp
+22:25:46,18
+[2026-02-18T21:26:03Z INFO  kp] Read 10000000 coordinates and succesfully transformed 10000000 in 16.9419602s  (1.694µs each)
+$ echo %time%
+22:26:03,21
+
+(fire-dev) C:\FLOW\AD\RG\geodesy>projsync --source-id eur_nkg
+Downloading from https://cdn.proj.org into C:\Users\B004330\AppData\Local/proj
+https://cdn.proj.org/eur_nkg_README.txt already downloaded.
+https://cdn.proj.org/NKG already downloaded.
+https://cdn.proj.org/eur_nkg_nkgrf03vel_realigned.tif already downloaded.
+https://cdn.proj.org/eur_nkg_nkgrf17vel.tif already downloaded.
+
+$ echo PROJ_NETWORK=%PROJ_NETWORK%
+PROJ_NETWORK=ON
+
+---
 
 ### PROJ Denmark
 
@@ -200,12 +225,4 @@ Conversion from ETRS89 (geocentric) to ETRS89 (geog2D)
   +step +inv +proj=cart +ellps=GRS80
   +step +proj=unitconvert +xy_in=rad +xy_out=deg
   +step +proj=axisswap +order=2,1
-```
-
-```console
-
-Odd difference between the EUREF expressions for SE and DK (difference in epoch balances differences in rx, ry, rz):
-
-SE: +step +proj=helmert +rx=0.001785 +ry=0.011151 +rz=-0.01617 +drx=8.5e-05 +dry=0.000531 +drz=-0.00077 +t_epoch=2010 +convention=position_vector
-DK: +step +proj=helmert +rx=0        +ry=0        +rz=0        +drx=8.5e-05 +dry=0.000531 +drz=-0.00077 +t_epoch=1989 +convention=position_vector
 ```
