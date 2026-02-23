@@ -162,7 +162,6 @@ fn main() -> Result<(), anyhow::Error> {
         }
     }
 
-
     let (lap, duration) = (start.elapsed() - duration, start.elapsed());
     let each = if number_of_operands_read == 0 {
         std::time::Duration::new(0, 0)
