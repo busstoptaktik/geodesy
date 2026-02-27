@@ -33,11 +33,11 @@ rem echo --------------------------- %time%
 rem echo Compiling
 rem cargo -q b --release
 echo --------------------------- %time%
-echo Running cs2cs
-cs2cs -d 10 --3d --only-best=yes --no-ballpark itrf2014 sweref99 untracked\timing\nkg_test.pts >untracked\timing\nkg_test.cs2cs
-echo --------------------------- %time%
 echo Running kp
 kp -vvd 10 nkg:itrf2014-sweref99 untracked\timing\nkg_test.pts> untracked\timing\nkg_test.kp
+echo --------------------------- %time%
+echo Running cs2cs
+cs2cs -d 10 --3d --only-best=yes --no-ballpark itrf2014 sweref99 untracked\timing\nkg_test.pts >untracked\timing\nkg_test.cs2cs
 echo --------------------------- %time%
 
 rem
