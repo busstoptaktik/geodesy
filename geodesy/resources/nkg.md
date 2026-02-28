@@ -104,7 +104,7 @@ deformation is much smaller in Denmark than in northern Sweden.
 |   deformation inv
 :      t_epoch=2000.0 grids=nkgrf17vel
 
-# Now, with t fixed at 2000.0, go from ETRF2014(2000) to ETRF94(2000),
+# Now, with t fixed at 2000.0, go from ETRF2014(2000) to ETRF92(2000),
 # which is the frame ETRS89-DNK is based on
 |   helmert
 :       translation = 668.18, 44.53, -450.49 mm
@@ -113,7 +113,7 @@ deformation is much smaller in Denmark than in northern Sweden.
 :       convention=position_vector
 
 # Finally correct for the frame deformation from the pivot epoch of 2000
-# to the *deformation realization* epoch of 2025.829 (replacing the original
+# to the *deformation realization* epoch of 2015.829 (replacing the original
 # realization epoch of 1994.709)
 |   deformation
 :       dt=15.829 grids=eur_nkg_nkgrf17vel.deformation
@@ -122,8 +122,6 @@ deformation is much smaller in Denmark than in northern Sweden.
 |   cart inv ellps=GRS80
 |   geo:out
 ```
-
----
 
 ## PROJ implementations
 
@@ -193,7 +191,7 @@ https://cdn.proj.org/eur_nkg_nkgrf17vel.tif already downloaded.
 $ echo PROJ_NETWORK=%PROJ_NETWORK%
 PROJ_NETWORK=ON
 
----
+```
 
 ### PROJ Denmark
 
