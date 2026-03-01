@@ -169,12 +169,16 @@ mod tests {
         assert_eq!(grid.header.lon_e, 16f64.to_radians());
 
         let ul = Coor4D::geo(58., 8., 0., 0.);
+        let ur = Coor4D::geo(58., 16., 0., 0.);
         let lr = Coor4D::geo(54., 16., 0., 0.);
-        let u = grid.at(None, ul, 0.).unwrap();
-        let v = grid.at(None, lr, 0.).unwrap();
+        let ul = grid.at(None, ul, 0.).unwrap();
+        let ur = grid.at(None, ur, 0.).unwrap();
+        let lr = grid.at(None, lr, 0.).unwrap();
         if let GridSource::Internal { values } = &grid.grid {
-            assert_eq!(u[0] as f32, *values.first().unwrap());
-            assert_eq!(v[2] as f32, *values.last().unwrap());
+            assert_eq!(ul[0] as f32, *values.first().unwrap());
+            // In the present case, the geoid undulation is larger in west, than in east
+            assert!(ul[0] > ur[0]);
+            assert_eq!(lr[2] as f32, *values.last().unwrap());
         } else {
             panic!("Unexpected GridSource enum")
         }
