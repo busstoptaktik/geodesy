@@ -2,7 +2,7 @@
 name = "geodesy"
 description = "A platform for experiments with geodetic transformations and data flow"
 keywords = ["geospatial", "geodesy", "cartography", "geography"]
-categories = ["science"]
+categories = ["science::geo", "science"]
 license = "MIT OR Apache-2.0"
 version = "0.14.0"
 authors = ["Thomas Knudsen <knudsen.thomas@gmail.com>"]
