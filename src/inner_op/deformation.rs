@@ -400,14 +400,13 @@ mod tests {
 
         // First by using direct grid access
         let g = ctx.get_grid("nkgrf17vel")?;
-        let gg = ctx.get_grid("eur_nkg_nkgrf17vel.deformation")?;
+        let gg = ctx.get_grid("nkgrf17vel.deformation")?;
         let val_unig = g.at(Some(&ctx), lul, 0.0);
         let val_grav = gg.at(Some(&ctx), lul, 0.0);
         assert_eq!(val_grav, val_unig);
 
         // ...then by operation definitions
-        let grav =
-            ctx.op("deformation t_epoch=2000 dt=1000 grids=eur_nkg_nkgrf17vel.deformation")?;
+        let grav = ctx.op("deformation t_epoch=2000 dt=1000 grids=nkgrf17vel.deformation")?;
         let unig = ctx.op("deformation dt=1000 grids=nkgrf17vel")?;
 
         // Forward direction

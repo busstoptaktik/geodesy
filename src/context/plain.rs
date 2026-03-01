@@ -504,7 +504,7 @@ mod tests {
         let ctx = Plain::new();
         let ellps = Ellipsoid::named("GRS80")?;
 
-        let unigrid_test = ctx.get_grid("unigrid_test_datum")?;
+        let unigrid_test = ctx.get_grid("test_datum_with_subset_as_subgrid")?;
 
         // A test point outside of the subgrid, and the correction grid value at that point
         let test_point = Coor4D::geo(55.1f64, 12.3f64, 0., 0.);
@@ -512,7 +512,7 @@ mod tests {
         let Some(subgrid) = unigrid_test.which_subgrid_contains(test_point, 0.0) else {
             return Err(Error::General("No (sub-)grid found for (55.1E, 12.3E)"));
         };
-        assert_eq!("unigrid_test_datum[0]", subgrid);
+        assert_eq!("test_datum_with_subset_as_subgrid[0]", subgrid);
 
         // Numerically the grid value IN ARCSEC should be identical to the grid location
         // IN DEGREES. Hence, to make the test_point (which is a coordinate in RADIANS)
@@ -546,7 +546,7 @@ mod tests {
         let Some(subgrid) = unigrid_test.which_subgrid_contains(test_point, 0.0) else {
             return Err(Error::General("No (sub-)grid found for (56.3E, 12.1E)"));
         };
-        assert_eq!("unigrid_test_datum[1]", subgrid);
+        assert_eq!("test_datum_with_subset_as_subgrid[1]", subgrid);
 
         Ok(())
     }
