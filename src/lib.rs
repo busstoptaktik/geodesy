@@ -90,6 +90,7 @@ pub mod grd {
     pub use crate::grid::GridSource;
     pub use crate::grid::gravsoft;
     pub use crate::grid::grids_at;
+    pub use crate::grid::read_grid;
     pub use crate::grid::unigrid::read_unigrid_index;
 }
 

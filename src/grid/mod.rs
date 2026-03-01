@@ -436,6 +436,38 @@ pub fn grids_at(
     None
 }
 
+/// Try to read 'path' as a grid file in one of the 4 supported formats:
+/// ntv2, gtx, Golden Software GSA, and Gravsoft
+pub fn read_grid(path: &str) -> Result<BaseGrid, Error> {
+    let path: std::path::PathBuf = path.into();
+    let grid = std::fs::read(&path)?;
+    let id = path
+        .file_stem()
+        .unwrap_or_default()
+        .to_str()
+        .unwrap_or_default();
+    let ext = path
+        .extension()
+        .unwrap_or_default()
+        .to_str()
+        .unwrap_or_default();
+    match ext {
+        "gsb" => ntv2::ntv2_grid(&grid),
+        "gtx" => gtx::gtx(id, &grid),
+        _ => {
+            // Neither GSA, nor Gravsoft can be identified by extension alone,
+            // so we try GSA first, since it can identify itself from its
+            // magic bytes 'DSAA'
+            if let Ok(grid) = gsa::gsa(id, &grid) {
+                Ok(grid)
+            } else {
+                // Gravsoft
+                gravsoft::gravsoft(id, &grid)
+            }
+        }
+    }
+}
+
 // ----- T E S T S ------------------------------------------------------------------
 
 #[cfg(test)]
@@ -536,6 +568,18 @@ mod tests {
         let n = geoid.at(None, c, 1.0).unwrap();
         assert!((n[0] - (58.75 + 0.0825)).abs() < 0.0001);
         Ok(())
+    }
+
+    #[test]
+    fn read_grid() {
+        // trying to read non-existing files fail with Error::Io
+        assert!(matches!(super::read_grid(""), Err(Error::Io(_))));
+        assert!(matches!(super::read_grid("not.existing"), Err(Error::Io(_))));
+
+        // read_grid goes only after the exact filename specified,
+        // it does not chase the file down the "known paths"
+        assert!(super::read_grid("test.datum").is_err());
+        assert!(super::read_grid("geodesy/datum/test.datum").is_ok());
     }
 }
 
