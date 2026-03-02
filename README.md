@@ -148,7 +148,7 @@ the [GeoRust](https://github.com/georust) ecosystem.
 
 ## License
 
-*Rust Geodesy*: Copyright 2020, 2021, 2022, 2023, 2024, 2025 by
+*Rust Geodesy*: Copyright 2020, 2021, 2022, 2023, 2024, 2025, 2026 by
 Thomas Knudsen <knudsen.thomas@gmail.com> and contributors.
 
 Licensed under either of

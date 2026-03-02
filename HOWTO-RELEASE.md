@@ -20,14 +20,14 @@
 - `git push --set-upstream origin 0.15`
 - `git switch main`
 - `cargo publish`
-- update `HOWTO-RELEASE.md` to say 0.16
+- Twitter/Mastodon/DiscordGeo:
+
+   ```txt
+   Rust Geodesy version 0.15.0 just released. X months and Y commits in the making. Get it while it's hot!  https://crates.io/crates/geodesy | https://docs.rs/geodesy/latest/geodesy/ | git commit -a -m "Start of work towards 0.16.0
+   ```
+
+   Also post new section of Changelog to DiscordGeo
+
+- update `HOWTO-RELEASE.md` to say 0.16 above, and 0.17 here, and below
 - `git commit -a -m "Start of work towards 0.16.0"`
 - `git push ...`
-
-Twitter/Mastodon/DiscordGeo:
-
-```txt
-Rust Geodesy version 0.15.0 just released. X months and Y commits in the making. Get it while it's hot!  https://crates.io/crates/geodesy | https://docs.rs/geodesy/latest/geodesy/ | git commit -a -m "Start of work towards 0.16.0
-```
-
-Also post new section of Changelog to DiscordGeo
