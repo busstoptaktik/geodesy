@@ -1,6 +1,6 @@
 @echo off
 rem generate demo unigrid file-set
-rem execute from the geodesy root directory as geodesy\timing\make_unigrid
+rem execute from the geodesy root directory as geodesy\etc\make_unigrid
 rem AFTER having removed and/or backed up unigrid.grids and unigrid.index
 rem writes a new set in geodesy\geodesy
 
