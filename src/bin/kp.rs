@@ -1,3 +1,9 @@
+//! KP: The Rust Geodesy "Coordinate Processing" program. Called `kp` in honor
+//! of Knud Poder (1925-2019), the nestor of computational geodesy, who would
+//! have found it amusing to know that he provides a reasonable abbreviation
+//! for something that would otherwise have collided with the name of the
+//! Unix file copying program `cp`.
+
 use clap::Parser;
 use geodesy::authoring::Jacobian;
 use geodesy::prelude::*;
@@ -7,11 +13,6 @@ use std::io::{BufRead, BufReader, Write};
 use std::path::PathBuf;
 use std::time;
 
-/// KP: The Rust Geodesy "Coordinate Processing" program. Called `kp` in honor
-/// of Knud Poder (1925-2019), the nestor of computational geodesy, who would
-/// have found it amusing to know that he provides a reasonable abbreviation
-/// for something that would otherwise have collided with the name of the
-/// Unix file copying program `cp`.
 #[derive(Parser, Debug)]
 #[command(name = "kp")]
 #[command(author, version, about = "KP: The Rust Geodesy 'Coordinate Processing' program", long_about = None)]

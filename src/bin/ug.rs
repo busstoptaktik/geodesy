@@ -1,5 +1,10 @@
-//! Very rudimentary maintenance tool for Unigrids. Supports only one subcommand, `add`,
-//! which adds a new grid to an existing Unigrid
+//! Very rudimentary maintenance tool for Unigrids. Supports only 5 subcommands:
+//! - `add`: Add a new grid to an existing Unigrid (or creates it if not exiting)
+//! - `list`: List the elementary grids comprising a unigrid
+//! - `paths`: Show unigrid search paths
+//! - `vacuum`: Placeholder for an upcomming clean up functionality
+//! - `help` show help text
+//!
 use byteorder::{LittleEndian, WriteBytesExt};
 use geodesy::authoring::*;
 
