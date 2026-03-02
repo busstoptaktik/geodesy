@@ -22,19 +22,20 @@ fn cli() -> Command {
         .subcommand_required(true)
         .arg_required_else_help(true)
         .allow_external_subcommands(false)
-        .subcommand(Command::new("vacuum").about("remove shadowed gridfiles (unimplemented)"))
-        .subcommand(
-            Command::new("list")
-                .about("list contents of unigrid")
-                .arg(arg!(--verbose "Show additional details")),
-        )
         .subcommand(
             Command::new("add")
-                .about("adds grids to geodesy/unigrid.grids")
+                .about("Add grids to geodesy/unigrid.grids")
                 .arg_required_else_help(true)
-                .arg(arg!(<PATH> ... "Grids to add")) // .value_parser(clap::value_parser!(PathBuf)))
+                .arg(arg!(<PATH> ... "Grids to add"))
                 .arg(arg!(--force)),
         )
+        .subcommand(
+            Command::new("list")
+                .about("List contents of unigrid in ./geodesy")
+                .arg(arg!(--verbose "Show additional details")),
+        )
+        .subcommand(Command::new("paths").about("Show unigrid search paths"))
+        .subcommand(Command::new("vacuum").about("Remove shadowed gridfiles (unimplemented)"))
 }
 
 fn main() -> Result<(), anyhow::Error> {
@@ -43,6 +44,7 @@ fn main() -> Result<(), anyhow::Error> {
     log::trace!("This is geodesy-grids");
 
     let matches = cli().get_matches();
+    let ctx = Plain::new();
 
     match matches.subcommand() {
         Some(("list", sub_matches)) => {
@@ -64,6 +66,11 @@ fn main() -> Result<(), anyhow::Error> {
                     println!();
                 }
             }
+            Ok(())
+        }
+        Some(("paths", _sub_matches)) => {
+            let paths = ctx.get_paths();
+            println!("{paths:?}");
             Ok(())
         }
         Some(("vacuum", _sub_matches)) => {

@@ -69,6 +69,11 @@ pub trait Context {
     /// Access grid resources by identifier
     fn get_grid(&self, name: &str) -> Result<Arc<BaseGrid>, Error>;
 
+    /// Get search paths for external grids, resources, etc.
+    fn get_paths(&self) -> Vec<std::path::PathBuf> {
+        Vec::new()
+    }
+
     /// Get grid value by index (helping [`BaseGrid`](crate::grid::BaseGrid)
     /// access externally stored grid collections)
     #[expect(unused_variables)]

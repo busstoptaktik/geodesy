@@ -135,6 +135,12 @@ impl Default for Plain {
             userpath.push("geodesy");
             paths.push(userpath);
         }
+
+        if let Some(mut userpath) = dirs::data_dir() {
+            userpath.push("geodesy");
+            paths.push(userpath);
+        }
+
         let unigrid_elements = Vec::new();
         let memmapped_unigrids = Vec::new();
 
@@ -347,6 +353,11 @@ impl Context for Plain {
 
         // Not found
         Err(Error::NotFound(name.to_string(), ": Grid".to_string()))
+    }
+
+    /// Get search paths for externl grids, resources, etc.
+    fn get_paths(&self) -> Vec<PathBuf> {
+        self.paths.clone()
     }
 
     fn get_grid_values(
