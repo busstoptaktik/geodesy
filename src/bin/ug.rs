@@ -27,7 +27,7 @@ fn cli() -> Command {
                 .about("Add grids to geodesy/unigrid.grids")
                 .arg_required_else_help(true)
                 .arg(arg!(<PATH> ... "Grids to add"))
-                .arg(arg!(--force)),
+                .arg(arg!(--force "Let new grids shadow older ones with the same name")),
         )
         .subcommand(
             Command::new("list")
