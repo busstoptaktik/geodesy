@@ -7,10 +7,15 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [0.15.0]
 
-Version 0.15.0 - 7 months and 234 commits in the making.
-Introducing unigrid - unified, memory mapped grids, and
+Just released: Rust Geodesy, Version 0.15.0
+7 months and 234 commits in the making.
+Introducing unigrids - unified, memory mapped grids, and
 shining from a substantial number of cleanups and
 improvements.
+
+https://crates.io/crates/geodesy | https://docs.rs/geodesy/latest/geodesy/
+
+More about unigrids: https://github.com/busstoptaktik/geodesy/blob/main/ruminations/012-rumination.md
 
 ### Added
 
