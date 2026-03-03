@@ -4,7 +4,7 @@
 
 Thomas Knudsen <knudsen.thomas@gmail.com>
 
-2026-03-02. Last [revision](#document-history) 2026-03-02
+2026-03-02. Latest [revision](#document-history) 2026-03-03
 
 ### Abstract
 
@@ -15,7 +15,7 @@ let using_stand_alone_grid = ctx.op("gridshift grids=ed50.ntv2")?;
 
 ---
 
-### Unigrids - don't implement poorly, what the OS already provides excellently!
+### Unigrids: Don't implement poorly, what the OS already provides excellently!
 
 Version 0.15 of Rust Geodesy introduces the concept of *unigrids*. Unigrids are
 conglomerates of geodetic grids (1-D geoid models, 2-D datum transformation
@@ -33,11 +33,11 @@ By combining all grids into a single file, and by accessing its contents through
 a read-only memory mapping of that file, we leave it up to the OS to figure out,
 what should, at any given time, reside in core memory, and what should stay on
 disk. The hope is that this may give the OS a better chance to optimize the
-overall perfomrance of the system, by not obscuring its real-time view of our
+overall performance of the system, by not obscuring its real-time view of our
 true, immediate memory needs.
 
 By using a read only mapping, the OS is free to re-use the actual physical
-memory for more than one process, needing to access the relevant data: The
+memory for more than one process, needing to access the same data: The
 memory may be mapped into different logical adresses in the memory map of each
 process, but the physical memory backing it need not be duplicated. The OS is
 excellently equipped to do this efficiently at the kernel level, whereas it is a
@@ -48,10 +48,11 @@ poorly, what the OS already provides excellently!*
 
 #### Contemporary evidence
 
-Preliminary evidence, from a modest amount of testing, using MS Windows,
-indicate that the unigrid concept really does provide a respectable access
-speed. The reader is encouraged to try it out, and report any successes and/or
-failures.
+Evidently, this is an experiment, and we need to gather evidence for its
+usefulness. Preliminary evidence, from a modest amount of testing, using MS
+Windows, indicate that the unigrid concept really does provide a respectable
+access speed. The reader is encouraged to try it out, and report any successes
+and/or failures.
 
 #### Historical/anecdotal evidence
 
@@ -64,9 +65,10 @@ foundational library behind the
 During this work, we did two very different implementations of the grid based
 datum transformation method:
 
-- one preloading the grid into a flat array, and accessing the grid elements directly
-- one doing a `fopen(...)` of the grid, and doing every single grid element
-  access by a combined `fseek(...)`/`fread(...)`-dance.
+- one preloading the grid into a flat array, and accessing the grid elements
+  directly
+- one doing a `fopen(...)` of the grid, and a combined
+  `fseek(...)`/`fread(...)`-dance for every single grid element access.
 
 To our surprise, *the difference in performance was immaterial!*
 
@@ -74,7 +76,7 @@ Some years later, however, an OS internals connoisseur explained to me, that
 this was plausible since a file opened as read-only, would secretly, behind my
 back, be memory mapped by Windows. And clever handshaking between the OS and the
 `stdio` layer virtually eliminates the number of context switches needed, even
-under heavily random access patterns.
+under essentially random access patterns.
 
 This explanation, whether credible or not, is the direct inspiration for the
 implementation of unigrids.
@@ -94,8 +96,11 @@ confidence, it must be maintained. To this (these) end(s), employ the (still
 rudimentary) `UG` unigrid tool.
 
 UG provides a rudimentary set of sub-commands, of which `ug add` is probably the
-most important, adding new grids to an existing unigrid, creating it if it does
+most important, adding new grids to a unigrid, creating it if it does
 not already exist.
+
+**NOTE!!!:** Updating a unigrid while it is in use leads to undefined, and
+presumably highly system dependent, behaviour
 
 `ug add` functions in strict append mode: It appends the new files to the end of
 the existing unigrid. If another file with the same name already exists in the
@@ -157,8 +162,9 @@ cargo r --bin ug list --verbose
 
 ```
 
-### Docuument History
+### Document History
 
 Major revisions and additions:
 
 - 2026-03-02: Initial version
+- 2026-03-03: Linguistics
