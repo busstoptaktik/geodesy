@@ -31,7 +31,7 @@
    ```
 
 - `git commit -a -m "Start of work towards 0.17.0"`
-- Change `HOWTO-RELEASE.md` from 0.17 to 0.18, and from 0.16 to 0.17
-- Update `CHANGELOG.md` with a new `[Unreleased]` section
+- Manually change `HOWTO-RELEASE.md` from 0.17 to 0.18, and from 0.16 to 0.17
+- Manually update `CHANGELOG.md` with a new `[Unreleased]` section
 - `git commit -a -m "Update HOWTO-RELEASE.md and CHANGELOG.md"`
 - `git push`
