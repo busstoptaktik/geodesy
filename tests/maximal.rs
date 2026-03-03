@@ -120,9 +120,9 @@ impl Context for Maximal {
         Ok(std::fs::read(path)?)
     }
     /// Access grid resources by identifier
-    fn get_grid(&self, name: &str) -> Result<Arc<dyn Grid>, Error> {
+    fn get_grid(&self, name: &str) -> Result<Arc<BaseGrid>, Error> {
         let buf = self.get_blob(name)?;
-        let grid = BaseGrid::gravsoft(&buf)?;
+        let grid = geodesy::grd::gravsoft::gravsoft(name, &buf)?;
 
         Ok(Arc::new(grid))
     }

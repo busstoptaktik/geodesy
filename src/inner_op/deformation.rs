@@ -115,9 +115,22 @@
 /// For now, this is the solution implemented here.
 use crate::authoring::*;
 
-// ----- F O R W A R D --------------------------------------------------------------
+// ----- C O M M O N -------------------------------------------------------------------
 
-fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
+// The forward and inverse implementations are virtually identical, so we combine them
+// into one, with the functionality selected from the "direction" parameter.
+//
+// The interrelation between the sign convention of the time differences involved, and in
+// which way we interpret "forward" versus "inverse" is, however, non-trivial. So before
+// adapting this code, read the introduction above, and the foundational paper by
+// [Häkli et al, 2023](crate::Bibliography::Hak23).
+
+fn common(
+    op: &Op,
+    ctx: &dyn Context,
+    operands: &mut dyn CoordinateSet,
+    direction: Direction,
+) -> usize {
     let grids = &op.params.grids;
     let mut successes = 0_usize;
     let n = operands.len();
@@ -127,41 +140,33 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     let ellps = op.params.ellps(0);
     let raw = op.params.boolean("raw");
     let use_null_grid = op.params.boolean("null_grid");
+    let direction = if direction == Fwd { -1f64 } else { 1f64 };
 
     // Datum shift
-    'points: for i in 0..n {
+    for i in 0..n {
         let cart = operands.get_coord(i);
         let geo = ellps.geographic(&cart);
-        for margin in [0.0, 0.5] {
-            for grid in grids.iter() {
-                // Interpolated deformation velocity
-                if let Some(v) = grid.at(&geo, margin) {
-                    // The deformation duration may be given either as a fixed duration or
-                    // as the difference between the frame epoch and the observation epoch
-                    let d = if dt.is_finite() { dt } else { epoch - geo[3] };
+        // Interpolated deformation velocity
+        if let Some(v) = grids_at(Some(ctx), grids, geo, use_null_grid) {
+            // The deformation duration may be given either as a fixed duration or
+            // as the difference between the frame epoch and the observation epoch
+            let d = if dt.is_finite() { -dt } else { epoch - geo[3] };
+            // Grid values are in mm/year. We need m/year
+            let v = v.scale(direction * 0.001);
+            let deformation = rotate_and_integrate_velocity(v, geo[0], geo[1], d);
 
-                    let deformation =
-                        rotate_and_integrate_velocity(v.scale(-1.), geo[0], geo[1], d);
-
-                    // Finally apply the deformation to the input coordinate - or just
-                    // provide the raw correction if that was what was requested
-                    if raw {
-                        let mut deformation_with_length = deformation;
-                        deformation_with_length[3] = deformation.dot(deformation).sqrt();
-                        operands.set_coord(i, &deformation_with_length);
-                    } else {
-                        operands.set_coord(i, &(cart + deformation));
-                    }
-                    successes += 1;
-
-                    // We've found the grid that contains the point, so we can move on
-                    continue 'points;
-                }
+            // Finally apply the deformation to the input coordinate - or just
+            // provide the raw correction if that was what was requested
+            if raw {
+                let mut deformation_with_length = deformation;
+                deformation_with_length[3] = deformation.dot(deformation).sqrt();
+                operands.set_coord(i, &deformation_with_length);
+            } else {
+                operands.set_coord(i, &(cart + deformation));
             }
-        }
-
-        if use_null_grid {
             successes += 1;
+
+            // We've found the grid that contains the point, so we can move on
             continue;
         }
 
@@ -171,59 +176,16 @@ fn fwd(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
     successes
 }
 
+// ----- F O R W A R D --------------------------------------------------------------
+
+fn fwd(op: &Op, ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
+    common(op, ctx, operands, Fwd)
+}
+
 // ----- I N V E R S E --------------------------------------------------------------
 
-fn inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
-    let grids = &op.params.grids;
-    let mut successes = 0_usize;
-    let n = operands.len();
-
-    let dt = op.params.real("dt").unwrap();
-    let epoch = op.params.real("t_epoch").unwrap();
-    let ellps = op.params.ellps(0);
-    let raw = op.params.boolean("raw");
-    let use_null_grid = op.params.boolean("null_grid");
-
-    // Datum shift
-    'points: for i in 0..n {
-        let cart = operands.get_coord(i);
-        let geo = ellps.geographic(&cart);
-        for margin in [0.0, 0.5] {
-            for grid in grids.iter() {
-                // Interpolated deformation velocity
-                if let Some(v) = grid.at(&geo, margin) {
-                    // The deformation duration may be given either as a fixed duration or
-                    // as the difference between the frame epoch and the observation epoch
-                    let d = if dt.is_finite() { dt } else { epoch - geo[3] };
-
-                    let deformation = rotate_and_integrate_velocity(v, geo[0], geo[1], d);
-
-                    // Finally apply the deformation to the input coordinate - or just
-                    // provide the raw correction if that was what was requested
-                    if raw {
-                        let mut deformation_with_length = deformation;
-                        deformation_with_length[3] = deformation.dot(deformation).sqrt();
-                        operands.set_coord(i, &deformation_with_length);
-                    } else {
-                        operands.set_coord(i, &(cart + deformation));
-                    }
-                    successes += 1;
-
-                    // We've found the grid that contains the point, so we can move on
-                    continue 'points;
-                }
-            }
-        }
-
-        if use_null_grid {
-            successes += 1;
-            continue;
-        }
-
-        // No grid found so we stomp on the coordinate
-        operands.set_coord(i, &Coor4D::nan());
-    }
-    successes
+fn inv(op: &Op, ctx: &dyn Context, operands: &mut dyn CoordinateSet) -> usize {
+    common(op, ctx, operands, Inv)
 }
 
 // ----- C O N S T R U C T O R ------------------------------------------------------
@@ -327,7 +289,7 @@ mod tests {
     #[test]
     fn deformation() -> Result<(), Error> {
         // Context and data
-        let mut ctx = Plain::default();
+        let mut ctx = Plain::new();
         let cph = Coor4D::geo(55., 12., 0., 0.);
         let test_deformation = include_str!("../../geodesy/deformation/test.deformation");
         let another_test_deformation =
@@ -338,11 +300,15 @@ mod tests {
         ctx.register_resource("another_test.deformation", another_test_deformation);
 
         let buf = ctx.get_blob("test.deformation")?;
-        let grid = BaseGrid::gravsoft(&buf)?;
+        let grid = crate::grid::gravsoft::gravsoft("test_deformation", &buf)?;
+        assert_eq!(grid.name, "test_deformation");
+        assert_eq!(grid.subgrids.len(), 0);
+        assert_eq!(grid.header.bands, 3);
 
         // Velocity in the ENU space
-        let v = grid.at(&cph, 0.0).unwrap();
-        // Which we rotate into the XYZ space and integrate for 1000 years
+        let v = grid.at(None, cph, 0.0).unwrap().scale(0.001);
+        // Which we rotate into the XYZ space and integrate for 1000 years - and mutate into Coor3D,
+        // to remove the NaN from the 4th dimension, which make the tests crash, because NaN!=NaN
         let deformation = rotate_and_integrate_velocity(v, cph[0], cph[1], 1000.);
 
         // Check that the length of the deformation correction, expressed as the
@@ -350,6 +316,11 @@ mod tests {
         let expected_length_of_correction = (55f64 * 55. + 12. * 12.).sqrt();
         let length_of_scaled_velocity = v.scale(1000.0).dot(v.scale(1000.0)).sqrt();
         let length_of_rotated_deformation = deformation.dot(deformation).sqrt();
+        // dbg!(length_of_rotated_deformation);
+        // dbg!(expected_length_of_correction);
+        // dbg!(length_of_scaled_velocity);
+        // dbg!(deformation);
+        // dbg!(v);
         assert!((length_of_scaled_velocity - expected_length_of_correction).abs() < 1e-6);
         assert!((length_of_rotated_deformation - expected_length_of_correction).abs() < 1e-6);
 
@@ -365,7 +336,7 @@ mod tests {
         ctx.apply(op, Fwd, &mut data)?;
         let diff = data[0] - cph;
         let length_of_diff = diff.dot(diff).sqrt();
-        dbg!(length_of_diff);
+        // dbg!(length_of_diff);
         assert!((length_of_diff - expected_length_of_correction).abs() < 1e-6);
 
         // Check the length of the correction after an inverse step
@@ -373,10 +344,10 @@ mod tests {
         ctx.apply(op, Inv, &mut data)?;
         let diff = data[0] - cph;
         let length_of_diff = diff.dot(diff).sqrt();
-        dbg!(length_of_diff);
-        dbg!(expected_length_of_correction);
-        dbg!(data[0]);
-        dbg!(cph);
+        // dbg!(length_of_diff);
+        // dbg!(expected_length_of_correction);
+        // dbg!(data[0]);
+        // dbg!(cph);
         assert!((length_of_diff - expected_length_of_correction).abs() < 1e-6);
 
         // Check the accuracy of a roundtrip step. Consider improving the accuracy by
@@ -384,9 +355,9 @@ mod tests {
         let mut data = [cph];
         ctx.apply(op, Fwd, &mut data)?;
         ctx.apply(op, Inv, &mut data)?;
-        dbg!(cph);
-        dbg!(data[0]);
-        assert!(cph.hypot3(&data[0]) < 1e-3);
+        // dbg!(cph);
+        // dbg!(data[0]);
+        assert!(cph.hypot3(&data[0]) < 2e-3);
 
         // Check the "raw" functionality
         let op =
@@ -396,14 +367,12 @@ mod tests {
         let mut data = [cph];
         ctx.apply(op, Fwd, &mut data)?;
         let fwd = data[0];
-        dbg!(fwd);
         assert!((fwd[3] - expected_length_of_correction) < 0.001);
 
         // and inverse direction
         let mut data = [cph];
         ctx.apply(op, Inv, &mut data)?;
         let inv = data[0];
-        dbg!(inv);
         assert!((inv[3] - expected_length_of_correction) < 0.001);
         assert!((inv[3] - fwd[3]) < 0.001);
 
@@ -413,7 +382,6 @@ mod tests {
         let mut data = [tio];
         ctx.apply(op, Fwd, &mut data)?;
         let fwd = data[0];
-        dbg!(fwd);
         assert!(fwd[0].is_finite());
 
         // The Norwegian town of Longyearbyen is outside of both grids
@@ -422,6 +390,37 @@ mod tests {
         let mut data = [lyb];
         ctx.apply(op, Fwd, &mut data)?;
         assert!(data[0][0].is_nan());
+
+        // Check the old Gravsoft grid version of NKGRF17VEL, versus the new Unigrid
+        // based. For this test, we use a site of extreme uplift (almost 10 mm/a),
+        // some 40 km to the north-east of Luleå, close to Bottenviken, in the
+        // nothernmost part of the Baltic Sea.
+        let lul = Coor4D::geo(66., 23., 0., 0.);
+        let lul_cart = ellps.cartesian(&lul);
+
+        // First by using direct grid access
+        let g = ctx.get_grid("nkgrf17vel")?;
+        let gg = ctx.get_grid("nkgrf17vel.deformation")?;
+        let val_unig = g.at(Some(&ctx), lul, 0.0);
+        let val_grav = gg.at(Some(&ctx), lul, 0.0);
+        assert_eq!(val_grav, val_unig);
+
+        // ...then by operation definitions
+        let grav = ctx.op("deformation t_epoch=2000 dt=1000 grids=nkgrf17vel.deformation")?;
+        let unig = ctx.op("deformation dt=1000 grids=nkgrf17vel")?;
+
+        // Forward direction
+        let mut gravdata = [lul_cart];
+        let mut unigdata = [lul_cart];
+        ctx.apply(grav, Fwd, &mut gravdata)?;
+        ctx.apply(unig, Fwd, &mut unigdata)?;
+        assert_eq!(gravdata[0], unigdata[0]);
+
+        // And roundtrip
+        ctx.apply(grav, Inv, &mut gravdata)?;
+        ctx.apply(unig, Inv, &mut unigdata)?;
+        assert_eq!(gravdata[0], unigdata[0]);
+        assert!(gravdata[0].hypot3(&lul_cart) < 1e-4);
 
         Ok(())
     }

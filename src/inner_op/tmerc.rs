@@ -289,7 +289,7 @@ fn precompute(op: &mut Op) {
 }
 
 pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> {
-    let mut op = Op::plain(parameters, InnerOp(fwd), Some(InnerOp(inv)), &GAMUT)?;
+    let mut op = Op::basic(parameters, InnerOp(fwd), Some(InnerOp(inv)), &GAMUT)?;
     precompute(&mut op);
     Ok(op)
 }

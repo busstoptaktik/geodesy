@@ -1,7 +1,9 @@
 #[cfg(feature = "with_plain")]
 use crate::authoring::*;
-use crate::grid::ntv2::Ntv2Grid;
+use crate::grid::GridSource;
+use memmap2::Mmap;
 use std::{
+    fs::File,
     path::PathBuf,
     sync::{Arc, Mutex, OnceLock},
 };
@@ -18,21 +20,26 @@ pub struct Plain {
     resources: BTreeMap<String, String>,
     operators: BTreeMap<OpHandle, Op>,
     paths: Vec<std::path::PathBuf>,
+    unigrid_elements: Vec<BTreeMap<String, Arc<BaseGrid>>>,
+    memmapped_unigrids: Vec<Option<Mmap>>,
 }
 
 // Helper for Plain: Provide grid access for all `Op`s
 // in all instantiations of `Plain` by handing out
 // reference counted clones to a single heap allocation
-
-static GRIDS: OnceLock<Mutex<GridCollection>> = OnceLock::new();
+static GLOBALLY_ALLOCATED_GRIDS: OnceLock<Mutex<GridCollection>> = OnceLock::new();
 
 fn init_grids() -> Mutex<GridCollection> {
-    Mutex::new(GridCollection(BTreeMap::<String, Arc<dyn Grid>>::new()))
+    Mutex::new(GridCollection(BTreeMap::<String, Arc<BaseGrid>>::new()))
 }
 
-struct GridCollection(BTreeMap<String, Arc<dyn Grid>>);
+struct GridCollection(BTreeMap<String, Arc<BaseGrid>>);
 impl GridCollection {
-    fn get_grid(&mut self, name: &str, paths: &[PathBuf]) -> Result<Arc<dyn Grid>, Error> {
+    fn get_grid_from_global_collection(
+        &mut self,
+        name: &str,
+        paths: &[PathBuf],
+    ) -> Result<Arc<BaseGrid>, Error> {
         // If the grid is already there, just return a reference clone
         if let Some(grid) = self.0.get(name) {
             return Ok(grid.clone());
@@ -47,24 +54,53 @@ impl GridCollection {
             .unwrap_or_default();
 
         for path in paths {
-            let mut path = path.clone();
-            path.push(ext);
-            path.push(name);
-            let Ok(grid) = std::fs::read(path) else {
+            // First we look in the base directory
+            let mut gridpath = path.clone();
+            gridpath.push(name);
+            let mut grid = std::fs::read(gridpath);
+
+            // If not found there: Look in a subdirectory named after the file extension
+            if grid.is_err() {
+                gridpath = path.clone();
+                gridpath.push(ext);
+                gridpath.push(name);
+                grid = std::fs::read(gridpath);
+            }
+            let Ok(grid) = grid else {
                 continue;
             };
 
-            if ext == "gsb" {
-                self.0
-                    .insert(name.to_string(), Arc::new(Ntv2Grid::new(&grid)?));
-            } else {
-                self.0
-                    .insert(name.to_string(), Arc::new(BaseGrid::gravsoft(&grid)?));
+            let key = name.to_string();
+            match ext {
+                "gsb" => {
+                    let value = crate::grid::ntv2::ntv2_grid(&grid)?;
+                    self.0.insert(key, Arc::new(value));
+                }
+
+                "gtx" => {
+                    let value = crate::grid::gtx::gtx(&key, &grid)?;
+                    self.0.insert(key, Arc::new(value));
+                }
+
+                _ => {
+                    // Neither GSA, nor Gravsoft can be identified by extension alone,
+                    // so we try GSA first, since it can identify itself from its
+                    // magic bytes 'DSAA'
+                    if let Ok(grid) = crate::grid::gsa::gsa(&key, &grid) {
+                        self.0.insert(name.to_string(), Arc::new(grid));
+                    } else {
+                        // Gravsoft
+                        let value = crate::grid::gravsoft::gravsoft(&key, &grid)?;
+                        self.0.insert(key, Arc::new(value));
+                    }
+                }
             }
+
             if let Some(grid) = self.0.get(name) {
                 return Ok(grid.clone());
             }
         }
+
         Err(Error::NotFound(name.to_string(), ": Grid".to_string()))
     }
 }
@@ -72,13 +108,14 @@ impl GridCollection {
 const BAD_ID_MESSAGE: Error = Error::General("Plain: Unknown operator id");
 
 impl Plain {
-    /// To avoid having the heap allocated collection of grids stored in `GRIDS`
-    /// growing through the roof, we may clear it occasionally.
+    /// To avoid having the heap allocated collection of grids stored in
+    /// `GLOBALLY_ALLOCATED_GRIDS` growing through the roof, we may clear
+    /// it occasionally.
     /// As the grids are behind an `Arc` reference counter, this is safe to do
     /// even though they may still be in use by some remaining operator
     /// instantiations.
     pub fn clear_grids() {
-        if let Some(grids) = GRIDS.get() {
+        if let Some(grids) = GLOBALLY_ALLOCATED_GRIDS.get() {
             grids.lock().unwrap().0.clear();
         }
     }
@@ -99,11 +136,21 @@ impl Default for Plain {
             paths.push(userpath);
         }
 
+        if let Some(mut userpath) = dirs::data_dir() {
+            userpath.push("geodesy");
+            paths.push(userpath);
+        }
+
+        let unigrid_elements = Vec::new();
+        let memmapped_unigrids = Vec::new();
+
         Plain {
             constructors,
             resources,
             operators,
             paths,
+            unigrid_elements,
+            memmapped_unigrids,
         }
     }
 }
@@ -114,6 +161,21 @@ impl Context for Plain {
         for item in BUILTIN_ADAPTORS {
             ctx.register_resource(item.0, item.1);
         }
+        let Ok(unigrids) = crate::grid::unigrid::read_unigrid_index(&ctx.paths) else {
+            return ctx;
+        };
+        ctx.unigrid_elements = unigrids;
+
+        let mut memmapped_unigrids = Vec::new();
+        for path in ctx.paths.iter() {
+            let unifile_path = path.join("unigrid.grids");
+            let Ok(unifile) = File::options().read(true).open(unifile_path) else {
+                memmapped_unigrids.push(None);
+                continue;
+            };
+            memmapped_unigrids.push(unsafe { memmap2::Mmap::map(&unifile).ok() });
+        }
+        ctx.memmapped_unigrids = memmapped_unigrids;
         ctx
     }
 
@@ -271,15 +333,67 @@ impl Context for Plain {
     }
 
     /// Access grid resources by identifier
-    fn get_grid(&self, name: &str) -> Result<Arc<dyn Grid>, Error> {
-        // The GridCollection does all the hard work here, but accessing GRIDS,
-        // which is a mutable static is (mis-)diagnosed as unsafe by the compiler,
-        // even though the mutable static is behind a Mutex guard
-        GRIDS
+    fn get_grid(&self, name: &str) -> Result<Arc<BaseGrid>, Error> {
+        // First search among the run time loaded grids
+        if let Ok(grid) = GLOBALLY_ALLOCATED_GRIDS
             .get_or_init(init_grids)
             .lock()
             .unwrap()
-            .get_grid(name, &self.paths)
+            .get_grid_from_global_collection(name, &self.paths)
+        {
+            return Ok(grid);
+        }
+
+        // Then among the unigrids
+        for unigrid in self.unigrid_elements.iter() {
+            if let Some(grid) = unigrid.get(name) {
+                return Ok(grid.clone());
+            }
+        }
+
+        // Not found
+        Err(Error::NotFound(name.to_string(), ": Grid".to_string()))
+    }
+
+    /// Get search paths for externl grids, resources, etc.
+    fn get_paths(&self) -> Vec<PathBuf> {
+        self.paths.clone()
+    }
+
+    fn get_grid_values(
+        &self,
+        grid: &BaseGrid,
+        indices: &[usize],
+        grid_values: &mut [Coor4D],
+    ) -> usize {
+        match &grid.grid {
+            GridSource::External { level, offset } => {
+                for (i, index) in indices.iter().enumerate() {
+                    let mut val = Coor4D::nan();
+                    if let Some(file) = &self.memmapped_unigrids[*level] {
+                        for j in 0..grid.header.bands.min(4) {
+                            let start = (index + j) * 4 + offset;
+                            if start > file.len() - 4 {
+                                // TODO: log message
+                                return 0;
+                            }
+                            let range = start..start + 4;
+                            val[j] = f32::from_le_bytes(file[range].try_into().unwrap()).into();
+                        }
+                    }
+                    grid_values[i] = val;
+                }
+                indices.len()
+            }
+            GridSource::Internal { values } => {
+                for (i, index) in indices.iter().enumerate() {
+                    for j in 0..grid.header.bands.min(4) {
+                        grid_values[i][j] = values[index + j].into()
+                    }
+                }
+                indices.len()
+            }
+        }
     }
 }
 
@@ -393,6 +507,58 @@ mod tests {
         let _op2 = ctx.op("gridshift grids=5458.gsb, 5458_with_subgrid.gsb")?;
         let _op3 = ctx.op("gridshift grids=test.geoid")?;
         assert!(ctx.op("gridshift grids=non.existing").is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn unigrid() -> Result<(), Error> {
+        let ctx = Plain::new();
+        let ellps = Ellipsoid::named("GRS80")?;
+
+        let unigrid_test = ctx.get_grid("test_datum_with_subset_as_subgrid")?;
+
+        // A test point outside of the subgrid, and the correction grid value at that point
+        let test_point = Coor4D::geo(55.1f64, 12.3f64, 0., 0.);
+        let correction = unigrid_test.at(Some(&ctx), test_point, 0.).unwrap();
+        let Some(subgrid) = unigrid_test.which_subgrid_contains(test_point, 0.0) else {
+            return Err(Error::General("No (sub-)grid found for (55.1E, 12.3E)"));
+        };
+        assert_eq!("test_datum_with_subset_as_subgrid[0]", subgrid);
+
+        // Numerically the grid value IN ARCSEC should be identical to the grid location
+        // IN DEGREES. Hence, to make the test_point (which is a coordinate in RADIANS)
+        // comparable to res, which is given in arcsec, we must treat res as DEGREES, and
+        // convert to radians
+        let d = ellps.distance(&test_point, &correction.to_radians());
+        assert!(d < 1e-9);
+
+        // A test point within the subgrid, and the correction grid value at that point
+        let test_point = Coor4D::geo(56.3, 12.1, 0., 0.);
+        let correction = unigrid_test.at(Some(&ctx), test_point, 0.).unwrap();
+        // The correction values are offset by 0.001 in the sub-grid
+        let expected = Coor4D::geo(56.301, 12.101, 0., 0.);
+        let d = ellps.distance(&expected, &correction.to_radians());
+        assert!(d < 0.1);
+        // The interpolated latitude above amounts to 56.30099945068359, leading to an
+        // apparently enormous discrepancy of 66 mm.
+        //
+        // However, 56.301-56.30099945068359 = 0.000_000_5493, i.e. a deviation
+        // at the 7th significant figure, which is as expected, since the backing grid consists
+        // of single precision floats (f32), having a typical accuracy of 7 figures.
+        //
+        // In real applications, the correction is on the order of a few seconds of arc. The
+        // deviation above is on the order of a microsecond of arc (uas).
+        //
+        // On the surface of the earth, 1 uas corresponds to approximately 30 micrometers,
+        // i.e. 0.03 mm, which is much smaller than the expected accuracy of any current
+        // or future datum shift estimate.
+
+        // (56.3N, 12.1E) is inside the subgrid
+        let Some(subgrid) = unigrid_test.which_subgrid_contains(test_point, 0.0) else {
+            return Err(Error::General("No (sub-)grid found for (56.3E, 12.1E)"));
+        };
+        assert_eq!("test_datum_with_subset_as_subgrid[1]", subgrid);
+
         Ok(())
     }
 }

@@ -2,14 +2,14 @@
 name = "geodesy"
 description = "A platform for experiments with geodetic transformations and data flow"
 keywords = ["geospatial", "geodesy", "cartography", "geography"]
-categories = ["science"]
+categories = ["science::geo", "science"]
 license = "MIT OR Apache-2.0"
 version = "0.14.0"
 authors = ["Thomas Knudsen <knudsen.thomas@gmail.com>"]
 readme = "README.md"
 repository = "https://github.com/busstoptaktik/geodesy/"
 edition = "2024"
-rust-version = "1.85"
+rust-version = "1.87"
 
 default-run = "kp"
 
@@ -20,23 +20,25 @@ default-run = "kp"
 uuid = { version = "1.8.0", features = ["v4"] }
 
 # Command line program helpers
-clap = { version = "4.5.0", features = ["derive"], optional = true }
+clap = { version = "4.5.60", features = ["derive"], optional = true }
 clap-verbosity-flag = { version = "2.2.0", optional = true }
-anyhow = { version = "1.0.0", optional = true }
+anyhow = { version = "1.0.100", optional = true }
 
 # CLI + plain
-dirs = { version = "5.0.0", optional = true }
+dirs = { version = "5.0.1", optional = true }
 env_logger = { version = "0.11.3", optional = true }
+memmap2 = { version = "0.9.9", optional = true }
 
 # Library level logging and error handling
 log = "0.4"
 thiserror = "1.0.50"
 float_eq = "1.0.0"
+byteorder = "1.5.0"
 
 [dev-dependencies]
 # Needed for building doc-tests
-anyhow = { version = "1.0.75" }
-clap = { version = "4.5.0", features = ["derive"] }
+anyhow = { version = "1.0.100" }
+clap = { version = "4.5.60", features = ["derive"] }
 
 # Needed for building examples
 dirs = { version = "5.0.1" }
@@ -51,7 +53,7 @@ crate-type = ["cdylib", "rlib"]
 [features]
 js = ["uuid/js"]
 binary = ["dirs", "clap", "clap-verbosity-flag", "env_logger", "anyhow"]
-with_plain = ["dirs"]
+with_plain = ["dirs", "memmap2"]
 default = ["binary", "with_plain"]
 
 [[bin]]

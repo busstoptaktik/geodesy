@@ -11,17 +11,21 @@ pub mod coor4d;
 /// Dimensionality untold, the methods operate on the first two
 /// dimensions only.
 pub trait AngularUnits {
-    /// Transform the first two elements of a coordinate tuple from degrees to radians
+    /// Convert the first two elements of a coordinate tuple from degrees to radians
     fn to_radians(&self) -> Self;
 
-    /// Transform the first two elements of a coordinate tuple from radians to degrees
+    /// Convert the first two elements of a coordinate tuple from radians to degrees
     fn to_degrees(&self) -> Self;
 
-    /// Transform the first two elements of a coordinate tuple from radians to seconds
+    /// Convert the first two elements of a coordinate tuple from radians to seconds
     /// of arc.
     fn to_arcsec(&self) -> Self;
 
-    /// Transform the internal lon/lat(/h/t)-in-radians to lat/lon(/h/t)-in-degrees
+    /// Inverse of `to_arcsec`: convert the first two elements of a tuple from seconds
+    /// of arc to radians
+    fn arcsec_to_radians(&self) -> Self;
+
+    /// Convert the internal lon/lat(/h/t)-in-radians to lat/lon(/h/t)-in-degrees
     fn to_geo(&self) -> Self;
 }
 
@@ -37,11 +41,20 @@ where
         res
     }
 
-    /// Convert the first two elements of `self` from radians to degrees
+    /// Convert the first two elements of `self` from radians to seconds of arc
     fn to_arcsec(&self) -> Self {
         let (x, y) = self.xy();
         let mut res = *self;
         res.set_xy(x.to_degrees() * 3600., y.to_degrees() * 3600.);
+        res
+    }
+
+    /// Inverse of `to_arcsec`: convert the first two elements of a tuple from seconds
+    /// of arc to radians
+    fn arcsec_to_radians(&self) -> Self {
+        let (x, y) = self.xy();
+        let mut res = *self;
+        res.set_xy((x / 3600.).to_radians(), (y / 3600.).to_radians());
         res
     }
 

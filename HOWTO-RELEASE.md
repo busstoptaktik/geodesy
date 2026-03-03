@@ -1,4 +1,4 @@
-# DRAFT: How to release
+# How to release
 
 - `git switch main`
 - `just clean-check`
@@ -9,8 +9,8 @@
   are resolved
 - update `Cargo.toml` with new version id, i.e. `"0.15.0"`
 
-- `just changes` (to preview a new `CHANGELOG`)
-- manually update `CHANGELOG.md` (mostly: change unreleased to 0.15.0)
+- `just changes` (for new `CHANGELOG.md` material)
+- Manually update `CHANGELOG.md`
 - `git commit -a -m "CHANGELOG.md for v0.15.0"`
 - `git push`
 - `git tag v0.15.0`
@@ -20,14 +20,17 @@
 - `git push --set-upstream origin 0.15`
 - `git switch main`
 - `cargo publish`
-- update `HOWTO-RELEASE.md` to say 0.16
+- Count number of months since last release, X, and number of commits since then, Y
+- Announce on Bluesky/Mastodon/DiscordGeo:
+
+   ```txt
+   Rust Geodesy version 0.15.0 just released. X months and Y commits in the making. Get it while it's hot!
+
+   https://crates.io/crates/geodesy | https://docs.rs/geodesy/latest/geodesy/
+
+   ```
+
 - `git commit -a -m "Start of work towards 0.16.0"`
-- `git push ...`
-
-Twitter/Mastodon/DiscordGeo:
-
-```txt
-Rust Geodesy version 0.15.0 just released. X months and Y commits in the making. Get it while it's hot!  https://crates.io/crates/geodesy | https://docs.rs/geodesy/latest/geodesy/ | git commit -a -m "Start of work towards 0.16.0
-```
-
-Also post new section of Changelog to DiscordGeo
+- Change `HOWTO-RELEASE.md` from 0.16 to 0.17, and from 0.15 to 0.16
+- `git commit -a -m "Update HOWTO-RELEASE.md"`
+- `git push`

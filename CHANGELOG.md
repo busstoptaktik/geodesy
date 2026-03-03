@@ -7,27 +7,51 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+Version 0.15.0 - 7 months and 231 commits in the making.
+Introducing unigrid - unified, memory mapped grids, and
+shining from a substantial number of cleanups and
+improvements.
+
 ### Added
 
-- X.md, the transformation register
+- Rumination #12: Unigrids and the `UG` grid maintenance utility
+- Unigrid maintenance tool `UG`
+- Support for memory mapped unigrids
+- read_grid(...) - mostly for unigrid maintenance
+- Introducing X.md, the (rudimentary) transformation register
 - Some additions to the TM register
+- NKG.md, the (incomplete) register of transformations originating
+  from the Nordic Geodetic Commission
+- trait Context: get_grid_value()
+- GridSource enum, for improved handling of internal vs. external grids
+- arcsec_to_radians (opposite of to_arcsec) for coordinate types
+- Support for additional grid file types: Gravsoft with subgrids,
+  Golden Software ASCII grid, GTX
+- Support for determination of the point of intersection of lines in the 2D (projected) plane
+- Helmert: Support angular args in microarcseconds, linear args in millimeters
 
 ### Fixed
 
-- Prefix modifiers for macros now works properly
+- Prefix modifiers for macros now work properly
+- Pipelines now have a meaningful `_name` (=their entire invocation)
+- Swap band order of `eur_nkg_nkgrf17vel.deformation` (now `nkgrf17vel.deformation`)
+  from NEU to ENU.
 
 ### Changed
 
-- MSRV set to 1.85, and Rust Version to 2024, foloowing georust/geo
+- MSRV set to 1.87, and Rust Edition to 2024, following georust/geo
 - Clean up and consolidate the macro- and operation decoding
 - Op.steps is only used by the pipeline operator, so make it
   an `Option<Vec<Op>>`, instead of a zero-sized `Vec<Op>`
 - Remove superfluous fields `steps` and `id` from `OpDescriptor`
 - Remove superfluous field `id` from `Op`
+- In general enormous changes and cleanups, mostly code internal
 
 ### Removed
 
-- Nothing
+- NTv2Grid (BaseGrid is now feature compatible with NTv2Grid)
+
+-------------------------------------------------------------------------------
 
 ## [0.14.0] - 2025-08-14
 

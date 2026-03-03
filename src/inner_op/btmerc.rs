@@ -110,7 +110,7 @@ pub const GAMUT: [OpParameter; 7] = [
 ];
 
 pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> {
-    Op::plain(parameters, InnerOp(fwd), Some(InnerOp(inv)), &GAMUT)
+    Op::basic(parameters, InnerOp(fwd), Some(InnerOp(inv)), &GAMUT)
 }
 
 #[rustfmt::skip]

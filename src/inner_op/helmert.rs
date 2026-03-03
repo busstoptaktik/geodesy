@@ -129,7 +129,7 @@ fn helmert_inv(op: &Op, _ctx: &dyn Context, operands: &mut dyn CoordinateSet) ->
 // ----- C O N S T R U C T O R ------------------------------------------------------
 
 #[rustfmt::skip]
-pub const GAMUT: [OpParameter; 25] = [
+pub const GAMUT: [OpParameter; 27] = [
     OpParameter::Flag { key: "inv" },
 
     // Translation
@@ -139,7 +139,7 @@ pub const GAMUT: [OpParameter; 25] = [
     OpParameter::Real { key: "z", default: Some(0f64) },
 
     // Time evolution of translation
-    OpParameter::Series { key: "velocity", default: Some("0,0,0") },
+    OpParameter::Series { key: "translation_rate", default: Some("0,0,0") },
     OpParameter::Real { key: "dx", default: Some(0f64) },
     OpParameter::Real { key: "dy", default: Some(0f64) },
     OpParameter::Real { key: "dz", default: Some(0f64) },
@@ -151,7 +151,7 @@ pub const GAMUT: [OpParameter; 25] = [
     OpParameter::Real { key: "rz", default: Some(0f64) },
 
     // Time evolution of rotation
-    OpParameter::Series { key: "angular_velocity", default: Some("0,0,0") },
+    OpParameter::Series { key: "rotation_rate", default: Some("0,0,0") },
     OpParameter::Real { key: "drx", default: Some(0f64) },
     OpParameter::Real { key: "dry", default: Some(0f64) },
     OpParameter::Real { key: "drz", default: Some(0f64) },
@@ -159,11 +159,13 @@ pub const GAMUT: [OpParameter; 25] = [
     // Handling of rotation
     OpParameter::Text { key: "convention", default: Some("") },
     OpParameter::Flag { key: "exact" },
+    OpParameter::Flag { key: "uas" },
+    OpParameter::Flag { key: "mm" },
 
     // Scale and its time evoution
     OpParameter::Real { key: "scale", default: Some(0f64) },
     OpParameter::Real { key: "s",  default: Some(0f64) },
-    OpParameter::Real { key: "scale_trend", default: Some(0f64) },
+    OpParameter::Real { key: "scale_rate", default: Some(0f64) },
     OpParameter::Real { key: "ds", default: Some(0f64) },  // TODO: scale by 1e-6
 
     // Epoch - "beginning of time for this transformation"
@@ -176,6 +178,18 @@ pub const GAMUT: [OpParameter; 25] = [
 pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> {
     let def = &parameters.instantiated_as;
     let mut params = ParsedParameters::new(parameters, &GAMUT)?;
+
+    // Parameter units:
+
+    // Handle linear units in either m or mm
+    let linear_scale = if params.boolean("mm") { 0.001 } else { 1.0 };
+
+    // Handle angular units in either arcsec or micro arcsec
+    let angular_scale = if params.boolean("uas") {
+        std::f64::consts::PI / (3.6e9 * 180f64)
+    } else {
+        std::f64::consts::PI / (3.6e3f64 * 180f64)
+    };
 
     // Translation
     let translation = params.series("translation")?;
@@ -200,32 +214,32 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     } else {
         translation[2]
     };
-    let mut T = [x, y, z];
+    let mut T = [linear_scale * x, linear_scale * y, linear_scale * z];
 
     // Time evolution of translation
-    let velocity = params.series("velocity")?;
-    if velocity.len() != 3 {
+    let translation_rate = params.series("translation_rate")?;
+    if translation_rate.len() != 3 {
         return Err(Error::BadParam(
-            "velocity".to_string(),
+            "translation_rate".to_string(),
             parameters.invoked_as.clone(),
         ));
     }
     let dx = if params.real("dx")? != 0. {
         params.real("dx")?
     } else {
-        velocity[0]
+        translation_rate[0]
     };
     let dy = if params.real("dy")? != 0. {
         params.real("dy")?
     } else {
-        velocity[1]
+        translation_rate[1]
     };
     let dz = if params.real("dz")? != 0. {
         params.real("dz")?
     } else {
-        velocity[2]
+        translation_rate[2]
     };
-    let DT = [dx, dy, dz];
+    let DT = [linear_scale * dx, linear_scale * dy, linear_scale * dz];
 
     // Rotation
     let rotation = params.series("rotation")?;
@@ -250,39 +264,36 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     } else {
         rotation[2]
     };
-    let mut R = [
-        (rx / 3600.).to_radians(),
-        (ry / 3600.).to_radians(),
-        (rz / 3600.).to_radians(),
-    ];
+
+    let mut R = [rx * angular_scale, ry * angular_scale, rz * angular_scale];
 
     // Time evolution of rotation
-    let angular_velocity = params.series("angular_velocity")?;
-    if angular_velocity.len() != 3 {
+    let rotation_rate = params.series("rotation_rate")?;
+    if rotation_rate.len() != 3 {
         return Err(Error::BadParam(
-            "angular_velocity".to_string(),
+            "rotation_rate".to_string(),
             parameters.invoked_as.clone(),
         ));
     }
     let drx = if params.real("drx")? != 0. {
         params.real("drx")?
     } else {
-        angular_velocity[0]
+        rotation_rate[0]
     };
     let dry = if params.real("dry")? != 0. {
         params.real("dry")?
     } else {
-        angular_velocity[1]
+        rotation_rate[1]
     };
     let drz = if params.real("drz")? != 0. {
         params.real("drz")?
     } else {
-        angular_velocity[2]
+        rotation_rate[2]
     };
     let DR = [
-        (drx / 3600.).to_radians(),
-        (dry / 3600.).to_radians(),
-        (drz / 3600.).to_radians(),
+        drx * angular_scale,
+        dry * angular_scale,
+        drz * angular_scale,
     ];
 
     // Handling of rotations: position vector vs. coordinate frame conventions.
@@ -311,12 +322,12 @@ pub fn new(parameters: &RawParameters, _ctx: &dyn Context) -> Result<Op, Error> 
     };
     let mut S = 1.0 + scale * 1e-6;
 
-    let scale_trend = if params.real("scale_trend")? != 0. {
-        params.real("scale_trend")?
+    let scale_rate = if params.real("scale_rate")? != 0. {
+        params.real("scale_rate")?
     } else {
         params.real("ds")?
     };
-    let DS = scale_trend * 1e-6;
+    let DS = scale_rate * 1e-6;
 
     let dynamic = !(DT == [0., 0., 0.] && DR == [0., 0., 0.] && DS == 0.);
     if dynamic {
@@ -577,7 +588,7 @@ mod tests {
         let mut ctx = Minimal::default();
         let definition = "
             helmert  exact    convention = coordinate_frame
-            angular_velocity = 0.00150379, 0.00118346,  0.00120716
+            rotation_rate = 0.00150379, 0.00118346,  0.00120716
             t_epoch = 2020.0
         ";
         let op = ctx.op(definition)?;

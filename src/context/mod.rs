@@ -53,11 +53,13 @@ pub trait Context {
 
     /// Register a new user-defined operator
     fn register_op(&mut self, name: &str, constructor: OpConstructor);
+
     /// Register a new user-defined resource (macro, ellipsoid parameter set...)
     fn register_resource(&mut self, name: &str, definition: &str);
 
     /// Helper for the `Op` instantiation logic in `Op::op(...)`
     fn get_op(&self, name: &str) -> Result<OpConstructor, Error>;
+
     /// Helper for the `Op` instantiation logic in `Op::op(...)`
     fn get_resource(&self, name: &str) -> Result<String, Error>;
 
@@ -65,7 +67,24 @@ pub trait Context {
     fn get_blob(&self, name: &str) -> Result<Vec<u8>, Error>;
 
     /// Access grid resources by identifier
-    fn get_grid(&self, name: &str) -> Result<Arc<dyn Grid>, Error>;
+    fn get_grid(&self, name: &str) -> Result<Arc<BaseGrid>, Error>;
+
+    /// Get search paths for external grids, resources, etc.
+    fn get_paths(&self) -> Vec<std::path::PathBuf> {
+        Vec::new()
+    }
+
+    /// Get grid value by index (helping [`BaseGrid`](crate::grid::BaseGrid)
+    /// access externally stored grid collections)
+    #[expect(unused_variables)]
+    fn get_grid_values(
+        &self,
+        grid: &BaseGrid,
+        index: &[usize],
+        grid_values: &mut [Coor4D],
+    ) -> usize {
+        0
+    }
 }
 
 /// Help context providers provide canonically named, built in coordinate adaptors

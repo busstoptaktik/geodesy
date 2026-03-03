@@ -37,3 +37,5 @@ all the ruminations:
   What's wrong with ISO 19111?
 - [Rumination 011](https://github.com/busstoptaktik/geodesy/blob/main/ruminations/011-rumination.md):
   Some potential elements of an introduction to a revised version of ISO 19111/OGC topic 2
+- [Rumination 012](https://github.com/busstoptaktik/geodesy/blob/main/ruminations/012-rumination.md):
+  Unigrids and the `UG` grid maintenance utility - or *don't implement poorly, what the OS already provides excellently!*
