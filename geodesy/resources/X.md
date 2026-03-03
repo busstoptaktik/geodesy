@@ -31,7 +31,7 @@ helmert exact
     translation = -0.30031, -1.17512, -0.30654           # meter
     rotation = 0.041614, -0.026303, -0.011214            # arc-seconds
     scale = -0.01626                                     # ppm
-    angular_velocity = 0.000045, -0.000666, -0.000098    # arc-seconds/year
+    rotation_rate = 0.000045, -0.000666, -0.000098       # arc-seconds/year
     t_epoch = 2021.6164                                  # 2021-08-14
 
 ```

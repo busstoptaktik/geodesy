@@ -602,10 +602,10 @@ Both conventions are common, and trivially converted between as they differ by s
 | `inv` | Inverse operation: output-to-input datum. Mathematically, a sign reversion of all parameters. |
 | `translation` | comma separated list of translations along the 3 axes |
 | `rotation` | comma separated list of rotations around the 3 axes the 3 axes |
-| `velocity` | comma separated list of the deformation velocity wrt. the 3 axes |
-| `angular_velocity` | comma separated list of the rate-of-change of the rotations wrt. the 3 axes |
 | `scale` | scaling factor given in parts-per-million |
-| `scale_trend` | rate-of-change for the scaling factor |
+| `translation_rate` | comma separated list of the rate-of-change of the translation (i.e. the velocity) wrt. the 3 axes |
+| `rotation_rate` | comma separated list of the rate-of-change of the rotations wrt. the 3 axes |
+| `scale_rate` | rate-of-change for the scaling factor |
 | `t_epoch` | origin of the time evolution |
 | `t_obs` | fixed value for observation time. Ignore fourth coordinate |
 | `exact` | Do not use small-angle approximations when constructing the rotation matrix |
@@ -616,9 +616,9 @@ Both conventions are common, and trivially converted between as they differ by s
 **Additional parameters for PROJ compatibility:**
 | Parameter | Description |
 |-----------|-------------|
-| `x`  | offset along the first axis  |
-| `y`  | offset along the second axis |
-| `z`  | offset along the third axis  |
+| `x`  | translation along the first axis  |
+| `y`  | translation along the second axis |
+| `z`  | translation along the third axis  |
 | `rx` | rotation around the first axis  |
 | `ry` | rotation around the second axis |
 | `rz` | rotation around the third axis  |

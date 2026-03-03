@@ -227,7 +227,7 @@ kp -d 5 "geo:in | cart" untracked\timing\1000.pts >untracked\timing\1000.xyz
 
 rem Go from ITRF2014(t) to ETRF2014(t) using EUREF parameters
 echo To ETRF2014
-kp -d 5 "helmert uas angular_velocity = 85, 531, -770 rotation = 1785, 11151, -16170 t_epoch=2010 convention=position_vector" 1000.xyz >1000.kp
+kp -d 5 "helmert uas rotation_rate = 85, 531, -770 rotation = 1785, 11151, -16170 t_epoch=2010 convention=position_vector" 1000.xyz >1000.kp
 cct -d 5 proj=helmert rx=0.001785 ry=0.011151 rz=-0.01617 drx=8.5e-05 dry=0.000531 drz=-0.00077 t_epoch=2010 convention=position_vector -- untracked\timing\1000.xyz > untracked\timing\1000.cct
 python geodesy\etc\takt_dist.py untracked\timing\1000.kp untracked\timing\1000.cct | tee untracked\timing\1000.dist
 

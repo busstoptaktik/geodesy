@@ -31,7 +31,7 @@ Journal of Geodetic Science, 13(1), 2023, pp. 20220155.
 
 # Go from ITRF2014(t) to ETRF2014(t) using EUREF parameters
 |   helmert
-:       angular_velocity = 85, 531, -770 uas
+:       rotation_rate = 85, 531, -770 uas
 :       t_epoch = 1989  convention = position_vector
 
 # Staying in ETRF2014, remove the frame deformation since 2000.0
@@ -97,7 +97,7 @@ deformation is much smaller in Denmark than in northern Sweden.
 
 # Go from ITRF2014(t) to ETRF2014(t) using EUREF parameters
 |   helmert
-:       angular_velocity = 85, 531, -770 uas
+:       rotation_rate = 85, 531, -770 uas
 :       t_epoch = 1989  convention = position_vector
 
 # Staying in ETRF2014, remove the frame deformation since 2000.0
